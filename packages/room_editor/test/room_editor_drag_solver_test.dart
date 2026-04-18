@@ -17,48 +17,42 @@ void main() {
               seqNo: 1,
               startX: 0,
               startY: 0,
-              length: 3600,
-              plasterSelected: true,
+              length: 3600
             ),
             (
               id: 2,
               seqNo: 2,
               startX: 3600,
               startY: 0,
-              length: 2400,
-              plasterSelected: true,
+              length: 2400
             ),
             (
               id: 3,
               seqNo: 3,
               startX: 3600,
               startY: 2400,
-              length: 1800,
-              plasterSelected: true,
+              length: 1800
             ),
             (
               id: 4,
               seqNo: 4,
               startX: 1800,
               startY: 2400,
-              length: 1200,
-              plasterSelected: true,
+              length: 1200
             ),
             (
               id: 5,
               seqNo: 5,
               startX: 1800,
               startY: 1200,
-              length: 1800,
-              plasterSelected: true,
+              length: 1800
             ),
             (
               id: 6,
               seqNo: 6,
               startX: 0,
               startY: 1200,
-              length: 1200,
-              plasterSelected: true,
+              length: 1200
             ),
           ],
           openings: const [],
@@ -182,48 +176,42 @@ void main() {
               seqNo: 1,
               startX: 0,
               startY: 0,
-              length: 3600,
-              plasterSelected: true,
+              length: 3600
             ),
             (
               id: 2,
               seqNo: 2,
               startX: 3600,
               startY: 0,
-              length: 2400,
-              plasterSelected: true,
+              length: 2400
             ),
             (
               id: 3,
               seqNo: 3,
               startX: 3600,
               startY: 2400,
-              length: 1800,
-              plasterSelected: true,
+              length: 1800
             ),
             (
               id: 4,
               seqNo: 4,
               startX: 1800,
               startY: 2400,
-              length: 1200,
-              plasterSelected: true,
+              length: 1200
             ),
             (
               id: 5,
               seqNo: 5,
               startX: 1800,
               startY: 1200,
-              length: 1800,
-              plasterSelected: true,
+              length: 1800
             ),
             (
               id: 6,
               seqNo: 6,
               startX: 0,
               startY: 1200,
-              length: 1200,
-              plasterSelected: true,
+              length: 1200
             ),
           ],
           openings: const [],
@@ -339,48 +327,42 @@ dragging a vertex can move horizontally when incoming line is vertical with fixe
               seqNo: 1,
               startX: 0,
               startY: -1,
-              length: 3600,
-              plasterSelected: true,
+              length: 3600
             ),
             (
               id: 2,
               seqNo: 2,
               startX: 3600,
               startY: -2,
-              length: 2230,
-              plasterSelected: true,
+              length: 2230
             ),
             (
               id: 3,
               seqNo: 3,
               startX: 3600,
               startY: 2228,
-              length: 1800,
-              plasterSelected: true,
+              length: 1800
             ),
             (
               id: 4,
               seqNo: 4,
               startX: 1800,
               startY: 2228,
-              length: 1029,
-              plasterSelected: true,
+              length: 1029
             ),
             (
               id: 5,
               seqNo: 5,
               startX: 1800,
               startY: 1199,
-              length: 1800,
-              plasterSelected: true,
+              length: 1800
             ),
             (
               id: 6,
               seqNo: 6,
               startX: 0,
               startY: 1199,
-              length: 1200,
-              plasterSelected: true,
+              length: 1200
             ),
           ],
           openings: const [],
@@ -491,48 +473,42 @@ dragging a vertex can move horizontally when incoming line is vertical with fixe
               seqNo: 1,
               startX: 0,
               startY: 0,
-              length: 2251,
-              plasterSelected: true,
+              length: 2251
             ),
             (
               id: 2,
               seqNo: 2,
               startX: 2251,
               startY: 0,
-              length: 2401,
-              plasterSelected: true,
+              length: 2401
             ),
             (
               id: 3,
               seqNo: 3,
               startX: 2251,
               startY: 2401,
-              length: 451,
-              plasterSelected: true,
+              length: 451
             ),
             (
               id: 4,
               seqNo: 4,
               startX: 1800,
               startY: 2401,
-              length: 1201,
-              plasterSelected: true,
+              length: 1201
             ),
             (
               id: 5,
               seqNo: 5,
               startX: 1800,
               startY: 1200,
-              length: 1800,
-              plasterSelected: true,
+              length: 1800
             ),
             (
               id: 6,
               seqNo: 6,
               startX: 0,
               startY: 1200,
-              length: 1200,
-              plasterSelected: true,
+              length: 1200
             ),
           ],
           openings: const [],
@@ -643,48 +619,42 @@ dragging a vertex can move horizontally when incoming line is vertical with fixe
               seqNo: 1,
               startX: 0,
               startY: 0,
-              length: 2681,
-              plasterSelected: true,
+              length: 2681
             ),
             (
               id: 2,
               seqNo: 2,
               startX: 2681,
               startY: 0,
-              length: 1662,
-              plasterSelected: true,
+              length: 1662
             ),
             (
               id: 3,
               seqNo: 3,
               startX: 2453,
               startY: 1646,
-              length: 988,
-              plasterSelected: true,
+              length: 988
             ),
             (
               id: 4,
               seqNo: 4,
               startX: 1465,
               startY: 1646,
-              length: 445,
-              plasterSelected: true,
+              length: 445
             ),
             (
               id: 5,
               seqNo: 5,
               startX: 1465,
               startY: 1201,
-              length: 1465,
-              plasterSelected: true,
+              length: 1465
             ),
             (
               id: 6,
               seqNo: 6,
               startX: 0,
               startY: 1200,
-              length: 1200,
-              plasterSelected: true,
+              length: 1200
             ),
           ],
           openings: const [],

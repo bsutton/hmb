@@ -36,6 +36,15 @@ class _RoomEditorHarnessScreen extends StatefulWidget {
 
 class _RoomEditorHarnessScreenState extends State<_RoomEditorHarnessScreen> {
   RoomEditorDocument _document = _initialDocument;
+  late Set<int> _includedLineIds;
+
+  @override
+  void initState() {
+    super.initState();
+    _includedLineIds = {
+      for (final line in _document.bundle.lines) line.id,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,9 +76,12 @@ class _RoomEditorHarnessScreenState extends State<_RoomEditorHarnessScreen> {
                     child: RoomEditorWorkspace(
                       document: _document,
                       editorOnly: true,
+                      customTools: _customTools(),
+                      linePresentations: _linePresentations(),
                       onDocumentCommitted: (document) {
                         setState(() {
                           _document = document;
+                          _includedLineIds = _syncIncludedLineIds(document);
                         });
                       },
                     ),
@@ -132,11 +144,62 @@ class _RoomEditorHarnessScreenState extends State<_RoomEditorHarnessScreen> {
   String _describeLine(int index) {
     final line = _document.bundle.lines[index];
     final end = RoomCanvasGeometry.lineEnd(_document.bundle.lines, index);
+    final included = _includedLineIds.contains(line.id) ? 'included' : 'excluded';
     return 'W${index + 1} '
         'start=(${line.startX}, ${line.startY}) '
         'end=(${end.x}, ${end.y}) '
-        'length=${line.length}';
+        'length=${line.length} '
+        '[$included]';
   }
+
+  Set<int> _syncIncludedLineIds(RoomEditorDocument document) {
+    final previousIds = {
+      for (final line in _document.bundle.lines) line.id,
+    };
+    return {
+      for (final line in document.bundle.lines)
+        if (_includedLineIds.contains(line.id) || !previousIds.contains(line.id))
+          line.id,
+    };
+  }
+
+  Map<int, RoomEditorLinePresentation> _linePresentations() => {
+    for (final line in _document.bundle.lines)
+      if (!_includedLineIds.contains(line.id))
+        line.id: const RoomEditorLinePresentation(
+          style: RoomEditorLineStrokeStyle.dashed,
+        ),
+  };
+
+  List<RoomEditorCustomTool> _customTools() => [
+    RoomEditorCustomTool(
+      id: 'toggle-layout-inclusion',
+      label: 'Layout',
+      helpText: 'Toggle whether the selected wall is to be plastered.',
+      icon: Icons.layers_outlined,
+      selectionRule: RoomEditorCustomToolSelectionRule.oneOrMoreLines,
+      isSelected: (context) =>
+          context.selection.selectedLineIndices.isNotEmpty &&
+          context.selection.selectedLineIndices.every(
+            (index) => _includedLineIds.contains(_document.bundle.lines[index].id),
+          ),
+      onInvoked: (invocation) async {
+        final include = invocation.selection.selectedLineIndices.any(
+          (index) => !_includedLineIds.contains(_document.bundle.lines[index].id),
+        );
+        setState(() {
+          for (final index in invocation.selection.selectedLineIndices) {
+            final lineId = _document.bundle.lines[index].id;
+            if (include) {
+              _includedLineIds.add(lineId);
+            } else {
+              _includedLineIds.remove(lineId);
+            }
+          }
+        });
+      },
+    ),
+  ];
 
   String _describeConstraint(RoomEditorConstraint constraint) {
     final ownerIndex = _document.bundle.lines.indexWhere(
@@ -176,48 +239,42 @@ final RoomEditorDocument _initialDocument = RoomEditorDocument(
         seqNo: 1,
         startX: 0,
         startY: 0,
-        length: 3600,
-        plasterSelected: true,
+        length: 3600
       ),
       (
         id: 2,
         seqNo: 2,
         startX: 3600,
         startY: 0,
-        length: 2400,
-        plasterSelected: true,
+        length: 2400
       ),
       (
         id: 3,
         seqNo: 3,
         startX: 3600,
         startY: 2400,
-        length: 1800,
-        plasterSelected: true,
+        length: 1800
       ),
       (
         id: 4,
         seqNo: 4,
         startX: 1800,
         startY: 2400,
-        length: 1200,
-        plasterSelected: true,
+        length: 1200
       ),
       (
         id: 5,
         seqNo: 5,
         startX: 1800,
         startY: 1200,
-        length: 1800,
-        plasterSelected: true,
+        length: 1800
       ),
       (
         id: 6,
         seqNo: 6,
         startX: 0,
         startY: 1200,
-        length: 1200,
-        plasterSelected: true,
+        length: 1200
       ),
     ],
     openings: const [],

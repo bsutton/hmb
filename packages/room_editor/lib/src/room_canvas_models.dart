@@ -8,6 +8,18 @@ enum RoomEditorOpeningType { door, window }
 
 enum RoomEditorGridControlsMode { none, gridOnly, gridAndSnap }
 
+enum RoomEditorLineStrokeStyle { solid, dashed }
+
+enum RoomEditorCustomToolSelectionRule {
+  anySelection,
+  singleLine,
+  oneOrMoreLines,
+  singleIntersection,
+  oneOrMoreIntersections,
+  twoAdjacentLines,
+  twoNonAdjacentLines,
+}
+
 enum RoomEditorConstraintType {
   lineLength,
   horizontal,
@@ -173,6 +185,95 @@ class RoomEditorOpeningDraft {
   });
 }
 
+
+class RoomEditorAnnotationBadge {
+  final String id;
+  final String? text;
+  final IconData? icon;
+  final Color? color;
+  final bool constraintLike;
+
+  const RoomEditorAnnotationBadge({
+    required this.id,
+    this.text,
+    this.icon,
+    this.color,
+    this.constraintLike = false,
+  }) : assert(
+         text != null || icon != null,
+         'Either text or icon must be provided',
+       );
+}
+
+class RoomEditorLinePresentation {
+  final RoomEditorLineStrokeStyle style;
+  final Color? color;
+  final RoomEditorAnnotationBadge? badge;
+
+  const RoomEditorLinePresentation({
+    this.style = RoomEditorLineStrokeStyle.solid,
+    this.color,
+    this.badge,
+  });
+}
+
+class RoomEditorIntersectionPresentation {
+  final Color? color;
+  final RoomEditorAnnotationBadge? badge;
+
+  const RoomEditorIntersectionPresentation({this.color, this.badge});
+}
+
+class RoomEditorCustomToolContext {
+  final RoomEditorDocument document;
+  final RoomEditorSelection selection;
+
+  const RoomEditorCustomToolContext({
+    required this.document,
+    required this.selection,
+  });
+}
+
+class RoomEditorCustomToolInvocation {
+  final String toolId;
+  final RoomEditorDocument document;
+  final RoomEditorSelection selection;
+
+  const RoomEditorCustomToolInvocation({
+    required this.toolId,
+    required this.document,
+    required this.selection,
+  });
+}
+
+class RoomEditorCustomTool {
+  final String id;
+  final String label;
+  final String helpText;
+  final IconData? icon;
+  final Widget? iconWidget;
+  final RoomEditorCustomToolSelectionRule selectionRule;
+  final bool Function(RoomEditorCustomToolContext context)? isSelected;
+  final bool Function(RoomEditorCustomToolContext context)? isEnabled;
+  final Future<void> Function(RoomEditorCustomToolInvocation invocation)
+  onInvoked;
+
+  const RoomEditorCustomTool({
+    required this.id,
+    required this.label,
+    required this.helpText,
+    required this.selectionRule,
+    required this.onInvoked,
+    this.icon,
+    this.iconWidget,
+    this.isSelected,
+    this.isEnabled,
+  }) : assert(
+         icon != null || iconWidget != null,
+         'Either icon or iconWidget must be provided',
+       );
+}
+
 class RoomEditorSelection {
   final Set<int> selectedLineIndices;
   final Set<int> selectedIntersectionIndices;
@@ -207,6 +308,50 @@ class RoomEditorSelection {
   int? get selectedIntersectionIndex => selectedIntersectionIndices.length == 1
       ? selectedIntersectionIndices.first
       : null;
+}
+
+
+bool canApplyRoomEditorCustomTool({
+  required RoomEditorCustomTool tool,
+  required RoomEditorDocument document,
+  required RoomEditorSelection selection,
+}) {
+  final context = RoomEditorCustomToolContext(
+    document: document,
+    selection: selection,
+  );
+  if (tool.isEnabled != null && !tool.isEnabled!(context)) {
+    return false;
+  }
+  final lineCount = document.bundle.lines.length;
+  final selectedLines = selection.selectedLineIndices;
+  final selectedIntersections = selection.selectedIntersectionIndices;
+  switch (tool.selectionRule) {
+    case RoomEditorCustomToolSelectionRule.anySelection:
+      return selectedLines.isNotEmpty || selectedIntersections.isNotEmpty;
+    case RoomEditorCustomToolSelectionRule.singleLine:
+      return selectedLines.length == 1;
+    case RoomEditorCustomToolSelectionRule.oneOrMoreLines:
+      return selectedLines.isNotEmpty;
+    case RoomEditorCustomToolSelectionRule.singleIntersection:
+      return selectedIntersections.length == 1;
+    case RoomEditorCustomToolSelectionRule.oneOrMoreIntersections:
+      return selectedIntersections.isNotEmpty;
+    case RoomEditorCustomToolSelectionRule.twoAdjacentLines:
+      if (selectedLines.length != 2 || lineCount < 2) {
+        return false;
+      }
+      final ordered = selectedLines.toList()..sort();
+      return (ordered[0] + 1) % lineCount == ordered[1] ||
+          (ordered[1] + 1) % lineCount == ordered[0];
+    case RoomEditorCustomToolSelectionRule.twoNonAdjacentLines:
+      if (selectedLines.length != 2 || lineCount < 2) {
+        return false;
+      }
+      final ordered = selectedLines.toList()..sort();
+      return (ordered[0] + 1) % lineCount != ordered[1] &&
+          (ordered[1] + 1) % lineCount != ordered[0];
+  }
 }
 
 class RoomEditorSelectionController extends ValueNotifier<RoomEditorSelection> {

@@ -174,7 +174,7 @@ abstract class RoomEditorSolverScheduler {
   String _documentKey(RoomEditorDocument document) => [
     for (final line in document.bundle.lines)
       '''
-${line.id}:${line.startX}:${line.startY}:${line.length}:${line.plasterSelected}''',
+${line.id}:${line.startX}:${line.startY}:${line.length}''',
     '#',
     for (final opening in document.bundle.openings)
       '''

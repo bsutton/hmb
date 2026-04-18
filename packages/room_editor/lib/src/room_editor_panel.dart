@@ -23,6 +23,10 @@ class RoomEditorPanel extends StatefulWidget {
   final ValueChanged<RoomEditorCommand>? onCommand;
   final VoidCallback? onUndo;
   final VoidCallback? onRedo;
+  final List<RoomEditorCustomTool> customTools;
+  final Map<int, RoomEditorLinePresentation> linePresentations;
+  final Map<int, RoomEditorIntersectionPresentation>
+  intersectionPresentations;
 
   const RoomEditorPanel({
     required this.roomId,
@@ -44,6 +48,9 @@ class RoomEditorPanel extends StatefulWidget {
     this.onUndo,
     this.onRedo,
     this.landscape = false,
+    this.customTools = const [],
+    this.linePresentations = const {},
+    this.intersectionPresentations = const {},
   });
 
   @override
@@ -94,6 +101,9 @@ class _RoomEditorPanelState extends State<RoomEditorPanel> {
             onCommand: widget.onCommand,
             onUndo: widget.onUndo,
             onRedo: widget.onRedo,
+            customTools: widget.customTools,
+            linePresentations: widget.linePresentations,
+            intersectionPresentations: widget.intersectionPresentations,
           ),
         ),
       );

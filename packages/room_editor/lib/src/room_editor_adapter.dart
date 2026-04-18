@@ -6,7 +6,6 @@ typedef RoomEditorLineRecord = ({
   int startX,
   int startY,
   int length,
-  bool plasterSelected,
 });
 
 typedef RoomEditorOpeningRecord = ({
@@ -37,7 +36,6 @@ RoomEditorBundle buildRoomEditorBundle({
         startX: line.startX,
         startY: line.startY,
         length: line.length,
-        plasterSelected: line.plasterSelected,
       ),
   ],
   openings: [

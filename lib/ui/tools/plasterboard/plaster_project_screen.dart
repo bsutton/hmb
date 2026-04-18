@@ -1681,7 +1681,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
           startX: line.startX,
           startY: line.startY,
           length: line.length,
-          plasterSelected: line.plasterSelected,
         ),
     ],
     openings: [
@@ -1752,7 +1751,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             startX: document.bundle.lines[i].startX,
             startY: document.bundle.lines[i].startY,
             length: document.bundle.lines[i].length,
-            plasterSelected: document.bundle.lines[i].plasterSelected,
           ),
       ],
       openings: [
@@ -1767,6 +1765,43 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       constraints: constraints,
     );
   }
+
+  Map<int, RoomEditorLinePresentation> _roomEditorLinePresentations(
+    _RoomBundle bundle,
+  ) => {
+    for (final line in bundle.lines)
+      if (!line.plasterSelected)
+        line.id: const RoomEditorLinePresentation(
+          style: RoomEditorLineStrokeStyle.dashed,
+        ),
+  };
+
+  List<RoomEditorCustomTool> _roomEditorCustomTools() => [
+    RoomEditorCustomTool(
+      id: 'toggle-layout-inclusion',
+      label: 'Layout',
+      helpText:
+          'Toggle whether the selected wall or walls are included in '
+          'plasterboard layout output.',
+      icon: Icons.layers_outlined,
+      selectionRule: RoomEditorCustomToolSelectionRule.oneOrMoreLines,
+      isSelected: (context) =>
+          context.selection.selectedLineIndices.isNotEmpty &&
+          context.selection.selectedLineIndices.every(
+            (index) => _currentRoom.lines[index].plasterSelected,
+          ),
+      onInvoked: (invocation) async {
+        final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
+        final include = invocation.selection.selectedLineIndices.any(
+          (index) => !lines[index].plasterSelected,
+        );
+        for (final index in invocation.selection.selectedLineIndices) {
+          lines[index] = lines[index].copyWith(plasterSelected: include);
+        }
+        await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
+      },
+    ),
+  ];
 
   Future<void> _handleEditorWorkspaceCommand(RoomEditorCommand command) async {
     switch (command.type) {
@@ -1857,6 +1892,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         onCommand: (command) async {
           await _handleEditorWorkspaceCommand(command);
         },
+        customTools: _roomEditorCustomTools(),
+        linePresentations: _roomEditorLinePresentations(_currentRoom),
       );
     }
 
@@ -1908,6 +1945,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       onCommand: (command) async {
         await _handleEditorWorkspaceCommand(command);
       },
+      customTools: _roomEditorCustomTools(),
+      linePresentations: _roomEditorLinePresentations(_currentRoom),
     );
 
     if (isMobileLandscape) {
@@ -1924,6 +1963,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         onCommand: (command) async {
           await _handleEditorWorkspaceCommand(command);
         },
+        customTools: _roomEditorCustomTools(),
+        linePresentations: _roomEditorLinePresentations(_currentRoom),
       );
     }
 

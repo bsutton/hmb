@@ -44,8 +44,8 @@ class RoomEditorToolbarState {
   final bool canSetRightAngle;
   final bool canSetParallel;
   final bool showAllConstraints;
-  final bool areSelectedLinesIncluded;
   final bool isSelectedOpeningDoor;
+  final List<RoomEditorToolAction> customActions;
 
   const RoomEditorToolbarState({
     required this.gridControlsMode,
@@ -64,8 +64,8 @@ class RoomEditorToolbarState {
     required this.canSetRightAngle,
     required this.canSetParallel,
     required this.showAllConstraints,
-    required this.areSelectedLinesIncluded,
     required this.isSelectedOpeningDoor,
+    this.customActions = const [],
   });
 }
 
@@ -81,7 +81,6 @@ class RoomEditorToolbarCallbacks {
   final VoidCallback? onAddWindow;
   final VoidCallback? onEditOpening;
   final VoidCallback? onDeleteOpening;
-  final VoidCallback? onToggleLinePlaster;
   final VoidCallback? onSetLineLength;
   final VoidCallback? onSetHorizontal;
   final VoidCallback? onSetVertical;
@@ -103,7 +102,6 @@ class RoomEditorToolbarCallbacks {
     required this.onAddWindow,
     required this.onEditOpening,
     required this.onDeleteOpening,
-    required this.onToggleLinePlaster,
     required this.onSetLineLength,
     required this.onSetHorizontal,
     required this.onSetVertical,
@@ -145,7 +143,7 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       icon: Icons.fit_screen,
       label: 'Fit',
       helpText:
-          'Reset the drawing zoom and pan so the current room fits back into '
+          'Reset the drawing zoom and pan so the current room fits in the '
           'view.',
       onPressed: callbacks.onFit,
     ),
@@ -226,18 +224,6 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       enabled: state.hasOpening,
       onPressed: callbacks.onDeleteOpening,
     ),
-    RoomEditorToolAction(
-      id: 'toggle-line-plaster',
-      icon: state.areSelectedLinesIncluded
-          ? Icons.layers_clear_outlined
-          : Icons.layers_outlined,
-      label: state.areSelectedLinesIncluded ? 'Exclude' : 'Include',
-      helpText:
-          'Include or exclude the selected wall or walls from '
-          'plasterboard layout calculation.',
-      enabled: state.selectedLineCount > 0,
-      onPressed: callbacks.onToggleLinePlaster,
-    ),
   ];
 
   final constraintButtons = <RoomEditorToolAction>[
@@ -317,8 +303,9 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
   if (constraintsOnly) {
     return constraintButtons;
   }
+  final combinedPrimary = [...primaryButtons, ...state.customActions];
   if (excludeConstraints) {
-    return primaryButtons;
+    return combinedPrimary;
   }
-  return [...primaryButtons, ...constraintButtons];
+  return [...combinedPrimary, ...constraintButtons];
 }

@@ -18,6 +18,8 @@ class RoomEditorCanvas extends StatefulWidget {
   final Map<RoomEditorConstraintKey, Offset> constraintVisualOffsets;
   final Set<RoomEditorConstraintKey> highlightedConstraintKeys;
   final Set<int> highlightedImplicitLengthLineIndices;
+  final Map<int, RoomEditorLinePresentation> linePresentations;
+  final Map<int, RoomEditorIntersectionPresentation> intersectionPresentations;
   final int fitRequestId;
   final RoomEditorSelection selection;
   final RoomEditorCanvasCallbacks callbacks;
@@ -33,6 +35,8 @@ class RoomEditorCanvas extends StatefulWidget {
     required this.constraintVisualOffsets,
     required this.highlightedConstraintKeys,
     required this.highlightedImplicitLengthLineIndices,
+    required this.linePresentations,
+    required this.intersectionPresentations,
     required this.fitRequestId,
     required this.selection,
     required this.callbacks,
@@ -105,6 +109,15 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     }
   }
 
+  Matrix4 _centeredScaleMatrix(Size size, double scale) => Matrix4.identity()
+    ..translateByDouble(
+      size.width * (1 - scale) / 2,
+      size.height * (1 - scale) / 2,
+      0,
+      1,
+    )
+    ..scaleByDouble(scale, scale, 1, 1);
+
   void _handlePointerSignal(PointerSignalEvent event, Size size) {
     if (event is! PointerScrollEvent) {
       return;
@@ -125,6 +138,17 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
       final currentScale = _transformationController.value.getMaxScaleOnAxis();
       final scaleDelta = exp(-scrollEvent.scrollDelta.dy / 240);
       final nextScale = (currentScale * scaleDelta).clamp(0.5, 4.0);
+      if (nextScale <= 1.0) {
+        if ((nextScale - 1.0).abs() < 0.001) {
+          _transformationController.value = Matrix4.identity();
+        } else {
+          _transformationController.value = _centeredScaleMatrix(
+            size,
+            nextScale,
+          );
+        }
+        return;
+      }
       final appliedDelta = nextScale / currentScale;
       if (appliedDelta == 1) {
         return;
@@ -367,6 +391,8 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
         selection: widget.selection,
         showAllConstraints: widget.showAllConstraints,
         customOffsets: widget.constraintVisualOffsets,
+        linePresentations: widget.linePresentations,
+        intersectionPresentations: widget.intersectionPresentations,
         size: transform.size,
       );
       _pendingDragOpeningAnchorOffset = transform.openingDragAnchorOffset(
@@ -387,6 +413,8 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
         selection: widget.selection,
         showAllConstraints: widget.showAllConstraints,
         customOffsets: widget.constraintVisualOffsets,
+        linePresentations: widget.linePresentations,
+        intersectionPresentations: widget.intersectionPresentations,
         size: transform.size,
       );
       _pendingDragLineIndex = null;
@@ -403,6 +431,8 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
         selection: widget.selection,
         showAllConstraints: widget.showAllConstraints,
         customOffsets: widget.constraintVisualOffsets,
+        linePresentations: widget.linePresentations,
+        intersectionPresentations: widget.intersectionPresentations,
         size: transform.size,
       );
     }
@@ -730,6 +760,8 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
             selection: widget.selection,
             showAllConstraints: widget.showAllConstraints,
             customOffsets: widget.constraintVisualOffsets,
+            linePresentations: widget.linePresentations,
+            intersectionPresentations: widget.intersectionPresentations,
             size: size,
           );
       final transform = _CanvasTransform(
@@ -773,6 +805,8 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
                 highlightedConstraintKeys: widget.highlightedConstraintKeys,
                 highlightedImplicitLengthLineIndices:
                     widget.highlightedImplicitLengthLineIndices,
+                linePresentations: widget.linePresentations,
+                intersectionPresentations: widget.intersectionPresentations,
                 selectedLineIndices: widget.selection.selectedLineIndices,
                 selectedIntersectionIndices:
                     widget.selection.selectedIntersectionIndices,
@@ -795,6 +829,8 @@ class _RoomPainter extends CustomPainter {
   final List<_ConstraintVisual> constraintVisuals;
   final Set<RoomEditorConstraintKey> highlightedConstraintKeys;
   final Set<int> highlightedImplicitLengthLineIndices;
+  final Map<int, RoomEditorLinePresentation> linePresentations;
+  final Map<int, RoomEditorIntersectionPresentation> intersectionPresentations;
   final Set<int> selectedLineIndices;
   final Set<int> selectedIntersectionIndices;
   final int? selectedOpeningIndex;
@@ -810,6 +846,8 @@ class _RoomPainter extends CustomPainter {
     required this.constraintVisuals,
     required this.highlightedConstraintKeys,
     required this.highlightedImplicitLengthLineIndices,
+    required this.linePresentations,
+    required this.intersectionPresentations,
     required this.selectedLineIndices,
     required this.selectedIntersectionIndices,
     required this.selectedOpeningIndex,
@@ -878,26 +916,33 @@ class _RoomPainter extends CustomPainter {
       final isHighlighted = highlightedLineIds.contains(line.id);
       final isSelected = selectedLineIndices.contains(i);
       final isSelectedIntersection = selectedIntersectionIndices.contains(i);
+      final linePresentation = linePresentations[line.id];
+      final intersectionPresentation = intersectionPresentations[line.id];
       final effectiveLineColor = isHighlighted
           ? const Color(0xFFFF6B6B)
           : isSelected
           ? Colors.orange
-          : baseLineColor;
+          : linePresentation?.color ?? baseLineColor;
       final paint = Paint()
         ..color = effectiveLineColor
-        ..strokeWidth = isSelected ? 5 : 3;
+        ..strokeWidth = isSelected ? 5 : 3
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
       final vertexColor = isHighlighted
           ? const Color(0xFFFF6B6B)
           : isSelectedIntersection
           ? Colors.orange
-          : baseLineColor;
-      canvas
-        ..drawLine(start, end, paint)
-        ..drawCircle(
-          start,
-          isSelectedIntersection ? 7 : 6,
-          Paint()..color = vertexColor,
-        );
+          : intersectionPresentation?.color ?? baseLineColor;
+      if (linePresentation?.style == RoomEditorLineStrokeStyle.dashed) {
+        _drawDashedLine(canvas, start, end, paint);
+      } else {
+        canvas.drawLine(start, end, paint);
+      }
+      canvas.drawCircle(
+        start,
+        isSelectedIntersection ? 7 : 6,
+        Paint()..color = vertexColor,
+      );
       final mid = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
       final dx = end.dx - start.dx;
       final dy = end.dy - start.dy;
@@ -939,6 +984,24 @@ class _RoomPainter extends CustomPainter {
         Paint()..color = _withOpacity(Colors.black, 0.8),
       );
       wallLabelPainter.paint(canvas, wallLabelOffset);
+      final lineBadge = linePresentation?.badge;
+      if (lineBadge != null) {
+        _paintExternalBadge(
+          canvas: canvas,
+          anchor: mid,
+          center: mid + outsideNormal * 58,
+          badge: lineBadge,
+        );
+      }
+      final intersectionBadge = intersectionPresentation?.badge;
+      if (intersectionBadge != null) {
+        _paintExternalBadge(
+          canvas: canvas,
+          anchor: start,
+          center: start + outsideNormal * 34,
+          badge: intersectionBadge,
+        );
+      }
       final hasVisibleLengthConstraint = visibleConstraintKeys.contains(
         RoomEditorConstraintKey(
           lineId: line.id,
@@ -995,10 +1058,7 @@ class _RoomPainter extends CustomPainter {
           );
         }
         if (isImplicitLengthHighlighted) {
-          TextPainter(
-              text: const TextSpan(),
-              textDirection: TextDirection.ltr,
-            )
+          TextPainter(text: const TextSpan(), textDirection: TextDirection.ltr)
             ..text = TextSpan(
               text: labelText,
               style: const TextStyle(
@@ -1127,6 +1187,94 @@ class _RoomPainter extends CustomPainter {
     }
   }
 
+  void _drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint) {
+    final delta = end - start;
+    final distance = delta.distance;
+    if (distance == 0) {
+      return;
+    }
+    final direction = delta / distance;
+    const dashLength = 14.0;
+    const gapLength = 8.0;
+    var offset = 0.0;
+    while (offset < distance) {
+      final dashStart = start + direction * offset;
+      final dashEnd = start + direction * min(offset + dashLength, distance);
+      canvas.drawLine(dashStart, dashEnd, paint);
+      offset += dashLength + gapLength;
+    }
+  }
+
+  void _paintExternalBadge({
+    required Canvas canvas,
+    required Offset anchor,
+    required Offset center,
+    required RoomEditorAnnotationBadge badge,
+  }) {
+    final accentColor = badge.color ?? Colors.white;
+    final leaderPaint = Paint()
+      ..color = _withOpacity(accentColor, 0.85)
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(anchor, center, leaderPaint);
+    final hitBox = Rect.fromCenter(center: center, width: 26, height: 26);
+    final badgeRect = RRect.fromRectAndRadius(hitBox, const Radius.circular(8));
+    canvas
+      ..drawRRect(badgeRect, Paint()..color = const Color(0xFF101418))
+      ..drawRRect(
+        badgeRect,
+        Paint()
+          ..color = accentColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2,
+      );
+    if (badge.text != null) {
+      final painter = TextPainter(
+        text: TextSpan(
+          text: badge.text,
+          style: TextStyle(
+            inherit: false,
+            fontSize: 14,
+            height: 1,
+            fontWeight: FontWeight.w700,
+            color: accentColor,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      painter.paint(
+        canvas,
+        Offset(
+          hitBox.left + (hitBox.width - painter.width) / 2,
+          hitBox.top + (hitBox.height - painter.height) / 2,
+        ),
+      );
+      return;
+    }
+    final icon = badge.icon!;
+    final painter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
+          inherit: false,
+          fontSize: 16,
+          height: 1,
+          color: accentColor,
+          fontFamily: icon.fontFamily,
+          package: icon.fontPackage,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    painter.paint(
+      canvas,
+      Offset(
+        hitBox.left + (hitBox.width - painter.width) / 2,
+        hitBox.top + (hitBox.height - painter.height) / 2,
+      ),
+    );
+  }
+
   void _paintGrid(Canvas canvas, Size size) {
     if (!showGrid || bundle.lines.isEmpty) {
       return;
@@ -1180,6 +1328,11 @@ class _RoomPainter extends CustomPainter {
           selectedIntersectionIndices.length ||
       !oldDelegate.selectedIntersectionIndices.containsAll(
         selectedIntersectionIndices,
+      ) ||
+      !mapEquals(oldDelegate.linePresentations, linePresentations) ||
+      !mapEquals(
+        oldDelegate.intersectionPresentations,
+        intersectionPresentations,
       ) ||
       oldDelegate.selectedOpeningIndex != selectedOpeningIndex;
 }
@@ -1342,7 +1495,7 @@ class _ConstraintVisual {
         ..strokeCap = StrokeCap.round;
       const inset = 6.0;
       const slant = Offset(11, -6);
-      const separation = Offset(3.0, 5.0);
+      const separation = Offset(3, 5);
       final firstStart = Offset(hitBox.left + inset, hitBox.center.dy + 3);
       final firstEnd = firstStart + slant;
       canvas
@@ -1717,6 +1870,9 @@ Rect _computeCanvasPaintBounds({
   required RoomEditorSelection selection,
   required bool showAllConstraints,
   required Map<RoomEditorConstraintKey, Offset> customOffsets,
+  required Map<int, RoomEditorLinePresentation> linePresentations,
+  required Map<int, RoomEditorIntersectionPresentation>
+  intersectionPresentations,
   required _CanvasTransform transform,
 }) {
   final lines = document.bundle.lines;
@@ -1806,6 +1962,20 @@ Rect _computeCanvasPaintBounds({
         labelPainter.height + 4,
       ),
     );
+
+    final lineBadge = linePresentations[line.id]?.badge;
+    if (lineBadge != null) {
+      final badgeCenter = mid + outsideNormal * 58;
+      includePoint(badgeCenter, radius: 18);
+      includeRect(Rect.fromCenter(center: badgeCenter, width: 30, height: 30));
+    }
+
+    final intersectionBadge = intersectionPresentations[line.id]?.badge;
+    if (intersectionBadge != null) {
+      final badgeCenter = start + outsideNormal * 34;
+      includePoint(badgeCenter, radius: 18);
+      includeRect(Rect.fromCenter(center: badgeCenter, width: 30, height: 30));
+    }
 
     final openings = document.bundle.openings
         .where((opening) => opening.lineId == line.id)
@@ -2152,6 +2322,9 @@ class _CanvasWorldBounds {
     required RoomEditorSelection selection,
     required bool showAllConstraints,
     required Map<RoomEditorConstraintKey, Offset> customOffsets,
+    required Map<int, RoomEditorLinePresentation> linePresentations,
+    required Map<int, RoomEditorIntersectionPresentation>
+    intersectionPresentations,
     required Size size,
   }) {
     final lineBounds = _CanvasWorldBounds.fromLines(document.bundle.lines);
@@ -2165,6 +2338,8 @@ class _CanvasWorldBounds {
       selection: selection,
       showAllConstraints: showAllConstraints,
       customOffsets: customOffsets,
+      linePresentations: linePresentations,
+      intersectionPresentations: intersectionPresentations,
       transform: baseTransform,
     );
     final leftOverhang = max(0, -paintBounds.left);

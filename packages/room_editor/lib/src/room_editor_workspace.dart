@@ -132,6 +132,10 @@ class RoomEditorWorkspace extends StatefulWidget {
   final RoomEditorHistoryController? historyController;
   final RoomEditorGridControlsMode gridControlsMode;
   final int? ceilingHeight;
+  final List<RoomEditorCustomTool> customTools;
+  final Map<int, RoomEditorLinePresentation> linePresentations;
+  final Map<int, RoomEditorIntersectionPresentation>
+  intersectionPresentations;
 
   const RoomEditorWorkspace({
     required this.document,
@@ -147,6 +151,9 @@ class RoomEditorWorkspace extends StatefulWidget {
     this.onRedo,
     this.gridControlsMode = RoomEditorGridControlsMode.none,
     this.ceilingHeight,
+    this.customTools = const [],
+    this.linePresentations = const {},
+    this.intersectionPresentations = const {},
   });
 
   @override
@@ -1113,7 +1120,6 @@ This room is rigid. Remove one or more constraints to modify the room.'''
       startX: midpoint.x,
       startY: midpoint.y,
       length: 0,
-      plasterSelected: line.plasterSelected,
     );
     final updatedLines = <RoomEditorLine>[];
     for (var i = 0; i < lines.length; i++) {
@@ -1349,8 +1355,7 @@ This room is rigid. Remove one or more constraints to modify the room.'''
           a.seqNo != b.seqNo ||
           a.startX != b.startX ||
           a.startY != b.startY ||
-          a.length != b.length ||
-          a.plasterSelected != b.plasterSelected) {
+          a.length != b.length) {
         return false;
       }
     }
@@ -1606,6 +1611,41 @@ This room is rigid. Remove one or more constraints to modify the room.'''
     }
   }
 
+  List<RoomEditorToolAction> _buildCustomToolActions() {
+    final context = RoomEditorCustomToolContext(
+      document: _document,
+      selection: _selection,
+    );
+    return [
+      for (final tool in widget.customTools)
+        RoomEditorToolAction(
+          id: tool.id,
+          label: tool.label,
+          helpText: tool.helpText,
+          icon: tool.icon,
+          iconWidget: tool.iconWidget,
+          selected: tool.isSelected?.call(context) ?? false,
+          enabled: canApplyRoomEditorCustomTool(
+            tool: tool,
+            document: _document,
+            selection: _selection,
+          ),
+          onPressed: () {
+            _clearHighlightedConstraints();
+            unawaited(
+              tool.onInvoked(
+                RoomEditorCustomToolInvocation(
+                  toolId: tool.id,
+                  document: _document,
+                  selection: _selection,
+                ),
+              ),
+            );
+          },
+        ),
+    ];
+  }
+
   Widget _buildToolbar({
     required bool vertical,
     required bool wrap,
@@ -1670,13 +1710,9 @@ This room is rigid. Remove one or more constraints to modify the room.'''
         canSetRightAngle: _canSetAngle,
         canSetParallel: _canSetParallel,
         showAllConstraints: _showAllConstraints,
-        areSelectedLinesIncluded:
-            _selectedLineIndices.isNotEmpty &&
-            _selectedLineIndices.every(
-              (index) => _bundle.lines[index].plasterSelected,
-            ),
         isSelectedOpeningDoor:
             selectedOpening?.type == RoomEditorOpeningType.door,
+        customActions: _buildCustomToolActions(),
       ),
       callbacks: RoomEditorToolbarCallbacks(
         onUndo: _canUndo ? _undoLocally : null,
@@ -1728,23 +1764,6 @@ This room is rigid. Remove one or more constraints to modify the room.'''
             ? () {
                 _clearHighlightedConstraints();
                 _deleteSelectedOpeningLocally();
-              }
-            : null,
-        onToggleLinePlaster: _selectedLineIndices.isNotEmpty
-            ? () {
-                _clearHighlightedConstraints();
-                final lines = List<RoomEditorLine>.from(_bundle.lines);
-                final include = !_selectedLineIndices.every(
-                  (index) => lines[index].plasterSelected,
-                );
-                for (final index in _selectedLineIndices) {
-                  final line = lines[index];
-                  lines[index] = line.copyWith(plasterSelected: include);
-                }
-                final next = _document.copyWith(
-                  bundle: _bundle.copyWith(lines: lines),
-                );
-                _commitDocument(next);
               }
             : null,
         onSetLineLength: hasLine
@@ -1826,6 +1845,8 @@ This room is rigid. Remove one or more constraints to modify the room.'''
     constraintVisualOffsets: _constraintVisualOffsets,
     highlightedConstraintKeys: _highlightedConstraintKeys,
     highlightedImplicitLengthLineIndices: _highlightedImplicitLengthLineIndices,
+    linePresentations: widget.linePresentations,
+    intersectionPresentations: widget.intersectionPresentations,
     fitRequestId: _fitCanvasRequest,
     selection: _selection,
     callbacks: RoomEditorCanvasCallbacks(

@@ -14,48 +14,42 @@ void main() {
             seqNo: 1,
             startX: 0,
             startY: 0,
-            length: 3600,
-            plasterSelected: true,
+            length: 3600
           ),
           (
             id: 2,
             seqNo: 2,
             startX: 3600,
             startY: 0,
-            length: 2400,
-            plasterSelected: true,
+            length: 2400
           ),
           (
             id: 3,
             seqNo: 3,
             startX: 3600,
             startY: 2400,
-            length: 1800,
-            plasterSelected: true,
+            length: 1800
           ),
           (
             id: 4,
             seqNo: 4,
             startX: 1800,
             startY: 2400,
-            length: 1200,
-            plasterSelected: true,
+            length: 1200
           ),
           (
             id: 5,
             seqNo: 5,
             startX: 1800,
             startY: 1200,
-            length: 1800,
-            plasterSelected: true,
+            length: 1800
           ),
           (
             id: 6,
             seqNo: 6,
             startX: 0,
             startY: 1200,
-            length: 1200,
-            plasterSelected: true,
+            length: 1200
           ),
         ],
         openings: const [],
@@ -161,48 +155,42 @@ void main() {
             seqNo: 1,
             startX: 0,
             startY: 0,
-            length: 3600,
-            plasterSelected: true,
+            length: 3600
           ),
           (
             id: 2,
             seqNo: 2,
             startX: 3600,
             startY: 0,
-            length: 2400,
-            plasterSelected: true,
+            length: 2400
           ),
           (
             id: 3,
             seqNo: 3,
             startX: 3600,
             startY: 2400,
-            length: 1800,
-            plasterSelected: true,
+            length: 1800
           ),
           (
             id: 4,
             seqNo: 4,
             startX: 1800,
             startY: 2400,
-            length: 1200,
-            plasterSelected: true,
+            length: 1200
           ),
           (
             id: 5,
             seqNo: 5,
             startX: 1800,
             startY: 1200,
-            length: 1800,
-            plasterSelected: true,
+            length: 1800
           ),
           (
             id: 6,
             seqNo: 6,
             startX: 0,
             startY: 1200,
-            length: 1200,
-            plasterSelected: true,
+            length: 1200
           ),
         ],
         openings: const [],
@@ -253,32 +241,28 @@ void main() {
             seqNo: 1,
             startX: 0,
             startY: 0,
-            length: 4000,
-            plasterSelected: true,
+            length: 4000
           ),
           (
             id: 2,
             seqNo: 2,
             startX: 4000,
             startY: 0,
-            length: 2400,
-            plasterSelected: true,
+            length: 2400
           ),
           (
             id: 3,
             seqNo: 3,
             startX: 4000,
             startY: 2400,
-            length: 4000,
-            plasterSelected: true,
+            length: 4000
           ),
           (
             id: 4,
             seqNo: 4,
             startX: 0,
             startY: 2400,
-            length: 2400,
-            plasterSelected: true,
+            length: 2400
           ),
         ],
         openings: const [],

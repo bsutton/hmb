@@ -86,32 +86,28 @@ void main() {
         seqNo: 1,
         startX: 137,
         startY: -954,
-        length: 2863,
-        plasterSelected: true,
+        length: 2863
       ),
       const RoomEditorLine(
         id: 2,
         seqNo: 2,
         startX: 3000,
         startY: -954,
-        length: 3407,
-        plasterSelected: true,
+        length: 3407
       ),
       const RoomEditorLine(
         id: 3,
         seqNo: 3,
         startX: 3600,
         startY: 2400,
-        length: 3795,
-        plasterSelected: true,
+        length: 3795
       ),
       const RoomEditorLine(
         id: 6,
         seqNo: 4,
         startX: 0,
         startY: 1200,
-        length: 2160,
-        plasterSelected: true,
+        length: 2160
       ),
     ];
     const constraints = [
@@ -181,16 +177,14 @@ void main() {
         seqNo: 1,
         startX: 0,
         startY: 0,
-        length: 10,
-        plasterSelected: true,
+        length: 10
       ),
       const RoomEditorLine(
         id: 20,
         seqNo: 2,
         startX: 10,
         startY: 0,
-        length: 10,
-        plasterSelected: true,
+        length: 10
       ),
     ];
 
@@ -231,16 +225,14 @@ void main() {
         seqNo: 1,
         startX: 0,
         startY: 0,
-        length: 10,
-        plasterSelected: true,
+        length: 10
       ),
       const RoomEditorLine(
         id: 20,
         seqNo: 2,
         startX: 10,
         startY: 0,
-        length: 10,
-        plasterSelected: true,
+        length: 10
       ),
     ];
     final direction = chooseParallelConstraintDirection(
@@ -286,32 +278,28 @@ void main() {
               seqNo: 1,
               startX: 0,
               startY: 0,
-              length: 100,
-              plasterSelected: true,
+              length: 100
             ),
             RoomEditorLine(
               id: 2,
               seqNo: 2,
               startX: 100,
               startY: 0,
-              length: 50,
-              plasterSelected: true,
+              length: 50
             ),
             RoomEditorLine(
               id: 3,
               seqNo: 3,
               startX: 100,
               startY: 50,
-              length: 100,
-              plasterSelected: true,
+              length: 100
             ),
             RoomEditorLine(
               id: 4,
               seqNo: 4,
               startX: 0,
               startY: 50,
-              length: 50,
-              plasterSelected: true,
+              length: 50
             ),
           ],
           openings: [],
@@ -348,24 +336,21 @@ void main() {
           seqNo: 1,
           startX: 0,
           startY: 0,
-          length: 100,
-          plasterSelected: true,
+          length: 100
         ),
         const RoomEditorLine(
           id: 2,
           seqNo: 2,
           startX: 100,
           startY: 0,
-          length: 50,
-          plasterSelected: true,
+          length: 50
         ),
         const RoomEditorLine(
           id: 3,
           seqNo: 3,
           startX: 100,
           startY: 50,
-          length: 100,
-          plasterSelected: true,
+          length: 100
         ),
       ];
 
@@ -400,32 +385,28 @@ void main() {
               seqNo: 1,
               startX: 0,
               startY: 0,
-              length: 100,
-              plasterSelected: true,
+              length: 100
             ),
             RoomEditorLine(
               id: 2,
               seqNo: 2,
               startX: 100,
               startY: 0,
-              length: 50,
-              plasterSelected: true,
+              length: 50
             ),
             RoomEditorLine(
               id: 3,
               seqNo: 3,
               startX: 100,
               startY: 50,
-              length: 100,
-              plasterSelected: true,
+              length: 100
             ),
             RoomEditorLine(
               id: 4,
               seqNo: 4,
               startX: 0,
               startY: 50,
-              length: 50,
-              plasterSelected: true,
+              length: 50
             ),
           ],
           openings: [],
@@ -459,32 +440,28 @@ blocking constraint analysis identifies constraints whose removal restores solva
               seqNo: 1,
               startX: 0,
               startY: 0,
-              length: 3600,
-              plasterSelected: true,
+              length: 3600
             ),
             RoomEditorLine(
               id: 2,
               seqNo: 2,
               startX: 3600,
               startY: 0,
-              length: 2400,
-              plasterSelected: true,
+              length: 2400
             ),
             RoomEditorLine(
               id: 3,
               seqNo: 3,
               startX: 3600,
               startY: 2400,
-              length: 3600,
-              plasterSelected: true,
+              length: 3600
             ),
             RoomEditorLine(
               id: 4,
               seqNo: 4,
               startX: 0,
               startY: 2400,
-              length: 2400,
-              plasterSelected: true,
+              length: 2400
             ),
           ],
           openings: [],
@@ -563,48 +540,42 @@ blocking constraint analysis identifies constraints whose removal restores solva
               seqNo: 1,
               startX: 0,
               startY: 0,
-              length: 3600,
-              plasterSelected: true,
+              length: 3600
             ),
             RoomEditorLine(
               id: 2,
               seqNo: 2,
               startX: 3600,
               startY: 0,
-              length: 3000,
-              plasterSelected: true,
+              length: 3000
             ),
             RoomEditorLine(
               id: 3,
               seqNo: 3,
               startX: 3600,
               startY: 3000,
-              length: 1800,
-              plasterSelected: true,
+              length: 1800
             ),
             RoomEditorLine(
               id: 4,
               seqNo: 4,
               startX: 1800,
               startY: 2400,
-              length: 1200,
-              plasterSelected: true,
+              length: 1200
             ),
             RoomEditorLine(
               id: 5,
               seqNo: 5,
               startX: 1800,
               startY: 1200,
-              length: 1800,
-              plasterSelected: true,
+              length: 1800
             ),
             RoomEditorLine(
               id: 6,
               seqNo: 6,
               startX: 0,
               startY: 1200,
-              length: 1200,
-              plasterSelected: true,
+              length: 1200
             ),
           ],
           openings: [],
