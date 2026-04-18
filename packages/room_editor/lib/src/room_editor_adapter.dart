@@ -16,6 +16,8 @@ typedef RoomEditorOpeningRecord = ({
   int width,
   int height,
   int sillHeight,
+  int? distanceToStartWall,
+  int? distanceToEndWall,
 });
 
 RoomEditorBundle buildRoomEditorBundle({
@@ -48,6 +50,8 @@ RoomEditorBundle buildRoomEditorBundle({
         width: opening.width,
         height: opening.height,
         sillHeight: opening.sillHeight,
+        distanceToStartWall: opening.distanceToStartWall,
+        distanceToEndWall: opening.distanceToEndWall,
       ),
   ],
 );

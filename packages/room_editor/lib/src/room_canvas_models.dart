@@ -6,6 +6,12 @@ enum RoomEditorUnitSystem { metric, imperial }
 
 enum RoomEditorOpeningType { door, window }
 
+enum RoomEditorOpeningDimensionType {
+  width,
+  distanceToStartWall,
+  distanceToEndWall,
+}
+
 enum RoomEditorGridControlsMode { none, gridOnly, gridAndSnap }
 
 enum RoomEditorLineStrokeStyle { solid, dashed }
@@ -38,6 +44,8 @@ typedef RoomEditorTapIndexedCallback = Future<void> Function(int index);
 typedef RoomEditorTapCeilingCallback = Future<void> Function();
 typedef RoomEditorTapConstraintCallback =
     Future<void> Function(RoomEditorConstraintKey key);
+typedef RoomEditorTapOpeningDimensionCallback =
+    Future<void> Function(RoomEditorOpeningDimensionKey key);
 typedef RoomEditorMoveConstraintCallback =
     void Function(RoomEditorConstraintKey key, Offset worldOffset);
 typedef RoomEditorDeleteConstraintCallback =
@@ -61,6 +69,8 @@ class RoomEditorOpening {
   final int width;
   final int height;
   final int sillHeight;
+  final int? distanceToStartWall;
+  final int? distanceToEndWall;
 
   const RoomEditorOpening({
     required this.id,
@@ -70,6 +80,8 @@ class RoomEditorOpening {
     required this.width,
     required this.height,
     this.sillHeight = 0,
+    this.distanceToStartWall,
+    this.distanceToEndWall,
   });
 
   RoomEditorOpening copyWith({
@@ -80,6 +92,10 @@ class RoomEditorOpening {
     int? width,
     int? height,
     int? sillHeight,
+    int? distanceToStartWall,
+    bool clearDistanceToStartWall = false,
+    int? distanceToEndWall,
+    bool clearDistanceToEndWall = false,
   }) => RoomEditorOpening(
     id: id ?? this.id,
     lineId: lineId ?? this.lineId,
@@ -88,7 +104,34 @@ class RoomEditorOpening {
     width: width ?? this.width,
     height: height ?? this.height,
     sillHeight: sillHeight ?? this.sillHeight,
+    distanceToStartWall: clearDistanceToStartWall
+        ? null
+        : distanceToStartWall ?? this.distanceToStartWall,
+    distanceToEndWall: clearDistanceToEndWall
+        ? null
+        : distanceToEndWall ?? this.distanceToEndWall,
   );
+}
+
+@immutable
+class RoomEditorOpeningDimensionKey {
+  final int openingId;
+  final RoomEditorOpeningDimensionType type;
+
+  const RoomEditorOpeningDimensionKey({
+    required this.openingId,
+    required this.type,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RoomEditorOpeningDimensionKey &&
+          openingId == other.openingId &&
+          type == other.type;
+
+  @override
+  int get hashCode => Object.hash(openingId, type);
 }
 
 class RoomEditorBundle {
@@ -176,12 +219,16 @@ class RoomEditorOpeningDraft {
   final int width;
   final int height;
   final int sillHeight;
+  final int? distanceToStartWall;
+  final int? distanceToEndWall;
 
   const RoomEditorOpeningDraft({
     required this.type,
     required this.width,
     required this.height,
     this.sillHeight = 0,
+    this.distanceToStartWall,
+    this.distanceToEndWall,
   });
 }
 
@@ -279,6 +326,7 @@ class RoomEditorSelection {
   final Set<int> selectedIntersectionIndices;
   final int? selectedOpeningIndex;
   final RoomEditorConstraintKey? selectedConstraintKey;
+  final RoomEditorOpeningDimensionKey? selectedOpeningDimensionKey;
 
   RoomEditorSelection({
     int? selectedLineIndex,
@@ -287,6 +335,7 @@ class RoomEditorSelection {
     Iterable<int> selectedIntersectionIndices = const <int>[],
     this.selectedOpeningIndex,
     this.selectedConstraintKey,
+    this.selectedOpeningDimensionKey,
   }) : selectedLineIndices = {
          if (selectedLineIndex != null) selectedLineIndex,
          ...selectedLineIndices,
@@ -300,7 +349,8 @@ class RoomEditorSelection {
     : selectedLineIndices = const {},
       selectedIntersectionIndices = const {},
       selectedOpeningIndex = null,
-      selectedConstraintKey = null;
+      selectedConstraintKey = null,
+      selectedOpeningDimensionKey = null;
 
   int? get selectedLineIndex =>
       selectedLineIndices.length == 1 ? selectedLineIndices.first : null;
@@ -308,6 +358,74 @@ class RoomEditorSelection {
   int? get selectedIntersectionIndex => selectedIntersectionIndices.length == 1
       ? selectedIntersectionIndices.first
       : null;
+}
+
+int openingDistanceToEndWall(RoomEditorOpening opening, RoomEditorLine line) =>
+    (line.length - opening.offsetFromStart - opening.width).clamp(
+      0,
+      line.length,
+    );
+
+RoomEditorOpening normalizeOpeningForLine(
+  RoomEditorOpening opening,
+  RoomEditorLine line,
+) {
+  final maxOffset = (line.length - opening.width).clamp(0, line.length);
+  if (opening.distanceToStartWall != null) {
+    return opening.copyWith(
+      offsetFromStart: opening.distanceToStartWall!.clamp(0, maxOffset),
+    );
+  }
+  if (opening.distanceToEndWall != null) {
+    return opening.copyWith(
+      offsetFromStart:
+          (line.length - opening.width - opening.distanceToEndWall!).clamp(
+            0,
+            maxOffset,
+          ),
+    );
+  }
+  return opening.copyWith(
+    offsetFromStart: opening.offsetFromStart.clamp(0, maxOffset),
+  );
+}
+
+RoomEditorDocument normalizeRoomEditorOpenings(RoomEditorDocument document) {
+  final openings = [
+    for (final opening in document.bundle.openings)
+      () {
+        for (final line in document.bundle.lines) {
+          if (line.id == opening.lineId) {
+            return normalizeOpeningForLine(opening, line);
+          }
+        }
+        return opening;
+      }(),
+  ];
+  return document.copyWith(
+    bundle: document.bundle.copyWith(openings: openings),
+  );
+}
+
+List<RoomEditorConstraint> effectiveRoomEditorConstraints(
+  RoomEditorDocument document,
+) {
+  final constraints = <RoomEditorConstraint>[...document.constraints];
+  for (final opening in document.bundle.openings) {
+    final startDistance = opening.distanceToStartWall;
+    final endDistance = opening.distanceToEndWall;
+    if (startDistance == null || endDistance == null) {
+      continue;
+    }
+    constraints.add(
+      RoomEditorConstraint(
+        lineId: opening.lineId,
+        type: RoomEditorConstraintType.lineLength,
+        targetValue: startDistance + opening.width + endDistance,
+      ),
+    );
+  }
+  return constraints;
 }
 
 
@@ -397,6 +515,7 @@ class RoomEditorCanvasCallbacks {
   final RoomEditorTapIndexedCallback onTapLine;
   final RoomEditorTapCeilingCallback onTapCeiling;
   final RoomEditorTapConstraintCallback onTapConstraint;
+  final RoomEditorTapOpeningDimensionCallback onTapOpeningDimension;
   final RoomEditorMoveConstraintCallback onMoveConstraint;
   final RoomEditorDeleteConstraintCallback onDeleteConstraint;
 
@@ -415,6 +534,7 @@ class RoomEditorCanvasCallbacks {
     required this.onTapLine,
     required this.onTapCeiling,
     required this.onTapConstraint,
+    required this.onTapOpeningDimension,
     required this.onMoveConstraint,
     required this.onDeleteConstraint,
   });

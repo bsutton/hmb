@@ -134,8 +134,7 @@ class RoomEditorWorkspace extends StatefulWidget {
   final int? ceilingHeight;
   final List<RoomEditorCustomTool> customTools;
   final Map<int, RoomEditorLinePresentation> linePresentations;
-  final Map<int, RoomEditorIntersectionPresentation>
-  intersectionPresentations;
+  final Map<int, RoomEditorIntersectionPresentation> intersectionPresentations;
 
   const RoomEditorWorkspace({
     required this.document,
@@ -215,6 +214,16 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     return null;
   }
 
+  RoomEditorOpeningDimensionKey? get _selectedOpeningDimensionKey =>
+      _selection.selectedOpeningDimensionKey;
+
+  RoomEditorOpening? get _selectedOpening =>
+      _selection.selectedOpeningIndex != null &&
+          _selection.selectedOpeningIndex! >= 0 &&
+          _selection.selectedOpeningIndex! < _bundle.openings.length
+      ? _bundle.openings[_selection.selectedOpeningIndex!]
+      : null;
+
   RoomEditorDocumentConstraintState get _documentConstraintState {
     if (!identical(_cachedConstraintStateDocument, _document) ||
         _cachedConstraintState == null) {
@@ -229,7 +238,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   @override
   void initState() {
     super.initState();
-    _document = widget.document;
+    _document = normalizeRoomEditorOpenings(widget.document);
     _focusNode = FocusNode(debugLabel: 'RoomEditorWorkspace');
     _selection = _normalizeSelection(
       _externalSelectionController?.value ?? const RoomEditorSelection.empty(),
@@ -258,7 +267,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   void didUpdateWidget(covariant RoomEditorWorkspace oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.document != widget.document) {
-      _document = widget.document;
+      _document = normalizeRoomEditorOpenings(widget.document);
       _selection = _normalizeSelection(_selection, _document);
       _constraintVisualOffsets = _pruneConstraintVisualOffsets(
         _constraintVisualOffsets,
@@ -406,6 +415,15 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
             )
         ? selection.selectedConstraintKey
         : null,
+    selectedOpeningDimensionKey:
+        selection.selectedOpeningDimensionKey != null &&
+            document.bundle.openings.any(
+              (opening) =>
+                  opening.id ==
+                  selection.selectedOpeningDimensionKey!.openingId,
+            )
+        ? selection.selectedOpeningDimensionKey
+        : null,
   );
 
   Map<RoomEditorConstraintKey, Offset> _pruneConstraintVisualOffsets(
@@ -517,18 +535,22 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     RoomEditorIntPoint? pinnedVertexTarget,
     List<({int index, RoomEditorIntPoint target})> additionalPinnedVertices =
         const [],
-  }) => RoomEditorConstraintSolver.solve(
-    lines: document.bundle.lines,
-    constraints: document.constraints,
-    pinnedVertexIndex: pinnedVertexIndex,
-    pinnedVertexTarget: pinnedVertexTarget,
-    additionalPinnedVertices: additionalPinnedVertices,
-  );
+  }) {
+    final normalized = normalizeRoomEditorOpenings(document);
+    return RoomEditorConstraintSolver.solve(
+      lines: normalized.bundle.lines,
+      constraints: effectiveRoomEditorConstraints(normalized),
+      pinnedVertexIndex: pinnedVertexIndex,
+      pinnedVertexTarget: pinnedVertexTarget,
+      additionalPinnedVertices: additionalPinnedVertices,
+    );
+  }
 
   void _replaceDocument(RoomEditorDocument document) {
+    final normalized = normalizeRoomEditorOpenings(document);
     setState(() {
-      _document = document;
-      _selection = _normalizeSelection(_selection, document);
+      _document = normalized;
+      _selection = _normalizeSelection(_selection, normalized);
     });
     _externalSelectionController?.value = _selection;
   }
@@ -556,12 +578,13 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     RoomEditorDocument? previousDocument,
     bool trackHistory = true,
   }) {
+    final normalized = normalizeRoomEditorOpenings(document);
     final previous = previousDocument ?? _document;
-    if (trackHistory && !_documentsEqual(previous, document)) {
+    if (trackHistory && !_documentsEqual(previous, normalized)) {
       _pushUndoState(previous);
     }
-    _replaceDocument(document);
-    widget.onDocumentCommitted(document);
+    _replaceDocument(normalized);
+    widget.onDocumentCommitted(normalized);
   }
 
   void _undoLocally() {
@@ -609,7 +632,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     final requestedViolations =
         RoomEditorConstraintViolation.constraintViolations(
           document.bundle.lines,
-          document.constraints,
+          effectiveRoomEditorConstraints(document),
         );
     final result = _solveDocument(
       document,
@@ -1002,9 +1025,16 @@ This room is rigid. Remove one or more constraints to modify the room.'''
         lengthSquared;
     final offset = (projected * line.length).round() - anchorOffset;
     final maxOffset = max(0, line.length - opening.width);
+    final clampedOffset = offset.clamp(0, maxOffset);
     final openings = List<RoomEditorOpening>.from(_bundle.openings);
     openings[index] = opening.copyWith(
-      offsetFromStart: offset.clamp(0, maxOffset),
+      offsetFromStart: clampedOffset,
+      distanceToStartWall: opening.distanceToStartWall == null
+          ? null
+          : clampedOffset,
+      distanceToEndWall: opening.distanceToEndWall == null
+          ? null
+          : max(0, line.length - clampedOffset - opening.width),
     );
     _replaceDocument(
       _document.copyWith(bundle: _bundle.copyWith(openings: openings)),
@@ -1177,6 +1207,72 @@ This room is rigid. Remove one or more constraints to modify the room.'''
     }
   }
 
+  int? _openingDimensionValue(
+    RoomEditorOpening opening,
+    int lineIndex,
+    RoomEditorOpeningDimensionType type,
+  ) {
+    if (lineIndex < 0 || lineIndex >= _bundle.lines.length) {
+      return null;
+    }
+    final line = _bundle.lines[lineIndex];
+    return switch (type) {
+      RoomEditorOpeningDimensionType.width => opening.width,
+      RoomEditorOpeningDimensionType.distanceToStartWall =>
+        opening.distanceToStartWall ?? opening.offsetFromStart,
+      RoomEditorOpeningDimensionType.distanceToEndWall =>
+        opening.distanceToEndWall ?? openingDistanceToEndWall(opening, line),
+    };
+  }
+
+  Future<void> _setOpeningDimensionLocally(
+    RoomEditorOpeningDimensionKey key,
+    int value,
+  ) async {
+    final openingIndex = _bundle.openings.indexWhere(
+      (opening) => opening.id == key.openingId,
+    );
+    if (openingIndex < 0) {
+      return;
+    }
+    final opening = _bundle.openings[openingIndex];
+    final lineIndex = _bundle.lines.indexWhere(
+      (line) => line.id == opening.lineId,
+    );
+    if (lineIndex < 0) {
+      return;
+    }
+    final line = _bundle.lines[lineIndex];
+    final clampedValue = value.clamp(0, max(line.length, value)).toInt();
+    RoomEditorOpening updated;
+    switch (key.type) {
+      case RoomEditorOpeningDimensionType.width:
+        updated = opening.copyWith(width: clampedValue);
+      case RoomEditorOpeningDimensionType.distanceToStartWall:
+        updated = opening.copyWith(
+          distanceToStartWall: clampedValue,
+          offsetFromStart: clampedValue,
+        );
+      case RoomEditorOpeningDimensionType.distanceToEndWall:
+        updated = opening.copyWith(distanceToEndWall: clampedValue);
+    }
+    final openings = List<RoomEditorOpening>.from(_bundle.openings);
+    openings[openingIndex] = updated;
+    final solved = await _trySolveAndCommit(
+      _document.copyWith(bundle: _bundle.copyWith(openings: openings)),
+      failureMessage:
+          'This opening dimension conflicts with the current constraints',
+    );
+    if (solved && mounted) {
+      _setSelection(
+        RoomEditorSelection(
+          selectedOpeningIndex: openingIndex,
+          selectedOpeningDimensionKey: key,
+        ),
+      );
+    }
+  }
+
   Future<void> _joinSelectedIntersectionLocally() async {
     final intersectionIndex = _joinTargetIntersectionIndex;
     if (intersectionIndex == null) {
@@ -1220,6 +1316,31 @@ This room is rigid. Remove one or more constraints to modify the room.'''
   }
 
   Future<void> _emitLengthCommand() async {
+    final openingDimensionKey = _selectedOpeningDimensionKey;
+    if (openingDimensionKey != null && _selectedOpening != null) {
+      final opening = _selectedOpening!;
+      final lineIndex = _bundle.lines.indexWhere(
+        (line) => line.id == opening.lineId,
+      );
+      final initialValue = _openingDimensionValue(
+        opening,
+        lineIndex,
+        openingDimensionKey.type,
+      );
+      if (initialValue == null) {
+        return;
+      }
+      final length = await showRoomEditorLengthDialog(
+        context: context,
+        unitSystem: _bundle.unitSystem,
+        initialValue: initialValue,
+      );
+      if (length == null || !mounted) {
+        return;
+      }
+      await _setOpeningDimensionLocally(openingDimensionKey, length);
+      return;
+    }
     final lineIndex = _selectedWallIndex;
     if (lineIndex == null) {
       return;
@@ -1376,7 +1497,9 @@ This room is rigid. Remove one or more constraints to modify the room.'''
           a.offsetFromStart != b.offsetFromStart ||
           a.width != b.width ||
           a.height != b.height ||
-          a.sillHeight != b.sillHeight) {
+          a.sillHeight != b.sillHeight ||
+          a.distanceToStartWall != b.distanceToStartWall ||
+          a.distanceToEndWall != b.distanceToEndWall) {
         return false;
       }
     }
@@ -1430,6 +1553,8 @@ This room is rigid. Remove one or more constraints to modify the room.'''
         width: opening.width,
         height: opening.height,
         sillHeight: opening.sillHeight,
+        distanceToStartWall: opening.distanceToStartWall,
+        distanceToEndWall: opening.distanceToEndWall,
       ),
       title: opening.type == RoomEditorOpeningType.door
           ? 'Edit Door'
@@ -1457,6 +1582,8 @@ This room is rigid. Remove one or more constraints to modify the room.'''
       width: openingDraft.width,
       height: openingDraft.height,
       sillHeight: openingDraft.sillHeight,
+      distanceToStartWall: openingDraft.distanceToStartWall,
+      distanceToEndWall: openingDraft.distanceToEndWall,
     );
     final next = _document.copyWith(
       bundle: _bundle.copyWith(openings: [..._bundle.openings, nextOpening]),
@@ -1492,6 +1619,8 @@ This room is rigid. Remove one or more constraints to modify the room.'''
       height: openingDraft.height,
       sillHeight: openingDraft.sillHeight,
       offsetFromStart: existing.offsetFromStart.clamp(0, maxOffset),
+      distanceToStartWall: openingDraft.distanceToStartWall,
+      distanceToEndWall: openingDraft.distanceToEndWall,
     );
     _commitDocument(
       _document.copyWith(bundle: _bundle.copyWith(openings: openings)),
@@ -1708,6 +1837,8 @@ This room is rigid. Remove one or more constraints to modify the room.'''
         selectedLineCount: _selectedLineIndices.length,
         selectedIntersectionCount: _selectedIntersectionIndices.length,
         hasOpening: hasOpening,
+        canSetLength:
+            _selectedWallIndex != null || _selectedOpeningDimensionKey != null,
         canSplit: _canSplit,
         canJoin: _canJoin,
         hasLineLengthConstraint: hasLineLengthConstraint,
@@ -1774,7 +1905,8 @@ This room is rigid. Remove one or more constraints to modify the room.'''
                 _deleteSelectedOpeningLocally();
               }
             : null,
-        onSetLineLength: hasLine
+        onSetLineLength:
+            (_selectedWallIndex != null || _selectedOpeningDimensionKey != null)
             ? () {
                 _clearHighlightedConstraints();
                 unawaited(_emitLengthCommand());
@@ -1911,6 +2043,21 @@ This room is rigid. Remove one or more constraints to modify the room.'''
         _clearHighlightedConstraints();
         _setSelection(RoomEditorSelection(selectedOpeningIndex: index));
       },
+      onTapOpeningDimension: (key) async {
+        _clearHighlightedConstraints();
+        final openingIndex = _bundle.openings.indexWhere(
+          (opening) => opening.id == key.openingId,
+        );
+        if (openingIndex < 0) {
+          return;
+        }
+        _setSelection(
+          RoomEditorSelection(
+            selectedOpeningIndex: openingIndex,
+            selectedOpeningDimensionKey: key,
+          ),
+        );
+      },
       onTapLine: (index) async {
         _clearHighlightedConstraints();
         final next = Set<int>.from(_selectedLineIndices);
@@ -1959,11 +2106,8 @@ This room is rigid. Remove one or more constraints to modify the room.'''
         control: true,
         shift: true,
       ): _handleRedoShortcut,
-      const SingleActivator(
-        LogicalKeyboardKey.keyZ,
-        meta: true,
-        shift: true,
-      ): _handleRedoShortcut,
+      const SingleActivator(LogicalKeyboardKey.keyZ, meta: true, shift: true):
+          _handleRedoShortcut,
     },
     child: Focus(
       autofocus: true,

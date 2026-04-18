@@ -130,12 +130,12 @@ class RoomEditorDragSolver {
         startX: solveTarget.x,
         startY: solveTarget.y,
       );
-      final candidate = seed.copyWith(
-        bundle: seed.bundle.copyWith(lines: lines),
+      final candidate = normalizeRoomEditorOpenings(
+        seed.copyWith(bundle: seed.bundle.copyWith(lines: lines)),
       );
       final result = RoomEditorConstraintSolver.solve(
         lines: candidate.bundle.lines,
-        constraints: candidate.constraints,
+        constraints: effectiveRoomEditorConstraints(candidate),
         pinnedVertexIndex: request.movedIndex,
         pinnedVertexTarget: solveTarget,
         additionalPinnedVertices: anchorPins,

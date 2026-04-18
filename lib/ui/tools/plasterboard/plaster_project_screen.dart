@@ -1695,6 +1695,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
           width: opening.width,
           height: opening.height,
           sillHeight: opening.sillHeight,
+          distanceToStartWall: opening.distanceToStartWall,
+          distanceToEndWall: opening.distanceToEndWall,
         ),
     ],
   );
@@ -1760,6 +1762,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             width: document.bundle.openings[i].width,
             height: document.bundle.openings[i].height,
             sillHeight: document.bundle.openings[i].sillHeight,
+            distanceToStartWall:
+                document.bundle.openings[i].distanceToStartWall,
+            distanceToEndWall:
+                document.bundle.openings[i].distanceToEndWall,
           ),
       ],
       constraints: constraints,
@@ -1825,6 +1831,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
               width: command.openingDraft!.width,
               height: command.openingDraft!.height,
               sillHeight: command.openingDraft!.sillHeight,
+              distanceToStartWall: command.openingDraft!.distanceToStartWall,
+              distanceToEndWall: command.openingDraft!.distanceToEndWall,
             ),
           );
         }
@@ -1837,6 +1845,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
               width: command.openingDraft!.width,
               height: command.openingDraft!.height,
               sillHeight: command.openingDraft!.sillHeight,
+              distanceToStartWall:
+                  command.openingDraft!.distanceToStartWall,
+              distanceToEndWall:
+                  command.openingDraft!.distanceToEndWall,
             ),
           );
         }

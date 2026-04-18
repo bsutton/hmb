@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'room_canvas_models.dart';
 
@@ -34,6 +35,7 @@ class RoomEditorToolbarState {
   final int selectedLineCount;
   final int selectedIntersectionCount;
   final bool hasOpening;
+  final bool canSetLength;
   final bool canSplit;
   final bool canJoin;
   final bool hasLineLengthConstraint;
@@ -54,6 +56,7 @@ class RoomEditorToolbarState {
     required this.selectedLineCount,
     required this.selectedIntersectionCount,
     required this.hasOpening,
+    required this.canSetLength,
     required this.canSplit,
     required this.canJoin,
     required this.hasLineLengthConstraint,
@@ -119,76 +122,19 @@ class _WindowToolbarIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconTheme = IconTheme.of(context);
+    final size = iconTheme.size ?? 24.0;
+    final color = iconTheme.color ?? Colors.white;
     return SizedBox.square(
-      dimension: iconTheme.size ?? 24,
-      child: CustomPaint(
-        painter: _WindowToolbarIconPainter(
-          color: iconTheme.color ?? Colors.white,
-        ),
+      dimension: size,
+      child: SvgPicture.asset(
+        'assets/icons/window_toolbar.svg',
+        package: 'room_editor',
+        width: size,
+        height: size,
+        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
       ),
     );
   }
-}
-
-class _WindowToolbarIconPainter extends CustomPainter {
-  final Color color;
-
-  const _WindowToolbarIconPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final framePaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.7
-      ..strokeCap = StrokeCap.square
-      ..strokeJoin = StrokeJoin.miter;
-    final detailPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.15
-      ..strokeCap = StrokeCap.square;
-
-    final outer = Rect.fromLTWH(4.8, 3.4, size.width - 9.6, size.height - 8.6);
-    final inner = Rect.fromLTWH(
-      6.9,
-      5.5,
-      size.width - 13.8,
-      size.height - 13.0,
-    );
-    final centerX = inner.center.dx;
-    final midY = inner.top + inner.height * 0.58;
-    final sillTopY = size.height - 3.6;
-    final sillBottomY = size.height - 1.9;
-
-    canvas
-      ..drawRect(outer, framePaint)
-      ..drawRect(inner, detailPaint)
-      ..drawLine(
-        Offset(centerX, inner.top),
-        Offset(centerX, inner.bottom),
-        detailPaint,
-      )
-      ..drawLine(
-        Offset(inner.left, midY),
-        Offset(inner.right, midY),
-        detailPaint,
-      )
-      ..drawLine(
-        Offset(2.8, sillTopY),
-        Offset(size.width - 2.8, sillTopY),
-        framePaint,
-      )
-      ..drawLine(
-        Offset(4.1, sillBottomY),
-        Offset(size.width - 4.1, sillBottomY),
-        detailPaint,
-      );
-  }
-
-  @override
-  bool shouldRepaint(covariant _WindowToolbarIconPainter oldDelegate) =>
-      oldDelegate.color != color;
 }
 
 List<RoomEditorToolAction> buildRoomEditorToolbarActions({
@@ -310,8 +256,10 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       id: 'length',
       icon: Icons.straighten,
       label: 'Length',
-      helpText: 'Set or edit a fixed length constraint on the selected wall.',
-      enabled: state.selectedLineCount == 1,
+      helpText:
+          'Set or edit a fixed length on the selected wall or opening '
+          'dimension.',
+      enabled: state.canSetLength,
       onPressed: callbacks.onSetLineLength,
     ),
     RoomEditorToolAction(

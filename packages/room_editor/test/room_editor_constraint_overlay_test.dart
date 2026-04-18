@@ -11,7 +11,7 @@ void main() {
       size: const Size(900, 700),
     );
 
-    expect(visuals.where((visual) => visual.key.lineId == 4).length, 2);
+    expect(visuals.where((visual) => visual.key.lineId == 4).length, 3);
     expect(
       visuals.any(
         (visual) => visual.key.lineId == 4 && visual.kind == 'dimension',

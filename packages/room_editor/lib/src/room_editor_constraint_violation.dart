@@ -115,12 +115,12 @@ List<RoomEditorConstraintViolation> deriveBlockingConstraintViolations({
       failedSolveResult ??
       RoomEditorConstraintSolver.solve(
         lines: document.bundle.lines,
-        constraints: document.constraints,
+        constraints: effectiveRoomEditorConstraints(document),
         pinnedVertexIndex: pinnedVertexIndex,
         pinnedVertexTarget: pinnedVertexTarget,
         additionalPinnedVertices: additionalPinnedVertices,
       );
-  if (baseline.converged || document.constraints.isEmpty) {
+  if (baseline.converged || effectiveRoomEditorConstraints(document).isEmpty) {
     return const [];
   }
 
@@ -130,9 +130,9 @@ List<RoomEditorConstraintViolation> deriveBlockingConstraintViolations({
     final baselinePenalty = _solvePenalty(baseline);
     final attemptedLines = document.bundle.lines;
     final candidates = <_BlockingConstraintCandidate>[];
-    for (final constraint in document.constraints) {
+    for (final constraint in effectiveRoomEditorConstraints(document)) {
       final reducedConstraints = [
-        for (final candidate in document.constraints)
+        for (final candidate in effectiveRoomEditorConstraints(document))
           if (!_sameConstraint(candidate, constraint)) candidate,
       ];
       final rerun = RoomEditorConstraintSolver.solve(
@@ -248,7 +248,7 @@ RoomEditorDocumentConstraintState deriveRoomEditorDocumentConstraintState(
 
   final directViolations = RoomEditorConstraintViolation.constraintViolations(
     lines,
-    document.constraints,
+    effectiveRoomEditorConstraints(document),
   );
   if (directViolations.isNotEmpty) {
     return RoomEditorDocumentConstraintState.invalid;
@@ -263,7 +263,7 @@ RoomEditorDocumentConstraintState deriveRoomEditorDocumentConstraintState(
 
 bool _documentHasMobility(RoomEditorDocument document) {
   final lines = document.bundle.lines;
-  if (lines.length < 2 || document.constraints.isEmpty) {
+  if (lines.length < 2 || effectiveRoomEditorConstraints(document).isEmpty) {
     return true;
   }
 
@@ -295,7 +295,7 @@ bool _documentHasMobility(RoomEditorDocument document) {
       final anchorLine = lines[anchorIndex];
       final result = RoomEditorConstraintSolver.solve(
         lines: lines,
-        constraints: document.constraints,
+        constraints: effectiveRoomEditorConstraints(document),
         pinnedVertexIndex: probe.vertexIndex,
         pinnedVertexTarget: probe.target,
         additionalPinnedVertices: [
