@@ -231,8 +231,7 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       id: 'length',
       icon: Icons.straighten,
       label: 'Length',
-      helpText:
-          'Set or edit a fixed length constraint on the selected wall.',
+      helpText: 'Set or edit a fixed length constraint on the selected wall.',
       enabled: state.selectedLineCount == 1,
       onPressed: callbacks.onSetLineLength,
     ),
@@ -240,8 +239,7 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       id: 'horizontal',
       icon: Icons.horizontal_rule,
       label: 'Horizontal',
-      helpText:
-          'Set a horizontal constraint on the selected wall.',
+      helpText: 'Set a horizontal constraint on the selected wall.',
       enabled: state.selectedLineCount == 1,
       onPressed: callbacks.onSetHorizontal,
     ),
@@ -252,8 +250,7 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
         child: Icon(Icons.horizontal_rule),
       ),
       label: 'Vertical',
-      helpText:
-          'Set a vertical constraint on the selected wall.',
+      helpText: 'Set a vertical constraint on the selected wall.',
       enabled: state.selectedLineCount == 1,
       onPressed: callbacks.onSetVertical,
     ),
@@ -279,7 +276,7 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
     ),
     RoomEditorToolAction(
       id: 'parallel',
-      icon: Icons.segment,
+      iconWidget: const _ParallelConstraintToolbarIcon(),
       label: 'Parallel',
       helpText:
           'Set a parallel constraint between two selected non-adjacent walls.',
@@ -308,4 +305,42 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
     return combinedPrimary;
   }
   return [...combinedPrimary, ...constraintButtons];
+}
+
+class _ParallelConstraintToolbarIcon extends StatelessWidget {
+  const _ParallelConstraintToolbarIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    final color = IconTheme.of(context).color ?? Colors.white;
+    return SizedBox(
+      width: 20,
+      height: 20,
+      child: CustomPaint(painter: _ParallelConstraintToolbarPainter(color)),
+    );
+  }
+}
+
+class _ParallelConstraintToolbarPainter extends CustomPainter {
+  final Color color;
+
+  const _ParallelConstraintToolbarPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    final firstStart = Offset(size.width * 0.18, size.height * 0.65);
+    final firstEnd = Offset(size.width * 0.82, size.height * 0.42);
+    const separation = Offset(0, -5);
+    canvas
+      ..drawLine(firstStart, firstEnd, paint)
+      ..drawLine(firstStart + separation, firstEnd + separation, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ParallelConstraintToolbarPainter oldDelegate) =>
+      oldDelegate.color != color;
 }

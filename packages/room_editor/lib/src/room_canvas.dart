@@ -1491,13 +1491,11 @@ class _ConstraintVisual {
     if (badgeText == '||') {
       final parallelPaint = Paint()
         ..color = accentColor
-        ..strokeWidth = selected ? 2.2 : 1.8
+        ..strokeWidth = selected ? 2.3 : 1.9
         ..strokeCap = StrokeCap.round;
-      const inset = 6.0;
-      const slant = Offset(11, -6);
-      const separation = Offset(3, 5);
-      final firstStart = Offset(hitBox.left + inset, hitBox.center.dy + 3);
-      final firstEnd = firstStart + slant;
+      final firstStart = Offset(hitBox.left + 6, hitBox.center.dy + 3.5);
+      final firstEnd = Offset(hitBox.right - 5, hitBox.center.dy - 1.5);
+      const separation = Offset(0, -6);
       canvas
         ..drawLine(firstStart, firstEnd, parallelPaint)
         ..drawLine(
