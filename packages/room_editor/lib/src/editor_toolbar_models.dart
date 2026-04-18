@@ -113,6 +113,84 @@ class RoomEditorToolbarCallbacks {
   });
 }
 
+class _WindowToolbarIcon extends StatelessWidget {
+  const _WindowToolbarIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    final iconTheme = IconTheme.of(context);
+    return SizedBox.square(
+      dimension: iconTheme.size ?? 24,
+      child: CustomPaint(
+        painter: _WindowToolbarIconPainter(
+          color: iconTheme.color ?? Colors.white,
+        ),
+      ),
+    );
+  }
+}
+
+class _WindowToolbarIconPainter extends CustomPainter {
+  final Color color;
+
+  const _WindowToolbarIconPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final framePaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.7
+      ..strokeCap = StrokeCap.square
+      ..strokeJoin = StrokeJoin.miter;
+    final detailPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.15
+      ..strokeCap = StrokeCap.square;
+
+    final outer = Rect.fromLTWH(4.8, 3.4, size.width - 9.6, size.height - 8.6);
+    final inner = Rect.fromLTWH(
+      6.9,
+      5.5,
+      size.width - 13.8,
+      size.height - 13.0,
+    );
+    final centerX = inner.center.dx;
+    final midY = inner.top + inner.height * 0.58;
+    final sillTopY = size.height - 3.6;
+    final sillBottomY = size.height - 1.9;
+
+    canvas
+      ..drawRect(outer, framePaint)
+      ..drawRect(inner, detailPaint)
+      ..drawLine(
+        Offset(centerX, inner.top),
+        Offset(centerX, inner.bottom),
+        detailPaint,
+      )
+      ..drawLine(
+        Offset(inner.left, midY),
+        Offset(inner.right, midY),
+        detailPaint,
+      )
+      ..drawLine(
+        Offset(2.8, sillTopY),
+        Offset(size.width - 2.8, sillTopY),
+        framePaint,
+      )
+      ..drawLine(
+        Offset(4.1, sillBottomY),
+        Offset(size.width - 4.1, sillBottomY),
+        detailPaint,
+      );
+  }
+
+  @override
+  bool shouldRepaint(covariant _WindowToolbarIconPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
 List<RoomEditorToolAction> buildRoomEditorToolbarActions({
   required RoomEditorToolbarState state,
   required RoomEditorToolbarCallbacks callbacks,
@@ -171,7 +249,7 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       id: 'deselect',
       icon: Icons.deselect,
       label: 'Deselect All',
-      helpText: 'Clear the current wall, joint, or opening selection.',
+      helpText: 'Clear all selections.',
       enabled:
           state.selectedLineCount > 0 ||
           state.selectedIntersectionCount > 0 ||
@@ -199,7 +277,7 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
     ),
     RoomEditorToolAction(
       id: 'window',
-      icon: Icons.web_asset_outlined,
+      iconWidget: const _WindowToolbarIcon(),
       label: 'Window',
       helpText: 'Add a window opening to the selected wall.',
       enabled: state.selectedLineCount == 1,
@@ -207,9 +285,10 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
     ),
     RoomEditorToolAction(
       id: 'edit-opening',
-      icon: state.isSelectedOpeningDoor
-          ? Icons.door_front_door_outlined
-          : Icons.web_asset_outlined,
+      icon: state.isSelectedOpeningDoor ? Icons.door_front_door_outlined : null,
+      iconWidget: state.isSelectedOpeningDoor
+          ? null
+          : const _WindowToolbarIcon(),
       label: state.hasOpening ? 'Edit Opening' : 'Opening',
       helpText: 'Edit the currently selected door or window opening.',
       enabled: state.hasOpening,

@@ -1339,6 +1339,14 @@ This room is rigid. Remove one or more constraints to modify the room.'''
     unawaited(_deleteConstraintByKey(key));
   }
 
+  void _handleUndoShortcut() {
+    _undoLocally();
+  }
+
+  void _handleRedoShortcut() {
+    _redoLocally();
+  }
+
   bool _documentsEqual(RoomEditorDocument left, RoomEditorDocument right) {
     if (left.bundle.roomName != right.bundle.roomName ||
         left.bundle.unitSystem != right.bundle.unitSystem ||
@@ -1938,6 +1946,24 @@ This room is rigid. Remove one or more constraints to modify the room.'''
       const SingleActivator(LogicalKeyboardKey.delete): _handleDeleteShortcut,
       const SingleActivator(LogicalKeyboardKey.backspace):
           _handleDeleteShortcut,
+      const SingleActivator(LogicalKeyboardKey.keyZ, control: true):
+          _handleUndoShortcut,
+      const SingleActivator(LogicalKeyboardKey.keyZ, meta: true):
+          _handleUndoShortcut,
+      const SingleActivator(LogicalKeyboardKey.keyY, control: true):
+          _handleRedoShortcut,
+      const SingleActivator(LogicalKeyboardKey.keyY, meta: true):
+          _handleRedoShortcut,
+      const SingleActivator(
+        LogicalKeyboardKey.keyZ,
+        control: true,
+        shift: true,
+      ): _handleRedoShortcut,
+      const SingleActivator(
+        LogicalKeyboardKey.keyZ,
+        meta: true,
+        shift: true,
+      ): _handleRedoShortcut,
     },
     child: Focus(
       autofocus: true,
