@@ -68,11 +68,16 @@ class RoomEditorDragSolver {
       );
       return cached;
     }
-    final solveTarget = _projectTargetToIncomingConstraints(
+    final primarySolveTarget = _projectTargetToIncomingConstraints(
       request.gestureBaseDocument ?? request.currentDocument,
       request.movedIndex,
       request.movedTarget,
     );
+    final solveTargets = <RoomEditorIntPoint>[primarySolveTarget];
+    if (primarySolveTarget.x != request.movedTarget.x ||
+        primarySolveTarget.y != request.movedTarget.y) {
+      solveTargets.add(request.movedTarget);
+    }
     if (_isRigidOrthogonalConstraintSystem(request.currentDocument)) {
       final currentLine =
           request.currentDocument.bundle.lines[request.movedIndex];
@@ -98,7 +103,7 @@ class RoomEditorDragSolver {
     }
     final includeGestureBaseSeed = !_shouldSkipGestureBaseSeed(
       request,
-      solveTarget,
+      primarySolveTarget,
     );
     final seeds = <RoomEditorDocument>[];
     final seenSeedKeys = <String>{};
@@ -121,49 +126,58 @@ class RoomEditorDragSolver {
     double? bestScore;
 
     for (final seed in seeds) {
-      final seedStopwatch = Stopwatch()..start();
-      final seedLabel = identical(seed, request.currentDocument)
-          ? 'current'
-          : 'gestureBase';
-      final lines = List<RoomEditorLine>.from(seed.bundle.lines);
-      lines[request.movedIndex] = lines[request.movedIndex].copyWith(
-        startX: solveTarget.x,
-        startY: solveTarget.y,
-      );
-      final candidate = normalizeRoomEditorOpenings(
-        seed.copyWith(bundle: seed.bundle.copyWith(lines: lines)),
-      );
-      final result = RoomEditorConstraintSolver.solve(
-        lines: candidate.bundle.lines,
-        constraints: effectiveRoomEditorConstraints(candidate),
-        pinnedVertexIndex: request.movedIndex,
-        pinnedVertexTarget: solveTarget,
-        additionalPinnedVertices: anchorPins,
-      );
-      seedStopwatch.stop();
-      debugPrint(
-        '[room_drag] seed solve'
-        ' #${request.traceId}'
-        ' phase=${request.phase.name}'
-        ' seed=$seedLabel'
-        ' duration=${seedStopwatch.elapsedMilliseconds}ms'
-        ' converged=${result.converged}',
-      );
-      if (!result.converged) {
-        continue;
-      }
-      final solvedDocument = candidate.copyWith(
-        bundle: candidate.bundle.copyWith(lines: result.lines),
-      );
-      final score = _dragSolutionDistance(
-        solvedDocument.bundle.lines,
-        request.currentDocument.bundle.lines,
-        movedIndex: request.movedIndex,
-        movedTarget: solveTarget,
-      );
-      if (bestScore == null || score < bestScore) {
-        bestScore = score;
-        bestDocument = solvedDocument;
+      for (final solveTarget in solveTargets) {
+        final seedStopwatch = Stopwatch()..start();
+        final seedLabel = identical(seed, request.currentDocument)
+            ? 'current'
+            : 'gestureBase';
+        var lines = List<RoomEditorLine>.from(seed.bundle.lines);
+        lines[request.movedIndex] = lines[request.movedIndex].copyWith(
+          startX: solveTarget.x,
+          startY: solveTarget.y,
+        );
+        lines = _preconditionIncomingFixedAxisDrag(
+          seed,
+          request.movedIndex,
+          solveTarget,
+          lines,
+        );
+        final candidate = normalizeRoomEditorOpenings(
+          seed.copyWith(bundle: seed.bundle.copyWith(lines: lines)),
+        );
+        final result = RoomEditorConstraintSolver.solve(
+          lines: candidate.bundle.lines,
+          constraints: effectiveRoomEditorConstraints(candidate),
+          pinnedVertexIndex: request.movedIndex,
+          pinnedVertexTarget: solveTarget,
+          additionalPinnedVertices: anchorPins,
+        );
+        seedStopwatch.stop();
+        debugPrint(
+          '[room_drag] seed solve'
+          ' #${request.traceId}'
+          ' phase=${request.phase.name}'
+          ' seed=$seedLabel'
+          ' target=(${solveTarget.x},${solveTarget.y})'
+          ' duration=${seedStopwatch.elapsedMilliseconds}ms'
+          ' converged=${result.converged}',
+        );
+        if (!result.converged) {
+          continue;
+        }
+        final solvedDocument = candidate.copyWith(
+          bundle: candidate.bundle.copyWith(lines: result.lines),
+        );
+        final score = _dragSolutionDistance(
+          solvedDocument.bundle.lines,
+          request.currentDocument.bundle.lines,
+          movedIndex: request.movedIndex,
+          movedTarget: request.movedTarget,
+        );
+        if (bestScore == null || score < bestScore) {
+          bestScore = score;
+          bestDocument = solvedDocument;
+        }
       }
     }
 
@@ -176,7 +190,7 @@ class RoomEditorDragSolver {
       '[room_drag] solve complete'
       ' #${request.traceId}'
       ' phase=${request.phase.name}'
-      ' seeds=${seeds.length}'
+      ' seeds=${seeds.length} targets=${solveTargets.length}'
       ' solved=${bestDocument != null}'
       ' solveDuration=${totalStopwatch.elapsedMilliseconds}ms'
       ' totalLag=${_latencyMs(request)}ms',
@@ -186,6 +200,95 @@ class RoomEditorDragSolver {
       _resultCache.remove(_resultCache.keys.first);
     }
     return finalResult;
+  }
+
+  static List<RoomEditorLine> _preconditionIncomingFixedAxisDrag(
+    RoomEditorDocument document,
+    int movedIndex,
+    RoomEditorIntPoint solveTarget,
+    List<RoomEditorLine> candidateLines,
+  ) {
+    final reference = document.bundle.lines;
+    if (reference.isEmpty) {
+      return candidateLines;
+    }
+    final previousIndex =
+        (movedIndex - 1 + reference.length) % reference.length;
+    final beforePreviousIndex =
+        (previousIndex - 1 + reference.length) % reference.length;
+    final previousLine = reference[previousIndex];
+    final beforePreviousLine = reference[beforePreviousIndex];
+    final currentPoint = reference[movedIndex];
+    final previousConstraints = [
+      for (final constraint in document.constraints)
+        if (constraint.lineId == previousLine.id) constraint,
+    ];
+    final lengthConstraint = previousConstraints
+        .where(
+          (constraint) =>
+              constraint.type == RoomEditorConstraintType.lineLength,
+        )
+        .cast<RoomEditorConstraint?>()
+        .firstWhere((constraint) => constraint != null, orElse: () => null);
+    final targetLength = lengthConstraint?.targetValue;
+    if (targetLength == null || targetLength <= 0) {
+      return candidateLines;
+    }
+    final beforePreviousConstraints = [
+      for (final constraint in document.constraints)
+        if (constraint.lineId == beforePreviousLine.id) constraint,
+    ];
+    final beforePreviousIsHorizontal = beforePreviousConstraints.any(
+      (constraint) => constraint.type == RoomEditorConstraintType.horizontal,
+    );
+    final beforePreviousIsVertical = beforePreviousConstraints.any(
+      (constraint) => constraint.type == RoomEditorConstraintType.vertical,
+    );
+    final hasVertical = previousConstraints.any(
+      (constraint) => constraint.type == RoomEditorConstraintType.vertical,
+    );
+    if (hasVertical && beforePreviousIsHorizontal) {
+      final direction = _axisDirection(
+        current: previousLine.startY,
+        anchor: currentPoint.startY,
+        fallback: previousLine.startY - currentPoint.startY,
+      );
+      final previousStartY = solveTarget.y + (direction * targetLength);
+      final lines = List<RoomEditorLine>.from(candidateLines);
+      lines[previousIndex] = lines[previousIndex].copyWith(
+        startX: solveTarget.x,
+        startY: previousStartY,
+      );
+      if (beforePreviousIsHorizontal) {
+        lines[beforePreviousIndex] = lines[beforePreviousIndex].copyWith(
+          startY: previousStartY,
+        );
+      }
+      return lines;
+    }
+    final hasHorizontal = previousConstraints.any(
+      (constraint) => constraint.type == RoomEditorConstraintType.horizontal,
+    );
+    if (hasHorizontal && beforePreviousIsVertical) {
+      final direction = _axisDirection(
+        current: previousLine.startX,
+        anchor: currentPoint.startX,
+        fallback: previousLine.startX - currentPoint.startX,
+      );
+      final previousStartX = solveTarget.x + (direction * targetLength);
+      final lines = List<RoomEditorLine>.from(candidateLines);
+      lines[previousIndex] = lines[previousIndex].copyWith(
+        startX: previousStartX,
+        startY: solveTarget.y,
+      );
+      if (beforePreviousIsVertical) {
+        lines[beforePreviousIndex] = lines[beforePreviousIndex].copyWith(
+          startX: previousStartX,
+        );
+      }
+      return lines;
+    }
+    return candidateLines;
   }
 
   static double _dragSolutionDistance(
@@ -355,10 +458,19 @@ class RoomEditorDragSolver {
     }
 
     if (targetLength > 0 && (hasHorizontal || hasVertical)) {
+      const axisIntentTolerance = 24;
       if (hasVertical && beforePreviousIsHorizontal) {
+        final horizontalDelta = (movedTarget.x - currentPoint.startX).abs();
+        if (horizontalDelta <= axisIntentTolerance) {
+          return movedTarget;
+        }
         return RoomEditorIntPoint(movedTarget.x, currentPoint.startY);
       }
       if (hasHorizontal && beforePreviousIsVertical) {
+        final verticalDelta = (movedTarget.y - currentPoint.startY).abs();
+        if (verticalDelta <= axisIntentTolerance) {
+          return movedTarget;
+        }
         return RoomEditorIntPoint(currentPoint.startX, movedTarget.y);
       }
       return movedTarget;
