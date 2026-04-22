@@ -22,20 +22,42 @@ import '../widgets/layout/layout.g.dart';
 import '../widgets/layout/surface.dart';
 
 class SelectJobDialog extends StatefulWidget {
-  const SelectJobDialog({super.key});
+  final String title;
+  final bool initialShowAllJobs;
+  final bool initialShowJobsWithNoBillableItems;
+  final bool showBillableFilters;
+
+  const SelectJobDialog({
+    this.title = 'Select Job',
+    this.initialShowAllJobs = false,
+    this.initialShowJobsWithNoBillableItems = false,
+    this.showBillableFilters = true,
+    super.key,
+  });
 
   @override
   _SelectJobDialogState createState() => _SelectJobDialogState();
 
-  static Future<Job?> show(BuildContext context) => showDialog<Job>(
+  static Future<Job?> show(
+    BuildContext context, {
+    String title = 'Select Job',
+    bool initialShowAllJobs = false,
+    bool initialShowJobsWithNoBillableItems = false,
+    bool showBillableFilters = true,
+  }) => showDialog<Job>(
     context: context,
-    builder: (context) => const SelectJobDialog(),
+    builder: (context) => SelectJobDialog(
+      title: title,
+      initialShowAllJobs: initialShowAllJobs,
+      initialShowJobsWithNoBillableItems: initialShowJobsWithNoBillableItems,
+      showBillableFilters: showBillableFilters,
+    ),
   );
 }
 
 class _SelectJobDialogState extends State<SelectJobDialog> {
-  var _showAllJobs = false;
-  var _showJobsWithNoBillableItems = false;
+  late bool _showAllJobs;
+  late bool _showJobsWithNoBillableItems;
 
   final _searchController = TextEditingController();
   var _searchQuery = '';
@@ -43,6 +65,8 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
   @override
   void initState() {
     super.initState();
+    _showAllJobs = widget.initialShowAllJobs;
+    _showJobsWithNoBillableItems = widget.initialShowJobsWithNoBillableItems;
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -63,6 +87,7 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
   Future<List<CustomerAndJob>> _fetchJobs() => CustomerAndJob.getJobs(
     showAllJobs: _showAllJobs,
     showJobsWithNoBillableItems: _showJobsWithNoBillableItems,
+    includeBillableState: widget.showBillableFilters,
   );
 
   List<CustomerAndJob> _filterJobs(List<CustomerAndJob> jobs) {
@@ -84,7 +109,7 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
     backgroundColor: Theme.of(context).canvasColor,
     child: Scaffold(
       appBar: AppBar(
-        title: const Text('Select Job'),
+        title: Text(widget.title),
         actions: [
           IconButton(
             icon: const Icon(Icons.close),
@@ -95,33 +120,34 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
       ),
       body: HMBColumn(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: HMBColumn(
-              children: [
-                CheckboxListTile(
-                  title: const Text('Show all jobs'),
-                  value: _showAllJobs,
-                  onChanged: (value) {
-                    setState(() {
-                      _showAllJobs = value ?? false;
-                    });
-                  },
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-                CheckboxListTile(
-                  title: const Text('Show jobs with no billable items'),
-                  value: _showJobsWithNoBillableItems,
-                  onChanged: (value) {
-                    setState(() {
-                      _showJobsWithNoBillableItems = value ?? false;
-                    });
-                  },
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-              ],
+          if (widget.showBillableFilters)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: HMBColumn(
+                children: [
+                  CheckboxListTile(
+                    title: const Text('Show all jobs'),
+                    value: _showAllJobs,
+                    onChanged: (value) {
+                      setState(() {
+                        _showAllJobs = value ?? false;
+                      });
+                    },
+                    controlAffinity: ListTileControlAffinity.leading,
+                  ),
+                  CheckboxListTile(
+                    title: const Text('Show jobs with no billable items'),
+                    value: _showJobsWithNoBillableItems,
+                    onChanged: (value) {
+                      setState(() {
+                        _showJobsWithNoBillableItems = value ?? false;
+                      });
+                    },
+                    controlAffinity: ListTileControlAffinity.leading,
+                  ),
+                ],
+              ),
             ),
-          ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
@@ -159,9 +185,10 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Customer: ${current.customer.name}'),
-                          Text(
-                            '''Has billable items: ${current.hasBillables ? "Yes" : "No"}''',
-                          ),
+                          if (widget.showBillableFilters)
+                            Text(
+                              '''Has billable items: ${current.hasBillables ? "Yes" : "No"}''',
+                            ),
                         ],
                       ),
                       onPressed: () => _onPressed(current),
@@ -193,6 +220,7 @@ class CustomerAndJob {
   static Future<List<CustomerAndJob>> getJobs({
     required bool showAllJobs,
     required bool showJobsWithNoBillableItems,
+    bool includeBillableState = true,
   }) async {
     final jobs = showAllJobs
         ? await DaoJob().getAll()
@@ -206,8 +234,13 @@ class CustomerAndJob {
         continue;
       }
 
-      final hasBillables = await hasBillableItems(job);
-      if (!showJobsWithNoBillableItems && !hasBillables) {
+      var hasBillables = true;
+      if (includeBillableState) {
+        hasBillables = await hasBillableItems(job);
+      }
+      if (includeBillableState &&
+          !showJobsWithNoBillableItems &&
+          !hasBillables) {
         continue;
       }
 

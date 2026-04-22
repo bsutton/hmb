@@ -2,9 +2,12 @@
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 */
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../../dao/dao.g.dart';
+import '../../../crud/job/job_completion_report.dart';
 import '../dashboard.dart';
 import '../dashlet_card.dart';
 
@@ -26,10 +29,17 @@ class ToolsDashboardPage extends StatelessWidget {
         label: 'Plasterboard',
         hint: 'Create room projects, edit room outlines, and sheet layouts',
         icon: Icons.grid_view,
-        value: () async => DashletValue(
-          (await DaoPlasterProject().getByFilter(null)).length,
-        ),
+        value: () async =>
+            DashletValue((await DaoPlasterProject().getByFilter(null)).length),
         route: '/home/tools/plasterboard',
+      ),
+      DashletCard<String>.onTap(
+        label: 'Job Report',
+        hint: 'Create a customer report for completed job tasks',
+        icon: Icons.description,
+        value: () async => const DashletValue(''),
+        onTap: (context) =>
+            unawaited(showJobCompletionReportForSelectedJob(context: context)),
       ),
     ],
   );
