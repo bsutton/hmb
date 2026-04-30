@@ -111,7 +111,7 @@ void main() {
     },
   );
 
-  test('applies task and whole-quote margins when creating quote', () async {
+  test('folds task and whole-quote margins into visible quote lines', () async {
     final job = await createJobWithCustomer(
       billingType: BillingType.fixedPrice,
       hourlyRate: Money.fromInt(10000, isoCode: 'AUD'),
@@ -166,24 +166,84 @@ void main() {
     final materialLine = lines.firstWhere(
       (line) => line.description == 'Material: Material item',
     );
-    final adjustmentLine = lines.firstWhere(
-      (line) => line.description.contains('Quote margin'),
-    );
 
     final expectedMaterial = Money.fromInt(
       2000,
       isoCode: 'AUD',
     ).plusPercentage(taskMargin);
-    final expectedAdjustment =
-        expectedMaterial.plusPercentage(quoteMargin) - expectedMaterial;
+    final expectedVisibleLine = expectedMaterial.plusPercentage(quoteMargin);
 
-    expect(materialLine.lineTotal, expectedMaterial);
-    expect(adjustmentLine.lineTotal, expectedAdjustment);
-    expect(quote.totalAmount, expectedMaterial + expectedAdjustment);
+    expect(materialLine.lineTotal, expectedVisibleLine);
+    expect(
+      lines.where((line) => line.description.contains('Quote margin')),
+      isEmpty,
+    );
+    expect(quote.totalAmount, expectedVisibleLine);
     expect(quote.quoteMargin, quoteMargin);
 
     final groups = await DaoQuoteLineGroup().getByQuoteId(quote.id);
     final taskGroup = groups.firstWhere((group) => group.taskId == task.id);
     expect(taskGroup.taskMargin, taskMargin);
+  });
+
+  test('item margin overrides the job-level quote task margin', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.fixedPrice,
+      hourlyRate: Money.fromInt(10000, isoCode: 'AUD'),
+    );
+
+    final task = Task.forInsert(
+      jobId: job.id,
+      name: 'Item margin override task',
+      description: '',
+      status: TaskStatus.awaitingApproval,
+    );
+    await DaoTask().insert(task);
+
+    final itemMargin = Percentage.fromInt(25000, decimalDigits: 3); // 25%
+    final jobMargin = Percentage.fromInt(10000, decimalDigits: 3); // 10%
+
+    await DaoTaskItem().insert(
+      TaskItem.forInsert(
+        taskId: task.id,
+        description: 'Material item',
+        purpose: '',
+        itemType: TaskItemType.materialsBuy,
+        estimatedMaterialUnitCost: Money.fromInt(1000, isoCode: 'AUD'),
+        estimatedMaterialQuantity: Fixed.fromNum(2, decimalDigits: 3),
+        chargeMode: ChargeMode.calculated,
+        margin: itemMargin,
+        measurementType: MeasurementType.length,
+        dimension1: Fixed.zero,
+        dimension2: Fixed.zero,
+        dimension3: Fixed.zero,
+        units: Units.m,
+        url: '',
+        labourEntryMode: LabourEntryMode.hours,
+      ),
+    );
+
+    final contact = (await DaoContact().getById(job.contactId))!;
+    final quote = await DaoQuote().create(
+      job,
+      InvoiceOptions(
+        selectedTaskIds: [task.id],
+        billBookingFee: false,
+        groupByTask: true,
+        contact: contact,
+        taskMargins: {task.id: jobMargin},
+      ),
+    );
+
+    final lines = await DaoQuoteLine().getByQuoteId(quote.id);
+    final materialLine = lines.firstWhere(
+      (line) => line.description == 'Material: Material item',
+    );
+
+    expect(
+      materialLine.lineTotal,
+      Money.fromInt(2000, isoCode: 'AUD').plusPercentage(itemMargin),
+    );
+    expect(quote.totalAmount, materialLine.lineTotal);
   });
 }

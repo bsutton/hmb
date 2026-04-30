@@ -121,6 +121,7 @@ class DaoQuote extends Dao<Quote> {
     }
 
     var totalAmount = MoneyEx.zero;
+    final insertedLines = <QuoteLine>[];
 
     // Insert the Quote
     final quote = Quote.forInsert(
@@ -153,6 +154,7 @@ class DaoQuote extends Dao<Quote> {
         lineTotal: job.bookingFee!,
       );
       await DaoQuoteLine().insert(bookingLine);
+      insertedLines.add(bookingLine);
       totalAmount += job.bookingFee!;
     }
 
@@ -172,48 +174,53 @@ class DaoQuote extends Dao<Quote> {
 
       /// One group for each task.
       QuoteLineGroup? group;
-      QuoteLine? line;
+      final items = await DaoTaskItem().getByTask(estimate.task.id);
+      var labourTotal = MoneyEx.zero;
 
-      // Labour
-      if (!MoneyEx.isZeroOrNull(estimate.estimatedLabourCharge)) {
-        /// Labour based billing using estimated effort
-        final labourTotal = estimate.estimatedLabourCharge.plusPercentage(
-          taskMargin,
-        );
-
-        if (!labourTotal.isZero) {
-          final labourQuantity = estimate.estimatedLabourHours;
-          line = QuoteLine.forInsert(
-            quoteId: quoteId,
-            description: 'Labour',
-            quantity: labourQuantity,
-            unitCharge: _unitChargeForLine(labourTotal, labourQuantity),
-            lineTotal: labourTotal,
+      for (final item in items.where((i) => !i.billed)) {
+        if (item.itemType == TaskItemType.labour) {
+          labourTotal += _applyTaskMarginOverride(
+            item.calcLabourCharges(billingType, job.hourlyRate!),
+            taskMargin: taskMargin,
+            itemMargin: item.margin,
           );
-          totalAmount += labourTotal;
         }
       }
 
-      // Group + insert labour line
-      if (line != null) {
+      // Labour
+      if (!labourTotal.isZero) {
+        final labourLine = QuoteLine.forInsert(
+          quoteId: quoteId,
+          description: 'Labour',
+          quantity: estimate.estimatedLabourHours,
+          unitCharge: _unitChargeForLine(
+            labourTotal,
+            estimate.estimatedLabourHours,
+          ),
+          lineTotal: labourTotal,
+        );
         group ??= await _createQuoteLineGroup(
           estimate.task,
           quoteId,
           taskMargin,
         );
-        await DaoQuoteLine().insert(line.copyWith(quoteLineGroupId: group.id));
+        final insertedLine = labourLine.copyWith(quoteLineGroupId: group.id);
+        await DaoQuoteLine().insert(insertedLine);
+        insertedLines.add(insertedLine);
+        totalAmount += labourTotal;
       }
 
       // Materials & Tools
-      final items = await DaoTaskItem().getByTask(estimate.task.id);
       for (final item in items.where((i) => !i.billed)) {
         if (item.itemType == TaskItemType.labour) {
           continue;
         }
 
-        final matTotal = item
-            .calcMaterialCharges(billingType)
-            .plusPercentage(taskMargin);
+        final matTotal = _applyTaskMarginOverride(
+          item.calcMaterialCharges(billingType),
+          taskMargin: taskMargin,
+          itemMargin: item.margin,
+        );
 
         group ??= await _createQuoteLineGroup(
           estimate.task,
@@ -233,32 +240,20 @@ class DaoQuote extends Dao<Quote> {
           lineTotal: matTotal,
         );
         await DaoQuoteLine().insert(matLine);
+        insertedLines.add(matLine);
         totalAmount += matTotal;
       }
     }
 
     final quoteMargin = invoiceOptions.quoteMargin;
-    if (!quoteMargin.isZero && !totalAmount.isZero) {
-      final marginAmount =
-          totalAmount.plusPercentage(quoteMargin) - totalAmount;
-      final adjustmentGroup = QuoteLineGroup.forInsert(
-        quoteId: quoteId,
-        taskId: null,
-        name: 'Adjustments',
-        description: 'Whole quote adjustments',
-        taskMargin: Percentage.zero,
+    if (!quoteMargin.isZero &&
+        insertedLines.isNotEmpty &&
+        !totalAmount.isZero) {
+      totalAmount = await _applyQuoteMarginAcrossLines(
+        insertedLines,
+        quoteMargin,
+        baseTotal: totalAmount,
       );
-      await DaoQuoteLineGroup().insert(adjustmentGroup);
-      final marginLine = QuoteLine.forInsert(
-        quoteId: quoteId,
-        quoteLineGroupId: adjustmentGroup.id,
-        description: 'Quote margin ($quoteMargin)',
-        quantity: Fixed.fromInt(1),
-        unitCharge: marginAmount,
-        lineTotal: marginAmount,
-      );
-      await DaoQuoteLine().insert(marginLine);
-      totalAmount += marginAmount;
     }
 
     // Finalize
@@ -295,6 +290,49 @@ class DaoQuote extends Dao<Quote> {
       return MoneyEx.zero;
     }
     return lineTotal.divideByFixed(quantity);
+  }
+
+  Money _applyTaskMarginOverride(
+    Money baseCharge, {
+    required Percentage taskMargin,
+    required Percentage itemMargin,
+  }) {
+    if (baseCharge.isZero || !itemMargin.isZero || taskMargin.isZero) {
+      return baseCharge;
+    }
+    return baseCharge.plusPercentage(taskMargin);
+  }
+
+  Future<Money> _applyQuoteMarginAcrossLines(
+    List<QuoteLine> lines,
+    Percentage quoteMargin, {
+    required Money baseTotal,
+  }) async {
+    final marginAmount = baseTotal.plusPercentage(quoteMargin) - baseTotal;
+    var remainder = marginAmount.minorUnits.toInt();
+    final baseMinorUnits = baseTotal.minorUnits.toInt();
+
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      final extraMinorUnits = i == lines.length - 1
+          ? remainder
+          : (marginAmount.minorUnits.toInt() *
+                    line.lineTotal.minorUnits.toInt()) ~/
+                baseMinorUnits;
+
+      remainder -= extraMinorUnits;
+
+      final updatedLineTotal =
+          line.lineTotal + MoneyEx.fromInt(extraMinorUnits);
+      final updated = line.copyWith(
+        unitCharge: _unitChargeForLine(updatedLineTotal, line.quantity),
+        lineTotal: updatedLineTotal,
+      );
+      await DaoQuoteLine().update(updated);
+      lines[i] = updated;
+    }
+
+    return baseTotal + marginAmount;
   }
 
   Future<void> recalculateTotal(int quoteId) async {
