@@ -85,7 +85,7 @@ class ListInvoiceCard extends StatelessWidget {
             HMBChip(
               label:
                   '${_overdueDays!} day${_overdueDays == 1 ? '' : 's'} overdue',
-              tone: HMBChipTone.danger,
+              tone: _outstandingTone,
               icon: Icons.warning_amber_rounded,
             ),
         ],
@@ -119,7 +119,7 @@ class ListInvoiceCard extends StatelessWidget {
               ? 'Paid'
               : 'Paid ${formatDate(invoice.paidDate!)}';
         }
-        return 'Outstanding';
+        return 'Outstanding due ${formatLocalDate(invoice.dueDate)}';
     }
   }
 
@@ -132,8 +132,16 @@ class ListInvoiceCard extends StatelessWidget {
       case InvoiceExternalSyncStatus.linked:
         return invoiceDetails.invoice.paid
             ? HMBChipTone.accent
-            : HMBChipTone.warning;
+            : _outstandingTone;
     }
+  }
+
+  HMBChipTone get _outstandingTone {
+    final overdueDays = _overdueDays;
+    if (overdueDays == null) {
+      return HMBChipTone.neutral;
+    }
+    return overdueDays >= 7 ? HMBChipTone.danger : HMBChipTone.warning;
   }
 
   IconData get _statusIcon {

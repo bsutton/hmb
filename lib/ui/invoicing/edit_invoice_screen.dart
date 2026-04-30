@@ -108,17 +108,13 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                 if (Strings.isNotBlank(invoice.voidDescription))
                   Text('Void description: ${invoice.voidDescription}'),
                 Text(
-                  'Payment tracking: '
-                  '${_paymentSourceLabel(invoice.paymentSource)}',
+                  'Management: '
+                  '${_paymentManagementLabel(invoice)}',
                 ),
-                if (invoice.paymentSource == InvoicePaymentSource.xero)
-                  const Text(
-                    'This invoice is managed by Xero for payment status.',
-                  ),
                 if (invoice.paymentSource == InvoicePaymentSource.unknown)
                   const Text(
                     'This is a legacy invoice. Convert it to manual '
-                    'tracking if it is no longer managed in Xero.',
+                    'management if it is no longer managed in Xero.',
                   ),
                 if (!readOnlyInvoice)
                   FutureBuilderEx<bool>(
@@ -233,11 +229,16 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
     InvoiceExternalSyncStatus.voided => 'Voided in Xero',
   };
 
-  String _paymentSourceLabel(InvoicePaymentSource source) => switch (source) {
-    InvoicePaymentSource.manual => 'Manual',
-    InvoicePaymentSource.xero => 'Xero',
-    InvoicePaymentSource.unknown => 'Needs review',
-  };
+  String _paymentManagementLabel(Invoice invoice) {
+    if (invoice.isManagedLocally) {
+      return 'Managed locally';
+    }
+    return switch (invoice.paymentSource) {
+      InvoicePaymentSource.manual => 'Managed locally',
+      InvoicePaymentSource.xero => 'Managed by Xero',
+      InvoicePaymentSource.unknown => 'Needs review',
+    };
+  }
 
   Future<void> _convertToManualTracking() async {
     await DaoInvoice().convertToManualTracking(invoiceId);

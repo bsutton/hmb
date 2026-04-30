@@ -40,12 +40,14 @@ class InvoiceDashlet extends StatelessWidget {
 class InvoiceCountSummary {
   final int outstanding;
   final int paid;
-  final bool hasOverdueOutstanding;
+  final int overdue;
+  final int overdueSevenDays;
 
   const InvoiceCountSummary({
     required this.outstanding,
     required this.paid,
-    required this.hasOverdueOutstanding,
+    required this.overdue,
+    required this.overdueSevenDays,
   });
 }
 
@@ -53,8 +55,10 @@ Future<InvoiceCountSummary> loadInvoiceCountSummary() async {
   final invoices = await DaoInvoice().getAll();
   var outstanding = 0;
   var paid = 0;
-  var hasOverdueOutstanding = false;
-  final overdueCutoff = LocalDate.today().subtractDays(3);
+  var overdue = 0;
+  var overdueSevenDays = 0;
+  final today = LocalDate.today();
+  final sevenDayCutoff = today.subtractDays(7);
   for (final invoice in invoices) {
     if (invoice.isExternallyDeletedOrVoided) {
       continue;
@@ -64,14 +68,18 @@ Future<InvoiceCountSummary> loadInvoiceCountSummary() async {
       continue;
     }
     outstanding += 1;
-    if (invoice.dueDate.isBefore(overdueCutoff)) {
-      hasOverdueOutstanding = true;
+    if (invoice.dueDate.isBefore(today)) {
+      overdue += 1;
+    }
+    if (!invoice.dueDate.isAfter(sevenDayCutoff)) {
+      overdueSevenDays += 1;
     }
   }
   return InvoiceCountSummary(
     outstanding: outstanding,
     paid: paid,
-    hasOverdueOutstanding: hasOverdueOutstanding,
+    overdue: overdue,
+    overdueSevenDays: overdueSevenDays,
   );
 }
 
@@ -83,10 +91,32 @@ Widget buildInvoiceCountSummary(
   children: [
     Text(
       summary.outstanding.toString(),
-      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-        fontWeight: FontWeight.bold,
-        color: summary.hasOverdueOutstanding ? Colors.red : null,
-      ),
+      style: Theme.of(
+        context,
+      ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+    ),
+    const SizedBox(height: 4),
+    Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'overdue: ${summary.overdue}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: Colors.orange.shade700),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '7+: ${summary.overdueSevenDays}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: Colors.red.shade400),
+        ),
+      ],
     ),
     const SizedBox(height: 4),
     Text(
