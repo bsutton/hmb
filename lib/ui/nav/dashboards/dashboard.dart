@@ -23,8 +23,14 @@ import '../route.dart';
 class DashboardPage extends StatefulWidget {
   final String title;
   final List<Widget> dashlets;
+  final Widget? header;
 
-  const DashboardPage({required this.title, required this.dashlets, super.key});
+  const DashboardPage({
+    required this.title,
+    required this.dashlets,
+    this.header,
+    super.key,
+  });
 
   @override
   State<DashboardPage> createState() => DashboardState();
@@ -66,25 +72,33 @@ class DashboardState extends State<DashboardPage> with RouteAware {
       alignment: Alignment.topCenter,
       child: Padding(
         padding: const EdgeInsets.only(top: 16),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            const spacing = 16.0;
-            const minTileWidth = 150.0; // Keep tiles to at lest 150
-            final count =
-                ((constraints.maxWidth + spacing) / (minTileWidth + spacing))
-                    .floor()
-                    .clamp(1, 6);
+        child: Column(
+          children: [
+            if (widget.header != null) widget.header!,
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  const spacing = 16.0;
+                  const minTileWidth = 150.0; // Keep tiles to at lest 150
+                  final count =
+                      ((constraints.maxWidth + spacing) /
+                              (minTileWidth + spacing))
+                          .floor()
+                          .clamp(1, 6);
 
-            return GridView.builder(
-              itemCount: widget.dashlets.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: count,
-                crossAxisSpacing: spacing,
-                mainAxisSpacing: spacing,
+                  return GridView.builder(
+                    itemCount: widget.dashlets.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: count,
+                      crossAxisSpacing: spacing,
+                      mainAxisSpacing: spacing,
+                    ),
+                    itemBuilder: (_, i) => widget.dashlets[i],
+                  );
+                },
               ),
-              itemBuilder: (_, i) => widget.dashlets[i],
-            );
-          },
+            ),
+          ],
         ),
       ),
     ),

@@ -29,6 +29,7 @@ import 'api/xero/xero_invoice_payment_sync_service.dart';
 import 'database/management/backup_providers/google_drive/background_backup/photo_sync_service.dart';
 import 'database/management/database_helper.dart';
 import 'ui/nav/dashboards/dashboard.dart';
+import 'ui/nav/dashboards/sync_warnings.dart';
 import 'ui/nav/nav.g.dart';
 import 'ui/widgets/blocking_ui.dart';
 import 'ui/widgets/desktop_back_gesture.dart';
@@ -139,11 +140,28 @@ class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
 
       try {
         await _syncBookings();
+        June.getState<BookingRequestsSyncWarningState>(
+          BookingRequestsSyncWarningState.new,
+        ).clearWarning();
       } catch (e, st) {
+        June.getState<BookingRequestsSyncWarningState>(
+          BookingRequestsSyncWarningState.new,
+        ).showWarning('Booking sync failed', formatBookingSyncWarning(e));
         Log.e('Failed to resume booking sync: $e\n$st');
       }
       try {
-        await XeroInvoicePaymentSyncService().sync();
+        var syncFailed = false;
+        await XeroInvoicePaymentSyncService().sync(
+          onError: (error, stackTrace) {
+            syncFailed = true;
+            _showResumeSyncError('Xero invoice payment sync failed', error);
+          },
+        );
+        if (!syncFailed) {
+          June.getState<AccountingSyncWarningState>(
+            AccountingSyncWarningState.new,
+          ).clearWarning();
+        }
       } catch (e, st) {
         Log.e('Failed to sync Xero invoice payments: $e\n$st');
       }
@@ -155,6 +173,12 @@ class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
     } finally {
       _resumeSyncInFlight = false;
     }
+  }
+
+  void _showResumeSyncError(String title, Object error) {
+    June.getState<AccountingSyncWarningState>(
+      AccountingSyncWarningState.new,
+    ).showWarning(title, formatAccountingSyncWarning(error));
   }
 
   Future<void> _syncBookings() async {

@@ -13,12 +13,16 @@
 
 // lib/src/ui/dashboard/billing_dashboard_page.dart
 import 'package:flutter/material.dart';
+import 'package:june/june.dart';
 
 import '../../../../dao/dao.g.dart';
 import '../../../../entity/entity.g.dart';
 import '../../../../util/flutter/flutter_util.g.dart';
+import '../../../widgets/layout/layout.g.dart';
+import '../../../widgets/layout/surface.dart';
 import '../dashboard.dart';
 import '../dashlet_card.dart';
+import '../sync_warnings.dart';
 import 'invoices.dart';
 import 'receipt.dart';
 
@@ -28,6 +32,35 @@ class AccountingDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => DashboardPage(
     title: 'Accounting',
+    header: JuneBuilder(
+      AccountingSyncWarningState.new,
+      builder: (_) {
+        final warning = June.getState<AccountingSyncWarningState>(
+          AccountingSyncWarningState.new,
+        ).warning;
+        if (warning == null) {
+          return const HMBEmpty();
+        }
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Surface(
+            rounded: true,
+            child: Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded, color: Colors.amber),
+                const HMBSpacer(width: true),
+                Expanded(
+                  child: Text(
+                    warning.details,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ),
     dashlets: [
       DashletCard<void>.route(
         label: 'Estimator',
@@ -63,6 +96,7 @@ class AccountingDashboardPage extends StatelessWidget {
       const ReceiptDashlet(),
     ],
   );
+
   Future<DashletValue<String>> getQuoteValue() async {
     final quotes = await DaoQuote().getAll();
     var total = MoneyEx.zero;

@@ -42,6 +42,7 @@ import '../../util/dart/log.dart';
 import '../../util/flutter/notifications/local_notifs.dart';
 import '../widgets/hmb_start_time_entry.dart';
 import '../widgets/media/desktop_camera_delegate.dart';
+import 'dashboards/sync_warnings.dart';
 
 /// this is were we do all of the heavy initialisation
 /// after the Splash screen is up and showing.
@@ -63,7 +64,7 @@ class BootStrapper {
     );
     unawaited(logAppStartup());
     await _runStartupPhase('init scheduler', _initScheduler);
-    unawaited(BookingRequestSyncService().sync());
+    unawaited(_runStartupBookingSync());
 
     // camera & deep link init
     _runSynchronousStartupPhase('init camera', initCamera);
@@ -76,10 +77,47 @@ class BootStrapper {
     /// initialise whatever accounting package the
     /// user is using.
     await _runStartupPhase('init accounting', initAccounting);
-    unawaited(XeroInvoicePaymentSyncService().sync());
+    unawaited(_runStartupAccountingSync());
 
     _isInitialized = true;
     Log.i('Startup initialization complete.');
+  }
+
+  Future<void> _runStartupBookingSync() async {
+    try {
+      await BookingRequestSyncService().sync();
+      June.getState<BookingRequestsSyncWarningState>(
+        BookingRequestsSyncWarningState.new,
+      ).clearWarning();
+    } catch (error, stackTrace) {
+      June.getState<BookingRequestsSyncWarningState>(
+        BookingRequestsSyncWarningState.new,
+      ).showWarning('Booking sync failed', formatBookingSyncWarning(error));
+      Log.e(
+        'Failed to sync booking requests during startup: $error\n$stackTrace',
+      );
+    }
+  }
+
+  Future<void> _runStartupAccountingSync() async {
+    var syncFailed = false;
+    await XeroInvoicePaymentSyncService().sync(
+      onError: (error, stackTrace) {
+        syncFailed = true;
+        _showStartupSyncError('Xero invoice payment sync failed', error);
+      },
+    );
+    if (!syncFailed) {
+      June.getState<AccountingSyncWarningState>(
+        AccountingSyncWarningState.new,
+      ).clearWarning();
+    }
+  }
+
+  void _showStartupSyncError(String title, Object error) {
+    June.getState<AccountingSyncWarningState>(
+      AccountingSyncWarningState.new,
+    ).showWarning(title, formatAccountingSyncWarning(error));
   }
 
   Future<T> _runStartupPhase<T>(

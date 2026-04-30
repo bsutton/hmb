@@ -125,6 +125,7 @@ class HMBSearchWithAdd extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [
+      const SizedBox(width: 8),
       Expanded(
         child: HMBSearch(
           onSearch: (filter) async {

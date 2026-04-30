@@ -13,11 +13,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:june/june.dart';
 
 import '../../api/ihserver/booking_request_sync_service.dart';
 import '../../dao/dao_booking_request.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/booking_request.dart';
+import '../nav/dashboards/sync_warnings.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_filter_line.dart';
 import '../widgets/widgets.g.dart' hide StatefulBuilder;
@@ -65,8 +67,13 @@ class _BookingRequestListScreenState extends State<BookingRequestListScreen> {
         return;
       }
       await BookingRequestSyncService().sync(force: true);
+      June.getState<BookingRequestsSyncWarningState>(
+        BookingRequestsSyncWarningState.new,
+      ).clearWarning();
     } catch (e) {
-      HMBToast.error(_friendlySyncError(e));
+      June.getState<BookingRequestsSyncWarningState>(
+        BookingRequestsSyncWarningState.new,
+      ).showWarning('Booking sync failed', formatBookingSyncWarning(e));
       if (_isConfigIssue(e)) {
         if (mounted) {
           await _showConfigHelpDialog(context);
@@ -99,6 +106,41 @@ class _BookingRequestListScreenState extends State<BookingRequestListScreen> {
               child: HMBColumn(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  JuneBuilder(
+                    BookingRequestsSyncWarningState.new,
+                    builder: (_) {
+                      final warning =
+                          June.getState<BookingRequestsSyncWarningState>(
+                            BookingRequestsSyncWarningState.new,
+                          ).warning;
+                      if (warning == null) {
+                        return const HMBEmpty();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Surface(
+                          rounded: true,
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.amber,
+                              ),
+                              const HMBSpacer(width: true),
+                              Expanded(
+                                child: Text(
+                                  warning.details,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                   HMBFilterLine(
                     lineBuilder: (_) => Row(
                       children: [
@@ -276,33 +318,6 @@ class _BookingRequestListScreenState extends State<BookingRequestListScreen> {
           ],
         ),
   );
-
-  String _friendlySyncError(Object error) {
-    final message = error.toString().toLowerCase();
-    if (message.contains('connection refused') ||
-        message.contains('failed host lookup') ||
-        message.contains('clientexception') ||
-        message.contains('socketexception')) {
-      return 'Cannot reach the booking server. Check that ihserver is running '
-          'and the URL is correct.';
-    }
-    if (message.contains('timed out') || message.contains('timeout')) {
-      return 'Booking server is taking too long to respond. Please try again.';
-    }
-    if (message.contains('401') ||
-        message.contains('403') ||
-        message.contains('unauthorized') ||
-        message.contains('forbidden')) {
-      return 'Booking sync is not authorized. Check the ihserver token.';
-    }
-    if (message.contains('500') ||
-        message.contains('502') ||
-        message.contains('503') ||
-        message.contains('504')) {
-      return 'Booking server error. Please try again later.';
-    }
-    return 'Unable to sync booking requests right now. Please try again.';
-  }
 
   Future<void> _showConfigHelpDialog(BuildContext context) => showDialog<void>(
     context: context,
