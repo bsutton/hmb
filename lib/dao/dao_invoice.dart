@@ -71,45 +71,83 @@ class DaoInvoice extends Dao<Invoice> {
   Future<List<Invoice>> getByFilter(
     String? filter, {
     bool includePaid = false,
+    DateTime? paidSince,
+    bool includeDeletedOrVoided = false,
   }) async {
     final db = withoutTransaction();
-    final paidWhere = includePaid ? '' : ' AND IFNULL(i.paid, 0) = 0';
+    final where = <String>[];
+    final whereArgs = <Object?>[];
 
-    if (Strings.isBlank(filter)) {
-      return toList(
-        await db.rawQuery('''
-    SELECT i.*
-    FROM invoice i
-    LEFT JOIN job j ON i.job_id = j.id
-    LEFT JOIN customer c ON j.customer_id = c.id
-    WHERE 1 = 1$paidWhere
-    ORDER BY i.modified_date DESC
-  '''),
+    if (!includeDeletedOrVoided) {
+      where.add(
+        'IFNULL(i.external_sync_status, 0) NOT IN ('
+        '${InvoiceExternalSyncStatus.deleted.ordinal}, '
+        '${InvoiceExternalSyncStatus.voided.ordinal})',
       );
     }
 
+    if (!includePaid) {
+      where.add('IFNULL(i.paid, 0) = 0');
+    } else if (paidSince != null) {
+      where.add('''
+(IFNULL(i.paid, 0) = 0
+ OR (IFNULL(i.paid, 0) = 1 AND i.paid_date >= ?))
+''');
+      whereArgs.add(paidSince.toIso8601String());
+    }
+
+    if (Strings.isNotBlank(filter)) {
+      where.add('''
+(
+      i.invoice_num LIKE ?
+   OR i.external_invoice_id LIKE ?
+   OR CAST(i.id AS TEXT) LIKE ?
+   OR CAST(j.id AS TEXT) LIKE ?
+   OR j.summary LIKE ?
+   OR c.name LIKE ?
+   OR bill.firstName LIKE ?
+   OR bill.surname LIKE ?
+   OR TRIM(bill.firstName || ' ' || bill.surname) LIKE ?
+   OR jobContact.firstName LIKE ?
+   OR jobContact.surname LIKE ?
+   OR TRIM(jobContact.firstName || ' ' || jobContact.surname) LIKE ?
+)
+''');
+      whereArgs.addAll([
+        '%$filter%',
+        '%$filter%',
+        '%$filter%',
+        '%$filter%',
+        '%$filter%',
+        '%$filter%',
+        '%$filter%',
+        '%$filter%',
+        '%$filter%',
+        '%$filter%',
+        '%$filter%',
+        '%$filter%',
+      ]);
+    }
+
+    final whereClause = where.isEmpty ? '' : "WHERE ${where.join(' AND ')}";
+
     return toList(
-      await db.rawQuery(
-        '''
+      await db.rawQuery('''
     SELECT i.*
     FROM invoice i
     LEFT JOIN job j ON i.job_id = j.id
     LEFT JOIN customer c ON j.customer_id = c.id
-    WHERE (
-          i.invoice_num LIKE ? 
-       OR i.external_invoice_id LIKE ?
-       OR j.summary LIKE ?
-       OR c.name LIKE ?
-    )$paidWhere
-    ORDER BY i.modified_date DESC
-  ''',
-        [
-          '%$filter%', // Filter for invoice_num
-          '%$filter%', // Filter for external_invoice_id
-          '%$filter%', // Filter for job summary
-          '%$filter%', // Filter for customer name
-        ],
-      ),
+    LEFT JOIN contact bill ON i.billing_contact_id = bill.id
+    LEFT JOIN contact jobContact ON j.contact_id = jobContact.id
+    $whereClause
+    ORDER BY
+      CASE WHEN IFNULL(i.paid, 0) = 0 THEN 0 ELSE 1 END ASC,
+      CASE
+        WHEN IFNULL(i.paid, 0) = 0 THEN IFNULL(i.due_date, i.created_date)
+        ELSE NULL
+      END ASC,
+      i.modified_date DESC
+''', whereArgs),
     );
   }
 
@@ -122,19 +160,90 @@ FROM invoice
 WHERE external_invoice_id IS NOT NULL
   AND external_invoice_id != ''
   AND IFNULL(paid, 0) = 0
+  AND IFNULL(external_sync_status, 0) NOT IN (
+    ${InvoiceExternalSyncStatus.deleted.ordinal},
+    ${InvoiceExternalSyncStatus.voided.ordinal}
+  )
 ORDER BY modified_date DESC
 '''),
     );
   }
 
-  Future<void> markPaid(int invoiceId, {DateTime? paidDate}) async {
+  Future<void> markPaidManually(int invoiceId, {DateTime? paidDate}) async {
     final invoice = await getById(invoiceId);
     if (invoice == null) {
       return;
     }
     await update(
-      invoice.copyWith(paid: true, paidDate: paidDate ?? DateTime.now()),
+      invoice.copyWith(
+        paid: true,
+        paidDate: paidDate ?? DateTime.now(),
+        paymentSource: InvoicePaymentSource.manual,
+      ),
     );
+  }
+
+  Future<void> markPaidFromXero(int invoiceId, {DateTime? paidDate}) async {
+    final invoice = await getById(invoiceId);
+    if (invoice == null) {
+      return;
+    }
+    await update(
+      invoice.copyWith(
+        paid: true,
+        paidDate: paidDate ?? DateTime.now(),
+        paymentSource: InvoicePaymentSource.xero,
+        externalSyncStatus: InvoiceExternalSyncStatus.linked,
+      ),
+    );
+  }
+
+  Future<void> updateExternalSyncStatus(
+    int invoiceId,
+    InvoiceExternalSyncStatus externalSyncStatus,
+  ) async {
+    final invoice = await getById(invoiceId);
+    if (invoice == null) {
+      return;
+    }
+    final paymentSource =
+        invoice.isUploaded() ||
+            externalSyncStatus != InvoiceExternalSyncStatus.none
+        ? InvoicePaymentSource.xero
+        : invoice.paymentSource;
+    await update(
+      invoice.copyWith(
+        externalSyncStatus: externalSyncStatus,
+        paymentSource: paymentSource,
+      ),
+    );
+  }
+
+  Future<void> markManagedByXero(
+    int invoiceId, {
+    required String invoiceNum,
+    required String externalInvoiceId,
+  }) async {
+    final invoice = await getById(invoiceId);
+    if (invoice == null) {
+      return;
+    }
+    await update(
+      invoice.copyWith(
+        invoiceNum: invoiceNum,
+        externalInvoiceId: externalInvoiceId,
+        paymentSource: InvoicePaymentSource.xero,
+        externalSyncStatus: InvoiceExternalSyncStatus.linked,
+      ),
+    );
+  }
+
+  Future<void> convertToManualTracking(int invoiceId) async {
+    final invoice = await getById(invoiceId);
+    if (invoice == null) {
+      return;
+    }
+    await update(invoice.copyWith(paymentSource: InvoicePaymentSource.manual));
   }
 
   @override

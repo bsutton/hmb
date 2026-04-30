@@ -6,6 +6,9 @@ import '../../entity/invoice.dart';
 import '../../util/dart/log.dart';
 import 'xero_api.dart';
 
+typedef XeroInvoicePaymentSyncErrorHandler =
+    void Function(Object error, StackTrace stackTrace);
+
 class XeroInvoicePaymentSyncService {
   static DateTime? _lastAttempt;
   static var _inFlight = false;
@@ -18,7 +21,10 @@ class XeroInvoicePaymentSyncService {
     : _xeroApi = xeroApi ?? XeroApi(),
       _daoInvoice = daoInvoice ?? DaoInvoice();
 
-  Future<int> sync({bool force = false}) async {
+  Future<int> sync({
+    bool force = false,
+    XeroInvoicePaymentSyncErrorHandler? onError,
+  }) async {
     if (!DatabaseHelper().isOpen()) {
       return 0;
     }
@@ -49,9 +55,21 @@ class XeroInvoicePaymentSyncService {
       var updated = 0;
       for (final invoice in pending) {
         try {
-          final paidDate = await _loadPaidDate(invoice);
-          if (paidDate != null) {
-            await _daoInvoice.markPaid(invoice.id, paidDate: paidDate);
+          final remoteState = await _loadRemoteState(invoice);
+          if (remoteState == null) {
+            continue;
+          }
+          if (invoice.externalSyncStatus != remoteState.externalSyncStatus) {
+            await _daoInvoice.updateExternalSyncStatus(
+              invoice.id,
+              remoteState.externalSyncStatus,
+            );
+          }
+          if (remoteState.paidDate != null) {
+            await _daoInvoice.markPaidFromXero(
+              invoice.id,
+              paidDate: remoteState.paidDate,
+            );
             updated += 1;
           }
         } catch (e, st) {
@@ -61,13 +79,14 @@ class XeroInvoicePaymentSyncService {
       return updated;
     } catch (e, st) {
       Log.e('Failed to sync Xero invoice payments: $e\n$st');
+      onError?.call(e, st);
       return 0;
     } finally {
       _inFlight = false;
     }
   }
 
-  Future<DateTime?> _loadPaidDate(Invoice invoice) async {
+  Future<_RemoteInvoiceState?> _loadRemoteState(Invoice invoice) async {
     final externalId = invoice.externalInvoiceId;
     if (externalId == null || externalId.isEmpty) {
       return null;
@@ -90,15 +109,21 @@ class XeroInvoicePaymentSyncService {
       return null;
     }
 
-    final status = (remote['Status'] as String?)?.toUpperCase() ?? '';
+    final status = ((remote['Status'] as String?) ?? '').trim().toUpperCase();
     final amountDue = _toDouble(remote['AmountDue']);
     final amountPaid = _toDouble(remote['AmountPaid']);
     final isPaid = status == 'PAID' || (amountDue <= 0 && amountPaid > 0);
-    if (!isPaid) {
-      return null;
-    }
 
-    return _parseXeroDate(remote['FullyPaidOnDate']) ?? DateTime.now();
+    return _RemoteInvoiceState(
+      externalSyncStatus: switch (status) {
+        'DELETED' => InvoiceExternalSyncStatus.deleted,
+        'VOIDED' => InvoiceExternalSyncStatus.voided,
+        _ => InvoiceExternalSyncStatus.linked,
+      },
+      paidDate: isPaid
+          ? _parseXeroDate(remote['FullyPaidOnDate']) ?? DateTime.now()
+          : null,
+    );
   }
 
   double _toDouble(dynamic value) {
@@ -125,4 +150,14 @@ class XeroInvoicePaymentSyncService {
     }
     return DateTime.tryParse(value);
   }
+}
+
+class _RemoteInvoiceState {
+  final InvoiceExternalSyncStatus externalSyncStatus;
+  final DateTime? paidDate;
+
+  const _RemoteInvoiceState({
+    required this.externalSyncStatus,
+    required this.paidDate,
+  });
 }

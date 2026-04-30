@@ -19,7 +19,6 @@ import '../../dao/dao_job.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../widgets/layout/layout.g.dart';
-import '../widgets/layout/surface.dart';
 
 class SelectJobDialog extends StatefulWidget {
   final String title;
@@ -176,29 +175,48 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
                 }
 
                 return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
                   itemCount: filteredJobs.length,
                   itemBuilder: (context, index) {
                     final current = filteredJobs[index];
-                    return SurfaceCard(
-                      title: current.job.summary,
-                      body: HMBColumn(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Customer: ${current.customer.name}'),
-                          if (widget.showBillableFilters)
-                            Text(
-                              '''Has billable items: ${current.hasBillables ? "Yes" : "No"}''',
-                            ),
-                        ],
-                      ),
-                      onPressed: () => _onPressed(current),
-                    );
+                    return _buildJobCard(current);
                   },
                 );
               },
             ),
           ),
         ],
+      ),
+    ),
+  );
+
+  Widget _buildJobCard(CustomerAndJob current) => Card(
+    semanticContainer: false,
+    elevation: 2,
+    margin: const EdgeInsets.only(bottom: 10),
+    child: InkWell(
+      onTap: () => _onPressed(current),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: HMBColumn(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              current.job.summary,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
+            Text('Customer: ${current.customer.name}'),
+            Text('Job #${current.job.id}'),
+            Text('Status: ${current.job.status.displayName}'),
+            if (widget.showBillableFilters)
+              Text(
+                '''Has billable items: ${current.hasBillables ? "Yes" : "No"}''',
+              ),
+          ],
+        ),
       ),
     ),
   );

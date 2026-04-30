@@ -13,7 +13,9 @@
 
 import 'package:flutter/material.dart';
 
+import '../../entity/invoice.dart';
 import '../../util/dart/format.dart';
+import '../../util/dart/local_date.dart';
 import '../crud/job/full_page_list_job_card.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/widgets.g.dart';
@@ -43,7 +45,6 @@ class ListInvoiceCard extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-
       if (showJobDetails)
         HMBLinkInternal(
           label:
@@ -53,10 +54,10 @@ class ListInvoiceCard extends StatelessWidget {
           navigateTo: () async => FullPageListJobCard(invoiceDetails.job),
         ),
       Text('Total: ${invoiceDetails.invoice.totalAmount}'),
-      const SizedBox(height: 8),
+      const SizedBox(height: 6),
       Wrap(
-        spacing: 8,
-        runSpacing: 8,
+        spacing: 6,
+        runSpacing: 6,
         children: [
           _buildXeroChip(),
           if (invoiceDetails.invoice.sent)
@@ -65,18 +66,82 @@ class ListInvoiceCard extends StatelessWidget {
               tone: HMBChipTone.accent,
               icon: Icons.send,
             ),
-          if (invoiceDetails.invoice.paid)
+          if (invoiceDetails.invoice.paymentSource ==
+              InvoicePaymentSource.unknown)
+            const HMBChip(
+              label: 'Needs review',
+              tone: HMBChipTone.warning,
+              icon: Icons.help_outline,
+            ),
+          HMBChip(label: _statusLabel, tone: _statusTone, icon: _statusIcon),
+          if (_overdueDays != null)
             HMBChip(
-              label: invoiceDetails.invoice.paidDate == null
-                  ? 'Paid'
-                  : 'Paid ${formatDate(invoiceDetails.invoice.paidDate!)}',
-              tone: HMBChipTone.accent,
-              icon: Icons.check_circle,
+              label:
+                  '${_overdueDays!} day${_overdueDays == 1 ? '' : 's'} overdue',
+              tone: HMBChipTone.danger,
+              icon: Icons.warning_amber_rounded,
             ),
         ],
       ),
     ],
   );
+
+  int? get _overdueDays {
+    final invoice = invoiceDetails.invoice;
+    if (invoice.paid || invoice.isExternallyDeletedOrVoided) {
+      return null;
+    }
+    final today = LocalDate.today();
+    if (!invoice.dueDate.isBefore(today)) {
+      return null;
+    }
+    return today.difference(invoice.dueDate).inDays;
+  }
+
+  String get _statusLabel {
+    final invoice = invoiceDetails.invoice;
+    switch (invoice.externalSyncStatus) {
+      case InvoiceExternalSyncStatus.deleted:
+        return 'Deleted in Xero';
+      case InvoiceExternalSyncStatus.voided:
+        return 'Voided in Xero';
+      case InvoiceExternalSyncStatus.none:
+      case InvoiceExternalSyncStatus.linked:
+        if (invoice.paid) {
+          return invoice.paidDate == null
+              ? 'Paid'
+              : 'Paid ${formatDate(invoice.paidDate!)}';
+        }
+        return 'Outstanding';
+    }
+  }
+
+  HMBChipTone get _statusTone {
+    switch (invoiceDetails.invoice.externalSyncStatus) {
+      case InvoiceExternalSyncStatus.deleted:
+      case InvoiceExternalSyncStatus.voided:
+        return HMBChipTone.danger;
+      case InvoiceExternalSyncStatus.none:
+      case InvoiceExternalSyncStatus.linked:
+        return invoiceDetails.invoice.paid
+            ? HMBChipTone.accent
+            : HMBChipTone.warning;
+    }
+  }
+
+  IconData get _statusIcon {
+    switch (invoiceDetails.invoice.externalSyncStatus) {
+      case InvoiceExternalSyncStatus.deleted:
+        return Icons.delete_forever;
+      case InvoiceExternalSyncStatus.voided:
+        return Icons.cancel;
+      case InvoiceExternalSyncStatus.none:
+      case InvoiceExternalSyncStatus.linked:
+        return invoiceDetails.invoice.paid
+            ? Icons.check_circle
+            : Icons.pending_actions;
+    }
+  }
 
   Widget _buildXeroChip() {
     final invoiceNum = invoiceDetails.invoice.invoiceNum;

@@ -27,6 +27,7 @@ import '../../dao/dao_invoice_line.dart';
 import '../../dao/dao_invoice_line_group.dart';
 import '../../dao/dao_task_item.dart';
 import '../../dao/dao_time_entry.dart';
+import '../../entity/invoice.dart';
 import '../../entity/invoice_line.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/money_ex.dart';
@@ -99,32 +100,65 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                 Text('Customer: ${customer?.name ?? "N/A"}'),
                 Text('Job: ${job.summary} #${job.id}'),
                 Text('Total: ${invoice.totalAmount}'),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    HMBButton(
-                      label: 'Upload to Xero',
-                      hint: 'Upload the invoice to Xero',
-                      onPressed: () {
-                        BlockingUI().run(() async {
-                          await _uploadInvoiceToXero();
-                        }, label: 'Uploading Invoice');
-                      },
-                    ),
-                    HMBButton(
-                      label: 'Add Discount',
-                      hint: 'Add a discount line to this invoice.',
-                      onPressed: () async {
-                        await _promptAddDiscount();
-                      },
-                    ),
-                    BuildSendButton(
-                      context: context,
-                      mounted: mounted,
-                      invoice: invoice,
-                    ),
-                  ],
+                Text('Sync: ${_syncStatusLabel(invoice.externalSyncStatus)}'),
+                Text(
+                  'Payment tracking: '
+                  '${_paymentSourceLabel(invoice.paymentSource)}',
+                ),
+                if (invoice.paymentSource == InvoicePaymentSource.xero)
+                  const Text(
+                    'This invoice is managed by Xero for payment status.',
+                  ),
+                if (invoice.paymentSource == InvoicePaymentSource.unknown)
+                  const Text(
+                    'This is a legacy invoice. Convert it to manual '
+                    'tracking if it is no longer managed in Xero.',
+                  ),
+                FutureBuilderEx<bool>(
+                  future: ExternalAccounting().isEnabled(),
+                  builder: (context, accountingEnabled) => Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      HMBButton(
+                        label: 'Upload to Xero',
+                        hint: 'Upload the invoice to Xero',
+                        onPressed: () {
+                          BlockingUI().run(() async {
+                            await _uploadInvoiceToXero();
+                          }, label: 'Uploading Invoice');
+                        },
+                      ),
+                      if (invoice.canConvertToManualTracking)
+                        HMBButton(
+                          label: 'Convert to Manual Tracking',
+                          hint: 'Switch this legacy invoice to manual tracking',
+                          onPressed: () async {
+                            await _convertToManualTracking();
+                          },
+                        ),
+                      if (invoice.canMarkPaidManually)
+                        HMBButton(
+                          label: 'Mark as Paid',
+                          hint: 'Mark this invoice as paid',
+                          onPressed: () async {
+                            await _markInvoicePaid();
+                          },
+                        ),
+                      HMBButton(
+                        label: 'Add Discount',
+                        hint: 'Add a discount line to this invoice.',
+                        onPressed: () async {
+                          await _promptAddDiscount();
+                        },
+                      ),
+                      BuildSendButton(
+                        context: context,
+                        mounted: mounted,
+                        invoice: invoice,
+                      ),
+                    ],
+                  ),
                 ),
                 // Show all line groups and lines inline
                 for (final group in lineGroups) ...[
@@ -161,6 +195,39 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       );
     },
   );
+
+  String _syncStatusLabel(InvoiceExternalSyncStatus status) => switch (status) {
+    InvoiceExternalSyncStatus.none => 'Not synced',
+    InvoiceExternalSyncStatus.linked => 'Linked to Xero',
+    InvoiceExternalSyncStatus.deleted => 'Deleted in Xero',
+    InvoiceExternalSyncStatus.voided => 'Voided in Xero',
+  };
+
+  String _paymentSourceLabel(InvoicePaymentSource source) => switch (source) {
+    InvoicePaymentSource.manual => 'Manual',
+    InvoicePaymentSource.xero => 'Xero',
+    InvoicePaymentSource.unknown => 'Needs review',
+  };
+
+  Future<void> _convertToManualTracking() async {
+    await DaoInvoice().convertToManualTracking(invoiceId);
+    await _reloadInvoice();
+    if (!mounted) {
+      return;
+    }
+    HMBToast.info('Invoice converted to manual tracking');
+    setState(() {});
+  }
+
+  Future<void> _markInvoicePaid() async {
+    await DaoInvoice().markPaidManually(invoiceId);
+    await _reloadInvoice();
+    if (!mounted) {
+      return;
+    }
+    HMBToast.info('Invoice marked as paid');
+    setState(() {});
+  }
 
   Future<void> _uploadInvoiceToXero() async {
     if (!(await ExternalAccounting().isEnabled())) {

@@ -22,6 +22,52 @@ import '../util/dart/local_date.dart';
 import 'entity.dart';
 import 'invoice_line.dart';
 
+enum InvoiceExternalSyncStatus {
+  none(0),
+  linked(1),
+  deleted(2),
+  voided(3);
+
+  final int ordinal;
+  const InvoiceExternalSyncStatus(this.ordinal);
+
+  static InvoiceExternalSyncStatus fromOrdinal(int? value) =>
+      value == InvoiceExternalSyncStatus.linked.ordinal
+      ? InvoiceExternalSyncStatus.linked
+      : value == InvoiceExternalSyncStatus.deleted.ordinal
+      ? InvoiceExternalSyncStatus.deleted
+      : value == InvoiceExternalSyncStatus.voided.ordinal
+      ? InvoiceExternalSyncStatus.voided
+      : InvoiceExternalSyncStatus.none;
+
+  static InvoiceExternalSyncStatus fromLegacyStatus(String? value) {
+    final normalized = value?.trim().toUpperCase();
+    return normalized == 'DELETED'
+        ? InvoiceExternalSyncStatus.deleted
+        : normalized == 'VOIDED'
+        ? InvoiceExternalSyncStatus.voided
+        : Strings.isNotBlank(normalized)
+        ? InvoiceExternalSyncStatus.linked
+        : InvoiceExternalSyncStatus.none;
+  }
+}
+
+enum InvoicePaymentSource {
+  manual(0),
+  xero(1),
+  unknown(2);
+
+  final int ordinal;
+  const InvoicePaymentSource(this.ordinal);
+
+  static InvoicePaymentSource fromOrdinal(int? value) =>
+      value == InvoicePaymentSource.xero.ordinal
+      ? InvoicePaymentSource.xero
+      : value == InvoicePaymentSource.unknown.ordinal
+      ? InvoicePaymentSource.unknown
+      : InvoicePaymentSource.manual;
+}
+
 class Invoice extends Entity<Invoice> {
   int jobId;
   Money totalAmount;
@@ -34,6 +80,8 @@ class Invoice extends Entity<Invoice> {
   bool sent;
   bool paid;
   DateTime? paidDate;
+  InvoiceExternalSyncStatus externalSyncStatus;
+  InvoicePaymentSource paymentSource;
   int? billingContactId;
 
   Invoice._({
@@ -49,6 +97,8 @@ class Invoice extends Entity<Invoice> {
     this.sent = false,
     this.paid = false,
     this.paidDate,
+    this.externalSyncStatus = InvoiceExternalSyncStatus.none,
+    this.paymentSource = InvoicePaymentSource.manual,
   }) : super() {
     this.dueDate =
         dueDate ??
@@ -60,9 +110,12 @@ class Invoice extends Entity<Invoice> {
     required this.dueDate,
     required this.totalAmount,
     required this.billingContactId,
+    this.externalInvoiceId,
     this.sent = false,
     this.paid = false,
     this.paidDate,
+    this.externalSyncStatus = InvoiceExternalSyncStatus.none,
+    this.paymentSource = InvoicePaymentSource.manual,
   }) : super.forInsert();
 
   Invoice copyWith({
@@ -74,6 +127,8 @@ class Invoice extends Entity<Invoice> {
     bool? sent,
     bool? paid,
     DateTime? paidDate,
+    InvoiceExternalSyncStatus? externalSyncStatus,
+    InvoicePaymentSource? paymentSource,
     int? billingContactId,
   }) => Invoice._(
     id: id,
@@ -85,6 +140,8 @@ class Invoice extends Entity<Invoice> {
     sent: sent ?? this.sent,
     paid: paid ?? this.paid,
     paidDate: paidDate ?? this.paidDate,
+    externalSyncStatus: externalSyncStatus ?? this.externalSyncStatus,
+    paymentSource: paymentSource ?? this.paymentSource,
     billingContactId: billingContactId ?? this.billingContactId,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
@@ -226,24 +283,51 @@ You must set the Account Code and Item Code in System | Integration before you c
   /// accounting system.
   bool isUploaded() => Strings.isNotBlank(externalInvoiceId);
 
-  factory Invoice.fromMap(Map<String, dynamic> map) => Invoice._(
-    id: map['id'] as int,
-    jobId: map['job_id'] as int,
-    totalAmount: Money.fromInt(map['total_amount'] as int, isoCode: 'AUD'),
-    createdDate: DateTime.parse(map['created_date'] as String),
-    modifiedDate: DateTime.parse(map['modified_date'] as String),
-    invoiceNum: map['invoice_num'] as String?,
-    externalInvoiceId: map['external_invoice_id'] as String?,
-    dueDate: map['due_date'] != null
-        ? const LocalDateConverter().fromJson(map['due_date'] as String)
-        : null,
-    sent: (map['sent'] as int) == 1,
-    paid: (map['paid'] as int? ?? 0) == 1,
-    paidDate: map['paid_date'] == null
-        ? null
-        : DateTime.parse(map['paid_date'] as String),
-    billingContactId: map['billing_contact_id'] as int?,
-  );
+  bool get isExternallyDeletedOrVoided =>
+      externalSyncStatus == InvoiceExternalSyncStatus.deleted ||
+      externalSyncStatus == InvoiceExternalSyncStatus.voided;
+
+  bool get canConvertToManualTracking =>
+      paymentSource == InvoicePaymentSource.unknown;
+
+  bool get canMarkPaidManually =>
+      !paid &&
+      !isExternallyDeletedOrVoided &&
+      paymentSource == InvoicePaymentSource.manual;
+
+  factory Invoice.fromMap(Map<String, dynamic> map) {
+    final legacyStatus = map['external_status'] as String?;
+    final externalInvoiceId = map['external_invoice_id'] as String?;
+
+    return Invoice._(
+      id: map['id'] as int,
+      jobId: map['job_id'] as int,
+      totalAmount: Money.fromInt(map['total_amount'] as int, isoCode: 'AUD'),
+      createdDate: DateTime.parse(map['created_date'] as String),
+      modifiedDate: DateTime.parse(map['modified_date'] as String),
+      invoiceNum: map['invoice_num'] as String?,
+      externalInvoiceId: externalInvoiceId,
+      dueDate: map['due_date'] != null
+          ? const LocalDateConverter().fromJson(map['due_date'] as String)
+          : null,
+      sent: (map['sent'] as int) == 1,
+      paid: (map['paid'] as int? ?? 0) == 1,
+      paidDate: map['paid_date'] == null
+          ? null
+          : DateTime.parse(map['paid_date'] as String),
+      externalSyncStatus: map['external_sync_status'] != null
+          ? InvoiceExternalSyncStatus.fromOrdinal(
+              map['external_sync_status'] as int?,
+            )
+          : InvoiceExternalSyncStatus.fromLegacyStatus(legacyStatus),
+      paymentSource: map['payment_source'] != null
+          ? InvoicePaymentSource.fromOrdinal(map['payment_source'] as int?)
+          : Strings.isNotBlank(externalInvoiceId)
+          ? InvoicePaymentSource.xero
+          : InvoicePaymentSource.unknown,
+      billingContactId: map['billing_contact_id'] as int?,
+    );
+  }
 
   @override
   Map<String, dynamic> toMap() => {
@@ -258,6 +342,8 @@ You must set the Account Code and Item Code in System | Integration before you c
     'sent': sent ? 1 : 0,
     'paid': paid ? 1 : 0,
     'paid_date': paidDate?.toIso8601String(),
+    'external_sync_status': externalSyncStatus.ordinal,
+    'payment_source': paymentSource.ordinal,
     'billing_contact_id': billingContactId,
   };
 }

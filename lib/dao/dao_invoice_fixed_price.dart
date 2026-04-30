@@ -11,9 +11,9 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:money2/money2.dart';
 
+import '../api/external_accounting.dart';
 import '../entity/entity.g.dart';
 import '../util/dart/exceptions.dart';
 import '../util/dart/local_date.dart';
@@ -37,6 +37,9 @@ Future<Invoice> createFixedPriceInvoice(
     totalAmount: totalAmount,
     dueDate: LocalDate.today().add(const Duration(days: 1)),
     billingContactId: billingContact.id,
+    paymentSource: await ExternalAccounting().isEnabled()
+        ? InvoicePaymentSource.unknown
+        : InvoicePaymentSource.manual,
   );
 
   final invoiceId = await DaoInvoice().insert(invoice);
@@ -75,6 +78,9 @@ Future<Invoice> createInvoiceFromMilestone(
     dueDate: LocalDate.today().add(const Duration(days: 1)),
     totalAmount: milestonePayment.paymentAmount,
     billingContactId: billingContact.id,
+    paymentSource: await ExternalAccounting().isEnabled()
+        ? InvoicePaymentSource.unknown
+        : InvoicePaymentSource.manual,
   );
 
   final invoiceId = await DaoInvoice().insert(invoice);

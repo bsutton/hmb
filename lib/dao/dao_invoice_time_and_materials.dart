@@ -13,6 +13,7 @@
 
 import 'package:money2/money2.dart';
 
+import '../api/external_accounting.dart';
 import '../entity/entity.g.dart';
 import '../util/dart/exceptions.dart';
 import '../util/dart/format.dart';
@@ -40,6 +41,9 @@ Future<Invoice> createTimeAndMaterialsInvoice(
     totalAmount: totalAmount,
     dueDate: LocalDate.today().add(Duration(days: system.paymentTermsInDays)),
     billingContactId: billingContact.id,
+    paymentSource: await ExternalAccounting().isEnabled()
+        ? InvoicePaymentSource.unknown
+        : InvoicePaymentSource.manual,
   );
 
   final invoiceId = await DaoInvoice().insert(invoice);

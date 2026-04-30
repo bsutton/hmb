@@ -113,12 +113,11 @@ You must provide an email address for the Contact ${billingContact.fullname}''',
     // ignore: avoid_dynamic_calls
     final invoiceId = responseBody['Invoices'][0]['InvoiceID'] as String;
 
-    final completedInvoice = invoice.copyWith(
+    await DaoInvoice().markManagedByXero(
+      invoice.id,
       invoiceNum: invoiceNum,
       externalInvoiceId: invoiceId,
     );
-
-    await DaoInvoice().update(completedInvoice);
     unawaited(XeroInvoicePaymentSyncService().sync(force: true));
   }
 }

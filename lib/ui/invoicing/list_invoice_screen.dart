@@ -49,7 +49,14 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   Customer? selectedCustomer;
   String? filterText;
   var showOldJobs = false;
-  var showPaidInvoices = false;
+  var showPaidInvoices = true;
+  var showOlderPaidInvoices = false;
+  var showDeletedOrVoidedInvoices = false;
+
+  bool get _isJobRestricted => widget.jobRestriction != null;
+
+  DateTime get _recentlyPaidCutoff =>
+      DateTime.now().subtract(const Duration(days: 30));
 
   @override
   void initState() {
@@ -72,24 +79,26 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
           InvoiceEditScreen(invoiceDetails: invoiceDetails!),
     ),
     onDelete: _deleteInvoice,
-    cardHeight: 250,
+    cardHeight: 340,
     background: (_) async => Colors.transparent,
     listCard: _buildInvoiceCard,
-    filterSheetBuilder: widget.jobRestriction == null
-        ? _buildFilterSheet
-        : null,
+    filterSheetBuilder: _buildFilterSheet,
     isFilterActive: () =>
-        selectedJob.jobId != null ||
-        selectedCustomer != null ||
+        (!_isJobRestricted && selectedJob.jobId != null) ||
+        (!_isJobRestricted && selectedCustomer != null) ||
         showOldJobs ||
-        showPaidInvoices ||
+        !showPaidInvoices ||
+        (!_isJobRestricted && showOlderPaidInvoices) ||
+        showDeletedOrVoidedInvoices ||
         Strings.isNotBlank(filterText),
     onFilterReset: () {
-      selectedJob.jobId = null;
+      selectedJob.jobId = widget.jobRestriction?.id;
       selectedCustomer = null;
       filterText = null;
       showOldJobs = false;
-      showPaidInvoices = false;
+      showPaidInvoices = true;
+      showOlderPaidInvoices = false;
+      showDeletedOrVoidedInvoices = false;
     },
   );
 
@@ -98,11 +107,16 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     var invoices = await DaoInvoice().getByFilter(
       filterText,
       includePaid: showPaidInvoices,
+      paidSince: !_isJobRestricted && !showOlderPaidInvoices && showPaidInvoices
+          ? _recentlyPaidCutoff
+          : null,
+      includeDeletedOrVoided: showDeletedOrVoidedInvoices,
     );
-    if (selectedJob.jobId != null) {
-      invoices = invoices.where((i) => i.jobId == selectedJob.jobId).toList();
+    final restrictedJobId = widget.jobRestriction?.id ?? selectedJob.jobId;
+    if (restrictedJobId != null) {
+      invoices = invoices.where((i) => i.jobId == restrictedJobId).toList();
     }
-    if (selectedCustomer != null) {
+    if (!_isJobRestricted && selectedCustomer != null) {
       final filtered = <Invoice>[];
       for (final invoice in invoices) {
         final job = await DaoJob().getById(invoice.jobId);
@@ -182,48 +196,77 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     padding: const EdgeInsets.all(8),
     child: HMBColumn(
       children: [
-        HMBSelectJob(
-          title: 'Filter By Job',
-          selectedJob: selectedJob,
-          items: (filter) => showOldJobs
-              ? DaoJob().getByFilter(filter)
-              : DaoJob().getActiveJobs(filter),
-          onSelected: (job) => setState(() {
-            selectedJob.jobId = job?.id;
-            onChange();
-          }),
-        ),
-        CheckboxListTile(
-          title: const Text('Show old jobs'),
-          value: showOldJobs,
-          onChanged: (value) => setState(() {
-            showOldJobs = value ?? false;
-            onChange();
-          }),
-          controlAffinity: ListTileControlAffinity.leading,
-        ),
+        if (!_isJobRestricted)
+          HMBSelectJob(
+            title: 'Filter By Job',
+            selectedJob: selectedJob,
+            items: (filter) => showOldJobs
+                ? DaoJob().getByFilter(filter)
+                : DaoJob().getActiveJobs(filter),
+            onSelected: (job) => setState(() {
+              selectedJob.jobId = job?.id;
+              onChange();
+            }),
+          ),
+        if (!_isJobRestricted)
+          CheckboxListTile(
+            title: const Text('Show old jobs'),
+            value: showOldJobs,
+            onChanged: (value) => setState(() {
+              showOldJobs = value ?? false;
+              onChange();
+            }),
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
         CheckboxListTile(
           title: const Text('Show paid invoices'),
           value: showPaidInvoices,
           onChanged: (value) => setState(() {
             showPaidInvoices = value ?? false;
+            if (!showPaidInvoices) {
+              showOlderPaidInvoices = false;
+            }
             onChange();
           }),
           controlAffinity: ListTileControlAffinity.leading,
         ),
-
-        HMBDroplist<Customer>(
-          // key: ValueKey(selectedCustomer),
-          title: 'Filter by Customer',
-          items: (filter) => DaoCustomer().getByFilter(filter),
-          format: (customer) => customer.name,
-          required: false,
-          selectedItem: () async => selectedCustomer,
-          onChanged: (customer) {
-            selectedCustomer = customer;
+        if (!_isJobRestricted)
+          CheckboxListTile(
+            title: const Text('Show older paid invoices'),
+            subtitle: const Text(
+              'Default view shows outstanding invoices and invoices '
+              'paid in the last 30 days.',
+            ),
+            value: showOlderPaidInvoices,
+            onChanged: showPaidInvoices
+                ? (value) => setState(() {
+                    showOlderPaidInvoices = value ?? false;
+                    onChange();
+                  })
+                : null,
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+        CheckboxListTile(
+          title: const Text('Show deleted and voided invoices'),
+          value: showDeletedOrVoidedInvoices,
+          onChanged: (value) => setState(() {
+            showDeletedOrVoidedInvoices = value ?? false;
             onChange();
-          },
+          }),
+          controlAffinity: ListTileControlAffinity.leading,
         ),
+        if (!_isJobRestricted)
+          HMBDroplist<Customer>(
+            title: 'Filter by Customer',
+            items: (filter) => DaoCustomer().getByFilter(filter),
+            format: (customer) => customer.name,
+            required: false,
+            selectedItem: () async => selectedCustomer,
+            onChanged: (customer) {
+              selectedCustomer = customer;
+              onChange();
+            },
+          ),
       ],
     ),
   );
