@@ -12,6 +12,7 @@
 */
 
 import 'package:flutter/material.dart';
+import 'package:strings/strings.dart';
 
 import '../../entity/invoice.dart';
 import '../../util/dart/format.dart';
@@ -54,6 +55,12 @@ class ListInvoiceCard extends StatelessWidget {
           navigateTo: () async => FullPageListJobCard(invoiceDetails.job),
         ),
       Text('Total: ${invoiceDetails.invoice.totalAmount}'),
+      if (Strings.isNotBlank(invoiceDetails.invoice.voidDescription))
+        Text(
+          'Void: ${invoiceDetails.invoice.voidDescription}',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
       const SizedBox(height: 6),
       Wrap(
         spacing: 6,
@@ -144,7 +151,16 @@ class ListInvoiceCard extends StatelessWidget {
   }
 
   Widget _buildXeroChip() {
-    final invoiceNum = invoiceDetails.invoice.invoiceNum;
+    final invoice = invoiceDetails.invoice;
+    if (invoice.isManagedLocally) {
+      return const HMBChip(
+        label: 'Managed locally',
+        tone: HMBChipTone.accent,
+        icon: Icons.home_repair_service,
+      );
+    }
+
+    final invoiceNum = invoice.invoiceNum;
     if (invoiceNum == null || invoiceNum.isEmpty) {
       return const HMBChip(
         label: 'Not uploaded',

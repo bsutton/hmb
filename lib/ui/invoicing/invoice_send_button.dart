@@ -42,6 +42,10 @@ class BuildSendButton extends StatelessWidget {
     label: 'View/Send...',
     hint: 'View and optionally email the Invoice',
     onPressed: () async {
+      if (invoice.isExternallyDeletedOrVoided) {
+        HMBToast.error('Voided or deleted invoices cannot be sent.');
+        return;
+      }
       var billBookingFee = true;
       var displayCosts = true;
       var displayGroupHeaders = true;

@@ -17,6 +17,7 @@ import 'package:money2/money2.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:strings/strings.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
@@ -185,6 +186,23 @@ Future<File> generateInvoicePdf(
                         pw.Text(
                           '''Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}''',
                         ),
+                        if (invoice.externalSyncStatus ==
+                            InvoiceExternalSyncStatus.voided) ...[
+                          pw.SizedBox(height: 6),
+                          pw.Text(
+                            'VOIDED',
+                            style: pw.TextStyle(
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.red,
+                            ),
+                          ),
+                          if (Strings.isNotBlank(invoice.voidDescription))
+                            pw.Text(
+                              'Reason: ${invoice.voidDescription}',
+                              style: const pw.TextStyle(fontSize: 11),
+                            ),
+                        ],
                       ],
                     ),
                     // Right column: Customer and Contact details

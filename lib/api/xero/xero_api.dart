@@ -79,7 +79,7 @@ class XeroApi {
 ''',
     );
     if (response.statusCode != 200) {
-      throw Exception('Error deleting invoice: ${response.body}');
+      throw Exception('Error voiding invoice: ${response.body}');
     }
     return response;
   }

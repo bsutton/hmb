@@ -42,6 +42,7 @@ import '../widgets/layout/surface.dart';
 import 'edit_invoice_line_dialog.dart';
 import 'invoice_details.dart';
 import 'invoice_send_button.dart';
+import 'void_invoice_dialog.dart';
 
 class InvoiceEditScreen extends StatefulWidget {
   final InvoiceDetails invoiceDetails;
@@ -79,6 +80,9 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       final job = details.job;
       final customer = details.customer;
       final lineGroups = details.lineGroups;
+      final readOnlyInvoice = invoice.isExternallyDeletedOrVoided;
+      final canChangeInvoice =
+          !readOnlyInvoice && !invoice.isUploaded() && !invoice.sent;
 
       // Show all details without expansions
       return Scaffold(
@@ -101,6 +105,8 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                 Text('Job: ${job.summary} #${job.id}'),
                 Text('Total: ${invoice.totalAmount}'),
                 Text('Sync: ${_syncStatusLabel(invoice.externalSyncStatus)}'),
+                if (Strings.isNotBlank(invoice.voidDescription))
+                  Text('Void description: ${invoice.voidDescription}'),
                 Text(
                   'Payment tracking: '
                   '${_paymentSourceLabel(invoice.paymentSource)}',
@@ -114,52 +120,73 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                     'This is a legacy invoice. Convert it to manual '
                     'tracking if it is no longer managed in Xero.',
                   ),
-                FutureBuilderEx<bool>(
-                  future: ExternalAccounting().isEnabled(),
-                  builder: (context, accountingEnabled) => Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      HMBButton(
-                        label: 'Upload to Xero',
-                        hint: 'Upload the invoice to Xero',
-                        onPressed: () {
-                          BlockingUI().run(() async {
-                            await _uploadInvoiceToXero();
-                          }, label: 'Uploading Invoice');
-                        },
-                      ),
-                      if (invoice.canConvertToManualTracking)
-                        HMBButton(
-                          label: 'Convert to Manual Tracking',
-                          hint: 'Switch this legacy invoice to manual tracking',
-                          onPressed: () async {
-                            await _convertToManualTracking();
-                          },
+                if (!readOnlyInvoice)
+                  FutureBuilderEx<bool>(
+                    future: ExternalAccounting().isEnabled(),
+                    builder: (context, accountingEnabled) => Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (!invoice.isUploaded() && !invoice.isManagedLocally)
+                          HMBButton(
+                            label: 'Upload to Xero',
+                            hint: 'Upload the invoice to Xero',
+                            onPressed: () {
+                              BlockingUI().run(() async {
+                                await _uploadInvoiceToXero();
+                              }, label: 'Uploading Invoice');
+                            },
+                          ),
+                        if (invoice.canConvertToManualTracking)
+                          HMBButton(
+                            label: 'Convert to Manual Tracking',
+                            hint:
+                                'Switch this legacy invoice to manual tracking',
+                            onPressed: () async {
+                              await _convertToManualTracking();
+                            },
+                          ),
+                        if (invoice.canMarkPaidManually)
+                          HMBButton(
+                            label: 'Mark as Paid',
+                            hint: 'Mark this invoice as paid',
+                            onPressed: () async {
+                              await _markInvoicePaid();
+                            },
+                          ),
+                        if (invoice.canVoid)
+                          HMBButton(
+                            label: 'Void Invoice',
+                            hint: 'Void this sent invoice',
+                            onPressed: () async {
+                              if (await promptAndVoidInvoice(
+                                context: context,
+                                invoice: invoice,
+                              )) {
+                                await _reloadInvoice();
+                                if (!mounted) {
+                                  return;
+                                }
+                                setState(() {});
+                              }
+                            },
+                          ),
+                        if (canChangeInvoice)
+                          HMBButton(
+                            label: 'Add Discount',
+                            hint: 'Add a discount line to this invoice.',
+                            onPressed: () async {
+                              await _promptAddDiscount();
+                            },
+                          ),
+                        BuildSendButton(
+                          context: context,
+                          mounted: mounted,
+                          invoice: invoice,
                         ),
-                      if (invoice.canMarkPaidManually)
-                        HMBButton(
-                          label: 'Mark as Paid',
-                          hint: 'Mark this invoice as paid',
-                          onPressed: () async {
-                            await _markInvoicePaid();
-                          },
-                        ),
-                      HMBButton(
-                        label: 'Add Discount',
-                        hint: 'Add a discount line to this invoice.',
-                        onPressed: () async {
-                          await _promptAddDiscount();
-                        },
-                      ),
-                      BuildSendButton(
-                        context: context,
-                        mounted: mounted,
-                        invoice: invoice,
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
                 // Show all line groups and lines inline
                 for (final group in lineGroups) ...[
                   Text(
@@ -169,16 +196,19 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                   for (final line in group.lines) ...[
                     HMBListCard(
                       title: line.description,
-                      actions: [
-                        HMBEditIcon(
-                          onPressed: () => _editInvoiceLine(context, line),
-                          hint: 'Edit Invoice Line',
-                        ),
-                        HMBDeleteIcon(
-                          onPressed: () => _deleteInvoiceLine(line),
-                          hint: 'Delete Invoice Line',
-                        ),
-                      ],
+                      actions: canChangeInvoice
+                          ? [
+                              HMBEditIcon(
+                                onPressed: () =>
+                                    _editInvoiceLine(context, line),
+                                hint: 'Edit Invoice Line',
+                              ),
+                              HMBDeleteIcon(
+                                onPressed: () => _deleteInvoiceLine(line),
+                                hint: 'Delete Invoice Line',
+                              ),
+                            ]
+                          : [],
                       children: [
                         Text(
                           '''Qty: ${line.quantity}, Unit: ${line.unitPrice}, Status: ${line.status.description}''',
@@ -238,6 +268,10 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
     }
     try {
       final invoice = (await _invoiceDetails).invoice;
+      if (invoice.isUploaded()) {
+        HMBToast.error('This invoice has already been uploaded to Xero.');
+        return;
+      }
       final contact = await DaoContact().getById(invoice.billingContactId);
       if (contact == null) {
         HMBToast.error('You must first add a Contact to the Customer');
@@ -280,6 +314,17 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   }
 
   Future<void> _editInvoiceLine(BuildContext context, InvoiceLine line) async {
+    final invoice = (await _invoiceDetails).invoice;
+    if (invoice.isUploaded() ||
+        invoice.sent ||
+        invoice.isExternallyDeletedOrVoided) {
+      HMBToast.error('Sent, uploaded or voided invoices cannot be edited.');
+      return;
+    }
+    if (!context.mounted) {
+      return;
+    }
+
     final editedLine = await showDialog<InvoiceLine>(
       context: context,
       builder: (context) => EditInvoiceLineDialog(line: line),
@@ -297,6 +342,17 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   }
 
   Future<void> _deleteInvoiceLine(InvoiceLine line) async {
+    final invoice = (await _invoiceDetails).invoice;
+    if (invoice.isUploaded() ||
+        invoice.sent ||
+        invoice.isExternallyDeletedOrVoided) {
+      HMBToast.error('Sent, uploaded or voided invoices cannot be edited.');
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+
     await showConfirmDeleteDialog(
       nameSingular: 'Invoice line',
       context: context,
@@ -341,8 +397,19 @@ Total: ${line.lineTotal}'''),
   }
 
   Future<void> _promptAddDiscount() async {
+    final details = await _invoiceDetails;
+    if (details.invoice.isUploaded() ||
+        details.invoice.sent ||
+        details.invoice.isExternallyDeletedOrVoided) {
+      HMBToast.error('Sent, uploaded or voided invoices cannot be changed.');
+      return;
+    }
+
     final descriptionController = TextEditingController(text: 'Discount');
     final amountController = TextEditingController();
+    if (!mounted) {
+      return;
+    }
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -388,7 +455,6 @@ Total: ${line.lineTotal}'''),
     }
 
     try {
-      final details = await _invoiceDetails;
       await DaoInvoice().addDiscountLine(
         invoice: details.invoice,
         amount: amount,

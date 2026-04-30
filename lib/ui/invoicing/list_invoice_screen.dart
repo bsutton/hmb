@@ -32,6 +32,7 @@ import 'edit_invoice_screen.dart';
 import 'invoice_details.dart';
 import 'list_invoice_card.dart';
 import 'select_job_dialog.dart';
+import 'void_invoice_dialog.dart';
 
 class InvoiceListScreen extends StatefulWidget {
   // The list of invoice are restricted to this job if passed.
@@ -107,7 +108,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     var invoices = await DaoInvoice().getByFilter(
       filterText,
       includePaid: showPaidInvoices,
-      paidSince: !_isJobRestricted && !showOlderPaidInvoices && showPaidInvoices
+      paidSince: !showOlderPaidInvoices && showPaidInvoices
           ? _recentlyPaidCutoff
           : null,
       includeDeletedOrVoided: showDeletedOrVoidedInvoices,
@@ -292,10 +293,13 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
       final invoiceDetails = await InvoiceDetails.load(invoice.id);
       final sent = invoiceDetails.invoice.sent;
       if (sent) {
-        HMBToast.error(
-          'This invoice has been sent to the customer and cannot be deleted',
+        if (!mounted) {
+          return false;
+        }
+        return promptAndVoidInvoice(
+          context: context,
+          invoice: invoiceDetails.invoice,
         );
-        return false;
       }
 
       if (await ExternalAccounting().isEnabled()) {

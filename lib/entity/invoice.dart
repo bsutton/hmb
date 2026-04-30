@@ -83,6 +83,7 @@ class Invoice extends Entity<Invoice> {
   InvoiceExternalSyncStatus externalSyncStatus;
   InvoicePaymentSource paymentSource;
   int? billingContactId;
+  String? voidDescription;
 
   Invoice._({
     required super.id,
@@ -99,6 +100,7 @@ class Invoice extends Entity<Invoice> {
     this.paidDate,
     this.externalSyncStatus = InvoiceExternalSyncStatus.none,
     this.paymentSource = InvoicePaymentSource.manual,
+    this.voidDescription,
   }) : super() {
     this.dueDate =
         dueDate ??
@@ -116,6 +118,7 @@ class Invoice extends Entity<Invoice> {
     this.paidDate,
     this.externalSyncStatus = InvoiceExternalSyncStatus.none,
     this.paymentSource = InvoicePaymentSource.manual,
+    this.voidDescription,
   }) : super.forInsert();
 
   Invoice copyWith({
@@ -130,6 +133,7 @@ class Invoice extends Entity<Invoice> {
     InvoiceExternalSyncStatus? externalSyncStatus,
     InvoicePaymentSource? paymentSource,
     int? billingContactId,
+    String? voidDescription,
   }) => Invoice._(
     id: id,
     jobId: jobId ?? this.jobId,
@@ -143,6 +147,7 @@ class Invoice extends Entity<Invoice> {
     externalSyncStatus: externalSyncStatus ?? this.externalSyncStatus,
     paymentSource: paymentSource ?? this.paymentSource,
     billingContactId: billingContactId ?? this.billingContactId,
+    voidDescription: voidDescription ?? this.voidDescription,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
   );
@@ -290,10 +295,13 @@ You must set the Account Code and Item Code in System | Integration before you c
   bool get canConvertToManualTracking =>
       paymentSource == InvoicePaymentSource.unknown;
 
+  bool get isManagedLocally =>
+      paymentSource == InvoicePaymentSource.manual && !isUploaded();
+
   bool get canMarkPaidManually =>
-      !paid &&
-      !isExternallyDeletedOrVoided &&
-      paymentSource == InvoicePaymentSource.manual;
+      !paid && !isExternallyDeletedOrVoided && isManagedLocally;
+
+  bool get canVoid => sent && !paid && !isExternallyDeletedOrVoided;
 
   factory Invoice.fromMap(Map<String, dynamic> map) {
     final legacyStatus = map['external_status'] as String?;
@@ -326,6 +334,7 @@ You must set the Account Code and Item Code in System | Integration before you c
           ? InvoicePaymentSource.xero
           : InvoicePaymentSource.unknown,
       billingContactId: map['billing_contact_id'] as int?,
+      voidDescription: map['void_description'] as String?,
     );
   }
 
@@ -345,5 +354,6 @@ You must set the Account Code and Item Code in System | Integration before you c
     'external_sync_status': externalSyncStatus.ordinal,
     'payment_source': paymentSource.ordinal,
     'billing_contact_id': billingContactId,
+    'void_description': voidDescription,
   };
 }

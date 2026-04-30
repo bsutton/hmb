@@ -53,7 +53,24 @@ class DaoInvoice extends Dao<Invoice> {
 
   Future<List<Invoice>> getUnsent({int? jobId}) async {
     final db = withoutTransaction();
-    final where = jobId == null ? 'sent = 0' : 'sent = 0 AND job_id = ?';
+    final where = jobId == null
+        ? '''
+sent = 0
+AND IFNULL(paid, 0) = 0
+AND IFNULL(external_sync_status, 0) NOT IN (
+  ${InvoiceExternalSyncStatus.deleted.ordinal},
+  ${InvoiceExternalSyncStatus.voided.ordinal}
+)
+'''
+        : '''
+sent = 0
+AND IFNULL(paid, 0) = 0
+AND IFNULL(external_sync_status, 0) NOT IN (
+  ${InvoiceExternalSyncStatus.deleted.ordinal},
+  ${InvoiceExternalSyncStatus.voided.ordinal}
+)
+AND job_id = ?
+''';
     final args = jobId == null ? <Object?>[] : <Object?>[jobId];
     return toList(
       await db.query(
@@ -244,6 +261,33 @@ ORDER BY modified_date DESC
       return;
     }
     await update(invoice.copyWith(paymentSource: InvoicePaymentSource.manual));
+  }
+
+  Future<void> voidInvoice({
+    required int invoiceId,
+    required String description,
+  }) async {
+    final invoice = await getById(invoiceId);
+    if (invoice == null) {
+      return;
+    }
+    if (invoice.paid) {
+      throw InvoiceException('An invoice with a payment may not be voided.');
+    }
+    if (invoice.isExternallyDeletedOrVoided) {
+      throw InvoiceException('This invoice has already been voided.');
+    }
+    if (Strings.isBlank(description)) {
+      throw InvoiceException('A void description is required.');
+    }
+
+    await update(
+      invoice.copyWith(
+        externalSyncStatus: InvoiceExternalSyncStatus.voided,
+        voidDescription: description.trim(),
+      ),
+    );
+    await DaoMilestone().detachFromInvoice(invoice.id);
   }
 
   @override

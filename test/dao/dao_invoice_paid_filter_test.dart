@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
+import 'package:hmb/util/dart/exceptions.dart';
 import 'package:hmb/util/dart/local_date.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 import 'package:money2/money2.dart';
@@ -219,6 +220,94 @@ void main() {
     expect(updated.canMarkPaidManually, isTrue);
   });
 
+  test('locally managed invoices are returned as unsent until paid', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.timeAndMaterial,
+      hourlyRate: MoneyEx.zero,
+      summary: 'Local invoice unsent job',
+    );
+
+    final localInvoice = Invoice.forInsert(
+      jobId: job.id,
+      dueDate: LocalDate.today(),
+      totalAmount: Money.fromInt(1000, isoCode: 'AUD'),
+      billingContactId: job.billingContactId,
+    );
+    await DaoInvoice().insert(localInvoice);
+
+    final paidLocalInvoice = Invoice.forInsert(
+      jobId: job.id,
+      dueDate: LocalDate.today(),
+      totalAmount: Money.fromInt(1000, isoCode: 'AUD'),
+      billingContactId: job.billingContactId,
+      paid: true,
+      paidDate: DateTime.now(),
+    );
+    await DaoInvoice().insert(paidLocalInvoice);
+
+    final deletedInvoice = Invoice.forInsert(
+      jobId: job.id,
+      dueDate: LocalDate.today(),
+      totalAmount: Money.fromInt(1000, isoCode: 'AUD'),
+      billingContactId: job.billingContactId,
+      externalSyncStatus: InvoiceExternalSyncStatus.deleted,
+      paymentSource: InvoicePaymentSource.xero,
+    );
+    await DaoInvoice().insert(deletedInvoice);
+
+    final unsent = await DaoInvoice().getUnsent();
+
+    expect(unsent.map((invoice) => invoice.id), contains(localInvoice.id));
+    expect(
+      unsent.map((invoice) => invoice.id),
+      isNot(contains(paidLocalInvoice.id)),
+    );
+    expect(
+      unsent.map((invoice) => invoice.id),
+      isNot(contains(deletedInvoice.id)),
+    );
+  });
+
+  test('paid locally managed invoices honour the recent paid window', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.timeAndMaterial,
+      hourlyRate: MoneyEx.zero,
+      summary: 'Local invoice paid filter job',
+    );
+
+    final oldLocalPaid = Invoice.forInsert(
+      jobId: job.id,
+      dueDate: LocalDate.today(),
+      totalAmount: Money.fromInt(1000, isoCode: 'AUD'),
+      billingContactId: job.billingContactId,
+      paid: true,
+      paidDate: DateTime.now().subtract(const Duration(days: 45)),
+    );
+    await DaoInvoice().insert(oldLocalPaid);
+
+    final recentLocalPaid = Invoice.forInsert(
+      jobId: job.id,
+      dueDate: LocalDate.today(),
+      totalAmount: Money.fromInt(1000, isoCode: 'AUD'),
+      billingContactId: job.billingContactId,
+      paid: true,
+      paidDate: DateTime.now().subtract(const Duration(days: 10)),
+    );
+    await DaoInvoice().insert(recentLocalPaid);
+
+    final visible = await DaoInvoice().getByFilter(
+      null,
+      includePaid: true,
+      paidSince: DateTime.now().subtract(const Duration(days: 30)),
+    );
+
+    expect(visible.map((invoice) => invoice.id), contains(recentLocalPaid.id));
+    expect(
+      visible.map((invoice) => invoice.id),
+      isNot(contains(oldLocalPaid.id)),
+    );
+  });
+
   test(
     'getByFilter matches job number, customer name and contact name',
     () async {
@@ -256,4 +345,107 @@ void main() {
       expect(byContact.map((i) => i.invoiceNum), contains('INV-SEARCH'));
     },
   );
+
+  test(
+    'voidInvoice records description and hides invoice by default',
+    () async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.zero,
+        summary: 'Invoice void job',
+      );
+
+      final invoice = Invoice.forInsert(
+        jobId: job.id,
+        dueDate: LocalDate.today(),
+        totalAmount: Money.fromInt(1000, isoCode: 'AUD'),
+        billingContactId: job.billingContactId,
+        sent: true,
+      );
+      await DaoInvoice().insert(invoice);
+
+      await DaoInvoice().voidInvoice(
+        invoiceId: invoice.id,
+        description: 'Incorrect milestone amount',
+      );
+
+      final updated = await DaoInvoice().getById(invoice.id);
+      expect(updated!.externalSyncStatus, InvoiceExternalSyncStatus.voided);
+      expect(updated.voidDescription, 'Incorrect milestone amount');
+
+      final visible = await DaoInvoice().getByFilter(null, includePaid: true);
+      expect(visible.map((i) => i.id), isNot(contains(invoice.id)));
+    },
+  );
+
+  test('voidInvoice refuses invoices with payments', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.timeAndMaterial,
+      hourlyRate: MoneyEx.zero,
+      summary: 'Invoice paid void job',
+    );
+
+    final invoice = Invoice.forInsert(
+      jobId: job.id,
+      dueDate: LocalDate.today(),
+      totalAmount: Money.fromInt(1000, isoCode: 'AUD'),
+      billingContactId: job.billingContactId,
+      sent: true,
+      paid: true,
+      paidDate: DateTime.now(),
+    );
+    await DaoInvoice().insert(invoice);
+
+    expect(
+      () => DaoInvoice().voidInvoice(
+        invoiceId: invoice.id,
+        description: 'Incorrect invoice',
+      ),
+      throwsA(isA<InvoiceException>()),
+    );
+  });
+
+  test('voidInvoice detaches milestone so it can be invoiced again', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.fixedPrice,
+      hourlyRate: MoneyEx.zero,
+      summary: 'Milestone invoice void job',
+    );
+
+    final quote = Quote.forInsert(
+      jobId: job.id,
+      summary: 'Milestone quote',
+      description: 'Quote description',
+      totalAmount: Money.fromInt(1000, isoCode: 'AUD'),
+      state: QuoteState.approved,
+    );
+    await DaoQuote().insert(quote);
+
+    final invoice = Invoice.forInsert(
+      jobId: job.id,
+      dueDate: LocalDate.today(),
+      totalAmount: Money.fromInt(1000, isoCode: 'AUD'),
+      billingContactId: job.billingContactId,
+      sent: true,
+    );
+    await DaoInvoice().insert(invoice);
+
+    final milestone = Milestone.forInsert(
+      quoteId: quote.id,
+      invoiceId: invoice.id,
+      milestoneNumber: 1,
+      paymentAmount: Money.fromInt(1000, isoCode: 'AUD'),
+      paymentPercentage: Percentage.fromInt(100),
+      milestoneDescription: 'Deposit',
+    );
+    await DaoMilestone().insert(milestone);
+
+    await DaoInvoice().voidInvoice(
+      invoiceId: invoice.id,
+      description: 'Wrong milestone billed',
+    );
+
+    final updatedMilestone = await DaoMilestone().getById(milestone.id);
+    expect(updatedMilestone!.invoiceId, isNull);
+  });
 }
