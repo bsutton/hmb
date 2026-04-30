@@ -41,23 +41,39 @@ class AccountingDashboardPage extends StatelessWidget {
         if (warning == null) {
           return const HMBEmpty();
         }
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Surface(
-            rounded: true,
-            child: Row(
-              children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.amber),
-                const HMBSpacer(width: true),
-                Expanded(
-                  child: Text(
-                    warning.details,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
+        return FutureBuilder<void>(
+          future: June.getState<AccountingSyncWarningState>(
+            AccountingSyncWarningState.new,
+          ).clearIfIntegrationDisabled(),
+          builder: (context, snapshot) {
+            final currentWarning = June.getState<AccountingSyncWarningState>(
+              AccountingSyncWarningState.new,
+            ).warning;
+            if (currentWarning == null) {
+              return const HMBEmpty();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Surface(
+                rounded: true,
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.amber,
+                    ),
+                    const HMBSpacer(width: true),
+                    Expanded(
+                      child: Text(
+                        currentWarning.details,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     ),

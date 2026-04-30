@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../api/external_accounting.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/invoice.dart';
+import '../../util/dart/exceptions.dart';
 import '../../util/dart/log.dart';
 import 'xero_api.dart';
 
@@ -78,13 +79,21 @@ class XeroInvoicePaymentSyncService {
       }
       return updated;
     } catch (e, st) {
-      Log.e('Failed to sync Xero invoice payments: $e\n$st');
+      if (_isConfigurationWarning(e)) {
+        Log.w('Skipping Xero invoice payment sync: $e');
+      } else {
+        Log.e('Failed to sync Xero invoice payments: $e\n$st');
+      }
       onError?.call(e, st);
       return 0;
     } finally {
       _inFlight = false;
     }
   }
+
+  bool _isConfigurationWarning(Object error) =>
+      error is InvoiceException &&
+      error.message.contains('The Xero credentials are not set');
 
   Future<_RemoteInvoiceState?> _loadRemoteState(Invoice invoice) async {
     final externalId = invoice.externalInvoiceId;

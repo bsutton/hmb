@@ -37,13 +37,33 @@ class AccountingDashlet extends StatelessWidget {
           AccountingSyncWarningState.new,
         ).warning;
         if (warning != null) {
-          return const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
-              SizedBox(width: 8),
-              Text('Warning', style: TextStyle(fontWeight: FontWeight.bold)),
-            ],
+          return FutureBuilder<void>(
+            future: June.getState<AccountingSyncWarningState>(
+              AccountingSyncWarningState.new,
+            ).clearIfIntegrationDisabled(),
+            builder: (context, snapshot) {
+              final currentWarning = June.getState<AccountingSyncWarningState>(
+                AccountingSyncWarningState.new,
+              ).warning;
+              if (currentWarning == null) {
+                return buildInvoiceCountSummary(context, dv.value!);
+              }
+              return const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.amber,
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Warning',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              );
+            },
           );
         }
         return buildInvoiceCountSummary(context, dv.value!);

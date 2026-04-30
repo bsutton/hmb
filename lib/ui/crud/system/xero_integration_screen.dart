@@ -15,10 +15,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:june/june.dart';
 import 'package:strings/strings.dart';
 
 import '../../../dao/dao_system.dart';
 import '../../../util/flutter/app_title.dart';
+import '../../nav/dashboards/sync_warnings.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
@@ -94,6 +96,12 @@ class XeroIntegrationScreenState extends State<XeroIntegrationScreen> {
       ..invoiceLineInventoryItemCode = _invoiceLineItemCodeController.text
       ..enableXeroIntegration = _xeroEnabled;
     await DaoSystem().update(system);
+
+    if (!_xeroEnabled) {
+      June.getState<AccountingSyncWarningState>(
+        AccountingSyncWarningState.new,
+      ).clearWarning();
+    }
 
     if (mounted) {
       if (widget.showButtons) {

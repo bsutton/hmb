@@ -13,6 +13,8 @@
 
 import 'package:june/june.dart';
 
+import '../../../api/external_accounting.dart';
+
 class SyncWarning {
   final String summary;
   final String details;
@@ -37,7 +39,14 @@ abstract class SyncWarningState extends JuneState {
   }
 }
 
-class AccountingSyncWarningState extends SyncWarningState {}
+class AccountingSyncWarningState extends SyncWarningState {
+  Future<void> clearIfIntegrationDisabled() async {
+    if (warning == null || await ExternalAccounting().isEnabled()) {
+      return;
+    }
+    clearWarning();
+  }
+}
 
 class BookingRequestsSyncWarningState extends SyncWarningState {}
 
