@@ -38,6 +38,7 @@ dependencies:
   dlibphonenumber: ^1.1.18
   email_validator: ^3.0.0
   equatable: ^2.0.0
+  fdb_helper: ^1.3.0
   ffi: ^2.1.2
   file_picker: ^10.1.2
   fixed: ^6.0.0
