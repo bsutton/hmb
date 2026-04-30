@@ -63,7 +63,19 @@
             "args": [
                 "-a"
             ]
-        }
-
+        },
+        {
+            "name": "room-editor-chrome",
+            "request": "launch",
+            "program": "packages/room_editor/example/lib/main.dart",
+            "type": "dart",
+            "deviceId": "chrome",
+            "args": [
+                "-d",
+                "chrome",
+                "--web-port",
+                "8000"
+            ],
+        },
     ]
 }

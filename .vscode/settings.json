@@ -20,12 +20,15 @@
             "driver": "SQLite",
             "name": "hmb",
             "database": "${workspaceFolder:hmb}/database/handyman.db"
+        },
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "documents",
+            "database": "/home/bsutton/Documents/handyman.db"
         }
     ],
-
-    
     "sqltools.useNodeRuntime": true,
-
     // Enable the experiment
     "dart.experimentalSidebarDevTools": true,
     // Customise which sections are shown in the sidebar, in an editor tab, or external browser.
@@ -36,6 +39,6 @@
         "memory": "external",
         "network": "external",
         "performance": "external",
-        "default": "external",        // Default other tabs to an editor tab beside the current code editor
+        "default": "external", // Default other tabs to an editor tab beside the current code editor
     },
 }
