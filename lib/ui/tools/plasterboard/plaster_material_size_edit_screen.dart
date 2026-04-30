@@ -32,6 +32,7 @@ class _PlasterMaterialSizeEditScreenState
   final _heightController = TextEditingController();
 
   late PreferredUnitSystem _unitSystem;
+  var _excludedFromLayout = false;
   int? _supplierId;
   String? _error;
 
@@ -43,6 +44,7 @@ class _PlasterMaterialSizeEditScreenState
     if (material != null) {
       _supplierId = material.supplierId;
       _unitSystem = material.unitSystem;
+      _excludedFromLayout = material.excludedFromLayout;
       _nameController.text = material.name;
       _widthController.text = PlasterGeometry.formatDisplayLength(
         material.width,
@@ -100,6 +102,7 @@ class _PlasterMaterialSizeEditScreenState
             unitSystem: _unitSystem,
             width: width,
             height: height,
+            excludedFromLayout: _excludedFromLayout,
           )
         : widget.material!.copyWith(
             supplierId: supplierId,
@@ -107,6 +110,7 @@ class _PlasterMaterialSizeEditScreenState
             unitSystem: _unitSystem,
             width: width,
             height: height,
+            excludedFromLayout: _excludedFromLayout,
           );
 
     if (_isNew) {
@@ -179,6 +183,19 @@ class _PlasterMaterialSizeEditScreenState
               labelText: 'Length (${PlasterGeometry.unitLabel(_unitSystem)})',
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+          const SizedBox(height: 12),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Exclude from layout'),
+            subtitle: const Text(
+              'Keep this sheet in the supplier material list, but do not use '
+              'it when calculating plasterboard layouts.',
+            ),
+            value: _excludedFromLayout,
+            onChanged: (value) {
+              setState(() => _excludedFromLayout = value);
+            },
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),

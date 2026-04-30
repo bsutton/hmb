@@ -106,4 +106,57 @@ CREATE TABLE supplier (
       }
     },
   );
+
+  test('v173 adds plaster material layout exclusion flag', () async {
+    final dbPath = join(createTempDir(), 'plaster_material_v173.db');
+    final db = await CliDatabaseFactory().openDatabase(
+      dbPath,
+      options: OpenDatabaseOptions(),
+    );
+
+    try {
+      await db.execute('''
+CREATE TABLE plaster_material_size (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  supplier_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  unit_system TEXT NOT NULL,
+  width INTEGER NOT NULL,
+  height INTEGER NOT NULL,
+  created_date TEXT NOT NULL,
+  modified_date TEXT NOT NULL
+)
+''');
+      await db.insert('plaster_material_size', {
+        'supplier_id': 7,
+        'name': '1200 x 6000',
+        'unit_system': 'metric',
+        'width': 12000,
+        'height': 60000,
+        'created_date': '2026-03-24T00:00:00.000',
+        'modified_date': '2026-03-24T00:00:00.000',
+      });
+
+      final source = ProjectScriptSource();
+      final sql = await source.loadSQL('assets/sql/upgrade_scripts/v173.sql');
+      final statements = await parseSqlFile(sql);
+      for (final statement in statements) {
+        await db.execute(statement);
+      }
+
+      final columns = await db.rawQuery(
+        'PRAGMA table_info(plaster_material_size)',
+      );
+      final names = {
+        for (final row in columns) row['name'] as String? ?? '': true,
+      };
+      final rows = await db.query('plaster_material_size');
+
+      expect(names.containsKey('excluded_from_layout'), isTrue);
+      expect(rows.single['excluded_from_layout'], 0);
+    } finally {
+      await db.close();
+      delete(dbPath);
+    }
+  });
 }

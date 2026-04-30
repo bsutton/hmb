@@ -12,6 +12,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
   final PreferredUnitSystem unitSystem;
   final int width;
   final int height;
+  final bool excludedFromLayout;
 
   PlasterMaterialSize._({
     required super.id,
@@ -20,6 +21,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
     required this.unitSystem,
     required this.width,
     required this.height,
+    required this.excludedFromLayout,
     required super.createdDate,
     required super.modifiedDate,
   });
@@ -30,6 +32,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
     required this.unitSystem,
     required this.width,
     required this.height,
+    this.excludedFromLayout = false,
   }) : super.forInsert();
 
   PlasterMaterialSize copyWith({
@@ -38,6 +41,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
     PreferredUnitSystem? unitSystem,
     int? width,
     int? height,
+    bool? excludedFromLayout,
   }) => PlasterMaterialSize._(
     id: id,
     supplierId: supplierId ?? this.supplierId,
@@ -45,6 +49,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
     unitSystem: unitSystem ?? this.unitSystem,
     width: width ?? this.width,
     height: height ?? this.height,
+    excludedFromLayout: excludedFromLayout ?? this.excludedFromLayout,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
   );
@@ -59,6 +64,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
             : PreferredUnitSystem.metric,
         width: map['width'] as int? ?? 0,
         height: map['height'] as int? ?? 0,
+        excludedFromLayout: (map['excluded_from_layout'] as int? ?? 0) == 1,
         createdDate: DateTime.parse(map['created_date'] as String),
         modifiedDate: DateTime.parse(map['modified_date'] as String),
       );
@@ -71,6 +77,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
     'unit_system': unitSystem.name,
     'width': width,
     'height': height,
+    'excluded_from_layout': excludedFromLayout ? 1 : 0,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };

@@ -54,11 +54,28 @@ class PlasterMaterialSizeListScreen extends StatelessWidget {
           );
           final widthText = Text('Width: $widthLabel');
           final lengthText = Text('Length: $lengthLabel');
+          final statusText = Text(
+            material.excludedFromLayout
+                ? 'Excluded from layout'
+                : 'Available for layout',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: material.excludedFromLayout
+                  ? Theme.of(context).colorScheme.error
+                  : Theme.of(context).colorScheme.onSurface,
+            ),
+          );
 
           if (constraints.maxWidth < 420) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [widthText, const SizedBox(height: 4), lengthText],
+              children: [
+                widthText,
+                const SizedBox(height: 4),
+                lengthText,
+                const SizedBox(height: 4),
+                statusText,
+              ],
             );
           }
 
@@ -67,6 +84,8 @@ class PlasterMaterialSizeListScreen extends StatelessWidget {
               Expanded(child: widthText),
               const SizedBox(width: 12),
               Expanded(child: lengthText),
+              const SizedBox(width: 12),
+              Expanded(child: statusText),
             ],
           );
         },
