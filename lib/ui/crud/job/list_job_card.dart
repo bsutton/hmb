@@ -107,7 +107,7 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
         ),
         _buildNextActivity(),
         const HMBText('Description:', bold: true),
-        HMBTextBlock(job.description),
+        HMBTextBlock(job.description, maxLines: 1),
         MiniJobDashboard(job: job),
       ],
     ),

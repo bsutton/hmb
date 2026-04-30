@@ -43,171 +43,173 @@ class MiniJobDashboard extends StatelessWidget {
   const MiniJobDashboard({required this.job, super.key});
 
   @override
-  Widget build(BuildContext context) {
-    const dashletSize = 100.0;
-    return Center(
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          _dashlet(
-            child: DaoJuneBuilder.builder(
-              DaoToDo(),
-              builder: (context) => DashletCard<int>.builder(
-                label: 'Todo',
-                hint: 'Add action items to the job',
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final dashletSize = constraints.maxWidth < 456 ? 92.0 : 100.0;
+      return Center(
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _dashlet(
+              child: DaoJuneBuilder.builder(
+                DaoToDo(),
+                builder: (context) => DashletCard<int>.builder(
+                  label: 'Todo',
+                  hint: 'Add action items to the job',
+                  icon: Icons.task,
+                  compact: true,
+                  value: () async {
+                    final open = await DaoToDo().getOpenByJob(job.id);
+                    return DashletValue<int>(open.length);
+                  },
+                  builder: (_, _) => HMBFullPageChildScreen(
+                    title: 'Todo',
+                    child: ToDoListScreen(job: job),
+                  ),
+                ),
+              ),
+              size: dashletSize,
+            ),
+            _dashlet(
+              child: DashletCard<int>.builder(
+                label: 'Tasks',
+                hint: 'Task to be completed for this Job',
                 icon: Icons.task,
                 compact: true,
                 value: () async {
-                  final open = await DaoToDo().getOpenByJob(job.id);
-                  return DashletValue<int>(open.length);
+                  final all = await DaoTask().getTasksByJob(job.id);
+                  return DashletValue<int>(all.length);
                 },
                 builder: (_, _) => HMBFullPageChildScreen(
-                  title: 'Todo',
-                  child: ToDoListScreen(job: job),
+                  title: 'Tasks',
+                  child: TaskListScreen(parent: Parent(job), extended: true),
                 ),
               ),
+              size: dashletSize,
             ),
-            size: dashletSize,
-          ),
-          _dashlet(
-            child: DashletCard<int>.builder(
-              label: 'Tasks',
-              hint: 'Task to be completed for this Job',
-              icon: Icons.task,
-              compact: true,
-              value: () async {
-                final all = await DaoTask().getTasksByJob(job.id);
-                return DashletValue<int>(all.length);
-              },
-              builder: (_, _) => HMBFullPageChildScreen(
-                title: 'Tasks',
-                child: TaskListScreen(parent: Parent(job), extended: true),
-              ),
-            ),
-            size: dashletSize,
-          ),
-          _dashlet(
-            child: DashletCard<int>.builder(
-              label: 'Track',
-              hint: 'Track and View time recorded against Job Tasks',
-              icon: Icons.access_time,
-              compact: true,
-              value: () async {
-                final list = await DaoTimeEntry().getByJob(job.id);
-                return DashletValue<int>(list.length);
-              },
-              builder: (_, _) => HMBFullPageChildScreen(
-                title: 'Time Entries',
-                child: TimeEntryListScreen(job: job),
-              ),
-            ),
-            size: dashletSize,
-          ),
-          _dashlet(
-            child: DashletCard<String>.onTap(
-              label: 'Estimate',
-              hint: "Build an Estimate of a Job's cost",
-              icon: Icons.calculate,
-              compact: true,
-              value: () async => const DashletValue(''),
-              onTap: _openEstimateBuilder,
-            ),
-            size: dashletSize,
-          ),
-          _dashlet(
-            child: DashletCard<int>.builder(
-              label: 'Quotes',
-              hint: 'Quote a job based on an Estimate',
-              icon: Icons.format_quote,
-              compact: true,
-              value: () async {
-                final all = await DaoQuote().getByFilter(null);
-                final list = all.where((q) => q.jobId == job.id).toList();
-                return DashletValue<int>(list.length);
-              },
-              builder: (_, _) => HMBFullPageChildScreen(
-                title: 'Quotes',
-                child: QuoteListScreen(job: job),
-              ),
-            ),
-            size: dashletSize,
-          ),
-          _dashlet(
-            child: DashletCard<int>.builder(
-              label: 'Approve',
-              hint: 'Send tasks to the customer for approval',
-              icon: Icons.approval,
-              compact: true,
-              value: () async {
-                final all = await DaoTaskApproval().getByJob(job.id);
-                return DashletValue<int>(all.length);
-              },
-              builder: (_, _) => HMBFullPageChildScreen(
-                title: 'Task Approvals',
-                child: TaskApprovalListScreen(parent: Parent(job)),
-              ),
-            ),
-            size: dashletSize,
-          ),
-          _dashlet(
-            child: DashletCard<int>.builder(
-              label: 'Assign',
-              hint: 'Assign tasks to sub-contractors (Suppliers)',
-              icon: Icons.task,
-              compact: true,
-              value: () async {
-                final all = await DaoWorkAssignment().getByJob(job.id);
-                return DashletValue<int>(all.length);
-              },
-              builder: (_, _) => HMBFullPageChildScreen(
-                title: 'Assignments',
-                child: AssignmentListScreen(parent: Parent(job)),
-              ),
-            ),
-            size: dashletSize,
-          ),
-          FutureBuilderEx<bool>(
-            future: _shouldShowMilestones(),
-            builder: (_, show) {
-              if (show != true) {
-                return const SizedBox.shrink();
-              }
-              return _dashlet(
-                child: DashletCard<int>.onTap(
-                  label: 'Milestones',
-                  hint: 'Create and manage milestone payments for this Job',
-                  icon: Icons.flag,
-                  compact: true,
-                  value: _milestoneDashletValue,
-                  onTap: _openMilestones,
+            _dashlet(
+              child: DashletCard<int>.builder(
+                label: 'Track',
+                hint: 'Track and View time recorded against Job Tasks',
+                icon: Icons.access_time,
+                compact: true,
+                value: () async {
+                  final list = await DaoTimeEntry().getByJob(job.id);
+                  return DashletValue<int>(list.length);
+                },
+                builder: (_, _) => HMBFullPageChildScreen(
+                  title: 'Time Entries',
+                  child: TimeEntryListScreen(job: job),
                 ),
-                size: dashletSize,
-              );
-            },
-          ),
-          _dashlet(
-            child: DashletCard<int>.builder(
-              label: 'Invoices',
-              hint: 'Invoice a Job',
-              icon: Icons.attach_money,
-              compact: true,
-              value: () async {
-                final all = await DaoInvoice().getByFilter(null);
-                final list = all.where((i) => i.jobId == job.id).toList();
-                return DashletValue<int>(list.length);
-              },
-              builder: (_, _) => HMBFullPageChildScreen(
-                title: 'Invoices',
-                child: InvoiceListScreen(jobRestriction: job),
               ),
+              size: dashletSize,
             ),
-            size: dashletSize,
-          ),
-        ],
-      ),
-    );
-  }
+            _dashlet(
+              child: DashletCard<String>.onTap(
+                label: 'Estimate',
+                hint: "Build an Estimate of a Job's cost",
+                icon: Icons.calculate,
+                compact: true,
+                value: () async => const DashletValue(''),
+                onTap: _openEstimateBuilder,
+              ),
+              size: dashletSize,
+            ),
+            _dashlet(
+              child: DashletCard<int>.builder(
+                label: 'Quotes',
+                hint: 'Quote a job based on an Estimate',
+                icon: Icons.format_quote,
+                compact: true,
+                value: () async {
+                  final all = await DaoQuote().getByFilter(null);
+                  final list = all.where((q) => q.jobId == job.id).toList();
+                  return DashletValue<int>(list.length);
+                },
+                builder: (_, _) => HMBFullPageChildScreen(
+                  title: 'Quotes',
+                  child: QuoteListScreen(job: job),
+                ),
+              ),
+              size: dashletSize,
+            ),
+            _dashlet(
+              child: DashletCard<int>.builder(
+                label: 'Approve',
+                hint: 'Send tasks to the customer for approval',
+                icon: Icons.approval,
+                compact: true,
+                value: () async {
+                  final all = await DaoTaskApproval().getByJob(job.id);
+                  return DashletValue<int>(all.length);
+                },
+                builder: (_, _) => HMBFullPageChildScreen(
+                  title: 'Task Approvals',
+                  child: TaskApprovalListScreen(parent: Parent(job)),
+                ),
+              ),
+              size: dashletSize,
+            ),
+            _dashlet(
+              child: DashletCard<int>.builder(
+                label: 'Assign',
+                hint: 'Assign tasks to sub-contractors (Suppliers)',
+                icon: Icons.task,
+                compact: true,
+                value: () async {
+                  final all = await DaoWorkAssignment().getByJob(job.id);
+                  return DashletValue<int>(all.length);
+                },
+                builder: (_, _) => HMBFullPageChildScreen(
+                  title: 'Assignments',
+                  child: AssignmentListScreen(parent: Parent(job)),
+                ),
+              ),
+              size: dashletSize,
+            ),
+            FutureBuilderEx<bool>(
+              future: _shouldShowMilestones(),
+              builder: (_, show) {
+                if (show != true) {
+                  return const SizedBox.shrink();
+                }
+                return _dashlet(
+                  child: DashletCard<int>.onTap(
+                    label: 'Milestones',
+                    hint: 'Create and manage milestone payments for this Job',
+                    icon: Icons.flag,
+                    compact: true,
+                    value: _milestoneDashletValue,
+                    onTap: _openMilestones,
+                  ),
+                  size: dashletSize,
+                );
+              },
+            ),
+            _dashlet(
+              child: DashletCard<int>.builder(
+                label: 'Invoices',
+                hint: 'Invoice a Job',
+                icon: Icons.attach_money,
+                compact: true,
+                value: () async {
+                  final all = await DaoInvoice().getByFilter(null);
+                  final list = all.where((i) => i.jobId == job.id).toList();
+                  return DashletValue<int>(list.length);
+                },
+                builder: (_, _) => HMBFullPageChildScreen(
+                  title: 'Invoices',
+                  child: InvoiceListScreen(jobRestriction: job),
+                ),
+              ),
+              size: dashletSize,
+            ),
+          ],
+        ),
+      );
+    },
+  );
 
   /// Wraps a dashlet in a fixed-size container
   Widget _dashlet({required Widget child, required double size}) =>

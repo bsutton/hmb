@@ -289,12 +289,10 @@ class _JobEstimateBuilderScreenState
             ),
             Expanded(
               child: HMBPadding(
-                child: ListView.builder(
-                  itemCount: tasks.length,
-                  itemBuilder: (context, index) {
-                    final task = tasks[index];
-                    return _buildTaskCard(task);
-                  },
+                child: SingleChildScrollView(
+                  child: HMBColumn(
+                    children: [for (final task in tasks) _buildTaskCard(task)],
+                  ),
                 ),
               ),
             ),
@@ -696,9 +694,8 @@ class _JobEstimateBuilderScreenState
     required String helpTitle,
     required String helpDetails,
   }) => InkWell(
-    onLongPress: () => unawaited(
-      _showFilterHelp(title: helpTitle, details: helpDetails),
-    ),
+    onLongPress: () =>
+        unawaited(_showFilterHelp(title: helpTitle, details: helpDetails)),
     child: HMBToggle(
       label: label,
       hint: hint,
@@ -805,8 +802,7 @@ class _EstimateMarginDialogState extends State<_EstimateMarginDialog> {
   }
 
   Percentage get _percentValue =>
-      Percentage.tryParse(_percentController.text) ??
-      Percentage.zero;
+      Percentage.tryParse(_percentController.text) ?? Percentage.zero;
 
   Money get _calculatedAmount =>
       widget.combinedCost.plusPercentage(_percentValue) - widget.combinedCost;
@@ -874,10 +870,7 @@ class _EstimateMarginDialogState extends State<_EstimateMarginDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ToggleButtons(
-          isSelected: [
-            _mode == MarginMode.percent,
-            _mode == MarginMode.amount,
-          ],
+          isSelected: [_mode == MarginMode.percent, _mode == MarginMode.amount],
           color: Theme.of(context).colorScheme.onSurface,
           selectedColor: Theme.of(context).colorScheme.onPrimary,
           fillColor: Theme.of(context).colorScheme.primary,
