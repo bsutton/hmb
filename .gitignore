@@ -64,3 +64,4 @@ error.txt
 logs/analyzer.txt
 build.err
 .env
+android/build/*
