@@ -31,6 +31,10 @@ class BenchmarkSheetExplorerPane extends StatelessWidget {
         }
         return left.label.compareTo(right.label);
       });
+    final labels = BenchmarkExplorerSheetLabels.forLayouts(
+      scenario.sheets,
+      orderedLayouts,
+    );
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -64,7 +68,7 @@ class BenchmarkSheetExplorerPane extends StatelessWidget {
                 const SizedBox(height: 16),
                 for (final layout in orderedLayouts) ...[
                   Text(
-                    layout.isCeiling ? 'Ceiling' : 'Wall',
+                    _surfaceSectionTitle(layout),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -77,17 +81,22 @@ class BenchmarkSheetExplorerPane extends StatelessWidget {
                           ))
                             sheet,
                       ];
-                      final labels = BenchmarkExplorerSheetLabels(layoutSheets);
                       final sheetNumbers = [
                         for (final sheet in layoutSheets)
                           labels.sheetLabel(sheet),
                       ];
+                      final placementLabels = _surfacePlacementLabels(
+                        layout: layout,
+                        sheets: layoutSheets,
+                        labels: labels,
+                      );
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           BenchmarkSurfaceSheetSection(
                             layout: layout,
                             sheetNumbers: sheetNumbers,
+                            placementLabels: placementLabels,
                           ),
                           const SizedBox(height: 12),
                           if (layoutSheets.isEmpty)
@@ -121,6 +130,61 @@ class BenchmarkSheetExplorerPane extends StatelessWidget {
       ),
     );
   }
+}
+
+String _surfaceSectionTitle(BenchmarkVisualSurfaceLayout layout) {
+  if (layout.isCeiling) {
+    return 'Ceiling';
+  }
+  final wallNumber = layout.lineId;
+  return wallNumber == null ? 'Wall' : 'Wall $wallNumber';
+}
+
+List<String> _surfacePlacementLabels({
+  required BenchmarkVisualSurfaceLayout layout,
+  required List<BenchmarkVisualProjectSheet> sheets,
+  required BenchmarkExplorerSheetLabels labels,
+}) {
+  final candidates = <({int width, int height, String label})>[];
+  for (final sheet in sheets) {
+    final relevantPieces = [
+      for (final piece in sheet.usedPieces)
+        if (piece.surfaceLabel == layout.label) piece,
+    ];
+    for (var i = 0; i < relevantPieces.length; i++) {
+      final piece = relevantPieces[i];
+      final sheetLabel = labels.sheetLabel(sheet);
+      final subsheetLabel = labels.subsheetLabelForPiece(sheet, piece);
+      final pieceLabel = relevantPieces.length > 1
+          ? '$sheetLabel.${i + 1}'
+          : subsheetLabel ?? sheetLabel;
+      candidates.add((
+        width: piece.width,
+        height: piece.height,
+        label: pieceLabel,
+      ));
+    }
+  }
+
+  return [
+    for (final placement in layout.placements)
+      _takeMatchingPlacementLabel(candidates, placement) ?? '',
+  ];
+}
+
+String? _takeMatchingPlacementLabel(
+  List<({int width, int height, String label})> candidates,
+  BenchmarkVisualSheetPlacement placement,
+) {
+  final index = candidates.indexWhere(
+    (candidate) =>
+        candidate.width == placement.width &&
+        candidate.height == placement.height,
+  );
+  if (index == -1) {
+    return null;
+  }
+  return candidates.removeAt(index).label;
 }
 
 class BenchmarkProjectSheetLegend extends StatelessWidget {
@@ -157,7 +221,47 @@ class BenchmarkExplorerSheetLabels {
     for (var i = 0; i < sheets.length; i++) {
       sheetLabelsByNumber[sheets[i].sheetNumber] = '${i + 1}';
     }
+    return BenchmarkExplorerSheetLabels._fromLabels(
+      sheets,
+      sheetLabelsByNumber,
+    );
+  }
 
+  factory BenchmarkExplorerSheetLabels.forLayouts(
+    List<BenchmarkVisualProjectSheet> sheets,
+    List<BenchmarkVisualSurfaceLayout> layouts,
+  ) {
+    final sheetLabelsByNumber = <int, String>{};
+    var nextLabel = 1;
+    for (final layout in layouts) {
+      for (final sheet in sheets) {
+        if (sheetLabelsByNumber.containsKey(sheet.sheetNumber)) {
+          continue;
+        }
+        final usedOnLayout = sheet.usedPieces.any(
+          (piece) => piece.surfaceLabel == layout.label,
+        );
+        if (usedOnLayout) {
+          sheetLabelsByNumber[sheet.sheetNumber] = '${nextLabel++}';
+        }
+      }
+    }
+    for (final sheet in sheets) {
+      sheetLabelsByNumber.putIfAbsent(
+        sheet.sheetNumber,
+        () => '${nextLabel++}',
+      );
+    }
+    return BenchmarkExplorerSheetLabels._fromLabels(
+      sheets,
+      sheetLabelsByNumber,
+    );
+  }
+
+  factory BenchmarkExplorerSheetLabels._fromLabels(
+    List<BenchmarkVisualProjectSheet> sheets,
+    Map<int, String> sheetLabelsByNumber,
+  ) {
     final nextBranchIndexBySource = <int, int>{};
     final subsheetLabelsByPair = <String, String>{};
     for (final sheet in sheets) {
@@ -207,11 +311,13 @@ class BenchmarkExplorerSheetLabels {
 class BenchmarkSurfaceSheetSection extends StatelessWidget {
   final BenchmarkVisualSurfaceLayout layout;
   final List<String> sheetNumbers;
+  final List<String> placementLabels;
 
   const BenchmarkSurfaceSheetSection({
     super.key,
     required this.layout,
     required this.sheetNumbers,
+    required this.placementLabels,
   });
 
   @override
@@ -223,9 +329,9 @@ class BenchmarkSurfaceSheetSection extends StatelessWidget {
         children: [
           BenchmarkSurfaceLayoutDiagram(
             layout: layout,
-            width: 112,
-            height: 72,
-            sheetNumbers: sheetNumbers,
+            width: 168,
+            height: 108,
+            sheetNumbers: placementLabels,
             showDimensionsOverlay: false,
           ),
           const SizedBox(width: 12),
@@ -362,7 +468,7 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
       );
       canvas.drawRect(sheetRect, sheet);
       canvas.drawRect(sheetRect, sheetBorder);
-      if (i < sheetNumbers.length) {
+      if (i < sheetNumbers.length && sheetNumbers[i].isNotEmpty) {
         _paintSheetNumberBadge(canvas, sheetRect, sheetNumbers[i]);
       }
       if (showSheetMeasurements) {
@@ -381,30 +487,28 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
   }
 
   void _paintSheetNumberBadge(Canvas canvas, Rect rect, String text) {
-    if (rect.width < 18 || rect.height < 18) {
+    if (rect.width < 10 || rect.height < 8) {
       return;
     }
+    final fontSize = rect.height < 24 ? 9.0 : 10.5;
     final textPainter = TextPainter(
       text: TextSpan(
         text: text,
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.white,
-          fontSize: 7,
+          fontSize: fontSize,
           fontWeight: FontWeight.w600,
         ),
       ),
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
       maxLines: 1,
-    )..layout(maxWidth: rect.width - 6);
+    )..layout(maxWidth: max(1, rect.width - 4));
+    final badgeWidth = min(rect.width - 2, textPainter.width + 9);
+    final badgeHeight = min(rect.height - 2, textPainter.height + 6);
     final badge = RRect.fromRectAndRadius(
-      Rect.fromLTWH(
-        rect.left + 4,
-        rect.top + 4,
-        textPainter.width + 8,
-        textPainter.height + 6,
-      ),
-      const Radius.circular(10),
+      Rect.fromLTWH(rect.left + 1, rect.top + 1, badgeWidth, badgeHeight),
+      const Radius.circular(8),
     );
     canvas.drawRRect(badge, Paint()..color = const Color(0xDD111827));
     textPainter.paint(
@@ -720,6 +824,10 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
     final unusedOffcutPaint = Paint()..color = const Color(0xFF4A90E2);
     final reusedLaterOffcutPaint = Paint()..color = const Color(0xFF0EA5A8);
     final scrapPaint = Paint()..color = const Color(0xFFE67E22);
+    final cutLinePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
     final metrics = _ProjectSheetDiagramMetrics.fromSize(
       sheet: sheet,
       rotateForLayout: rotateForLayout,
@@ -735,12 +843,14 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
         piece.width,
         piece.height,
       );
-      canvas.drawRect(pieceRect, piece.reusedOffcut ? reusedPaint : freshPaint);
-      if (piece.reusedOffcut) {
-        final subsheetLabel = labels.subsheetLabelForPiece(sheet, piece);
-        if (subsheetLabel != null) {
-          _paintPieceBadge(canvas, pieceRect, subsheetLabel);
-        }
+      canvas.drawRect(
+        pieceRect,
+        _isSameSurfaceReuse(piece) ? freshPaint : reusedPaint,
+      );
+      canvas.drawRect(pieceRect, cutLinePaint);
+      final pieceLabel = _pieceLabel(piece);
+      if (pieceLabel != null) {
+        _paintPieceBadge(canvas, pieceRect, pieceLabel);
       }
       if (piece.surfaceLabel == currentLayoutLabel) {
         _paintLabel(
@@ -764,9 +874,40 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
             ? (offcut.reusedLater ? reusedLaterOffcutPaint : unusedOffcutPaint)
             : scrapPaint,
       );
+      canvas.drawRect(offcutRect, cutLinePaint);
     }
 
     canvas.drawRect(rect, border);
+  }
+
+  String? _pieceLabel(BenchmarkVisualProjectSheetPiece piece) {
+    final relevantPieces = [
+      for (final candidate in sheet.usedPieces)
+        if (candidate.surfaceLabel == piece.surfaceLabel) candidate,
+    ];
+    if (relevantPieces.length <= 1) {
+      return null;
+    }
+    final index = relevantPieces.indexOf(piece);
+    if (index == -1) {
+      return null;
+    }
+    if (relevantPieces.length > 1) {
+      return '${labels.sheetLabel(sheet)}.${index + 1}';
+    }
+    return labels.subsheetLabelForPiece(sheet, piece);
+  }
+
+  bool _isSameSurfaceReuse(BenchmarkVisualProjectSheetPiece piece) {
+    if (!piece.reusedOffcut) {
+      return true;
+    }
+    return piece.sourceSheetNumber == sheet.sheetNumber &&
+        sheet.usedPieces.any(
+          (candidate) =>
+              !identical(candidate, piece) &&
+              candidate.surfaceLabel == piece.surfaceLabel,
+        );
   }
 
   void _paintPieceBadge(Canvas canvas, Rect rect, String text) {

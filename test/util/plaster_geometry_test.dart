@@ -174,6 +174,52 @@ void main() {
       expect(layouts, isEmpty);
     });
 
+    test('calculate layout ignores excluded material sizes', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Room 1',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        plasterCeiling: false,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      final selectedWallOnly = [
+        lines[0],
+        for (final line in lines.skip(1)) line.copyWith(plasterSelected: false),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '6000 x 1200',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 60000,
+          height: 12000,
+          excludedFromLayout: true,
+        ),
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '2400 x 1200',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 24000,
+          height: 12000,
+        ),
+      ];
+
+      final layouts = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(
+          room: room,
+          lines: selectedWallOnly,
+          openings: const [],
+        ),
+      ], materials);
+
+      expect(layouts, hasLength(1));
+      expect(layouts.single.material.name, '2400 x 1200');
+    });
+
     test('horizontal wall layouts use a half-height starter course', () {
       final room = PlasterRoom.forInsert(
         projectId: 1,

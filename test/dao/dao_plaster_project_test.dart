@@ -85,6 +85,7 @@ void main() {
       unitSystem: PreferredUnitSystem.metric,
       width: 12000,
       height: 24000,
+      excludedFromLayout: true,
     );
     await DaoPlasterMaterialSize().insert(material);
 
@@ -111,5 +112,6 @@ void main() {
     expect(reloadedMaterials, hasLength(1));
     expect(reloadedMaterials.single.name, '1200 x 2400');
     expect(reloadedMaterials.single.supplierId, supplier.id);
+    expect(reloadedMaterials.single.excludedFromLayout, isTrue);
   });
 }

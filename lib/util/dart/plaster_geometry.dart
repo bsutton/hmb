@@ -1089,6 +1089,10 @@ class PlasterGeometry {
     List<PlasterMaterialSize> materials, {
     _PlasterSearchBudget? budget,
   }) {
+    final availableMaterials = [
+      for (final material in materials)
+        if (!material.excludedFromLayout) material,
+    ];
     const planWaves = <int>[18, 36, 72, 144, 288];
     var best = const _ProjectLayoutState(
       layouts: [],
@@ -1115,7 +1119,7 @@ class PlasterGeometry {
       }
       final candidateGroups = _candidateGroupsForPlanLimit(
         roomShapes,
-        materials,
+        availableMaterials,
         planLimit: planLimit,
       );
       final candidate = _optimizeProjectLayouts(
@@ -2019,6 +2023,22 @@ class PlasterGeometry {
     return left.wasteArea < right.wasteArea;
   }
 
+  static bool _isBetterPackingScore(
+    _ProjectLayoutScore left,
+    _ProjectLayoutScore right,
+  ) {
+    if (left.sheetCount != right.sheetCount) {
+      return left.sheetCount < right.sheetCount;
+    }
+    if (left.wasteArea != right.wasteArea) {
+      return left.wasteArea < right.wasteArea;
+    }
+    if (left.fragmentationPenalty != right.fragmentationPenalty) {
+      return left.fragmentationPenalty < right.fragmentationPenalty;
+    }
+    return left.reusableArea > right.reusableArea;
+  }
+
   static List<(PlasterSheetDirection, int, int)> _directionCandidates({
     required PlasterSheetDirection direction,
     required int sheetWidth,
@@ -2265,10 +2285,10 @@ class PlasterGeometry {
         );
       }
       nextBeam.sort((left, right) {
-        if (_isBetterProjectScore(left.score, right.score, budget?.scoring)) {
+        if (_isBetterPackingScore(left.score, right.score)) {
           return -1;
         }
-        if (_isBetterProjectScore(right.score, left.score, budget?.scoring)) {
+        if (_isBetterPackingScore(right.score, left.score)) {
           return 1;
         }
         return 0;

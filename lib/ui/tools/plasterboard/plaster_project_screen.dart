@@ -391,6 +391,11 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       return;
     }
     await _stopAnalysis(markStopped: false);
+    final materials = await _loadMaterialsForSupplier(_project.supplierId);
+    if (!mounted) {
+      return;
+    }
+    _materials = materials;
     final shapes = _buildShapes();
     final generation = ++_analysisGeneration;
     if (shapes.isEmpty || _materials.isEmpty) {
@@ -813,6 +818,18 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     );
   }
 
+  Future<void> _setCurrentRoomPlasterCeiling(bool value) async {
+    if (_rooms.isEmpty || _currentRoom.room.plasterCeiling == value) {
+      return;
+    }
+    await _updateCurrentRoom(
+      _currentRoom.copyWith(
+        room: _currentRoom.room.copyWith(plasterCeiling: value),
+      ),
+      trackUndo: false,
+    );
+  }
+
   Future<void> _openEditorFramingSettings() async {
     if (_rooms.isEmpty || !mounted) {
       return;
@@ -840,10 +857,12 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                 _roomCeilingFramingOffsetController,
             roomCeilingFixingFaceWidthController:
                 _roomCeilingFixingFaceWidthController,
+            plasterCeiling: _currentRoom.room.plasterCeiling,
             hasSelectedWall: _selectedLineIndex != null,
             lineStudSpacingController: _lineStudSpacingController,
             lineStudOffsetController: _lineStudOffsetController,
             lineFixingFaceWidthController: _lineFixingFaceWidthController,
+            onPlasterCeilingChanged: _setCurrentRoomPlasterCeiling,
             onCommitCeilingHeight: _commitCeilingHeight,
             onCommitSelectedRoomCeilingOverrides:
                 _commitSelectedRoomCeilingOverrides,
@@ -1015,7 +1034,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       final existingOpenings = openingDao.toList(existingOpeningRows);
       final keptOpeningIds = <int>{};
       for (var i = 0; i < bundle.openings.length; i++) {
-        final opening = bundle.openings[i];
+        var opening = bundle.openings[i];
+        opening = opening.copyWith(
+          lineId: lineIdMap[opening.lineId] ?? opening.lineId,
+        );
         if (!bundle.lines.any((line) => line.id == opening.lineId)) {
           continue;
         }
@@ -1065,6 +1087,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
           ))
             constraint.copyWith(
               lineId: lineIdMap[constraint.lineId] ?? constraint.lineId,
+              targetValue: constraint.type == PlasterConstraintType.parallel
+                  ? lineIdMap[constraint.targetValue] ?? constraint.targetValue
+                  : constraint.targetValue,
+              clearTargetValue: constraint.targetValue == null,
             ),
       ];
       for (var i = 0; i < bundle.constraints.length; i++) {
@@ -1721,6 +1747,16 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     RoomEditorDocument document,
     _RoomBundle base,
   ) {
+    final existingLinesById = {for (final line in base.lines) line.id: line};
+    final editorToHostLineIds = <int, int>{};
+    for (final line in document.bundle.lines) {
+      editorToHostLineIds[line.id] = existingLinesById.containsKey(line.id)
+          ? line.id
+          : -line.id.abs();
+    }
+    final existingOpeningsById = {
+      for (final opening in base.openings) opening.id: opening,
+    };
     final existingConstraintsByKey =
         <(int, PlasterConstraintType), PlasterRoomConstraint>{
           for (final constraint in base.constraints)
@@ -1729,17 +1765,24 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     final constraints = <PlasterRoomConstraint>[];
     for (final constraint in document.constraints) {
       final type = _fromEditorConstraintType(constraint.type);
-      final existing = existingConstraintsByKey[(constraint.lineId, type)];
+      final lineId = editorToHostLineIds[constraint.lineId];
+      if (lineId == null) {
+        continue;
+      }
+      final targetValue = type == PlasterConstraintType.parallel
+          ? editorToHostLineIds[constraint.targetValue]
+          : constraint.targetValue;
+      final existing = existingConstraintsByKey[(lineId, type)];
       constraints.add(
         existing?.copyWith(
-              targetValue: constraint.targetValue,
-              clearTargetValue: constraint.targetValue == null,
+              targetValue: targetValue,
+              clearTargetValue: targetValue == null,
             ) ??
             PlasterRoomConstraint.forInsert(
               roomId: base.room.id,
-              lineId: constraint.lineId,
+              lineId: lineId,
               type: type,
-              targetValue: constraint.targetValue,
+              targetValue: targetValue,
             ),
       );
     }
@@ -1747,26 +1790,50 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     return base.copyWith(
       room: base.room.copyWith(plasterCeiling: document.bundle.plasterCeiling),
       lines: [
-        for (var i = 0; i < base.lines.length; i++)
-          base.lines[i].copyWith(
-            seqNo: document.bundle.lines[i].seqNo,
-            startX: document.bundle.lines[i].startX,
-            startY: document.bundle.lines[i].startY,
-            length: document.bundle.lines[i].length,
-          ),
+        for (final line in document.bundle.lines)
+          (existingLinesById[line.id]?.copyWith(
+                seqNo: line.seqNo,
+                startX: line.startX,
+                startY: line.startY,
+                length: line.length,
+              ) ??
+              (PlasterRoomLine.forInsert(
+                roomId: base.room.id,
+                seqNo: line.seqNo,
+                startX: line.startX,
+                startY: line.startY,
+                length: line.length,
+              )..id = editorToHostLineIds[line.id]!)),
       ],
       openings: [
-        for (var i = 0; i < base.openings.length; i++)
-          base.openings[i].copyWith(
-            offsetFromStart: document.bundle.openings[i].offsetFromStart,
-            width: document.bundle.openings[i].width,
-            height: document.bundle.openings[i].height,
-            sillHeight: document.bundle.openings[i].sillHeight,
-            distanceToStartWall:
-                document.bundle.openings[i].distanceToStartWall,
-            distanceToEndWall:
-                document.bundle.openings[i].distanceToEndWall,
-          ),
+        for (final opening in document.bundle.openings)
+          if (editorToHostLineIds.containsKey(opening.lineId))
+            (existingOpeningsById[opening.id]?.copyWith(
+                  lineId: editorToHostLineIds[opening.lineId],
+                  type: opening.type == RoomEditorOpeningType.door
+                      ? PlasterOpeningType.door
+                      : PlasterOpeningType.window,
+                  offsetFromStart: opening.offsetFromStart,
+                  width: opening.width,
+                  height: opening.height,
+                  sillHeight: opening.sillHeight,
+                  distanceToStartWall: opening.distanceToStartWall,
+                  clearDistanceToStartWall: opening.distanceToStartWall == null,
+                  distanceToEndWall: opening.distanceToEndWall,
+                  clearDistanceToEndWall: opening.distanceToEndWall == null,
+                ) ??
+                PlasterRoomOpening.forInsert(
+                  lineId: editorToHostLineIds[opening.lineId]!,
+                  type: opening.type == RoomEditorOpeningType.door
+                      ? PlasterOpeningType.door
+                      : PlasterOpeningType.window,
+                  offsetFromStart: opening.offsetFromStart,
+                  width: opening.width,
+                  height: opening.height,
+                  sillHeight: opening.sillHeight,
+                  distanceToStartWall: opening.distanceToStartWall,
+                  distanceToEndWall: opening.distanceToEndWall,
+                )),
       ],
       constraints: constraints,
     );
@@ -1845,10 +1912,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
               width: command.openingDraft!.width,
               height: command.openingDraft!.height,
               sillHeight: command.openingDraft!.sillHeight,
-              distanceToStartWall:
-                  command.openingDraft!.distanceToStartWall,
-              distanceToEndWall:
-                  command.openingDraft!.distanceToEndWall,
+              distanceToStartWall: command.openingDraft!.distanceToStartWall,
+              distanceToEndWall: command.openingDraft!.distanceToEndWall,
             ),
           );
         }
@@ -2696,7 +2761,7 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
       canvas
         ..drawRect(sheetRect, sheet)
         ..drawRect(sheetRect, sheetBorder);
-      if (i < sheetNumbers.length) {
+      if (i < sheetNumbers.length && sheetNumbers[i].isNotEmpty) {
         _paintSheetNumberBadge(canvas, sheetRect, sheetNumbers[i]);
       }
       if (showSheetMeasurements) {
@@ -2715,30 +2780,28 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
   }
 
   void _paintSheetNumberBadge(Canvas canvas, Rect rect, String text) {
-    if (rect.width < 18 || rect.height < 18) {
+    if (rect.width < 10 || rect.height < 8) {
       return;
     }
+    final fontSize = rect.height < 24 ? 9.0 : 10.5;
     final textPainter = TextPainter(
       text: TextSpan(
         text: text,
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.white,
-          fontSize: 7,
+          fontSize: fontSize,
           fontWeight: FontWeight.w600,
         ),
       ),
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
       maxLines: 1,
-    )..layout(maxWidth: rect.width - 6);
+    )..layout(maxWidth: max(1, rect.width - 4));
+    final badgeWidth = min(rect.width - 2, textPainter.width + 9);
+    final badgeHeight = min(rect.height - 2, textPainter.height + 6);
     final badge = RRect.fromRectAndRadius(
-      Rect.fromLTWH(
-        rect.left + 4,
-        rect.top + 4,
-        textPainter.width + 8,
-        textPainter.height + 6,
-      ),
-      const Radius.circular(10),
+      Rect.fromLTWH(rect.left + 1, rect.top + 1, badgeWidth, badgeHeight),
+      const Radius.circular(8),
     );
     canvas.drawRRect(badge, Paint()..color = const Color(0xDD111827));
     textPainter.paint(
@@ -2815,6 +2878,7 @@ class _ProjectSheetExplorerScreen extends StatelessWidget {
         }
         return left.label.compareTo(right.label);
       });
+    final labels = _ExplorerSheetLabels.forLayouts(sheets, orderedLayouts);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Sheet Explorer')),
@@ -2825,7 +2889,7 @@ class _ProjectSheetExplorerScreen extends StatelessWidget {
           const SizedBox(height: 16),
           for (final layout in orderedLayouts) ...[
             Text(
-              layout.isCeiling ? 'Ceiling' : 'Wall',
+              _surfaceExplorerTitle(layout),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -2838,16 +2902,21 @@ class _ProjectSheetExplorerScreen extends StatelessWidget {
                     ))
                       sheet,
                 ];
-                final labels = _ExplorerSheetLabels(layoutSheets);
                 final sheetNumbers = [
                   for (final sheet in layoutSheets) labels.sheetLabel(sheet),
                 ];
+                final placementLabels = _surfacePlacementLabels(
+                  layout: layout,
+                  sheets: sheets,
+                  labels: labels,
+                );
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _SurfaceSheetExplorerSection(
                       layout: layout,
                       sheetNumbers: sheetNumbers,
+                      placementLabels: placementLabels,
                     ),
                     const SizedBox(height: 12),
                     if (layoutSheets.isEmpty)
@@ -2912,7 +2981,41 @@ class _ExplorerSheetLabels {
     for (var i = 0; i < sheets.length; i++) {
       sheetLabelsByNumber[sheets[i].sheetNumber] = '${i + 1}';
     }
+    return _ExplorerSheetLabels._fromLabels(sheets, sheetLabelsByNumber);
+  }
 
+  factory _ExplorerSheetLabels.forLayouts(
+    List<PlasterProjectSheet> sheets,
+    List<PlasterSurfaceLayout> layouts,
+  ) {
+    final sheetLabelsByNumber = <int, String>{};
+    var nextLabel = 1;
+    for (final layout in layouts) {
+      for (final sheet in sheets) {
+        if (sheetLabelsByNumber.containsKey(sheet.sheetNumber)) {
+          continue;
+        }
+        final usedOnLayout = sheet.usedPieces.any(
+          (piece) => piece.surfaceLabel == layout.label,
+        );
+        if (usedOnLayout) {
+          sheetLabelsByNumber[sheet.sheetNumber] = '${nextLabel++}';
+        }
+      }
+    }
+    for (final sheet in sheets) {
+      sheetLabelsByNumber.putIfAbsent(
+        sheet.sheetNumber,
+        () => '${nextLabel++}',
+      );
+    }
+    return _ExplorerSheetLabels._fromLabels(sheets, sheetLabelsByNumber);
+  }
+
+  factory _ExplorerSheetLabels._fromLabels(
+    List<PlasterProjectSheet> sheets,
+    Map<int, String> sheetLabelsByNumber,
+  ) {
     final nextBranchIndexBySource = <int, int>{};
     final subsheetLabelsByPair = <String, String>{};
     for (final sheet in sheets) {
@@ -2956,13 +3059,70 @@ class _ExplorerSheetLabels {
   }
 }
 
+String _surfaceExplorerTitle(PlasterSurfaceLayout layout) {
+  if (layout.isCeiling) {
+    return 'Ceiling';
+  }
+  final wallNumber = layout.lineId;
+  return wallNumber == null ? 'Wall' : 'Wall $wallNumber';
+}
+
+List<String> _surfacePlacementLabels({
+  required PlasterSurfaceLayout layout,
+  required List<PlasterProjectSheet> sheets,
+  required _ExplorerSheetLabels labels,
+}) {
+  final candidates = <({int width, int height, String label})>[];
+  for (final sheet in sheets) {
+    final relevantPieces = [
+      for (final piece in sheet.usedPieces)
+        if (piece.surfaceLabel == layout.label) piece,
+    ];
+    for (var i = 0; i < relevantPieces.length; i++) {
+      final piece = relevantPieces[i];
+      final sheetLabel = labels.sheetLabel(sheet);
+      final subsheetLabel = labels.subsheetLabelForPiece(sheet, piece);
+      final pieceLabel = relevantPieces.length > 1
+          ? '$sheetLabel.${i + 1}'
+          : subsheetLabel ?? sheetLabel;
+      candidates.add((
+        width: piece.width,
+        height: piece.height,
+        label: pieceLabel,
+      ));
+    }
+  }
+
+  return [
+    for (final placement in layout.placements)
+      _takeMatchingPlacementLabel(candidates, placement) ?? '',
+  ];
+}
+
+String? _takeMatchingPlacementLabel(
+  List<({int width, int height, String label})> candidates,
+  PlasterSheetPlacement placement,
+) {
+  final index = candidates.indexWhere(
+    (candidate) =>
+        candidate.width == placement.width &&
+        candidate.height == placement.height,
+  );
+  if (index == -1) {
+    return null;
+  }
+  return candidates.removeAt(index).label;
+}
+
 class _SurfaceSheetExplorerSection extends StatelessWidget {
   final PlasterSurfaceLayout layout;
   final List<String> sheetNumbers;
+  final List<String> placementLabels;
 
   const _SurfaceSheetExplorerSection({
     required this.layout,
     required this.sheetNumbers,
+    required this.placementLabels,
   });
 
   void _openZoom(BuildContext context) {
@@ -2972,7 +3132,7 @@ class _SurfaceSheetExplorerSection extends StatelessWidget {
           builder: (_) => _SurfaceLayoutViewerScreen(
             layout: layout,
             unitSystem: layout.material.unitSystem,
-            sheetNumbers: sheetNumbers,
+            sheetNumbers: placementLabels,
           ),
         ),
       ),
@@ -2989,9 +3149,9 @@ class _SurfaceSheetExplorerSection extends StatelessWidget {
           _SurfaceLayoutDiagram(
             layout: layout,
             unitSystem: layout.material.unitSystem,
-            width: 112,
-            height: 72,
-            sheetNumbers: sheetNumbers,
+            width: 168,
+            height: 108,
+            sheetNumbers: placementLabels,
             showDimensionsOverlay: false,
           ),
           const SizedBox(width: 12),
@@ -3413,6 +3573,10 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
     final unusedOffcutPaint = Paint()..color = const Color(0xFF4A90E2);
     final reusedLaterOffcutPaint = Paint()..color = const Color(0xFF0EA5A8);
     final scrapPaint = Paint()..color = const Color(0xFFE67E22);
+    final cutLinePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
     final metrics = _ProjectSheetDiagramMetrics.fromSize(
       sheet: sheet,
       rotateForLayout: rotateForLayout,
@@ -3428,12 +3592,15 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
         piece.width,
         piece.height,
       );
-      canvas.drawRect(pieceRect, piece.reusedOffcut ? reusedPaint : freshPaint);
-      if (piece.reusedOffcut) {
-        final subsheetLabel = labels.subsheetLabelForPiece(sheet, piece);
-        if (subsheetLabel != null) {
-          _paintPieceBadge(canvas, pieceRect, subsheetLabel);
-        }
+      canvas
+        ..drawRect(
+          pieceRect,
+          _isSameSurfaceReuse(piece) ? freshPaint : reusedPaint,
+        )
+        ..drawRect(pieceRect, cutLinePaint);
+      final pieceLabel = _pieceLabel(piece);
+      if (pieceLabel != null) {
+        _paintPieceBadge(canvas, pieceRect, pieceLabel);
       }
       if (piece.surfaceLabel == currentLayoutLabel) {
         _paintLabel(
@@ -3451,15 +3618,49 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
         offcut.width,
         offcut.height,
       );
-      canvas.drawRect(
-        offcutRect,
-        offcut.reusable
-            ? (offcut.reusedLater ? reusedLaterOffcutPaint : unusedOffcutPaint)
-            : scrapPaint,
-      );
+      canvas
+        ..drawRect(
+          offcutRect,
+          offcut.reusable
+              ? (offcut.reusedLater
+                    ? reusedLaterOffcutPaint
+                    : unusedOffcutPaint)
+              : scrapPaint,
+        )
+        ..drawRect(offcutRect, cutLinePaint);
     }
 
     canvas.drawRect(rect, border);
+  }
+
+  String? _pieceLabel(PlasterProjectSheetPiece piece) {
+    final relevantPieces = [
+      for (final candidate in sheet.usedPieces)
+        if (candidate.surfaceLabel == piece.surfaceLabel) candidate,
+    ];
+    if (relevantPieces.length <= 1) {
+      return null;
+    }
+    final index = relevantPieces.indexOf(piece);
+    if (index == -1) {
+      return null;
+    }
+    if (relevantPieces.length > 1) {
+      return '${labels.sheetLabel(sheet)}.${index + 1}';
+    }
+    return labels.subsheetLabelForPiece(sheet, piece);
+  }
+
+  bool _isSameSurfaceReuse(PlasterProjectSheetPiece piece) {
+    if (!piece.reusedOffcut) {
+      return true;
+    }
+    return piece.sourceSheetNumber == sheet.sheetNumber &&
+        sheet.usedPieces.any(
+          (candidate) =>
+              !identical(candidate, piece) &&
+              candidate.surfaceLabel == piece.surfaceLabel,
+        );
   }
 
   void _paintPieceBadge(Canvas canvas, Rect rect, String text) {
