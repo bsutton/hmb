@@ -27,8 +27,10 @@ import '../../dao/dao_quote_task_photo.dart';
 import '../../dao/dao_site.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/quote.dart';
+import '../../entity/quote_line.dart';
 import '../../entity/system.dart';
 import '../../util/dart/format.dart';
+import '../../util/dart/money_ex.dart';
 import '../../util/dart/photo_meta.dart';
 import '../../util/dart/tax_display_text.dart';
 import 'quote_details.dart';
@@ -49,10 +51,22 @@ Future<File> generateQuotePdf(
     quote.id,
     excludeHidden: true,
   );
+  final visibleGroups = jobQuote.groups
+      .map(
+        (group) => QuoteLineGroupWithLines(
+          group: group.group,
+          lines: group.lines.where(_isCustomerVisibleQuoteLine).toList(),
+        ),
+      )
+      .where((group) => group.lines.isNotEmpty)
+      .toList();
   final taxDisplayText = await buildPdfTaxDisplayText();
   final appendix = await _loadQuotePhotoAppendix(jobQuote);
 
-  final totalAmount = jobQuote.total;
+  final totalAmount = visibleGroups.fold(
+    MoneyEx.zero,
+    (sum, group) => sum + group.total,
+  );
   final phone = await formatPhone(system.bestPhone);
   final logo = await _getLogo(system);
   final systemColor = PdfColor.fromInt(system.billingColour);
@@ -236,7 +250,7 @@ Future<File> generateQuotePdf(
 
         // Task groups & items with group-level assumptions
         if (displayGroupHeaders) {
-          for (final group in jobQuote.groups) {
+          for (final group in visibleGroups) {
             content.addAll([
               pw.SizedBox(height: 4),
               pw.Row(
@@ -410,9 +424,10 @@ Future<File> generateQuotePdf(
                 ),
               );
             }
-            content..add(pw.SizedBox(height: 6))
-            ..add(pw.Divider())
-            ..add(pw.SizedBox(height: 8));
+            content
+              ..add(pw.SizedBox(height: 6))
+              ..add(pw.Divider())
+              ..add(pw.SizedBox(height: 8));
           }
         }
 
@@ -426,6 +441,9 @@ Future<File> generateQuotePdf(
   await file.writeAsBytes(await pdf.save());
   return file;
 }
+
+bool _isCustomerVisibleQuoteLine(QuoteLine quoteLine) =>
+    !quoteLine.description.startsWith('Quote margin (');
 
 Future<List<_QuotePhotoAppendixSection>> _loadQuotePhotoAppendix(
   QuoteDetails quoteDetails,
