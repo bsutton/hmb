@@ -16,6 +16,7 @@ class RoomEditorCanvas extends StatefulWidget {
   final bool showAllConstraints;
   final RoomEditorDocumentConstraintState documentConstraintState;
   final Map<RoomEditorConstraintKey, Offset> constraintVisualOffsets;
+  final Map<int, Offset> wallLabelOffsets;
   final Set<RoomEditorConstraintKey> highlightedConstraintKeys;
   final Set<int> highlightedImplicitLengthLineIndices;
   final Map<int, RoomEditorLinePresentation> linePresentations;
@@ -33,6 +34,7 @@ class RoomEditorCanvas extends StatefulWidget {
     required this.showAllConstraints,
     required this.documentConstraintState,
     required this.constraintVisualOffsets,
+    required this.wallLabelOffsets,
     required this.highlightedConstraintKeys,
     required this.highlightedImplicitLengthLineIndices,
     required this.linePresentations,
@@ -83,6 +85,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
   var _activePointerCount = 0;
   _CanvasTransform? _dragTransform;
   _CanvasWorldBounds? _dragViewportBounds;
+  _CanvasWorldBounds? _zoomViewportBounds;
   final _transformationController = TransformationController();
 
   @override
@@ -106,20 +109,18 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
   void didUpdateWidget(covariant RoomEditorCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.fitRequestId != widget.fitRequestId) {
+      _zoomViewportBounds = null;
       _transformationController.value = Matrix4.identity();
     }
   }
 
-  Matrix4 _centeredScaleMatrix(Size size, double scale) => Matrix4.identity()
-    ..translateByDouble(
-      size.width * (1 - scale) / 2,
-      size.height * (1 - scale) / 2,
-      0,
-      1,
-    )
-    ..scaleByDouble(scale, scale, 1, 1);
-
-  void _handlePointerSignal(PointerSignalEvent event, Size size) {
+  void _handlePointerSignal(
+    PointerSignalEvent event,
+    Size size,
+    _CanvasTransform transform,
+    _CanvasWorldBounds fitBounds,
+    _CanvasWorldBounds viewportBounds,
+  ) {
     if (event is! PointerScrollEvent) {
       return;
     }
@@ -136,33 +137,44 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
         return;
       }
 
-      final currentScale = _transformationController.value.getMaxScaleOnAxis();
       final scaleDelta = exp(-scrollEvent.scrollDelta.dy / 240);
-      final nextScale = (currentScale * scaleDelta).clamp(0.5, 4.0);
-      if (nextScale <= 1.0) {
-        if ((nextScale - 1.0).abs() < 0.001) {
-          _transformationController.value = Matrix4.identity();
-        } else {
-          _transformationController.value = _centeredScaleMatrix(
-            size,
-            nextScale,
-          );
-        }
-        return;
-      }
-      final appliedDelta = nextScale / currentScale;
-      if (appliedDelta == 1) {
+      final currentZoom = fitBounds.zoomRatioFor(viewportBounds);
+      final nextZoom = (currentZoom * scaleDelta).clamp(0.5, 4.0);
+      if ((nextZoom - currentZoom).abs() < 0.001) {
         return;
       }
 
-      final zoomMatrix = Matrix4.identity()
-        ..translateByDouble(localPosition.dx, localPosition.dy, 0, 1)
-        ..scaleByDouble(appliedDelta, appliedDelta, 1, 1)
-        ..translateByDouble(-localPosition.dx, -localPosition.dy, 0, 1);
-      _transformationController.value = zoomMatrix.multiplied(
-        _transformationController.value,
+      final canvasPosition = _toCanvasSpace(localPosition);
+      final worldAnchor = transform.toWorldOffset(canvasPosition);
+      final nextBounds = fitBounds.zoomed(
+        zoom: nextZoom,
+        anchor: worldAnchor,
+        anchorCanvasPosition: canvasPosition,
+        size: size,
       );
+      if (nextZoom <= 1.001) {
+        _zoomViewportBounds = nextZoom >= 0.999 ? null : nextBounds;
+      } else {
+        _zoomViewportBounds = nextBounds;
+      }
+      setState(() {});
     });
+  }
+
+  Offset _toCanvasSpace(Offset viewportPosition) {
+    final inverse = Matrix4.inverted(_transformationController.value);
+    return MatrixUtils.transformPoint(inverse, viewportPosition);
+  }
+
+  void _panCanvas(Offset delta) {
+    if (delta == Offset.zero) {
+      return;
+    }
+    final panMatrix = Matrix4.identity()
+      ..translateByDouble(delta.dx, delta.dy, 0, 1);
+    _transformationController.value = panMatrix.multiplied(
+      _transformationController.value,
+    );
   }
 
   bool get _isDraggingGeometry =>
@@ -170,6 +182,12 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
       _dragLineIndex != null ||
       _dragOpeningIndex != null ||
       _dragConstraintKey != null;
+
+  bool get _hasPendingGeometryDrag =>
+      _pendingDragIndex != null ||
+      _pendingDragLineIndex != null ||
+      _pendingDragOpeningIndex != null ||
+      _pendingDragConstraintKey != null;
 
   void _cancelGeometryDrag() {
     final draggingOpening = _dragOpeningIndex != null;
@@ -217,22 +235,6 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
   bool _isSecondaryMousePanEvent(PointerEvent event) =>
       event.kind == PointerDeviceKind.mouse &&
       (event.buttons & kSecondaryMouseButton) != 0;
-
-  void _panCanvas(Offset delta) {
-    if (delta == Offset.zero) {
-      return;
-    }
-    final panMatrix = Matrix4.identity()
-      ..translateByDouble(delta.dx, delta.dy, 0, 1);
-    _transformationController.value = panMatrix.multiplied(
-      _transformationController.value,
-    );
-  }
-
-  Offset _toCanvasSpace(Offset viewportPosition) {
-    final inverse = Matrix4.inverted(_transformationController.value);
-    return MatrixUtils.transformPoint(inverse, viewportPosition);
-  }
 
   List<_ConstraintVisual> _constraintVisuals(_CanvasTransform transform) =>
       buildConstraintVisuals(
@@ -283,6 +285,9 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     };
     final polygonDirection = _polygonDirection(lines);
     for (var i = lines.length - 1; i >= 0; i--) {
+      if (!widget.highlightedImplicitLengthLineIndices.contains(i)) {
+        continue;
+      }
       final line = lines[i];
       final hasVisibleLengthConstraint = visibleConstraintKeys.contains(
         RoomEditorConstraintKey(
@@ -397,6 +402,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     final constraintVisual = _hitConstraint(canvasPosition, transform);
     if (constraintVisual != null) {
       _dragTransform = transform;
+      _dragViewportBounds ??= transform.worldBounds;
       _pendingDragConstraintKey = constraintVisual.key;
       _pendingDragOpeningIndex = null;
       _pendingDragIndex = null;
@@ -409,15 +415,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     );
     if (_pendingDragOpeningIndex != null) {
       _dragTransform = transform;
-      _dragViewportBounds ??= _CanvasWorldBounds.fromDocument(
-        document: widget.document,
-        selection: widget.selection,
-        showAllConstraints: widget.showAllConstraints,
-        customOffsets: widget.constraintVisualOffsets,
-        linePresentations: widget.linePresentations,
-        intersectionPresentations: widget.intersectionPresentations,
-        size: transform.size,
-      );
+      _dragViewportBounds ??= transform.worldBounds;
       _pendingDragOpeningAnchorOffset = transform.openingDragAnchorOffset(
         _bundle.openings,
         canvasPosition,
@@ -431,15 +429,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     _pendingDragIndex = transform.hitIntersection(canvasPosition);
     if (_pendingDragIndex != null) {
       _dragTransform = transform;
-      _dragViewportBounds ??= _CanvasWorldBounds.fromDocument(
-        document: widget.document,
-        selection: widget.selection,
-        showAllConstraints: widget.showAllConstraints,
-        customOffsets: widget.constraintVisualOffsets,
-        linePresentations: widget.linePresentations,
-        intersectionPresentations: widget.intersectionPresentations,
-        size: transform.size,
-      );
+      _dragViewportBounds ??= transform.worldBounds;
       _pendingDragLineIndex = null;
       return;
     }
@@ -449,15 +439,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
         : lineCandidates.first.$1;
     if (_pendingDragLineIndex != null) {
       _dragTransform = transform;
-      _dragViewportBounds ??= _CanvasWorldBounds.fromDocument(
-        document: widget.document,
-        selection: widget.selection,
-        showAllConstraints: widget.showAllConstraints,
-        customOffsets: widget.constraintVisualOffsets,
-        linePresentations: widget.linePresentations,
-        intersectionPresentations: widget.intersectionPresentations,
-        size: transform.size,
-      );
+      _dragViewportBounds ??= transform.worldBounds;
     }
   }
 
@@ -786,17 +768,17 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
           ),
         );
       }
+      final fitBounds = _CanvasWorldBounds.fromDocument(
+        document: widget.document,
+        selection: widget.selection,
+        showAllConstraints: widget.showAllConstraints,
+        customOffsets: widget.constraintVisualOffsets,
+        linePresentations: widget.linePresentations,
+        intersectionPresentations: widget.intersectionPresentations,
+        size: size,
+      );
       final viewportBounds =
-          _dragViewportBounds ??
-          _CanvasWorldBounds.fromDocument(
-            document: widget.document,
-            selection: widget.selection,
-            showAllConstraints: widget.showAllConstraints,
-            customOffsets: widget.constraintVisualOffsets,
-            linePresentations: widget.linePresentations,
-            intersectionPresentations: widget.intersectionPresentations,
-            size: size,
-          );
+          _dragViewportBounds ?? _zoomViewportBounds ?? fitBounds;
       final transform = _CanvasTransform(
         _bundle.lines,
         size,
@@ -820,13 +802,19 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
             onPointerMove: (event) => _handlePointerMove(event, transform),
             onPointerUp: (event) => _handlePointerEnd(event.pointer),
             onPointerCancel: (event) => _handlePointerEnd(event.pointer),
-            onPointerSignal: (event) => _handlePointerSignal(event, size),
+            onPointerSignal: (event) => _handlePointerSignal(
+              event,
+              size,
+              transform,
+              fitBounds,
+              viewportBounds,
+            ),
             child: InteractiveViewer(
               transformationController: _transformationController,
-              minScale: 0.5,
-              maxScale: 4,
-              panEnabled: !_isDraggingGeometry,
-              scaleEnabled: !_isDraggingGeometry,
+              minScale: 1,
+              maxScale: 1,
+              panEnabled: !_isDraggingGeometry && !_hasPendingGeometryDrag,
+              scaleEnabled: false,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onLongPressStart: (details) => unawaited(
@@ -1055,7 +1043,7 @@ class _RoomPainter extends CustomPainter {
       );
       final isImplicitLengthHighlighted = highlightedImplicitLengthLineIndices
           .contains(i);
-      if (!hasVisibleLengthConstraint) {
+      if (!hasVisibleLengthConstraint && isImplicitLengthHighlighted) {
         final labelText = RoomCanvasGeometry.formatDisplayLength(
           line.length,
           bundle.unitSystem,
@@ -1404,6 +1392,9 @@ class RoomEditorConstraintVisualDebug {
   final Offset? center;
   final Offset? lineStart;
   final Offset? lineEnd;
+  final String? label;
+  final bool constrained;
+  final bool selected;
 
   const RoomEditorConstraintVisualDebug({
     required this.key,
@@ -1413,6 +1404,9 @@ class RoomEditorConstraintVisualDebug {
     this.center,
     this.lineStart,
     this.lineEnd,
+    this.label,
+    this.constrained = true,
+    this.selected = false,
   });
 }
 
@@ -1433,6 +1427,7 @@ class _ConstraintVisual {
   final Offset? dimensionAnchorEnd;
   final Offset? dragNormalWorld;
   final String? label;
+  final bool constrained;
   final IconData? icon;
   final String? badgeText;
 
@@ -1444,6 +1439,7 @@ class _ConstraintVisual {
     required this.anchor,
     required this.anchorWorld,
     required this.hitBox,
+    this.constrained = true,
     this.center,
     this.lineStart,
     this.lineEnd,
@@ -1457,30 +1453,7 @@ class _ConstraintVisual {
     this.badgeText,
   });
 
-  bool contains(Offset point) {
-    if (hitBox.contains(point)) {
-      return true;
-    }
-    if (kind == _ConstraintVisualKind.dimension) {
-      if (lineStart != null &&
-          lineEnd != null &&
-          _distanceToSegment(point, lineStart!, lineEnd!) <= 10) {
-        return true;
-      }
-      if (dimensionAnchorStart != null &&
-          extensionStart != null &&
-          _distanceToSegment(point, dimensionAnchorStart!, extensionStart!) <=
-              8) {
-        return true;
-      }
-      if (dimensionAnchorEnd != null &&
-          extensionEnd != null &&
-          _distanceToSegment(point, dimensionAnchorEnd!, extensionEnd!) <= 8) {
-        return true;
-      }
-    }
-    return false;
-  }
+  bool contains(Offset point) => hitBox.contains(point);
 
   Offset offsetForDrag(Offset canvasPosition, _CanvasTransform transform) {
     final worldPoint = transform.toWorldOffset(canvasPosition);
@@ -1533,7 +1506,9 @@ class _ConstraintVisual {
               ? const Color(0xFF2E1D08)
               : attention
               ? const Color(0xFF2A1010)
-              : const Color(0xFF101418),
+              : constrained
+              ? const Color(0xFF101418)
+              : const Color(0xFF202830),
       )
       ..drawRRect(
         badgeRect,
@@ -1597,7 +1572,9 @@ class _ConstraintVisual {
         ? const Color(0xFFFF6B6B)
         : selected
         ? const Color(0xFFFFB84D)
-        : Colors.white;
+        : constrained
+        ? Colors.white
+        : const Color(0xFFB8C0C8);
     final underlayPaint = Paint()
       ..color = _withOpacity(Colors.black, 0.95)
       ..strokeWidth = selected ? 4.2 : 3.2;
@@ -1618,11 +1595,15 @@ class _ConstraintVisual {
 
     final labelPainter = TextPainter(
       text: TextSpan(
-        text: label,
+        text: constrained ? '= $label' : label,
         style: TextStyle(
-          color: selected ? const Color(0xFFFFB84D) : Colors.white,
+          color: selected
+              ? const Color(0xFFFFB84D)
+              : constrained
+              ? Colors.white
+              : const Color(0xFFD2D8DE),
           fontSize: 12,
-          fontWeight: FontWeight.w600,
+          fontWeight: constrained ? FontWeight.w700 : FontWeight.w500,
         ),
       ),
       textDirection: TextDirection.ltr,
@@ -1697,31 +1678,23 @@ List<_ConstraintVisual> buildConstraintVisuals({
   Set<RoomEditorConstraintKey> highlightedKeys = const {},
 }) {
   final lines = document.bundle.lines;
-  if (lines.isEmpty || document.constraints.isEmpty) {
+  if (lines.isEmpty) {
     return const [];
   }
   final polygonDirection = _polygonDirection(lines);
-  final visibleConstraints = document.constraints.where((constraint) {
-    final key = RoomEditorConstraintKey.fromConstraint(constraint);
-    if (constraint.type == RoomEditorConstraintType.lineLength) {
-      return true;
-    }
-    if (selection.selectedConstraintKey == key) {
-      return true;
-    }
-    if (highlightedKeys.contains(key)) {
-      return true;
-    }
-    if (showAllConstraints) {
-      return true;
-    }
-    final selectedLineIndices = {
-      for (final index in selection.selectedLineIndices)
-        if (index >= 0 && index < lines.length) index,
-    };
-    final selectedLineIds = {
-      for (final index in selectedLineIndices) lines[index].id,
-    };
+  final selectedLineIndices = {
+    for (final index in selection.selectedLineIndices)
+      if (index >= 0 && index < lines.length) index,
+  };
+  final selectedLineIds = {
+    for (final index in selectedLineIndices) lines[index].id,
+  };
+  final selectedIntersectionIds = {
+    for (final index in selection.selectedIntersectionIndices)
+      if (index >= 0 && index < lines.length) lines[index].id,
+  };
+
+  bool associatedWithSelection(RoomEditorConstraint constraint) {
     if (constraint.type == RoomEditorConstraintType.jointAngle) {
       final jointLineIndex = lines.indexWhere(
         (line) => line.id == constraint.lineId,
@@ -1734,24 +1707,89 @@ List<_ConstraintVisual> buildConstraintVisuals({
           return true;
         }
       }
-    } else if (selectedLineIds.contains(constraint.lineId) ||
-        selectedLineIds.contains(constraint.targetValue)) {
+      return selectedIntersectionIds.contains(constraint.lineId);
+    }
+    return selectedLineIds.contains(constraint.lineId) ||
+        selectedLineIds.contains(constraint.targetValue);
+  }
+
+  final visibleConstraints = document.constraints.where((constraint) {
+    final key = RoomEditorConstraintKey.fromConstraint(constraint);
+    if (selection.selectedConstraintKey == key ||
+        highlightedKeys.contains(key)) {
       return true;
     }
-    final selectedIntersectionIds = {
-      for (final index in selection.selectedIntersectionIndices)
-        if (index >= 0 && index < lines.length) lines[index].id,
-    };
-    if (selectedIntersectionIds.contains(constraint.lineId) &&
-        constraint.type == RoomEditorConstraintType.jointAngle) {
-      return true;
-    }
-    return false;
+    return showAllConstraints || associatedWithSelection(constraint);
   });
 
   final visuals = <_ConstraintVisual>[];
   final baseOffset = transform.worldDistanceForCanvasDistance(68);
   final tangentShiftDistance = transform.worldDistanceForCanvasDistance(24);
+
+  _ConstraintVisual? buildLineLengthVisual({
+    required int lineIndex,
+    required RoomEditorLine line,
+    required RoomEditorConstraintKey key,
+    required bool selected,
+    required bool attention,
+    required bool constrained,
+    int? targetValue,
+  }) {
+    final startWorld = Offset(line.startX.toDouble(), line.startY.toDouble());
+    final endPoint = RoomCanvasGeometry.lineEnd(lines, lineIndex);
+    final endWorld = Offset(endPoint.x.toDouble(), endPoint.y.toDouble());
+    final direction = endWorld - startWorld;
+    if (direction.distance == 0) {
+      return null;
+    }
+    final tangent = direction / direction.distance;
+    final normal = Offset(-tangent.dy, tangent.dx);
+    final outsideNormal = polygonDirection >= 0 ? -normal : normal;
+    final offsetWorld = customOffsets[key] ?? outsideNormal * baseOffset;
+    final dimensionStartWorld = startWorld + offsetWorld;
+    final dimensionEndWorld = endWorld + offsetWorld;
+    final dimensionStart = transform.toCanvasOffset(dimensionStartWorld);
+    final dimensionEnd = transform.toCanvasOffset(dimensionEndWorld);
+    final label = RoomCanvasGeometry.formatDisplayLength(
+      targetValue ?? line.length,
+      document.bundle.unitSystem,
+    );
+    final labelPainter = TextPainter(
+      text: TextSpan(
+        text: constrained ? '= $label' : label,
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final midpoint = Offset(
+      (dimensionStart.dx + dimensionEnd.dx) / 2,
+      (dimensionStart.dy + dimensionEnd.dy) / 2,
+    );
+    final anchorWorld = (startWorld + endWorld) / 2;
+    return _ConstraintVisual(
+      key: key,
+      kind: _ConstraintVisualKind.dimension,
+      selected: selected,
+      attention: attention,
+      anchor: transform.toCanvasOffset(anchorWorld),
+      anchorWorld: anchorWorld,
+      hitBox: Rect.fromCenter(
+        center: midpoint,
+        width: labelPainter.width + 18,
+        height: labelPainter.height + 10,
+      ),
+      constrained: constrained,
+      lineStart: dimensionStart,
+      lineEnd: dimensionEnd,
+      extensionStart: dimensionStart,
+      extensionEnd: dimensionEnd,
+      dimensionAnchorStart: transform.toCanvasOffset(startWorld),
+      dimensionAnchorEnd: transform.toCanvasOffset(endWorld),
+      dragNormalWorld: outsideNormal,
+      label: label,
+    );
+  }
+
   for (final constraint in visibleConstraints) {
     final lineIndex = lines.indexWhere((line) => line.id == constraint.lineId);
     if (lineIndex < 0) {
@@ -1769,55 +1807,25 @@ List<_ConstraintVisual> buildConstraintVisuals({
     final normal = Offset(-tangent.dy, tangent.dx);
     final outsideNormal = polygonDirection >= 0 ? -normal : normal;
     final key = RoomEditorConstraintKey.fromConstraint(constraint);
-    final selected = selection.selectedConstraintKey == key;
+    final selected =
+        selection.selectedConstraintKey == key ||
+        associatedWithSelection(constraint);
     final attention = highlightedKeys.contains(key);
 
     switch (constraint.type) {
       case RoomEditorConstraintType.lineLength:
-        final offsetWorld = customOffsets[key] ?? outsideNormal * baseOffset;
-        final dimensionStartWorld = startWorld + offsetWorld;
-        final dimensionEndWorld = endWorld + offsetWorld;
-        final dimensionStart = transform.toCanvasOffset(dimensionStartWorld);
-        final dimensionEnd = transform.toCanvasOffset(dimensionEndWorld);
-        final label = RoomCanvasGeometry.formatDisplayLength(
-          constraint.targetValue ?? line.length,
-          document.bundle.unitSystem,
+        final visual = buildLineLengthVisual(
+          lineIndex: lineIndex,
+          line: line,
+          key: key,
+          selected: selected,
+          attention: attention,
+          constrained: true,
+          targetValue: constraint.targetValue,
         );
-        final labelPainter = TextPainter(
-          text: TextSpan(
-            text: label,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-          ),
-          textDirection: TextDirection.ltr,
-        )..layout();
-        final midpoint = Offset(
-          (dimensionStart.dx + dimensionEnd.dx) / 2,
-          (dimensionStart.dy + dimensionEnd.dy) / 2,
-        );
-        final hitBox = Rect.fromCenter(
-          center: midpoint,
-          width: labelPainter.width + 18,
-          height: labelPainter.height + 10,
-        );
-        visuals.add(
-          _ConstraintVisual(
-            key: key,
-            kind: _ConstraintVisualKind.dimension,
-            selected: selected,
-            attention: attention,
-            anchor: transform.toCanvasOffset((startWorld + endWorld) / 2),
-            anchorWorld: (startWorld + endWorld) / 2,
-            hitBox: hitBox,
-            lineStart: dimensionStart,
-            lineEnd: dimensionEnd,
-            extensionStart: dimensionStart,
-            extensionEnd: dimensionEnd,
-            dimensionAnchorStart: transform.toCanvasOffset(startWorld),
-            dimensionAnchorEnd: transform.toCanvasOffset(endWorld),
-            dragNormalWorld: outsideNormal,
-            label: label,
-          ),
-        );
+        if (visual != null) {
+          visuals.add(visual);
+        }
       case RoomEditorConstraintType.horizontal:
       case RoomEditorConstraintType.vertical:
       case RoomEditorConstraintType.parallel:
@@ -1891,6 +1899,40 @@ List<_ConstraintVisual> buildConstraintVisuals({
         );
     }
   }
+
+  final constrainedLengthLineIds = {
+    for (final constraint in document.constraints)
+      if (constraint.type == RoomEditorConstraintType.lineLength)
+        constraint.lineId,
+  };
+  if (showAllConstraints || selectedLineIndices.isNotEmpty) {
+    for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      final line = lines[lineIndex];
+      final key = RoomEditorConstraintKey(
+        lineId: line.id,
+        type: RoomEditorConstraintType.lineLength,
+      );
+      final selected = selectedLineIndices.contains(lineIndex);
+      if (constrainedLengthLineIds.contains(line.id) ||
+          (!showAllConstraints &&
+              !selected &&
+              !highlightedKeys.contains(key))) {
+        continue;
+      }
+      final visual = buildLineLengthVisual(
+        lineIndex: lineIndex,
+        line: line,
+        key: key,
+        selected: selected,
+        attention: highlightedKeys.contains(key),
+        constrained: false,
+      );
+      if (visual != null) {
+        visuals.add(visual);
+      }
+    }
+  }
+
   return visuals;
 }
 
@@ -1937,9 +1979,10 @@ class _OpeningDimensionVisual {
       ..color = _withOpacity(strokeColor, 0.92)
       ..strokeWidth = selected ? 2.2 : 1.2
       ..strokeCap = StrokeCap.round;
-    canvas..drawLine(anchorStart, dimensionStart, paint)
-    ..drawLine(anchorEnd, dimensionEnd, paint)
-    ..drawLine(dimensionStart, dimensionEnd, paint);
+    canvas
+      ..drawLine(anchorStart, dimensionStart, paint)
+      ..drawLine(anchorEnd, dimensionEnd, paint)
+      ..drawLine(dimensionStart, dimensionEnd, paint);
     _paintOpeningDimensionTick(canvas, dimensionStart, dimensionEnd, paint);
     _paintOpeningDimensionTick(canvas, dimensionEnd, dimensionStart, paint);
 
@@ -1955,21 +1998,22 @@ class _OpeningDimensionVisual {
       textDirection: TextDirection.ltr,
     )..layout();
     final labelRect = RRect.fromRectAndRadius(hitBox, const Radius.circular(6));
-    canvas..drawRRect(
-      labelRect,
-      Paint()
-        ..color = _withOpacity(
-          selected ? const Color(0xFFFFE2BF) : Colors.white,
-          0.96,
-        ),
-    )
-    ..drawRRect(
-      labelRect,
-      Paint()
-        ..color = _withOpacity(strokeColor, 0.92)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = selected ? 1.6 : 1.0,
-    );
+    canvas
+      ..drawRRect(
+        labelRect,
+        Paint()
+          ..color = _withOpacity(
+            selected ? const Color(0xFFFFE2BF) : Colors.white,
+            0.96,
+          ),
+      )
+      ..drawRRect(
+        labelRect,
+        Paint()
+          ..color = _withOpacity(strokeColor, 0.92)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = selected ? 1.6 : 1.0,
+      );
     labelPainter.paint(
       canvas,
       Offset(
@@ -2145,6 +2189,9 @@ List<RoomEditorConstraintVisualDebug> debugDescribeConstraintVisuals({
         center: visual.center,
         lineStart: visual.lineStart,
         lineEnd: visual.lineEnd,
+        label: visual.label,
+        constrained: visual.constrained,
+        selected: visual.selected,
       ),
   ];
 }
@@ -2368,6 +2415,9 @@ class _CanvasTransform {
   late final int _minY;
   late final int _maxX;
   late final int _maxY;
+
+  _CanvasWorldBounds get worldBounds =>
+      _CanvasWorldBounds(minX: _minX, minY: _minY, maxX: _maxX, maxY: _maxY);
 
   _CanvasTransform(
     this.lines,
@@ -2600,6 +2650,58 @@ class _CanvasWorldBounds {
     required this.maxX,
     required this.maxY,
   });
+
+  double get width => (maxX - minX).abs().toDouble().clamp(1, double.infinity);
+
+  double get height => (maxY - minY).abs().toDouble().clamp(1, double.infinity);
+
+  double zoomRatioFor(_CanvasWorldBounds viewport) {
+    final widthRatio = width / viewport.width;
+    final heightRatio = height / viewport.height;
+    return widthRatio < heightRatio ? widthRatio : heightRatio;
+  }
+
+  _CanvasWorldBounds translate(double dx, double dy) => _CanvasWorldBounds(
+    minX: (minX + dx).round(),
+    minY: (minY + dy).round(),
+    maxX: (maxX + dx).round(),
+    maxY: (maxY + dy).round(),
+  );
+
+  _CanvasWorldBounds zoomed({
+    required double zoom,
+    required Offset anchor,
+    required Offset anchorCanvasPosition,
+    required Size size,
+  }) {
+    final nextWidth = width / zoom;
+    final nextHeight = height / zoom;
+    final availableWidth = max(
+      1,
+      size.width - (_CanvasTransform._horizontalPadding * 2),
+    );
+    final availableHeight = max(
+      1,
+      size.height - (_CanvasTransform._verticalPadding * 2),
+    );
+    final nextScale = availableWidth / nextWidth < availableHeight / nextHeight
+        ? availableWidth / nextWidth
+        : availableHeight / nextHeight;
+    final minX =
+        anchor.dx -
+        ((anchorCanvasPosition.dx - _CanvasTransform._horizontalPadding) /
+            nextScale);
+    final minY =
+        anchor.dy -
+        ((anchorCanvasPosition.dy - _CanvasTransform._verticalPadding) /
+            nextScale);
+    return _CanvasWorldBounds(
+      minX: minX.round(),
+      minY: minY.round(),
+      maxX: (minX + nextWidth).round(),
+      maxY: (minY + nextHeight).round(),
+    );
+  }
 
   factory _CanvasWorldBounds.fromDocument({
     required RoomEditorDocument document,

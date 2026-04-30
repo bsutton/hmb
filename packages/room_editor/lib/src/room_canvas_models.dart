@@ -48,6 +48,8 @@ typedef RoomEditorTapOpeningDimensionCallback =
     Future<void> Function(RoomEditorOpeningDimensionKey key);
 typedef RoomEditorMoveConstraintCallback =
     void Function(RoomEditorConstraintKey key, Offset worldOffset);
+typedef RoomEditorMoveWallLabelCallback =
+    void Function(int lineId, Offset worldOffset);
 typedef RoomEditorDeleteConstraintCallback =
     Future<void> Function(RoomEditorConstraintKey key);
 
@@ -231,7 +233,6 @@ class RoomEditorOpeningDraft {
     this.distanceToEndWall,
   });
 }
-
 
 class RoomEditorAnnotationBadge {
   final String id;
@@ -428,7 +429,6 @@ List<RoomEditorConstraint> effectiveRoomEditorConstraints(
   return constraints;
 }
 
-
 bool canApplyRoomEditorCustomTool({
   required RoomEditorCustomTool tool,
   required RoomEditorDocument document,
@@ -517,6 +517,7 @@ class RoomEditorCanvasCallbacks {
   final RoomEditorTapConstraintCallback onTapConstraint;
   final RoomEditorTapOpeningDimensionCallback onTapOpeningDimension;
   final RoomEditorMoveConstraintCallback onMoveConstraint;
+  final RoomEditorMoveWallLabelCallback onMoveWallLabel;
   final RoomEditorDeleteConstraintCallback onDeleteConstraint;
 
   const RoomEditorCanvasCallbacks({
@@ -536,6 +537,7 @@ class RoomEditorCanvasCallbacks {
     required this.onTapConstraint,
     required this.onTapOpeningDimension,
     required this.onMoveConstraint,
+    required this.onMoveWallLabel,
     required this.onDeleteConstraint,
   });
 }

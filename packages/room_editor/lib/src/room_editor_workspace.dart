@@ -179,6 +179,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   RoomEditorDragSolveResult? _lastPreviewSolveResult;
   var _rigidDragNotificationShownForGesture = false;
   Map<RoomEditorConstraintKey, Offset> _constraintVisualOffsets = {};
+  Map<int, Offset> _wallLabelOffsets = {};
   Set<RoomEditorConstraintKey> _highlightedConstraintKeys = {};
   Set<int> _highlightedImplicitLengthLineIndices = {};
 
@@ -248,6 +249,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       _constraintVisualOffsets,
       _document,
     );
+    _wallLabelOffsets = _pruneWallLabelOffsets(_wallLabelOffsets, _document);
     _dragSolverScheduler = createRoomEditorSolverScheduler(
       onEmit: (result) {
         if (!mounted) {
@@ -273,6 +275,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         _constraintVisualOffsets,
         _document,
       );
+      _wallLabelOffsets = _pruneWallLabelOffsets(_wallLabelOffsets, _document);
       _highlightedConstraintKeys = {
         for (final key in _highlightedConstraintKeys)
           if (_document.constraints.any(
@@ -433,10 +436,26 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     final activeKeys = {
       for (final constraint in document.constraints)
         RoomEditorConstraintKey.fromConstraint(constraint),
+      for (final line in document.bundle.lines)
+        RoomEditorConstraintKey(
+          lineId: line.id,
+          type: RoomEditorConstraintType.lineLength,
+        ),
     };
     return {
       for (final entry in offsets.entries)
         if (activeKeys.contains(entry.key)) entry.key: entry.value,
+    };
+  }
+
+  Map<int, Offset> _pruneWallLabelOffsets(
+    Map<int, Offset> offsets,
+    RoomEditorDocument document,
+  ) {
+    final activeLineIds = {for (final line in document.bundle.lines) line.id};
+    return {
+      for (final entry in offsets.entries)
+        if (activeLineIds.contains(entry.key)) entry.key: entry.value,
     };
   }
 
@@ -551,6 +570,11 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     setState(() {
       _document = normalized;
       _selection = _normalizeSelection(_selection, normalized);
+      _constraintVisualOffsets = _pruneConstraintVisualOffsets(
+        _constraintVisualOffsets,
+        normalized,
+      );
+      _wallLabelOffsets = _pruneWallLabelOffsets(_wallLabelOffsets, normalized);
     });
     _externalSelectionController?.value = _selection;
   }
@@ -1452,6 +1476,12 @@ This room is rigid. Remove one or more constraints to modify the room.'''
     });
   }
 
+  void _moveWallLabel(int lineId, Offset worldOffset) {
+    setState(() {
+      _wallLabelOffsets = Map.of(_wallLabelOffsets)..[lineId] = worldOffset;
+    });
+  }
+
   void _handleDeleteShortcut() {
     final key = _selection.selectedConstraintKey;
     if (key == null) {
@@ -1983,6 +2013,7 @@ This room is rigid. Remove one or more constraints to modify the room.'''
     showAllConstraints: _showAllConstraints,
     documentConstraintState: _documentConstraintState,
     constraintVisualOffsets: _constraintVisualOffsets,
+    wallLabelOffsets: _wallLabelOffsets,
     highlightedConstraintKeys: _highlightedConstraintKeys,
     highlightedImplicitLengthLineIndices: _highlightedImplicitLengthLineIndices,
     linePresentations: widget.linePresentations,
@@ -2079,6 +2110,10 @@ This room is rigid. Remove one or more constraints to modify the room.'''
       onMoveConstraint: (key, worldOffset) {
         _clearHighlightedConstraints();
         _moveConstraintVisual(key, worldOffset);
+      },
+      onMoveWallLabel: (lineId, worldOffset) {
+        _clearHighlightedConstraints();
+        _moveWallLabel(lineId, worldOffset);
       },
       onDeleteConstraint: (key) async {
         _clearHighlightedConstraints();

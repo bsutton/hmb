@@ -198,16 +198,19 @@ class RoomEditorDetailsForm extends StatelessWidget {
   );
 }
 
-class RoomEditorFramingSettingsSheet extends StatelessWidget {
+class RoomEditorFramingSettingsSheet extends StatefulWidget {
   final String unitLabel;
   final TextEditingController ceilingHeightController;
   final TextEditingController roomCeilingFramingSpacingController;
   final TextEditingController roomCeilingFramingOffsetController;
   final TextEditingController roomCeilingFixingFaceWidthController;
+  final bool plasterCeiling;
   final bool hasSelectedWall;
   final TextEditingController? lineStudSpacingController;
   final TextEditingController? lineStudOffsetController;
   final TextEditingController? lineFixingFaceWidthController;
+  // ignore: avoid_positional_boolean_parameters
+  final Future<void> Function(bool value) onPlasterCeilingChanged;
   final Future<void> Function() onCommitCeilingHeight;
   final Future<void> Function() onCommitSelectedRoomCeilingOverrides;
   final Future<void> Function()? onCommitSelectedLineOverrides;
@@ -219,7 +222,9 @@ class RoomEditorFramingSettingsSheet extends StatelessWidget {
     required this.roomCeilingFramingSpacingController,
     required this.roomCeilingFramingOffsetController,
     required this.roomCeilingFixingFaceWidthController,
+    required this.plasterCeiling,
     required this.hasSelectedWall,
+    required this.onPlasterCeilingChanged,
     required this.onCommitCeilingHeight,
     required this.onCommitSelectedRoomCeilingOverrides,
     required this.onApply,
@@ -229,6 +234,26 @@ class RoomEditorFramingSettingsSheet extends StatelessWidget {
     this.lineFixingFaceWidthController,
     this.onCommitSelectedLineOverrides,
   });
+
+  @override
+  State<RoomEditorFramingSettingsSheet> createState() =>
+      _RoomEditorFramingSettingsSheetState();
+}
+
+class _RoomEditorFramingSettingsSheetState
+    extends State<RoomEditorFramingSettingsSheet> {
+  late bool _plasterCeiling;
+
+  @override
+  void initState() {
+    super.initState();
+    _plasterCeiling = widget.plasterCeiling;
+  }
+
+  Future<void> _setPlasterCeiling(bool value) async {
+    setState(() => _plasterCeiling = value);
+    await widget.onPlasterCeilingChanged(value);
+  }
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
@@ -241,98 +266,119 @@ class RoomEditorFramingSettingsSheet extends StatelessWidget {
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 12),
-        TextField(
-          controller: ceilingHeightController,
-          decoration: InputDecoration(labelText: 'Ceiling Height ($unitLabel)'),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onSubmitted: (_) => unawaited(onCommitCeilingHeight()),
-          onEditingComplete: () => unawaited(onCommitCeilingHeight()),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Plaster ceiling'),
+          subtitle: const Text(
+            'Turn off to exclude this room ceiling from the plasterboard '
+            'layout and takeoff.',
+          ),
+          value: _plasterCeiling,
+          onChanged: (value) => unawaited(_setPlasterCeiling(value)),
         ),
         const SizedBox(height: 8),
         TextField(
-          controller: roomCeilingFramingSpacingController,
+          controller: widget.ceilingHeightController,
           decoration: InputDecoration(
-            labelText: 'Ceiling Framing Spacing Override ($unitLabel)',
-            helperText: 'Leave blank to use project default.',
+            labelText: 'Ceiling Height (${widget.unitLabel})',
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onSubmitted: (_) => unawaited(onCommitSelectedRoomCeilingOverrides()),
-          onEditingComplete: () =>
-              unawaited(onCommitSelectedRoomCeilingOverrides()),
+          onSubmitted: (_) => unawaited(widget.onCommitCeilingHeight()),
+          onEditingComplete: () => unawaited(widget.onCommitCeilingHeight()),
         ),
         const SizedBox(height: 8),
         TextField(
-          controller: roomCeilingFramingOffsetController,
+          controller: widget.roomCeilingFramingSpacingController,
           decoration: InputDecoration(
-            labelText: 'Ceiling Framing Offset Override ($unitLabel)',
+            labelText: 'Ceiling Framing Spacing Override (${widget.unitLabel})',
             helperText: 'Leave blank to use project default.',
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onSubmitted: (_) => unawaited(onCommitSelectedRoomCeilingOverrides()),
+          onSubmitted: (_) =>
+              unawaited(widget.onCommitSelectedRoomCeilingOverrides()),
           onEditingComplete: () =>
-              unawaited(onCommitSelectedRoomCeilingOverrides()),
+              unawaited(widget.onCommitSelectedRoomCeilingOverrides()),
         ),
         const SizedBox(height: 8),
         TextField(
-          controller: roomCeilingFixingFaceWidthController,
+          controller: widget.roomCeilingFramingOffsetController,
           decoration: InputDecoration(
-            labelText: 'Ceiling Fixing Face Width Override ($unitLabel)',
+            labelText: 'Ceiling Framing Offset Override (${widget.unitLabel})',
             helperText: 'Leave blank to use project default.',
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onSubmitted: (_) => unawaited(onCommitSelectedRoomCeilingOverrides()),
+          onSubmitted: (_) =>
+              unawaited(widget.onCommitSelectedRoomCeilingOverrides()),
           onEditingComplete: () =>
-              unawaited(onCommitSelectedRoomCeilingOverrides()),
+              unawaited(widget.onCommitSelectedRoomCeilingOverrides()),
         ),
-        if (hasSelectedWall &&
-            lineStudSpacingController != null &&
-            lineStudOffsetController != null &&
-            lineFixingFaceWidthController != null &&
-            onCommitSelectedLineOverrides != null) ...[
+        const SizedBox(height: 8),
+        TextField(
+          controller: widget.roomCeilingFixingFaceWidthController,
+          decoration: InputDecoration(
+            labelText:
+                'Ceiling Fixing Face Width Override (${widget.unitLabel})',
+            helperText: 'Leave blank to use project default.',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          onSubmitted: (_) =>
+              unawaited(widget.onCommitSelectedRoomCeilingOverrides()),
+          onEditingComplete: () =>
+              unawaited(widget.onCommitSelectedRoomCeilingOverrides()),
+        ),
+        if (widget.hasSelectedWall &&
+            widget.lineStudSpacingController != null &&
+            widget.lineStudOffsetController != null &&
+            widget.lineFixingFaceWidthController != null &&
+            widget.onCommitSelectedLineOverrides != null) ...[
           const SizedBox(height: 16),
           Text('Selected wall', style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
           TextField(
-            controller: lineStudSpacingController,
+            controller: widget.lineStudSpacingController,
             decoration: InputDecoration(
-              labelText: 'Wall Stud Spacing Override ($unitLabel)',
+              labelText: 'Wall Stud Spacing Override (${widget.unitLabel})',
               helperText: 'Leave blank to use project default.',
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onSubmitted: (_) => unawaited(onCommitSelectedLineOverrides!()),
+            onSubmitted: (_) =>
+                unawaited(widget.onCommitSelectedLineOverrides!()),
             onEditingComplete: () =>
-                unawaited(onCommitSelectedLineOverrides!()),
+                unawaited(widget.onCommitSelectedLineOverrides!()),
           ),
           const SizedBox(height: 8),
           TextField(
-            controller: lineStudOffsetController,
+            controller: widget.lineStudOffsetController,
             decoration: InputDecoration(
-              labelText: 'Wall Stud Offset Override ($unitLabel)',
+              labelText: 'Wall Stud Offset Override (${widget.unitLabel})',
               helperText: 'Leave blank to use project default.',
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onSubmitted: (_) => unawaited(onCommitSelectedLineOverrides!()),
+            onSubmitted: (_) =>
+                unawaited(widget.onCommitSelectedLineOverrides!()),
             onEditingComplete: () =>
-                unawaited(onCommitSelectedLineOverrides!()),
+                unawaited(widget.onCommitSelectedLineOverrides!()),
           ),
           const SizedBox(height: 8),
           TextField(
-            controller: lineFixingFaceWidthController,
+            controller: widget.lineFixingFaceWidthController,
             decoration: InputDecoration(
-              labelText: 'Wall Fixing Face Width Override ($unitLabel)',
+              labelText:
+                  'Wall Fixing Face Width Override (${widget.unitLabel})',
               helperText: 'Leave blank to use project default.',
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onSubmitted: (_) => unawaited(onCommitSelectedLineOverrides!()),
+            onSubmitted: (_) =>
+                unawaited(widget.onCommitSelectedLineOverrides!()),
             onEditingComplete: () =>
-                unawaited(onCommitSelectedLineOverrides!()),
+                unawaited(widget.onCommitSelectedLineOverrides!()),
           ),
         ],
         const SizedBox(height: 16),
         Align(
           alignment: Alignment.centerRight,
           child: FilledButton(
-            onPressed: () => unawaited(onApply()),
+            onPressed: () => unawaited(widget.onApply()),
             child: const Text('Apply'),
           ),
         ),

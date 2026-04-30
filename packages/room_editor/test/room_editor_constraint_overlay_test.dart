@@ -52,6 +52,7 @@ void main() {
       );
       expect(lineFourLength.lineStart, isNotNull);
       expect(lineFourLength.lineEnd, isNotNull);
+      expect(lineFourLength.constrained, isTrue);
       expect(
         (lineFourLength.lineStart!.dx - lineFourLength.anchor.dx).abs(),
         greaterThan(10),
@@ -63,6 +64,183 @@ void main() {
       );
     },
   );
+
+  test('constrained line length only shows for selected wall or show all', () {
+    const key = RoomEditorConstraintKey(
+      lineId: 4,
+      type: RoomEditorConstraintType.lineLength,
+    );
+
+    final hiddenVisuals = debugDescribeConstraintVisuals(
+      document: _document,
+      selection: const RoomEditorSelection.empty(),
+      showAllConstraints: false,
+      size: const Size(900, 700),
+    );
+    expect(hiddenVisuals.any((visual) => visual.key == key), isFalse);
+
+    final selectedVisuals = debugDescribeConstraintVisuals(
+      document: _document,
+      selection: RoomEditorSelection(selectedLineIndex: 3),
+      showAllConstraints: false,
+      size: const Size(900, 700),
+    );
+    final selectedLength = selectedVisuals.singleWhere(
+      (visual) => visual.key == key,
+    );
+    expect(selectedLength.kind, 'dimension');
+    expect(selectedLength.constrained, isTrue);
+
+    final showAllVisuals = debugDescribeConstraintVisuals(
+      document: _document,
+      selection: const RoomEditorSelection.empty(),
+      showAllConstraints: true,
+      size: const Size(900, 700),
+    );
+    expect(showAllVisuals.any((visual) => visual.key == key), isTrue);
+  });
+
+  test(
+    'unconstrained line lengths only show when all constraints are shown',
+    () {
+      final document = _document.copyWith(
+        constraints: [
+          for (final constraint in _document.constraints)
+            if (!(constraint.lineId == 4 &&
+                constraint.type == RoomEditorConstraintType.lineLength))
+              constraint,
+        ],
+      );
+      const key = RoomEditorConstraintKey(
+        lineId: 4,
+        type: RoomEditorConstraintType.lineLength,
+      );
+
+      final hiddenVisuals = debugDescribeConstraintVisuals(
+        document: document,
+        selection: const RoomEditorSelection.empty(),
+        showAllConstraints: false,
+        size: const Size(900, 700),
+      );
+      expect(hiddenVisuals.any((visual) => visual.key == key), isFalse);
+
+      final visibleVisuals = debugDescribeConstraintVisuals(
+        document: document,
+        selection: const RoomEditorSelection.empty(),
+        showAllConstraints: true,
+        size: const Size(900, 700),
+      );
+      final lengthVisual = visibleVisuals.singleWhere(
+        (visual) => visual.key == key,
+      );
+      expect(lengthVisual.kind, 'dimension');
+      expect(lengthVisual.constrained, isFalse);
+      expect(lengthVisual.lineStart, isNotNull);
+      expect(lengthVisual.lineEnd, isNotNull);
+    },
+  );
+
+  test('selected line highlights associated constraints', () {
+    final visuals = debugDescribeConstraintVisuals(
+      document: _document,
+      selection: RoomEditorSelection(selectedLineIndex: 3),
+      showAllConstraints: false,
+      size: const Size(900, 700),
+    );
+
+    final selectedKeys = {
+      for (final visual in visuals)
+        if (visual.selected) visual.key,
+    };
+    expect(
+      selectedKeys,
+      contains(
+        const RoomEditorConstraintKey(
+          lineId: 4,
+          type: RoomEditorConstraintType.vertical,
+        ),
+      ),
+    );
+    expect(
+      selectedKeys,
+      contains(
+        const RoomEditorConstraintKey(
+          lineId: 4,
+          type: RoomEditorConstraintType.lineLength,
+        ),
+      ),
+    );
+    expect(
+      selectedKeys,
+      contains(
+        const RoomEditorConstraintKey(
+          lineId: 4,
+          type: RoomEditorConstraintType.jointAngle,
+        ),
+      ),
+    );
+    expect(
+      selectedKeys,
+      contains(
+        const RoomEditorConstraintKey(
+          lineId: 5,
+          type: RoomEditorConstraintType.jointAngle,
+        ),
+      ),
+    );
+  });
+
+  test('selected unconstrained line shows highlighted length measurement', () {
+    final document = _document.copyWith(
+      constraints: [
+        for (final constraint in _document.constraints)
+          if (!(constraint.lineId == 4 &&
+              constraint.type == RoomEditorConstraintType.lineLength))
+            constraint,
+      ],
+    );
+    const key = RoomEditorConstraintKey(
+      lineId: 4,
+      type: RoomEditorConstraintType.lineLength,
+    );
+
+    final visuals = debugDescribeConstraintVisuals(
+      document: document,
+      selection: RoomEditorSelection(selectedLineIndex: 3),
+      showAllConstraints: false,
+      size: const Size(900, 700),
+    );
+    final visual = visuals.singleWhere((visual) => visual.key == key);
+    expect(visual.kind, 'dimension');
+    expect(visual.constrained, isFalse);
+    expect(visual.selected, isTrue);
+  });
+
+  test('selected parallel target line highlights the parallel constraint', () {
+    final document = _document.copyWith(
+      constraints: [
+        ..._document.constraints,
+        const RoomEditorConstraint(
+          lineId: 1,
+          type: RoomEditorConstraintType.parallel,
+          targetValue: 3,
+        ),
+      ],
+    );
+    const key = RoomEditorConstraintKey(
+      lineId: 1,
+      type: RoomEditorConstraintType.parallel,
+    );
+
+    final visuals = debugDescribeConstraintVisuals(
+      document: document,
+      selection: RoomEditorSelection(selectedLineIndex: 2),
+      showAllConstraints: false,
+      size: const Size(900, 700),
+    );
+    final visual = visuals.singleWhere((visual) => visual.key == key);
+    expect(visual.selected, isTrue);
+  });
 
   testWidgets(
     'center vertical wall remains selectable with all constraints shown',
@@ -123,48 +301,12 @@ final _document = RoomEditorDocument(
     unitSystem: RoomEditorUnitSystem.metric,
     plasterCeiling: true,
     lines: const [
-      (
-        id: 1,
-        seqNo: 1,
-        startX: 0,
-        startY: 0,
-        length: 3600
-      ),
-      (
-        id: 2,
-        seqNo: 2,
-        startX: 3600,
-        startY: 0,
-        length: 2400
-      ),
-      (
-        id: 3,
-        seqNo: 3,
-        startX: 3600,
-        startY: 2400,
-        length: 1800
-      ),
-      (
-        id: 4,
-        seqNo: 4,
-        startX: 1800,
-        startY: 2400,
-        length: 1200
-      ),
-      (
-        id: 5,
-        seqNo: 5,
-        startX: 1800,
-        startY: 1200,
-        length: 1800
-      ),
-      (
-        id: 6,
-        seqNo: 6,
-        startX: 0,
-        startY: 1200,
-        length: 1200
-      ),
+      (id: 1, seqNo: 1, startX: 0, startY: 0, length: 3600),
+      (id: 2, seqNo: 2, startX: 3600, startY: 0, length: 2400),
+      (id: 3, seqNo: 3, startX: 3600, startY: 2400, length: 1800),
+      (id: 4, seqNo: 4, startX: 1800, startY: 2400, length: 1200),
+      (id: 5, seqNo: 5, startX: 1800, startY: 1200, length: 1800),
+      (id: 6, seqNo: 6, startX: 0, startY: 1200, length: 1200),
     ],
     openings: const [],
   ),
