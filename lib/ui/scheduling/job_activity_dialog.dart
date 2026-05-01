@@ -629,7 +629,20 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     Job job,
     JobActivity jobActivity,
   ) async {
-    await SendNoticeForJobDialog.show(context, job, jobActivity);
+    await SendNoticeForJobDialog.show(
+      context,
+      job,
+      jobActivity,
+      preferredEmailRecipient: contact.method == ContactMethod.email
+          ? contact.detail
+          : null,
+      preferredMobileRecipient: contact.method == ContactMethod.sms
+          ? contact.detail
+          : null,
+      initialChannel: contact.method == ContactMethod.email
+          ? NoticeChannel.email
+          : NoticeChannel.sms,
+    );
 
     // Record the date the notice was sent
     setState(() {
