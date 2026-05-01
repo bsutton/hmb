@@ -30,6 +30,18 @@ import '../widgets/select/hmb_select_mobile_multi.dart';
 
 enum _Channel { email, sms }
 
+String noticeEmailGreetingForContact(Contact? contact) {
+  final name = _noticeContactName(contact);
+  return Strings.isBlank(name) ? 'Hello,' : '$name,';
+}
+
+String noticeSmsGreetingForContact(Contact? contact) {
+  final name = _noticeContactName(contact);
+  return Strings.isBlank(name) ? 'Hi,' : 'Hi $name,';
+}
+
+String _noticeContactName(Contact? contact) => contact?.fullname.trim() ?? '';
+
 class SendNoticeForJobDialog extends StatefulWidget {
   final Job job;
 
@@ -57,22 +69,17 @@ class SendNoticeForJobDialog extends StatefulWidget {
   @override
   State<SendNoticeForJobDialog> createState() => _SendNoticeForJobDialogState();
 
-  static Future<void> show(
+  static Future<bool> show(
     BuildContext context,
     Job job,
     JobActivity jobActivity,
-  ) async {
-    final sent = await showDialog<bool>(
-      context: context,
-      builder: (_) => SendNoticeForJobDialog(
-        job: job,
-        jobActivity: jobActivity, // optional
-      ),
-    );
-    if (sent ?? false) {
-      // refresh UI if needed
-    }
-  }
+  ) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (_) =>
+            SendNoticeForJobDialog(job: job, jobActivity: jobActivity),
+      ) ??
+      false;
 }
 
 class _SendNoticeForJobDialogState
@@ -91,6 +98,7 @@ class _SendNoticeForJobDialogState
   @override
   Future<void> asyncInitState() async {
     _system = await DaoSystem().get();
+    final primary = await _primaryContactForJob(widget.job);
 
     // Prefill subject/body from schedule if available.
     final scheduleText = await _buildScheduleLine(widget.job);
@@ -98,7 +106,7 @@ class _SendNoticeForJobDialogState
     final defaultBody =
         widget.initialBody ??
         '''
-Hello,
+${noticeEmailGreetingForContact(primary)}
 
 This is a notice for your scheduled job.
 
@@ -118,12 +126,13 @@ ${Strings.isNotBlank(_system.businessNumber) ? '${Strings.orElseOnBlank(_system.
 
     // SMS body is shorter; keep it simple and template-friendly.
     _smsBodyCtl = TextEditingController(
-      text: 'Hi, your job is scheduled. $scheduleText\n${_system.businessName}',
+      text:
+          '${noticeSmsGreetingForContact(primary)} your job is scheduled. '
+          '$scheduleText\n${_system.businessName}',
     );
 
     // Smart default: prefer SMS tab and preselect primary contact mobile.
     _channel = _Channel.sms;
-    final primary = await _primaryContactForJob(widget.job);
     if (primary != null && Strings.isNotBlank(primary.mobileNumber)) {
       _toMobiles = [primary.mobileNumber];
     }
