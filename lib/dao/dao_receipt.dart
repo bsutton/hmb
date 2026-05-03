@@ -13,9 +13,11 @@
 
 import '../entity/photo.dart';
 import '../entity/receipt.dart';
+import '../entity/task_item.dart';
 import '../util/dart/exceptions.dart';
 import 'dao.dart';
 import 'dao_photo.dart';
+import 'dao_task_item.dart';
 import 'dao_tool.dart';
 
 class DaoReceipt extends Dao<Receipt> {
@@ -34,12 +36,73 @@ class DaoReceipt extends Dao<Receipt> {
       );
     }
 
+    final linkedTaskItemCount = await countLinkedTaskItems(id);
+    if (linkedTaskItemCount > 0) {
+      throw HMBException(
+        'Cannot delete this receipt while it is linked to task items.',
+      );
+    }
+
     final photos = await DaoPhoto().getByParent(id, ParentType.receipt);
     for (final photo in photos) {
       await DaoPhoto().delete(photo.id, transaction);
     }
 
     return super.delete(id, transaction);
+  }
+
+  Future<int> countLinkedTaskItems(int receiptId) async {
+    final db = withoutTransaction();
+    final rows = await db.rawQuery(
+      '''
+SELECT COUNT(*) AS count
+  FROM receipt_task_item
+ WHERE receipt_id = ?
+''',
+      [receiptId],
+    );
+    return rows.first['count'] as int? ?? 0;
+  }
+
+  Future<List<int>> getLinkedTaskItemIds(int receiptId) async {
+    final db = withoutTransaction();
+    final rows = await db.rawQuery(
+      '''
+SELECT task_item_id
+  FROM receipt_task_item
+ WHERE receipt_id = ?
+ ORDER BY task_item_id
+''',
+      [receiptId],
+    );
+    return rows.map((row) => row['task_item_id']).whereType<int>().toList();
+  }
+
+  Future<List<TaskItem>> getLinkedTaskItems(int receiptId) async {
+    final ids = await getLinkedTaskItemIds(receiptId);
+    return DaoTaskItem().getByIds(ids);
+  }
+
+  Future<void> replaceTaskItemLinks(
+    int receiptId,
+    Iterable<int> taskItemIds,
+  ) async {
+    await db.transaction((txn) async {
+      await txn.delete(
+        'receipt_task_item',
+        where: 'receipt_id = ?',
+        whereArgs: [receiptId],
+      );
+      for (final taskItemId in taskItemIds.toSet()) {
+        final now = DateTime.now().toIso8601String();
+        await txn.insert('receipt_task_item', {
+          'receipt_id': receiptId,
+          'task_item_id': taskItemId,
+          'created_date': now,
+          'modified_date': now,
+        });
+      }
+    });
   }
 
   /// Filter receipts by optional criteria
