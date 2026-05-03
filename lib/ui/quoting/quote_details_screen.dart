@@ -77,6 +77,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
           'Quote #${_quote.id}',
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
+        if (_quote.summary.trim().isNotEmpty) Text(_quote.summary),
         Text('Issued: ${formatDate(_quote.createdDate)}'),
         Text('Job ID: ${_quote.jobId}'),
         HMBRow(

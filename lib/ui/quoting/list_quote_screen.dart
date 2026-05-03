@@ -150,7 +150,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     entityNamePlural: 'Quotes',
     dao: DaoQuote(),
     listCardTitle: (quote) => Text(
-      'Quote #${quote.id} - Issued: ${formatDate(quote.createdDate)}',
+      _quoteListTitle(quote),
       style: const TextStyle(fontWeight: FontWeight.bold),
     ),
     fetchList: _fetchFilteredQuotes,
@@ -174,6 +174,13 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
       _includeRejected = true;
     },
   );
+
+  String _quoteListTitle(Quote quote) {
+    final name = quote.summary.trim();
+    final suffix = name.isEmpty ? '' : ' - $name';
+    final issued = formatDate(quote.createdDate);
+    return 'Quote #${quote.id}$suffix - Issued: $issued';
+  }
 
   Widget _buildQuoteCard(Quote quote) => QuoteCard(
     key: ValueKey(quote.id),

@@ -361,6 +361,7 @@ To approve it, reply to this email with:
                   Text(jc.job.summary),
                 ],
               ),
+              if (quote.summary.trim().isNotEmpty) Text(quote.summary),
               Text('Customer: ${jc.customer.name}'),
               Text('Primary Contact: ${jc.primaryContact?.fullname ?? 'N/A'}'),
               Text('Billing Contact: ${jc.billingContact?.fullname ?? 'N/A'}'),
