@@ -1336,7 +1336,7 @@ class PlasterGeometry {
               isCeiling: isCeiling,
             ),
             estimatedGlueKg: _estimateGlueKg(area, isCeiling),
-            estimatedPlasterKg: _estimatePlasterKg(area, candidate.$1),
+            estimatedPlasterKg: _estimatePlasterKg(area),
           );
           candidates.add(surface);
           _logSurfaceCandidateDecision(
@@ -2845,10 +2845,10 @@ class PlasterGeometry {
     return areaSqM * 3.5 / 100;
   }
 
-  static double _estimatePlasterKg(int area, PlasterSheetDirection direction) {
+  static double _estimatePlasterKg(int area) {
     final areaSqM = area / (metricUnitsPerMm * metricUnitsPerMm) / 1000000;
-    final multiplier = direction == PlasterSheetDirection.vertical ? 1.2 : 1.0;
-    return areaSqM * (24 + 8) * multiplier / 100;
+    const kgPerHundredSquareMeters = 22.0;
+    return areaSqM * kgPerHundredSquareMeters / 100;
   }
 
   static PlasterTakeoffSummary calculateTakeoff(

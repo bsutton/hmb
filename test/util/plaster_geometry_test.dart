@@ -808,6 +808,10 @@ void main() {
       );
       expect(takeoff.estimatedWasteArea, greaterThanOrEqualTo(0));
       expect(takeoff.estimatedWastePercent, greaterThanOrEqualTo(0));
+      expect(
+        takeoff.plasterKg,
+        closeTo(takeoff.surfaceArea / 100000000 * 22 / 100, 0.001),
+      );
     });
 
     test('project takeoff does not exceed summed raw layout sheets', () {
