@@ -62,6 +62,7 @@ class JobEstimateBuilderScreen extends StatefulWidget {
 class _JobEstimateBuilderScreenState
     extends DeferredState<JobEstimateBuilderScreen> {
   List<Task> _tasks = [];
+  final _itemsByTaskId = <int, ItemsAndRate>{};
   Money _totalLabourCost = MoneyEx.zero;
   Money _totalMaterialsCost = MoneyEx.zero;
   Money _totalCombinedCost = MoneyEx.zero;
@@ -134,10 +135,15 @@ class _JobEstimateBuilderScreenState
 
   Future<void> _loadTasks() async {
     _tasks = await DaoTask().getTasksByJob(widget.job.id);
+    await Future.wait(_tasks.map(_reloadTaskItems));
 
     await _calculateTotals();
     _recomputeEstimateCompletion();
     setState(() {});
+  }
+
+  Future<void> _reloadTaskItems(Task task) async {
+    _itemsByTaskId[task.id] = await ItemsAndRate.fromTask(task);
   }
 
   List<Task> filteredTasks() {
@@ -172,7 +178,7 @@ class _JobEstimateBuilderScreenState
       if (task.status.isWithdrawn()) {
         continue;
       }
-      final items = await DaoTaskItem().getByTask(task.id);
+      final items = _itemsByTaskId[task.id]?.items ?? const <TaskItem>[];
 
       final hourlyRate = await DaoTask().getHourlyRate(task);
       for (final item in items) {
@@ -208,6 +214,7 @@ class _JobEstimateBuilderScreenState
     );
 
     if (newTask != null) {
+      await _reloadTaskItems(newTask);
       await _calculateTotals();
       setState(() {
         _tasks.add(newTask);
@@ -223,6 +230,7 @@ class _JobEstimateBuilderScreenState
     );
 
     if (updatedTask != null) {
+      await _reloadTaskItems(updatedTask);
       await _calculateTotals();
       setState(() {
         final index = _tasks.indexWhere((t) => t.id == updatedTask.id);
@@ -243,6 +251,7 @@ class _JobEstimateBuilderScreenState
         try {
           await DaoTask().delete(task.id);
           _tasks.removeWhere((t) => t.id == task.id);
+          _itemsByTaskId.remove(task.id);
           await _calculateTotals();
           setState(() {});
         } catch (e) {
@@ -431,10 +440,13 @@ class _JobEstimateBuilderScreenState
     ],
   );
 
-  Widget _buildTaskItems(Task task) => FutureBuilderEx<ItemsAndRate>(
-    future: ItemsAndRate.fromTask(task),
-    builder: (context, itemAndRate) => HMBColumn(
-      children: itemAndRate!.items
+  Widget _buildTaskItems(Task task) {
+    final itemAndRate = _itemsByTaskId[task.id];
+    if (itemAndRate == null) {
+      return const SizedBox.shrink();
+    }
+    return HMBColumn(
+      children: itemAndRate.items
           .map(
             (item) => _buildItemTile(
               item,
@@ -444,8 +456,8 @@ class _JobEstimateBuilderScreenState
             ),
           )
           .toList(),
-    ),
-  );
+    );
+  }
 
   Widget _buildItemTile(
     TaskItem item,
@@ -467,7 +479,7 @@ class _JobEstimateBuilderScreenState
               hint: 'Edit Estimate',
             ),
             HMBDeleteIcon(
-              onPressed: () => _deleteItem(item),
+              onPressed: () => _deleteItem(item, task),
               hint: 'Delete Estimate',
             ),
           ],
@@ -496,6 +508,7 @@ class _JobEstimateBuilderScreenState
       ),
     );
     if (newItem != null) {
+      await _reloadTaskItems(task);
       await _calculateTotals();
       setState(() {});
     }
@@ -518,12 +531,13 @@ class _JobEstimateBuilderScreenState
     );
 
     if (updatedItem != null) {
+      await _reloadTaskItems(task);
       await _calculateTotals();
       setState(() {});
     }
   }
 
-  Future<void> _deleteItem(TaskItem item) async {
+  Future<void> _deleteItem(TaskItem item, Task task) async {
     await showConfirmDeleteDialog(
       context: context,
       nameSingular: 'Task item',
@@ -532,6 +546,7 @@ class _JobEstimateBuilderScreenState
       onConfirmed: () async {
         try {
           await DaoTaskItem().delete(item.id);
+          await _reloadTaskItems(task);
           await _calculateTotals();
           setState(() {});
         } catch (e) {
@@ -565,6 +580,7 @@ class _JobEstimateBuilderScreenState
         inserted++;
       }
 
+      await _reloadTaskItems(task);
       await _calculateTotals();
       setState(() {});
       HMBToast.info('Added $inserted estimate item(s) from AI.');
