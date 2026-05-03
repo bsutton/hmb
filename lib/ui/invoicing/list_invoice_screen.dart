@@ -59,6 +59,12 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   DateTime get _recentlyPaidCutoff =>
       DateTime.now().subtract(const Duration(days: 30));
 
+  bool get _hasScopedInvoiceFilter =>
+      _isJobRestricted ||
+      selectedJob.jobId != null ||
+      selectedCustomer != null ||
+      Strings.isNotBlank(filterText);
+
   @override
   void initState() {
     super.initState();
@@ -108,7 +114,8 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     var invoices = await DaoInvoice().getByFilter(
       filterText,
       includePaid: showPaidInvoices,
-      paidSince: !showOlderPaidInvoices && showPaidInvoices
+      paidSince:
+          !showOlderPaidInvoices && showPaidInvoices && !_hasScopedInvoiceFilter
           ? _recentlyPaidCutoff
           : null,
       includeDeletedOrVoided: showDeletedOrVoidedInvoices,
