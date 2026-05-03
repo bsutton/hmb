@@ -812,9 +812,9 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
             child: InteractiveViewer(
               transformationController: _transformationController,
               minScale: 1,
-              maxScale: 1,
+              maxScale: 4,
               panEnabled: !_isDraggingGeometry && !_hasPendingGeometryDrag,
-              scaleEnabled: false,
+              scaleEnabled: !_isDraggingGeometry && !_hasPendingGeometryDrag,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onLongPressStart: (details) => unawaited(
