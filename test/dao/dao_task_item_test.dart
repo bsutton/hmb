@@ -162,6 +162,26 @@ void main() {
     expect(reloaded.userDefinedCharge, Money.fromInt(12345, isoCode: 'AUD'));
     expect(reloaded.completed, isTrue);
   });
+
+  test('completed material update fills missing actual costs', () async {
+    final item = await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.inProgress,
+      itemType: TaskItemType.materialsBuy,
+      completed: false,
+      includeActuals: false,
+    );
+
+    final updated = item.copyWith(completed: true);
+    await DaoTaskItem().update(updated);
+
+    final reloaded = (await DaoTaskItem().getById(item.id))!;
+    expect(reloaded.completed, isTrue);
+    expect(reloaded.actualMaterialUnitCost, MoneyEx.fromInt(500));
+    expect(reloaded.actualMaterialQuantity, Fixed.one);
+    expect(reloaded.actualCost, MoneyEx.fromInt(500));
+    expect(reloaded.chargeMode, ChargeMode.calculated);
+  });
 }
 
 Future<TaskItem> _insertMaterialTaskItem() => _insertTaskItemForJob(
@@ -176,6 +196,7 @@ Future<TaskItem> _insertTaskItemForJob({
   required TaskStatus taskStatus,
   required TaskItemType itemType,
   required bool completed,
+  bool includeActuals = true,
 }) async {
   final unique = DateTime.now().microsecondsSinceEpoch;
   final customer = Customer.forInsert(
@@ -216,8 +237,8 @@ Future<TaskItem> _insertTaskItemForJob({
     itemType: itemType,
     estimatedMaterialUnitCost: MoneyEx.fromInt(500),
     estimatedMaterialQuantity: Fixed.one,
-    actualMaterialUnitCost: MoneyEx.fromInt(500),
-    actualMaterialQuantity: Fixed.one,
+    actualMaterialUnitCost: includeActuals ? MoneyEx.fromInt(500) : null,
+    actualMaterialQuantity: includeActuals ? Fixed.one : null,
     chargeMode: ChargeMode.calculated,
     margin: Percentage.zero,
     completed: completed,
