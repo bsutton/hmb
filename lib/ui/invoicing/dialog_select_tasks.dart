@@ -162,9 +162,14 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
   Future<void> asyncInitState() async {
     _groupByTask = true;
 
-    billBookingFee = canBillBookingFee =
-        widget.job.billingType == BillingType.timeAndMaterial &&
-        !widget.job.bookingFeeInvoiced;
+    final hasBookingFee =
+        widget.job.bookingFee != null && !widget.job.bookingFee!.isZero;
+    canBillBookingFee = widget.forQuote
+        ? hasBookingFee && !widget.job.bookingFeeInvoiced
+        : widget.job.billingType == BillingType.timeAndMaterial &&
+              hasBookingFee &&
+              !widget.job.bookingFeeInvoiced;
+    billBookingFee = canBillBookingFee;
 
     for (final accuredValue in widget.taskSelectors) {
       _selectedTasks[accuredValue.task.id] = true;
