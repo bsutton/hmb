@@ -401,27 +401,16 @@ class TaskItem extends Entity<TaskItem> {
   MaterialCalculator calcMaterialCost(BillingType billingType) =>
       MaterialCalculator(billingType, this);
 
-  /// Finalise a user-defined charge based on provided actuals
-  /// (common for time & materials).
+  /// Capture actual purchase costs while keeping material charges calculated
+  /// from the current quantity, unit cost, and margin.
   void setActualCosts({
     required Money actualMaterialUnitCost,
     required Fixed actualMaterialQuantity,
   }) {
     this.actualMaterialUnitCost = actualMaterialUnitCost;
     this.actualMaterialQuantity = actualMaterialQuantity;
-
-    // Recompute via calculator with actuals (T&M uses actuals when completed),
-    // then lock in as user-defined.
-    final mc = MaterialCalculator(
-      BillingType.timeAndMaterial,
-      copyWith(
-        actualMaterialUnitCost: actualMaterialUnitCost,
-        actualMaterialQuantity: actualMaterialQuantity,
-        completed: true,
-      ),
-    );
-    _totalLineCharge = mc.calcMaterialCharges(BillingType.timeAndMaterial);
-    chargeMode = ChargeMode.userDefined;
+    _totalLineCharge = null;
+    chargeMode = ChargeMode.calculated;
   }
 
   /// Generates a human-readable dimension string.
