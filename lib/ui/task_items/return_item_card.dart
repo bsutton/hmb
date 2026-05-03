@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:flutter/material.dart';
 
 import '../../dao/dao.g.dart';
@@ -30,6 +29,9 @@ class ReturnItemCard extends ShoppingItemCard {
     required super.onReload,
     super.key,
   });
+
+  @override
+  bool get showDeleteAction => false;
 
   @override
   Widget buildActions(BuildContext context, CustomerAndJob det) {

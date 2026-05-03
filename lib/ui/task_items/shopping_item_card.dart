@@ -14,7 +14,10 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
+import '../../dao/dao.g.dart';
 import '../../util/dart/types.dart';
+import '../dialog/hmb_comfirm_delete_dialog.dart';
+import '../widgets/icons/hmb_delete_icon.dart';
 import '../widgets/icons/hmb_edit_icon.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/widgets.g.dart';
@@ -38,6 +41,8 @@ abstract class ShoppingItemCard extends StatelessWidget {
   /// Build specific action buttons (e.g. ✓ for purchase, ↩ for return).
   Widget buildActions(BuildContext context, CustomerAndJob det);
 
+  bool get showDeleteAction => true;
+
   @override
   Widget build(BuildContext context) => FutureBuilderEx<CustomerAndJob>(
     future: CustomerAndJob.fetch(itemContext),
@@ -50,6 +55,11 @@ abstract class ShoppingItemCard extends StatelessWidget {
               showShoppingItemDialog(context, itemContext, onReload),
           hint: 'Edit Item',
         ),
+        if (showDeleteAction)
+          HMBDeleteIcon(
+            hint: 'Delete Item',
+            onPressed: () => _deleteItem(context),
+          ),
       ],
       height: 340,
       body: HMBRow(
@@ -65,4 +75,27 @@ abstract class ShoppingItemCard extends StatelessWidget {
       ),
     ),
   );
+
+  Future<void> _deleteItem(BuildContext context) async {
+    final taskItem = itemContext.taskItem;
+    if (taskItem.billed) {
+      HMBToast.error("You can't delete an item that has been invoiced.");
+      return;
+    }
+
+    await showConfirmDeleteDialog(
+      context: context,
+      nameSingular: 'Item',
+      question: 'Are you sure you want to delete ${taskItem.description}?',
+      onConfirmed: () async {
+        try {
+          await DaoTaskItem().delete(taskItem.id);
+          await onReload();
+          HMBToast.info('Item deleted.');
+        } catch (e) {
+          HMBToast.error('Unable to delete item: $e');
+        }
+      },
+    );
+  }
 }
