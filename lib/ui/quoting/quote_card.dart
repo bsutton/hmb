@@ -364,7 +364,6 @@ To approve it, reply to this email with:
               Text('Customer: ${jc.customer.name}'),
               Text('Primary Contact: ${jc.primaryContact?.fullname ?? 'N/A'}'),
               Text('Billing Contact: ${jc.billingContact?.fullname ?? 'N/A'}'),
-              Text('Quote Margin: ${quote.quoteMargin}'),
               Text('Total: ${quote.totalAmount}'),
             ],
           ),
