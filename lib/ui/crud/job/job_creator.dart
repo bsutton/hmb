@@ -68,6 +68,7 @@ class _JobCreatorState extends State<JobCreator> {
   Contact? _selectedExistingContact;
   Contact? _selectedReferrerContact;
   Contact? _selectedPrimaryContact;
+  Contact? _draftPrimaryContact;
   Site? _selectedExistingSite;
   late final List<WizardStep> _steps;
   late final _CustomerStep _customerStep;
@@ -199,6 +200,7 @@ class _JobCreatorState extends State<JobCreator> {
           _existingSites = [];
           _selectedExistingContact = null;
           _selectedPrimaryContact = null;
+          _draftPrimaryContact = null;
           _selectedExistingSite = null;
         }
       });
@@ -243,6 +245,7 @@ class _JobCreatorState extends State<JobCreator> {
           _existingSites = [];
           _selectedExistingContact = null;
           _selectedPrimaryContact = null;
+          _draftPrimaryContact = null;
           _selectedExistingSite = null;
         }
       });
@@ -308,10 +311,50 @@ class _JobCreatorState extends State<JobCreator> {
     for (final contact in _referrerContacts) {
       add(contact);
     }
+    add(_draftPrimaryContactForCurrentFields());
     add(_selectedExistingContact);
     add(_selectedReferrerContact);
+    add(_resolvedPrimaryContact());
     return all;
   }
+
+  Contact? _draftPrimaryContactForCurrentFields() {
+    if (_selectedExistingContact != null) {
+      return null;
+    }
+
+    final hasDetails =
+        _firstName.text.trim().isNotEmpty ||
+        _surname.text.trim().isNotEmpty ||
+        _mobileNo.text.trim().isNotEmpty ||
+        _email.text.trim().isNotEmpty;
+    if (!hasDetails) {
+      _draftPrimaryContact = null;
+      return null;
+    }
+
+    final draft =
+        (_draftPrimaryContact ??= Contact.forInsert(
+            firstName: _firstName.text,
+            surname: _surname.text,
+            mobileNumber: _mobileNo.text,
+            landLine: '',
+            officeNumber: '',
+            emailAddress: _email.text,
+          ))
+          ..firstName = _firstName.text
+          ..surname = _surname.text
+          ..mobileNumber = _mobileNo.text
+          ..emailAddress = _email.text;
+    return draft;
+  }
+
+  Contact? _resolvedPrimaryContact() =>
+      _selectedPrimaryContact == _draftPrimaryContact
+      ? _draftPrimaryContactForCurrentFields()
+      : _selectedPrimaryContact ??
+            _selectedExistingContact ??
+            _draftPrimaryContactForCurrentFields();
 
   Contact? _pickBestMatchingContact(List<Contact> contacts) {
     if (contacts.isEmpty) {
@@ -368,8 +411,21 @@ class _JobCreatorState extends State<JobCreator> {
 
   String _normalizedDigits(String value) => value.replaceAll(RegExp(r'\D'), '');
 
-  String _displayName(Contact contact) =>
-      '${contact.firstName} ${contact.surname}'.trim();
+  String _displayContact(Contact contact) {
+    final name = '${contact.firstName} ${contact.surname}'.trim();
+    if (name.isNotEmpty) {
+      return name;
+    }
+    if (contact.emailAddress.isNotEmpty) {
+      return contact.emailAddress;
+    }
+    if (contact.mobileNumber.isNotEmpty) {
+      return contact.mobileNumber;
+    }
+    return 'New contact';
+  }
+
+  String _displayName(Contact contact) => _displayContact(contact);
 
   List<Contact> _filteredExistingContacts() {
     final filter = _normalize(_existingContactFilter.text);
@@ -590,6 +646,7 @@ class _JobCreatorState extends State<JobCreator> {
         _selectedExistingContact = null;
         _selectedReferrerContact = null;
         _selectedPrimaryContact = null;
+        _draftPrimaryContact = null;
         _selectedExistingSite = null;
       }
     });
@@ -665,14 +722,16 @@ class _JobCreatorState extends State<JobCreator> {
           if (_selectedExistingContact != null) {
             contact = _selectedExistingContact;
           } else {
-            contact = Contact.forInsert(
-              firstName: _firstName.text,
-              surname: _surname.text,
-              mobileNumber: _mobileNo.text,
-              landLine: '',
-              officeNumber: '',
-              emailAddress: _email.text,
-            );
+            contact =
+                _draftPrimaryContactForCurrentFields() ??
+                Contact.forInsert(
+                  firstName: _firstName.text,
+                  surname: _surname.text,
+                  mobileNumber: _mobileNo.text,
+                  landLine: '',
+                  officeNumber: '',
+                  emailAddress: _email.text,
+                );
             await daoContact.insert(contact!, transaction);
             await DaoContactCustomer().insertJoin(
               contact!,
@@ -730,7 +789,7 @@ class _JobCreatorState extends State<JobCreator> {
         final summary = Strings.isBlank(_jobSummary.text)
             ? 'New Job'
             : _jobSummary.text;
-        final primaryContact = _selectedPrimaryContact ?? contact;
+        final primaryContact = _resolvedPrimaryContact() ?? contact;
         job = Job.forInsert(
           customerId: customer.id,
           referrerCustomerId: _selectedReferrerCustomer?.id,
@@ -886,6 +945,10 @@ class _ContactStep extends WizardStep {
                   state._mobileNo.text = value.mobileNumber;
                   state._email.text = value.emailAddress;
                   state._selectedPrimaryContact = value;
+                  state._draftPrimaryContact = null;
+                } else {
+                  state._selectedPrimaryContact = state
+                      ._draftPrimaryContactForCurrentFields();
                 }
               }),
               child: Column(
@@ -1110,8 +1173,7 @@ class _JobStep extends WizardStep {
                   return name.contains(value) || email.contains(value);
                 }).toList();
               },
-              format: (contact) =>
-                  '${contact.firstName} ${contact.surname}'.trim(),
+              format: state._displayContact,
               onChanged: (contact) {
                 setState(() {
                   state._selectedReferrerContact = contact;
@@ -1122,9 +1184,7 @@ class _JobStep extends WizardStep {
           HMBDroplist<Contact>(
             title: 'Primary Contact',
             required: false,
-            selectedItem: () => Future.value(
-              state._selectedPrimaryContact ?? state._selectedExistingContact,
-            ),
+            selectedItem: () => Future.value(state._resolvedPrimaryContact()),
             items: (filter) async {
               final contacts = state._partyContacts();
               final value = filter?.trim().toLowerCase() ?? '';
@@ -1138,8 +1198,7 @@ class _JobStep extends WizardStep {
                 return name.contains(value) || email.contains(value);
               }).toList();
             },
-            format: (contact) =>
-                '${contact.firstName} ${contact.surname}'.trim(),
+            format: state._displayContact,
             onChanged: (contact) {
               setState(() {
                 state._selectedPrimaryContact = contact;
