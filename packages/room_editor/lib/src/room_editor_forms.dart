@@ -215,6 +215,7 @@ class RoomEditorFramingSettingsSheet extends StatefulWidget {
   final Future<void> Function() onCommitSelectedRoomCeilingOverrides;
   final Future<void> Function()? onCommitSelectedLineOverrides;
   final Future<void> Function() onApply;
+  final Widget? extraContent;
 
   const RoomEditorFramingSettingsSheet({
     required this.unitLabel,
@@ -233,6 +234,7 @@ class RoomEditorFramingSettingsSheet extends StatefulWidget {
     this.lineStudOffsetController,
     this.lineFixingFaceWidthController,
     this.onCommitSelectedLineOverrides,
+    this.extraContent,
   });
 
   @override
@@ -373,6 +375,10 @@ class _RoomEditorFramingSettingsSheetState
             onEditingComplete: () =>
                 unawaited(widget.onCommitSelectedLineOverrides!()),
           ),
+        ],
+        if (widget.extraContent != null) ...[
+          const SizedBox(height: 16),
+          widget.extraContent!,
         ],
         const SizedBox(height: 16),
         Align(

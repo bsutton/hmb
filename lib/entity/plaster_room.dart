@@ -24,6 +24,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
   final PreferredUnitSystem unitSystem;
   final int ceilingHeight;
   final bool plasterCeiling;
+  final int attributeMask;
   final PlasterSheetDirection ceilingSheetDirection;
   final int? ceilingFramingSpacingOverride;
   final int? ceilingFramingOffsetOverride;
@@ -36,6 +37,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
     required this.unitSystem,
     required this.ceilingHeight,
     required this.plasterCeiling,
+    required this.attributeMask,
     required this.ceilingSheetDirection,
     required this.ceilingFramingSpacingOverride,
     required this.ceilingFramingOffsetOverride,
@@ -50,6 +52,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
     required this.unitSystem,
     required this.ceilingHeight,
     this.plasterCeiling = true,
+    this.attributeMask = 0,
     this.ceilingSheetDirection = PlasterSheetDirection.auto,
     this.ceilingFramingSpacingOverride,
     this.ceilingFramingOffsetOverride,
@@ -62,6 +65,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
     PreferredUnitSystem? unitSystem,
     int? ceilingHeight,
     bool? plasterCeiling,
+    int? attributeMask,
     PlasterSheetDirection? ceilingSheetDirection,
     Object? ceilingFramingSpacingOverride = _unsetPlasterRoomField,
     Object? ceilingFramingOffsetOverride = _unsetPlasterRoomField,
@@ -73,6 +77,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
     unitSystem: unitSystem ?? this.unitSystem,
     ceilingHeight: ceilingHeight ?? this.ceilingHeight,
     plasterCeiling: plasterCeiling ?? this.plasterCeiling,
+    attributeMask: attributeMask ?? this.attributeMask,
     ceilingSheetDirection: ceilingSheetDirection ?? this.ceilingSheetDirection,
     ceilingFramingSpacingOverride:
         identical(ceilingFramingSpacingOverride, _unsetPlasterRoomField)
@@ -99,6 +104,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
         : PreferredUnitSystem.metric,
     ceilingHeight: map['ceiling_height'] as int? ?? 24000,
     plasterCeiling: (map['plaster_ceiling'] as int? ?? 1) == 1,
+    attributeMask: map['attribute_mask'] as int? ?? 0,
     ceilingSheetDirection: PlasterSheetDirectionX.fromStorage(
       map['ceiling_sheet_direction'] as String?,
     ),
@@ -120,6 +126,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
     'unit_system': unitSystem.name,
     'ceiling_height': ceilingHeight,
     'plaster_ceiling': plasterCeiling ? 1 : 0,
+    'attribute_mask': attributeMask,
     'ceiling_sheet_direction': ceilingSheetDirection.storageValue,
     'ceiling_framing_spacing_override': ceilingFramingSpacingOverride,
     'ceiling_framing_offset_override': ceilingFramingOffsetOverride,

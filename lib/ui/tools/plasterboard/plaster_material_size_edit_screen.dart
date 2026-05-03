@@ -9,6 +9,7 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/plaster_geometry.dart';
+import 'plaster_attribute_fields.dart';
 
 class PlasterMaterialSizeEditScreen extends StatefulWidget {
   final PlasterProject project;
@@ -33,6 +34,7 @@ class _PlasterMaterialSizeEditScreenState
 
   late PreferredUnitSystem _unitSystem;
   var _excludedFromLayout = false;
+  var _attributeMask = 0;
   int? _supplierId;
   String? _error;
 
@@ -45,6 +47,7 @@ class _PlasterMaterialSizeEditScreenState
       _supplierId = material.supplierId;
       _unitSystem = material.unitSystem;
       _excludedFromLayout = material.excludedFromLayout;
+      _attributeMask = material.attributeMask;
       _nameController.text = material.name;
       _widthController.text = PlasterGeometry.formatDisplayLength(
         material.width,
@@ -103,6 +106,7 @@ class _PlasterMaterialSizeEditScreenState
             width: width,
             height: height,
             excludedFromLayout: _excludedFromLayout,
+            attributeMask: _attributeMask,
           )
         : widget.material!.copyWith(
             supplierId: supplierId,
@@ -111,6 +115,7 @@ class _PlasterMaterialSizeEditScreenState
             width: width,
             height: height,
             excludedFromLayout: _excludedFromLayout,
+            attributeMask: _attributeMask,
           );
 
     if (_isNew) {
@@ -183,6 +188,11 @@ class _PlasterMaterialSizeEditScreenState
               labelText: 'Length (${PlasterGeometry.unitLabel(_unitSystem)})',
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+          const SizedBox(height: 12),
+          PlasterAttributeFields(
+            value: _attributeMask,
+            onChanged: (value) => setState(() => _attributeMask = value),
           ),
           const SizedBox(height: 12),
           SwitchListTile(
