@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/plaster_geometry.dart';
 import '../../widgets/blocking_ui.dart';
 import '../../widgets/hmb_button.dart';
@@ -54,13 +53,14 @@ class _PlasterRoomEditScreenState extends DeferredState<PlasterRoomEditScreen> {
     } else {
       final system = await DaoSystem().get();
       final rooms = await DaoPlasterRoom().getByProject(widget.project.id);
+      final unitSystem = rooms.isEmpty
+          ? system.preferredUnitSystem
+          : rooms.first.unitSystem;
       _room = PlasterRoom.forInsert(
         projectId: widget.project.id,
         name: 'Room ${rooms.length + 1}',
-        unitSystem: system.preferredUnitSystem,
-        ceilingHeight: PlasterGeometry.defaultCeilingHeight(
-          system.preferredUnitSystem,
-        ),
+        unitSystem: unitSystem,
+        ceilingHeight: PlasterGeometry.defaultCeilingHeight(unitSystem),
       );
     }
     _syncControllers();
@@ -154,24 +154,6 @@ class _PlasterRoomEditScreenState extends DeferredState<PlasterRoomEditScreen> {
     }
   }
 
-  Future<void> _changeUnitSystem(PreferredUnitSystem unitSystem) async {
-    if (unitSystem == _room.unitSystem) {
-      return;
-    }
-    final converted = PlasterGeometry.convertRoomBundle(
-      room: _room,
-      lines: _lines,
-      openings: _openings,
-      target: unitSystem,
-    );
-    setState(() {
-      _room = converted.$1;
-      _lines = converted.$2;
-      _openings = converted.$3;
-      _syncControllers();
-    });
-  }
-
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
@@ -196,26 +178,6 @@ class _PlasterRoomEditScreenState extends DeferredState<PlasterRoomEditScreen> {
           TextField(
             controller: _nameController,
             decoration: const InputDecoration(labelText: 'Room Name'),
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<PreferredUnitSystem>(
-            initialValue: _room.unitSystem,
-            decoration: const InputDecoration(labelText: 'Units'),
-            items: const [
-              DropdownMenuItem(
-                value: PreferredUnitSystem.metric,
-                child: Text('Metric'),
-              ),
-              DropdownMenuItem(
-                value: PreferredUnitSystem.imperial,
-                child: Text('Imperial'),
-              ),
-            ],
-            onChanged: (value) {
-              if (value != null) {
-                unawaited(_changeUnitSystem(value));
-              }
-            },
           ),
           const SizedBox(height: 12),
           TextField(
