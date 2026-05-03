@@ -146,14 +146,16 @@ Future<void> showShoppingItemDialog(
           TextButton(
             onPressed: () async {
               // update fields
+              final unitCost = MoneyEx.tryParse(costController.text);
+              final quantity = FixedEx.tryParse(quantityController.text);
               item
                 ..description = descriptionController.text
                 ..purpose = purposeController.text
-                ..actualMaterialUnitCost = MoneyEx.tryParse(costController.text)
-                ..actualMaterialQuantity = FixedEx.tryParse(
-                  quantityController.text,
-                )
-                ..supplierId = selectedSupplier?.id;
+                ..supplierId = selectedSupplier?.id
+                ..setActualCosts(
+                  actualMaterialUnitCost: unitCost,
+                  actualMaterialQuantity: quantity,
+                );
               await DaoTaskItem().update(item);
               if (dialogCtx.mounted) {
                 Navigator.of(dialogCtx).pop();
