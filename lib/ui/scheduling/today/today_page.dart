@@ -386,7 +386,7 @@ class TodayPageState extends DeferredState<TodayPage> {
     title: 'Invoicing',
     list: today.toBeInvoiced,
     emptyMessage: 'No jobs need to be invoiced.',
-    cardBuilder: InvoiceCard.new,
+    cardBuilder: (invoicingJob) => InvoiceCard(invoicingJob, onChange: refresh),
   );
 
   Future<void> _openShoppingItem(TaskItem taskItem) async {
@@ -502,8 +502,9 @@ class QuotingCard extends StatelessWidget {
 
 class InvoiceCard extends StatelessWidget {
   final InvoicingJob invoicingJob;
+  final Future<void> Function() onChange;
 
-  const InvoiceCard(this.invoicingJob, {super.key});
+  const InvoiceCard(this.invoicingJob, {required this.onChange, super.key});
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
@@ -543,6 +544,7 @@ class InvoiceCard extends StatelessWidget {
                             InvoiceListScreen(jobRestriction: invoicingJob.job),
                       ),
                     );
+                    await onChange();
                   },
                 ),
               if (invoicingJob.hasUnsentInvoice &&
@@ -554,6 +556,7 @@ class InvoiceCard extends StatelessWidget {
                   hint: 'Create a new invoice',
                   onPressed: () async {
                     await createInvoiceFor(invoicingJob.job, context);
+                    await onChange();
                   },
                 ),
             ],
