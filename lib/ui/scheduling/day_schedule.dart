@@ -147,9 +147,13 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     );
     // If operating hours are not defined, we treat it as a non-operating day.
     if (dayOperating.start == null || dayOperating.end == null) {
-      _hasActivitiesInExtendedHours = false;
-      _computedStartHour = null;
-      _computedEndHour = null;
+      _hasActivitiesInExtendedHours = foundExtended;
+      _computedStartHour = foundExtended
+          ? max(0, earliestExtendedHour - buffer)
+          : null;
+      _computedEndHour = foundExtended
+          ? min(24, latestExtendedHour + buffer)
+          : null;
     } else {
       final operatingStartHour = dayOperating.start!.hour;
       final operatingEndHour = dayOperating.end!.hour;
@@ -255,9 +259,12 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     final dayOperating = system.getOperatingHours().day(
       DayName.fromDate(currentDate),
     );
-    // If operating hours are not defined (non-operating day),
-    //show the full day.
+    // If operating hours are not defined (non-operating day), use the
+    // activity range when there are activities; otherwise show the full day.
     if (dayOperating.start == null || dayOperating.end == null) {
+      if (_hasActivitiesInExtendedHours && _computedStartHour != null) {
+        return _computedStartHour!;
+      }
       return 0;
     }
     // If there are extended activities, use the computed start hour.
@@ -279,9 +286,12 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     final dayOperating = system.getOperatingHours().day(
       DayName.fromDate(currentDate),
     );
-    // If operating hours are not defined (non-operating day),
-    //show the full day.
+    // If operating hours are not defined (non-operating day), use the
+    // activity range when there are activities; otherwise show the full day.
     if (dayOperating.start == null || dayOperating.end == null) {
+      if (_hasActivitiesInExtendedHours && _computedEndHour != null) {
+        return _computedEndHour!;
+      }
       return 24;
     }
     // If there are extended activities, use the computed end hour.

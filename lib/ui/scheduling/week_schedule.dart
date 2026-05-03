@@ -54,6 +54,8 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
   late final bool showWeekends;
   late final OperatingHours operatingHours;
   late bool _hasActivitiesInExtendedHours;
+  int? _computedStartHour;
+  int? _computedEndHour;
   late LocalDate currentDate;
 
   @override
@@ -95,7 +97,10 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
       endOfWeek,
     );
 
-    _hasActivitiesInExtendedHours = false;
+    var foundExtended = false;
+    var earliestExtendedHour = 24;
+    var latestExtendedHour = 0;
+    const buffer = 1;
 
     final eventData = <CalendarEventData<JobActivityEx>>[];
     for (final jobActivity in jobActivities) {
@@ -103,9 +108,16 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
       if (widget.defaultJob == jobActivity.jobId) {
         fontColor = Colors.black;
       }
-      _hasActivitiesInExtendedHours =
-          _hasActivitiesInExtendedHours ||
-          !operatingHours.inOperatingHours(jobActivity);
+      if (!operatingHours.inOperatingHours(jobActivity)) {
+        foundExtended = true;
+        final eventStartHour = jobActivity.start.hour;
+        var eventEndHour = jobActivity.end.hour;
+        if (jobActivity.end.minute > 0) {
+          eventEndHour++;
+        }
+        earliestExtendedHour = min(earliestExtendedHour, eventStartHour);
+        latestExtendedHour = max(latestExtendedHour, eventEndHour);
+      }
 
       final style = TextStyle(color: fontColor, fontSize: 13);
       eventData.add(
@@ -113,6 +125,20 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
           jobActivity,
         )).eventData.copyWith(titleStyle: style, descriptionStyle: style),
       );
+    }
+
+    _hasActivitiesInExtendedHours = foundExtended;
+    if (foundExtended) {
+      final defaultStart = max(0, _getEarliestStart(currentDate) - buffer);
+      final defaultEnd = min(24, _getLatestFinish(currentDate) + buffer);
+      _computedStartHour = min(
+        defaultStart,
+        max(0, earliestExtendedHour - buffer),
+      );
+      _computedEndHour = max(defaultEnd, min(24, latestExtendedHour + buffer));
+    } else {
+      _computedStartHour = null;
+      _computedEndHour = null;
     }
 
     /// Occasionally when moving this can get called
@@ -181,15 +207,21 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
   }
 
   int _getEndHour() {
-    if (widget.showExtendedHours || _hasActivitiesInExtendedHours) {
+    if (widget.showExtendedHours) {
       return 24;
+    }
+    if (_hasActivitiesInExtendedHours && _computedEndHour != null) {
+      return _computedEndHour!;
     }
     return min(24, _getLatestFinish(currentDate) + 1);
   }
 
   int _getStartHour() {
-    if (widget.showExtendedHours || _hasActivitiesInExtendedHours) {
+    if (widget.showExtendedHours) {
       return 0;
+    }
+    if (_hasActivitiesInExtendedHours && _computedStartHour != null) {
+      return _computedStartHour!;
     }
     return max(0, _getEarliestStart(currentDate) - 1);
   }
