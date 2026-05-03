@@ -121,6 +121,7 @@ AND job_id = ?
    OR CAST(i.id AS TEXT) LIKE ?
    OR CAST(j.id AS TEXT) LIKE ?
    OR j.summary LIKE ?
+   OR j.description LIKE ?
    OR c.name LIKE ?
    OR bill.firstName LIKE ?
    OR bill.surname LIKE ?
@@ -128,9 +129,26 @@ AND job_id = ?
    OR jobContact.firstName LIKE ?
    OR jobContact.surname LIKE ?
    OR TRIM(jobContact.firstName || ' ' || jobContact.surname) LIKE ?
+   OR EXISTS (
+        SELECT 1
+        FROM customer_contact cc
+        JOIN contact customerContact ON customerContact.id = cc.contact_id
+        WHERE cc.customer_id = c.id
+          AND (
+               customerContact.firstName LIKE ?
+            OR customerContact.surname LIKE ?
+            OR TRIM(
+                 customerContact.firstName || ' ' || customerContact.surname
+               ) LIKE ?
+          )
+      )
 )
 ''');
       whereArgs.addAll([
+        '%$filter%',
+        '%$filter%',
+        '%$filter%',
+        '%$filter%',
         '%$filter%',
         '%$filter%',
         '%$filter%',
