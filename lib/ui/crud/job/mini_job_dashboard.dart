@@ -18,6 +18,7 @@ import '../../../dao/dao.g.dart';
 import '../../../dao/notification/dao_june_builder.dart';
 import '../../../entity/job.dart';
 import '../../../entity/quote.dart';
+import '../../../entity/task.dart';
 import '../../invoicing/list_invoice_screen.dart';
 import '../../nav/dashboards/dashlet_card.dart';
 import '../../quoting/list_quote_screen.dart';
@@ -72,14 +73,14 @@ class MiniJobDashboard extends StatelessWidget {
               size: dashletSize,
             ),
             _dashlet(
-              child: DashletCard<int>.builder(
+              child: DashletCard<String>.builder(
                 label: 'Tasks',
                 hint: 'Task to be completed for this Job',
                 icon: Icons.task,
                 compact: true,
                 value: () async {
                   final all = await DaoTask().getTasksByJob(job.id);
-                  return DashletValue<int>(all.length);
+                  return taskDashletValue(all);
                 },
                 builder: (_, _) => HMBFullPageChildScreen(
                   title: 'Tasks',
@@ -340,4 +341,10 @@ class MiniJobDashboard extends StatelessWidget {
       ),
     );
   }
+}
+
+DashletValue<String> taskDashletValue(List<Task> tasks) {
+  final open = tasks.where((task) => !task.status.isInActive()).length;
+  final completed = tasks.where((task) => task.status.isComplete()).length;
+  return DashletValue<String>('$open/$completed');
 }
