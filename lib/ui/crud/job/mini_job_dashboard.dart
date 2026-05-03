@@ -59,6 +59,7 @@ class MiniJobDashboard extends StatelessWidget {
                   hint: 'Add action items to the job',
                   icon: Icons.task,
                   compact: true,
+                  onBeforeOpen: _markJobAccessed,
                   value: () async {
                     final open = await DaoToDo().getOpenByJob(job.id);
                     return DashletValue<int>(open.length);
@@ -77,6 +78,7 @@ class MiniJobDashboard extends StatelessWidget {
                 hint: 'Task to be completed for this Job',
                 icon: Icons.task,
                 compact: true,
+                onBeforeOpen: _markJobAccessed,
                 value: () async {
                   final all = await DaoTask().getTasksByJob(job.id);
                   return DashletValue<int>(all.length);
@@ -94,6 +96,7 @@ class MiniJobDashboard extends StatelessWidget {
                 hint: 'Track and View time recorded against Job Tasks',
                 icon: Icons.access_time,
                 compact: true,
+                onBeforeOpen: _markJobAccessed,
                 value: () async {
                   final list = await DaoTimeEntry().getByJob(job.id);
                   return DashletValue<int>(list.length);
@@ -111,6 +114,7 @@ class MiniJobDashboard extends StatelessWidget {
                 hint: "Build an Estimate of a Job's cost",
                 icon: Icons.calculate,
                 compact: true,
+                onBeforeOpen: _markJobAccessed,
                 value: () async => const DashletValue(''),
                 onTap: _openEstimateBuilder,
               ),
@@ -122,6 +126,7 @@ class MiniJobDashboard extends StatelessWidget {
                 hint: 'Quote a job based on an Estimate',
                 icon: Icons.format_quote,
                 compact: true,
+                onBeforeOpen: _markJobAccessed,
                 value: () async {
                   final all = await DaoQuote().getByFilter(null);
                   final list = all.where((q) => q.jobId == job.id).toList();
@@ -140,6 +145,7 @@ class MiniJobDashboard extends StatelessWidget {
                 hint: 'Send tasks to the customer for approval',
                 icon: Icons.approval,
                 compact: true,
+                onBeforeOpen: _markJobAccessed,
                 value: () async {
                   final all = await DaoTaskApproval().getByJob(job.id);
                   return DashletValue<int>(all.length);
@@ -157,6 +163,7 @@ class MiniJobDashboard extends StatelessWidget {
                 hint: 'Assign tasks to sub-contractors (Suppliers)',
                 icon: Icons.task,
                 compact: true,
+                onBeforeOpen: _markJobAccessed,
                 value: () async {
                   final all = await DaoWorkAssignment().getByJob(job.id);
                   return DashletValue<int>(all.length);
@@ -180,6 +187,7 @@ class MiniJobDashboard extends StatelessWidget {
                     hint: 'Create and manage milestone payments for this Job',
                     icon: Icons.flag,
                     compact: true,
+                    onBeforeOpen: _markJobAccessed,
                     value: _milestoneDashletValue,
                     onTap: _openMilestones,
                   ),
@@ -193,6 +201,7 @@ class MiniJobDashboard extends StatelessWidget {
                 hint: 'Invoice a Job',
                 icon: Icons.attach_money,
                 compact: true,
+                onBeforeOpen: _markJobAccessed,
                 value: () async {
                   final all = await DaoInvoice().getByFilter(null);
                   final list = all.where((i) => i.jobId == job.id).toList();
@@ -214,6 +223,9 @@ class MiniJobDashboard extends StatelessWidget {
   /// Wraps a dashlet in a fixed-size container
   Widget _dashlet({required Widget child, required double size}) =>
       SizedBox(width: size, height: size, child: child);
+
+  Future<void> _markJobAccessed(BuildContext _) =>
+      DaoJob().markLastActive(job.id);
 
   Future<bool> _shouldShowMilestones() async {
     if (job.billingType == BillingType.fixedPrice) {
