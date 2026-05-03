@@ -69,6 +69,7 @@ class DaoJob extends Dao<Job> {
 
     await DaoTask().deleteByJob(id, transaction: transaction);
     await DaoQuote().deleteByJob(id, transaction: transaction);
+    await DaoToDo().deleteByJob(id, transaction: transaction);
 
     // Delete the job itself
     return db.delete(tableName, where: 'id = ?', whereArgs: [id]);
