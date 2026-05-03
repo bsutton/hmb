@@ -644,6 +644,9 @@ class PlasterGeometry {
   static int defaultCeilingHeight(PreferredUnitSystem unitSystem) =>
       unitSystem == PreferredUnitSystem.metric ? 24000 : 96000;
 
+  static int defaultBoardThickness(PreferredUnitSystem unitSystem) =>
+      unitSystem == PreferredUnitSystem.metric ? 100 : 500;
+
   static List<PlasterRoomLine> defaultLines({
     required int roomId,
     required PreferredUnitSystem unitSystem,
@@ -1229,7 +1232,28 @@ class PlasterGeometry {
         'framingSpacing=$framingSpacing, '
         'framingOffset=$framingOffset, '
         'fixingFaceWidth=$fixingFaceWidth';
+    final requiredThickness =
+        line?.boardThicknessOverride ?? room.boardThickness;
     for (final material in materials) {
+      final materialThickness = convertLength(
+        material.thickness,
+        material.unitSystem,
+        room.unitSystem,
+      );
+      if (materialThickness != requiredThickness) {
+        _logSurfaceCandidateDecision(
+          label: label,
+          material: material,
+          direction: direction,
+          decision: 'rejected',
+          detail:
+              'thickness '
+              '${formatDisplayLength(materialThickness, room.unitSystem)} '
+              'does not match required '
+              '${formatDisplayLength(requiredThickness, room.unitSystem)}',
+        );
+        continue;
+      }
       final sheetWidth = convertLength(
         material.width,
         material.unitSystem,

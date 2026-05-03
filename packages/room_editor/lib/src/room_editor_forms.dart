@@ -201,6 +201,7 @@ class RoomEditorDetailsForm extends StatelessWidget {
 class RoomEditorFramingSettingsSheet extends StatefulWidget {
   final String unitLabel;
   final TextEditingController ceilingHeightController;
+  final TextEditingController roomBoardThicknessController;
   final TextEditingController roomCeilingFramingSpacingController;
   final TextEditingController roomCeilingFramingOffsetController;
   final TextEditingController roomCeilingFixingFaceWidthController;
@@ -209,9 +210,11 @@ class RoomEditorFramingSettingsSheet extends StatefulWidget {
   final TextEditingController? lineStudSpacingController;
   final TextEditingController? lineStudOffsetController;
   final TextEditingController? lineFixingFaceWidthController;
+  final TextEditingController? lineBoardThicknessController;
   // ignore: avoid_positional_boolean_parameters
   final Future<void> Function(bool value) onPlasterCeilingChanged;
   final Future<void> Function() onCommitCeilingHeight;
+  final Future<void> Function() onCommitRoomBoardThickness;
   final Future<void> Function() onCommitSelectedRoomCeilingOverrides;
   final Future<void> Function()? onCommitSelectedLineOverrides;
   final Future<void> Function() onApply;
@@ -219,6 +222,7 @@ class RoomEditorFramingSettingsSheet extends StatefulWidget {
   const RoomEditorFramingSettingsSheet({
     required this.unitLabel,
     required this.ceilingHeightController,
+    required this.roomBoardThicknessController,
     required this.roomCeilingFramingSpacingController,
     required this.roomCeilingFramingOffsetController,
     required this.roomCeilingFixingFaceWidthController,
@@ -226,12 +230,14 @@ class RoomEditorFramingSettingsSheet extends StatefulWidget {
     required this.hasSelectedWall,
     required this.onPlasterCeilingChanged,
     required this.onCommitCeilingHeight,
+    required this.onCommitRoomBoardThickness,
     required this.onCommitSelectedRoomCeilingOverrides,
     required this.onApply,
     super.key,
     this.lineStudSpacingController,
     this.lineStudOffsetController,
     this.lineFixingFaceWidthController,
+    this.lineBoardThicknessController,
     this.onCommitSelectedLineOverrides,
   });
 
@@ -288,6 +294,17 @@ class _RoomEditorFramingSettingsSheetState
         ),
         const SizedBox(height: 8),
         TextField(
+          controller: widget.roomBoardThicknessController,
+          decoration: InputDecoration(
+            labelText: 'Default Board Thickness (${widget.unitLabel})',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          onSubmitted: (_) => unawaited(widget.onCommitRoomBoardThickness()),
+          onEditingComplete: () =>
+              unawaited(widget.onCommitRoomBoardThickness()),
+        ),
+        const SizedBox(height: 8),
+        TextField(
           controller: widget.roomCeilingFramingSpacingController,
           decoration: InputDecoration(
             labelText: 'Ceiling Framing Spacing Override (${widget.unitLabel})',
@@ -330,6 +347,7 @@ class _RoomEditorFramingSettingsSheetState
             widget.lineStudSpacingController != null &&
             widget.lineStudOffsetController != null &&
             widget.lineFixingFaceWidthController != null &&
+            widget.lineBoardThicknessController != null &&
             widget.onCommitSelectedLineOverrides != null) ...[
           const SizedBox(height: 16),
           Text('Selected wall', style: Theme.of(context).textTheme.titleSmall),
@@ -366,6 +384,19 @@ class _RoomEditorFramingSettingsSheetState
               labelText:
                   'Wall Fixing Face Width Override (${widget.unitLabel})',
               helperText: 'Leave blank to use project default.',
+            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onSubmitted: (_) =>
+                unawaited(widget.onCommitSelectedLineOverrides!()),
+            onEditingComplete: () =>
+                unawaited(widget.onCommitSelectedLineOverrides!()),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: widget.lineBoardThicknessController,
+            decoration: InputDecoration(
+              labelText: 'Board Thickness Override (${widget.unitLabel})',
+              helperText: 'Leave blank to use room default.',
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             onSubmitted: (_) =>

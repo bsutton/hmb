@@ -30,6 +30,7 @@ class _PlasterMaterialSizeEditScreenState
   final _nameController = TextEditingController();
   final _widthController = TextEditingController();
   final _heightController = TextEditingController();
+  final _thicknessController = TextEditingController();
 
   late PreferredUnitSystem _unitSystem;
   var _excludedFromLayout = false;
@@ -54,11 +55,19 @@ class _PlasterMaterialSizeEditScreenState
         material.height,
         material.unitSystem,
       ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
+      _thicknessController.text = PlasterGeometry.formatDisplayLength(
+        material.thickness,
+        material.unitSystem,
+      ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
       return;
     }
 
     _supplierId = widget.project.supplierId;
     _unitSystem = (await DaoSystem().get()).preferredUnitSystem;
+    _thicknessController.text = PlasterGeometry.formatDisplayLength(
+      PlasterGeometry.defaultBoardThickness(_unitSystem),
+      _unitSystem,
+    ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
   }
 
   @override
@@ -66,6 +75,7 @@ class _PlasterMaterialSizeEditScreenState
     _nameController.dispose();
     _widthController.dispose();
     _heightController.dispose();
+    _thicknessController.dispose();
     super.dispose();
   }
 
@@ -85,7 +95,16 @@ class _PlasterMaterialSizeEditScreenState
       _heightController.text,
       _unitSystem,
     );
-    if (width == null || height == null || width <= 0 || height <= 0) {
+    final thickness = PlasterGeometry.parseDisplayLength(
+      _thicknessController.text,
+      _unitSystem,
+    );
+    if (width == null ||
+        height == null ||
+        thickness == null ||
+        width <= 0 ||
+        height <= 0 ||
+        thickness <= 0) {
       setState(() => _error = 'Enter valid material dimensions.');
       return;
     }
@@ -102,6 +121,7 @@ class _PlasterMaterialSizeEditScreenState
             unitSystem: _unitSystem,
             width: width,
             height: height,
+            thickness: thickness,
             excludedFromLayout: _excludedFromLayout,
           )
         : widget.material!.copyWith(
@@ -110,6 +130,7 @@ class _PlasterMaterialSizeEditScreenState
             unitSystem: _unitSystem,
             width: width,
             height: height,
+            thickness: thickness,
             excludedFromLayout: _excludedFromLayout,
           );
 
@@ -181,6 +202,15 @@ class _PlasterMaterialSizeEditScreenState
             controller: _heightController,
             decoration: InputDecoration(
               labelText: 'Length (${PlasterGeometry.unitLabel(_unitSystem)})',
+            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _thicknessController,
+            decoration: InputDecoration(
+              labelText:
+                  'Thickness (${PlasterGeometry.unitLabel(_unitSystem)})',
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),

@@ -86,6 +86,7 @@ class _PlasterProjectListScreenState extends State<PlasterProjectListScreen> {
       name: 'Room 1',
       unitSystem: draft.unitSystem,
       ceilingHeight: PlasterGeometry.defaultCeilingHeight(draft.unitSystem),
+      boardThickness: PlasterGeometry.defaultBoardThickness(draft.unitSystem),
     );
     final roomId = await DaoPlasterRoom().insert(room);
     final defaultLines = PlasterGeometry.defaultLines(
@@ -312,6 +313,7 @@ List<PlasterMaterialSize> defaultMaterialSizes(
   int supplierId,
   PreferredUnitSystem unitSystem,
 ) {
+  final thickness = PlasterGeometry.defaultBoardThickness(unitSystem);
   if (unitSystem == PreferredUnitSystem.metric) {
     return [
       PlasterMaterialSize.forInsert(
@@ -320,6 +322,7 @@ List<PlasterMaterialSize> defaultMaterialSizes(
         unitSystem: unitSystem,
         width: 12000,
         height: 24000,
+        thickness: thickness,
       ),
       PlasterMaterialSize.forInsert(
         supplierId: supplierId,
@@ -327,6 +330,7 @@ List<PlasterMaterialSize> defaultMaterialSizes(
         unitSystem: unitSystem,
         width: 12000,
         height: 27000,
+        thickness: thickness,
       ),
       PlasterMaterialSize.forInsert(
         supplierId: supplierId,
@@ -334,6 +338,7 @@ List<PlasterMaterialSize> defaultMaterialSizes(
         unitSystem: unitSystem,
         width: 12000,
         height: 30000,
+        thickness: thickness,
       ),
     ];
   }
@@ -344,6 +349,7 @@ List<PlasterMaterialSize> defaultMaterialSizes(
       unitSystem: unitSystem,
       width: 48000,
       height: 96000,
+      thickness: thickness,
     ),
     PlasterMaterialSize.forInsert(
       supplierId: supplierId,
@@ -351,6 +357,7 @@ List<PlasterMaterialSize> defaultMaterialSizes(
       unitSystem: unitSystem,
       width: 48000,
       height: 108000,
+      thickness: thickness,
     ),
     PlasterMaterialSize.forInsert(
       supplierId: supplierId,
@@ -358,6 +365,7 @@ List<PlasterMaterialSize> defaultMaterialSizes(
       unitSystem: unitSystem,
       width: 48000,
       height: 120000,
+      thickness: thickness,
     ),
   ];
 }

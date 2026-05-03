@@ -61,6 +61,9 @@ class _PlasterRoomEditScreenState extends DeferredState<PlasterRoomEditScreen> {
         ceilingHeight: PlasterGeometry.defaultCeilingHeight(
           system.preferredUnitSystem,
         ),
+        boardThickness: PlasterGeometry.defaultBoardThickness(
+          system.preferredUnitSystem,
+        ),
       );
     }
     _syncControllers();
