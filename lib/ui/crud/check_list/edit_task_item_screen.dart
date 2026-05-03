@@ -75,6 +75,9 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   late TextEditingController _descriptionController;
   late TextEditingController _purposeController;
 
+  late TextEditingController _estimatedMaterialPackCostController;
+  late TextEditingController _estimatedMaterialUnitsPerPackController;
+  late TextEditingController _estimatedMaterialPacksController;
   late TextEditingController _estimatedMaterialUnitCostController;
   late TextEditingController _estimatedMaterialQuantityController;
   late TextEditingController _estimatedLabourHoursController;
@@ -107,6 +110,9 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     );
 
     _purposeController = TextEditingController(text: currentEntity?.purpose);
+    _estimatedMaterialPackCostController = TextEditingController();
+    _estimatedMaterialUnitsPerPackController = TextEditingController(text: '1');
+    _estimatedMaterialPacksController = TextEditingController(text: '1');
     _estimatedMaterialUnitCostController = TextEditingController(
       text: currentEntity?.estimatedMaterialUnitCost.toString(),
     );
@@ -185,6 +191,9 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   void dispose() {
     _descriptionController.dispose();
     _purposeController.dispose();
+    _estimatedMaterialPackCostController.dispose();
+    _estimatedMaterialUnitsPerPackController.dispose();
+    _estimatedMaterialPacksController.dispose();
     _estimatedMaterialUnitCostController.dispose();
     _estimatedMaterialQuantityController.dispose();
     _estimatedLabourHoursController.dispose();
@@ -409,6 +418,27 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
 
   List<Widget> _buildBuyFields() => [
     HMBTextField(
+      controller: _estimatedMaterialPackCostController,
+      labelText: 'Estimated Pack Cost',
+      keyboardType: TextInputType.number,
+      enabled: _chargeMode != ChargeMode.userDefined,
+      onChanged: (_) => _calculateEstimatedUnitCostFromPack(),
+    ),
+    HMBTextField(
+      controller: _estimatedMaterialUnitsPerPackController,
+      labelText: 'Units per Pack',
+      keyboardType: TextInputType.number,
+      enabled: _chargeMode != ChargeMode.userDefined,
+      onChanged: (_) => _calculateEstimatedUnitCostFromPack(),
+    ),
+    HMBTextField(
+      controller: _estimatedMaterialPacksController,
+      labelText: 'Packs',
+      keyboardType: TextInputType.number,
+      enabled: _chargeMode != ChargeMode.userDefined,
+      onChanged: (_) => _calculateEstimatedUnitCostFromPack(),
+    ),
+    HMBTextField(
       controller: _estimatedMaterialUnitCostController,
       labelText: 'Estimated Unit Cost (pre margin)',
       keyboardType: TextInputType.number,
@@ -424,6 +454,32 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     ),
     _buildMarginAndChargeFields(),
   ];
+
+  void _calculateEstimatedUnitCostFromPack() {
+    if (_estimatedMaterialPackCostController.text.trim().isEmpty) {
+      return;
+    }
+
+    final packCost = MoneyEx.tryParse(
+      _estimatedMaterialPackCostController.text,
+    );
+    final unitsPerPack = FixedEx.tryParseOrElse(
+      _estimatedMaterialUnitsPerPackController.text,
+      Fixed.one,
+    );
+    final safeUnitsPerPack = unitsPerPack.isZero ? Fixed.one : unitsPerPack;
+    final packs = FixedEx.tryParseOrElse(
+      _estimatedMaterialPacksController.text,
+      Fixed.one,
+    );
+
+    _estimatedMaterialUnitCostController.text = packCost
+        .divideByFixed(safeUnitsPerPack)
+        .toString();
+    _estimatedMaterialQuantityController.text = (packs * safeUnitsPerPack)
+        .toString();
+    _calculateChargeFromMargin(_marginController.text);
+  }
 
   /// Materials or tools that we have in stock,
   /// which we may optionally charge for.
