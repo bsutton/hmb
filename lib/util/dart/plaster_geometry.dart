@@ -637,12 +637,34 @@ class PlasterGeometry {
   static const imperialGrid = 6000;
   static const metricMinEdgePiece = 3000;
   static const imperialMinEdgePiece = 11811;
+  static const metricWallBaseClearance = 100;
+  static const metricWallTopClearance = 50;
 
   static int defaultRoomSize(PreferredUnitSystem unitSystem) =>
       unitSystem == PreferredUnitSystem.metric ? 30000 : 120000;
 
   static int defaultCeilingHeight(PreferredUnitSystem unitSystem) =>
       unitSystem == PreferredUnitSystem.metric ? 24000 : 96000;
+
+  static int wallBaseClearance(PreferredUnitSystem unitSystem) => convertLength(
+    metricWallBaseClearance,
+    PreferredUnitSystem.metric,
+    unitSystem,
+  );
+
+  static int wallTopClearance(PreferredUnitSystem unitSystem) => convertLength(
+    metricWallTopClearance,
+    PreferredUnitSystem.metric,
+    unitSystem,
+  );
+
+  static int wallBoardCoverageHeight(
+    int wallHeight,
+    PreferredUnitSystem unitSystem,
+  ) => max(
+    0,
+    wallHeight - wallBaseClearance(unitSystem) - wallTopClearance(unitSystem),
+  );
 
   static List<PlasterRoomLine> defaultLines({
     required int roomId,
@@ -820,6 +842,23 @@ class PlasterGeometry {
         .where((opening) => opening.lineId == line.id)
         .fold<int>(0, (sum, opening) => sum + openingArea(opening));
     return max(0, line.length * room.ceilingHeight - openingAreaSum);
+  }
+
+  static int lineBoardArea(
+    PlasterRoom room,
+    List<PlasterRoomLine> lines,
+    List<PlasterRoomOpening> openings,
+    int lineIndex,
+  ) {
+    final line = lines[lineIndex];
+    final openingAreaSum = openings
+        .where((opening) => opening.lineId == line.id)
+        .fold<int>(0, (sum, opening) => sum + openingArea(opening));
+    final coverageHeight = wallBoardCoverageHeight(
+      room.ceilingHeight,
+      room.unitSystem,
+    );
+    return max(0, line.length * coverageHeight - openingAreaSum);
   }
 
   static double toDisplay(int value, PreferredUnitSystem unitSystem) =>
@@ -1160,7 +1199,7 @@ class PlasterGeometry {
           direction: line.sheetDirection,
           width: line.length,
           height: shape.room.ceilingHeight,
-          area: lineNetArea(shape.room, shape.lines, shape.openings, i),
+          area: lineBoardArea(shape.room, shape.lines, shape.openings, i),
           materials: materials,
           label: _surfaceLabel(
             name: '${shape.room.name} wall ${i + 1}',
@@ -1240,12 +1279,15 @@ class PlasterGeometry {
         material.unitSystem,
         room.unitSystem,
       );
+      final boardCoverageHeight = isCeiling
+          ? height
+          : wallBoardCoverageHeight(height, room.unitSystem);
       final directionCandidates = _directionCandidates(
         direction: direction,
         sheetWidth: sheetWidth,
         sheetHeight: sheetHeight,
         surfaceWidth: width,
-        surfaceHeight: height,
+        surfaceHeight: boardCoverageHeight,
       );
       if (directionCandidates.isEmpty) {
         _logSurfaceCandidateDecision(
@@ -1259,7 +1301,7 @@ class PlasterGeometry {
       for (final candidate in directionCandidates) {
         if (!isCeiling &&
             candidate.$1 == PlasterSheetDirection.vertical &&
-            candidate.$3 < height) {
+            candidate.$3 < boardCoverageHeight) {
           _logSurfaceCandidateDecision(
             label: label,
             material: material,
@@ -1419,6 +1461,15 @@ class PlasterGeometry {
     required PlasterSheetDirection direction,
     required bool isCeiling,
   }) {
+    final placementOriginY = isCeiling
+        ? 0
+        : wallBaseClearance(shape.room.unitSystem);
+    final boardCoverageHeight = isCeiling
+        ? height
+        : wallBoardCoverageHeight(height, shape.room.unitSystem);
+    if (boardCoverageHeight <= 0) {
+      return const [];
+    }
     if (!isCeiling && direction == PlasterSheetDirection.vertical) {
       final row = _buildStudAlignedRow(
         surfaceWidth: width,
@@ -1436,9 +1487,9 @@ class PlasterGeometry {
             for (final piece in row.$1)
               PlasterSheetPlacement(
                 x: piece.$1,
-                y: 0,
+                y: placementOriginY,
                 width: piece.$2,
-                height: height,
+                height: boardCoverageHeight,
               ),
           ],
           row.$1.length,
@@ -1448,7 +1499,7 @@ class PlasterGeometry {
     }
 
     final rowHeights = _buildCourseHeights(
-      surfaceHeight: height,
+      surfaceHeight: boardCoverageHeight,
       sheetHeight: sheetHeight,
       minEdge: minEdge,
       horizontalWallStarter:
@@ -1486,7 +1537,7 @@ class PlasterGeometry {
 
     final placements = <PlasterSheetPlacement>[];
     var maxAcross = 0;
-    var y = 0;
+    var y = placementOriginY;
     for (var rowIndex = 0; rowIndex < rowHeights.length; rowIndex++) {
       final row = chosenRows[rowIndex];
       maxAcross = max(maxAcross, row.length);
