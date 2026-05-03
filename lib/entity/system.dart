@@ -90,6 +90,7 @@ class System extends Entity<System> {
   Money? defaultHourlyRate;
   String? termsUrl;
   Money? defaultBookingFee;
+  Percentage? defaultProfitMargin;
   int? simCardNo;
   String? xeroClientId;
   String? xeroClientSecret;
@@ -151,6 +152,7 @@ class System extends Entity<System> {
     required this.defaultHourlyRate,
     required this.termsUrl,
     required this.defaultBookingFee,
+    required this.defaultProfitMargin,
     required this.simCardNo,
     required this.xeroClientId,
     required this.xeroClientSecret,
@@ -219,6 +221,7 @@ class System extends Entity<System> {
     required this.paymentTermsInDays,
     required this.paymentOptions,
     required this.richTextRemoved,
+    this.defaultProfitMargin,
     this.photoCacheMaxMb = 100,
     this.enableXeroIntegration = true,
     this.preferredUnitSystem = PreferredUnitSystem.metric,
@@ -253,6 +256,7 @@ class System extends Entity<System> {
     Money? defaultHourlyRate,
     String? termsUrl,
     Money? defaultBookingFee,
+    Percentage? defaultProfitMargin,
     int? simCardNo,
     String? xeroClientId,
     String? xeroClientSecret,
@@ -302,6 +306,7 @@ class System extends Entity<System> {
     defaultHourlyRate: defaultHourlyRate ?? this.defaultHourlyRate,
     termsUrl: termsUrl ?? this.termsUrl,
     defaultBookingFee: defaultBookingFee ?? this.defaultBookingFee,
+    defaultProfitMargin: defaultProfitMargin ?? this.defaultProfitMargin,
     simCardNo: simCardNo ?? this.simCardNo,
     xeroClientId: xeroClientId ?? this.xeroClientId,
     xeroClientSecret: xeroClientSecret ?? this.xeroClientSecret,
@@ -366,6 +371,12 @@ class System extends Entity<System> {
       map['default_booking_fee'] as int? ?? 0,
       isoCode: 'AUD',
     ),
+    defaultProfitMargin: map['default_profit_margin'] == null
+        ? null
+        : Percentage.fromInt(
+            map['default_profit_margin'] as int,
+            decimalDigits: 3,
+          ),
     simCardNo: map['sim_card_no'] as int?,
     xeroClientId: map['xero_client_id'] as String?,
     xeroClientSecret: map['xero_client_secret'] as String?,
@@ -463,6 +474,10 @@ class System extends Entity<System> {
     'default_hourly_rate': defaultHourlyRate?.minorUnits.toInt(),
     'terms_url': termsUrl,
     'default_booking_fee': defaultBookingFee?.minorUnits.toInt(),
+    'default_profit_margin': defaultProfitMargin
+        ?.copyWith(decimalDigits: 3)
+        .minorUnits
+        .toInt(),
     'sim_card_no': simCardNo,
     'xero_client_id': xeroClientId,
     'xero_client_secret': xeroClientSecret,

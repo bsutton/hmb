@@ -17,7 +17,6 @@ import 'package:money2/money2.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../../entity/helpers/charge_mode.dart';
-import '../../util/dart/app_settings.dart';
 import '../../util/dart/measurement_type.dart';
 import '../../util/dart/money_ex.dart';
 import '../../util/dart/units.dart';
@@ -163,9 +162,7 @@ Future<void> _addTaskItem({
       selectedItemType != null) {
     final quantity = Fixed.tryParse(quantityController.text) ?? Fixed.one;
     final unitCost = MoneyEx.tryParse(unitCostController.text);
-    final defaultMargin =
-        Percentage.tryParse(await AppSettings.getDefaultProfitMarginText()) ??
-        Percentage.zero;
+    final defaultMargin = await DaoSystem().getDefaultProfitMargin();
 
     // Create and insert the new TaskItem
     final newItem = TaskItem.forInsert(

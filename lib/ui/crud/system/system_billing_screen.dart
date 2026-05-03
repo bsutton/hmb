@@ -96,7 +96,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
       text: system.paymentOptions,
     );
     _defaultProfitMarginController.text =
-        await AppSettings.getDefaultProfitMarginText();
+        (await DaoSystem().getDefaultProfitMargin()).toString();
     _taxDisplayMode = await AppSettings.getTaxDisplayMode();
     _taxLabelController.text = await AppSettings.getTaxLabel();
     _taxRateController.text = await AppSettings.getTaxRatePercentText();
@@ -132,6 +132,14 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
 
   Future<bool> save({required bool close}) async {
     if (_formKey.currentState!.validate()) {
+      final marginValid = Percentage.tryParse(
+        _defaultProfitMarginController.text,
+      );
+      if (marginValid == null) {
+        HMBToast.error('Default Profit Margin is invalid.');
+        return false;
+      }
+
       final system = await DaoSystem().get();
       // Save the form data
       system
@@ -141,6 +149,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
         ..defaultBookingFee = MoneyEx.tryParse(
           _defaultBookingFeeController.text,
         )
+        ..defaultProfitMargin = marginValid
         ..bsb = _bsbController.text
         ..accountNo = _accountNoController.text
         ..paymentLinkUrl = _paymentLinkUrlController.text
@@ -155,16 +164,6 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
         ..billingColour = _billingColour.toColorValue(); // Save billing color
 
       await DaoSystem().update(system);
-      final marginValid = Percentage.tryParse(
-        _defaultProfitMarginController.text,
-      );
-      if (marginValid == null) {
-        HMBToast.error('Default Profit Margin is invalid.');
-        return false;
-      }
-      await AppSettings.setDefaultProfitMarginText(
-        _defaultProfitMarginController.text,
-      );
       await AppSettings.setTaxDisplayMode(_taxDisplayMode);
       await AppSettings.setTaxLabel(_taxLabelController.text);
       await AppSettings.setTaxRatePercentText(_taxRateController.text);
@@ -298,8 +297,9 @@ Sometime this is referred to as a Surcharge, Callout Fee or Admin Fee''',
                   ? 'Enter a valid percentage'
                   : null,
             ).help('Default Profit Margin', '''
-Used as the default margin when creating new Task Items.
-You can still override the margin per Task Item.'''),
+Used as the default margin when creating new Task Items and
+as the starting estimate margin for new Jobs.
+You can still override the margin per Task Item and per Job estimate.'''),
             HMBTextField(
               controller: _bsbController,
               labelText: 'BSB',
