@@ -134,6 +134,11 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     if (!mounted) {
       return;
     }
+    final shouldAnalyze = _shouldAnalyzeAfterLoad(
+      project: project,
+      rooms: bundles,
+      materials: materials,
+    );
     final roomIndex = widget.editorOnlyRoomId == null
         ? 0
         : bundles.indexWhere(
@@ -194,7 +199,159 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     if (_isRoomEditorOnly && bundles.isNotEmpty) {
       _logRoomEditorDebugDump(bundles[_selectedRoomIndex]);
     }
-    unawaited(_startAnalysis());
+    if (shouldAnalyze) {
+      unawaited(_startAnalysis());
+    }
+  }
+
+  bool _shouldAnalyzeAfterLoad({
+    required PlasterProject project,
+    required List<_RoomBundle> rooms,
+    required List<PlasterMaterialSize> materials,
+  }) {
+    if (!_hasLoadedProjectState || _layouts.isEmpty) {
+      return true;
+    }
+    if (_projectAffectsLayout(_project, project)) {
+      return true;
+    }
+    if (!_sameRoomBundles(_rooms, rooms)) {
+      return true;
+    }
+
+    final materialsById = {
+      for (final material in materials) material.id: material,
+    };
+    for (final layout in _layouts) {
+      final current = materialsById[layout.material.id];
+      if (current == null ||
+          !_sameMaterialForLayout(layout.material, current)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _projectAffectsLayout(PlasterProject left, PlasterProject right) =>
+      left.supplierId != right.supplierId ||
+      left.wastePercent != right.wastePercent ||
+      left.wallStudSpacing != right.wallStudSpacing ||
+      left.wallStudOffset != right.wallStudOffset ||
+      left.wallFixingFaceWidth != right.wallFixingFaceWidth ||
+      left.ceilingFramingSpacing != right.ceilingFramingSpacing ||
+      left.ceilingFramingOffset != right.ceilingFramingOffset ||
+      left.ceilingFixingFaceWidth != right.ceilingFixingFaceWidth;
+
+  bool _sameMaterialForLayout(
+    PlasterMaterialSize left,
+    PlasterMaterialSize right,
+  ) =>
+      left.supplierId == right.supplierId &&
+      left.name == right.name &&
+      left.unitSystem == right.unitSystem &&
+      left.width == right.width &&
+      left.height == right.height &&
+      left.excludedFromLayout == right.excludedFromLayout;
+
+  bool _sameRoomBundles(List<_RoomBundle> left, List<_RoomBundle> right) {
+    if (left.length != right.length) {
+      return false;
+    }
+    for (var i = 0; i < left.length; i++) {
+      if (!_sameRoomBundle(left[i], right[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _sameRoomBundle(_RoomBundle left, _RoomBundle right) =>
+      _sameRoom(left.room, right.room) &&
+      _sameLines(left.lines, right.lines) &&
+      _sameOpenings(left.openings, right.openings) &&
+      _sameConstraints(left.constraints, right.constraints);
+
+  bool _sameRoom(PlasterRoom left, PlasterRoom right) =>
+      left.id == right.id &&
+      left.projectId == right.projectId &&
+      left.unitSystem == right.unitSystem &&
+      left.ceilingHeight == right.ceilingHeight &&
+      left.plasterCeiling == right.plasterCeiling &&
+      left.ceilingSheetDirection == right.ceilingSheetDirection &&
+      left.ceilingFramingSpacingOverride ==
+          right.ceilingFramingSpacingOverride &&
+      left.ceilingFramingOffsetOverride == right.ceilingFramingOffsetOverride &&
+      left.ceilingFixingFaceWidthOverride ==
+          right.ceilingFixingFaceWidthOverride;
+
+  bool _sameLines(List<PlasterRoomLine> left, List<PlasterRoomLine> right) {
+    if (left.length != right.length) {
+      return false;
+    }
+    for (var i = 0; i < left.length; i++) {
+      final a = left[i];
+      final b = right[i];
+      if (a.id != b.id ||
+          a.roomId != b.roomId ||
+          a.seqNo != b.seqNo ||
+          a.startX != b.startX ||
+          a.startY != b.startY ||
+          a.length != b.length ||
+          a.plasterSelected != b.plasterSelected ||
+          a.sheetDirection != b.sheetDirection ||
+          a.studSpacingOverride != b.studSpacingOverride ||
+          a.studOffsetOverride != b.studOffsetOverride ||
+          a.fixingFaceWidthOverride != b.fixingFaceWidthOverride) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _sameOpenings(
+    List<PlasterRoomOpening> left,
+    List<PlasterRoomOpening> right,
+  ) {
+    if (left.length != right.length) {
+      return false;
+    }
+    for (var i = 0; i < left.length; i++) {
+      final a = left[i];
+      final b = right[i];
+      if (a.id != b.id ||
+          a.lineId != b.lineId ||
+          a.type != b.type ||
+          a.offsetFromStart != b.offsetFromStart ||
+          a.width != b.width ||
+          a.height != b.height ||
+          a.sillHeight != b.sillHeight ||
+          a.distanceToStartWall != b.distanceToStartWall ||
+          a.distanceToEndWall != b.distanceToEndWall) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _sameConstraints(
+    List<PlasterRoomConstraint> left,
+    List<PlasterRoomConstraint> right,
+  ) {
+    if (left.length != right.length) {
+      return false;
+    }
+    for (var i = 0; i < left.length; i++) {
+      final a = left[i];
+      final b = right[i];
+      if (a.id != b.id ||
+          a.roomId != b.roomId ||
+          a.lineId != b.lineId ||
+          a.type != b.type ||
+          a.targetValue != b.targetValue) {
+        return false;
+      }
+    }
+    return true;
   }
 
   void _logRoomEditorDebugDump(_RoomBundle bundle) {
