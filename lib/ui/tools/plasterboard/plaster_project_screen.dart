@@ -2096,9 +2096,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final narrow = constraints.maxWidth < 500;
-                  final estimatedTape = PlasterGeometry.formatDisplayLength(
+                  final estimatedTape = PlasterGeometry.formatJointTapeLength(
                     layout.estimatedJointTapeLength,
-                    _unitSystemForLayout(layout),
                   );
                   final details = Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2343,10 +2342,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         ListTile(
           title: const Text('Tape'),
           trailing: Text(
-            PlasterGeometry.formatLinearTakeoffLength(
-              takeoff.tapeLength,
-              unitSystem,
-            ),
+            PlasterGeometry.formatJointTapeLength(takeoff.tapeLength),
           ),
         ),
         ListTile(
