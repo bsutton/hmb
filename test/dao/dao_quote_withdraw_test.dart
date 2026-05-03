@@ -37,4 +37,54 @@ void main() {
     final quote = await DaoQuote().getById(quoteId);
     expect(quote?.state, QuoteState.withdrawn);
   });
+
+  test('markQuoteSent moves prospecting job to awaiting approval', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.fixedPrice,
+      hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+      bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+    );
+
+    final quoteId = await DaoQuote().insert(
+      Quote.forInsert(
+        jobId: job.id,
+        summary: 'Send quote',
+        description: 'Quote to test sent state',
+        totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
+      ),
+    );
+
+    await DaoQuote().markQuoteSent(quoteId);
+
+    final quote = await DaoQuote().getById(quoteId);
+    final updatedJob = await DaoJob().getById(job.id);
+    expect(quote?.state, QuoteState.sent);
+    expect(updatedJob?.status, JobStatus.awaitingApproval);
+  });
+
+  test('markQuoteSent leaves active jobs in their current status', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.fixedPrice,
+      hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+      bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+    );
+    job.status = JobStatus.scheduled;
+    await DaoJob().update(job);
+
+    final quoteId = await DaoQuote().insert(
+      Quote.forInsert(
+        jobId: job.id,
+        summary: 'Send active job quote',
+        description: 'Quote to test active job state',
+        totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
+      ),
+    );
+
+    await DaoQuote().markQuoteSent(quoteId);
+
+    final quote = await DaoQuote().getById(quoteId);
+    final updatedJob = await DaoJob().getById(job.id);
+    expect(quote?.state, QuoteState.sent);
+    expect(updatedJob?.status, JobStatus.scheduled);
+  });
 }
