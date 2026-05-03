@@ -18,12 +18,17 @@ import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/system.dart';
-import '../util//dart/exceptions.dart' as hmb;
+import '../util/dart/app_settings.dart';
+import '../util/dart/exceptions.dart' as hmb;
 import 'dao.dart';
 import 'system_secret_store.dart';
 
 class DaoSystem extends Dao<System> {
   static const tableName = 'system';
+  static final defaultProfitMargin = Percentage.fromInt(
+    20000,
+    decimalDigits: 3,
+  );
   final _secretStore = SystemSecretStore();
   DaoSystem() : super(tableName);
   Future<void> createTable(Database db, int version) async {}
@@ -90,6 +95,18 @@ class DaoSystem extends Dao<System> {
     final system = await get();
 
     return system.defaultHourlyRate ?? Money.parse('100', isoCode: 'AUD');
+  }
+
+  Future<Percentage> getDefaultProfitMargin() async {
+    final system = await get();
+    if (system.defaultProfitMargin != null) {
+      return system.defaultProfitMargin!;
+    }
+
+    final legacyMargin = Percentage.tryParse(
+      await AppSettings.getDefaultProfitMarginText(),
+    );
+    return legacyMargin ?? defaultProfitMargin;
   }
 }
 
