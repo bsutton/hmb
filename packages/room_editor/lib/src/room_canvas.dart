@@ -234,7 +234,8 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
 
   bool _isSecondaryMousePanEvent(PointerEvent event) =>
       event.kind == PointerDeviceKind.mouse &&
-      (event.buttons & kSecondaryMouseButton) != 0;
+      ((event.buttons & kSecondaryMouseButton) != 0 ||
+          (event.buttons & kMiddleMouseButton) != 0);
 
   List<_ConstraintVisual> _constraintVisuals(_CanvasTransform transform) =>
       buildConstraintVisuals(
@@ -812,9 +813,9 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
             child: InteractiveViewer(
               transformationController: _transformationController,
               minScale: 1,
-              maxScale: 1,
+              maxScale: 4,
               panEnabled: !_isDraggingGeometry && !_hasPendingGeometryDrag,
-              scaleEnabled: false,
+              scaleEnabled: !_isDraggingGeometry && !_hasPendingGeometryDrag,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onLongPressStart: (details) => unawaited(
