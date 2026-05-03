@@ -262,6 +262,20 @@ class DaoQuote extends Dao<Quote> {
     return updated;
   }
 
+  Future<Quote> amendQuote(
+    Quote original,
+    InvoiceOptions invoiceOptions,
+  ) async {
+    final job = await DaoJob().getById(original.jobId);
+    if (job == null) {
+      throw InvoiceException('Job ${original.jobId} not found.');
+    }
+
+    final amended = await create(job, invoiceOptions);
+    await rejectQuote(original.id);
+    return amended;
+  }
+
   Future<List<String>> getEmailsByQuote(Quote quote) =>
       DaoJob().getEmailsByJob(quote.jobId);
 
