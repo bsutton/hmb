@@ -30,9 +30,9 @@ Future<Money> createInvoiceForTasks(
   List<int> selectedTaskIds,
 ) => job.billingType == BillingType.fixedPrice
     ? _createFixedPriceInvoiceForTasks(invoiceId, job, selectedTaskIds)
-    : _createTimeAndMaterialsInvoiceForTasks(invoiceId, job, selectedTaskIds);
+    : _createInvoiceForTaskBillingTypes(invoiceId, job, selectedTaskIds);
 
-Future<Money> _createTimeAndMaterialsInvoiceForTasks(
+Future<Money> _createInvoiceForTaskBillingTypes(
   int invoiceId,
   Job job,
   List<int> selectedTaskIds,
@@ -140,9 +140,7 @@ Future<Money> _createTimeAndMaterialsInvoiceForTasks(
 
       final descriptionPrefix = taskItem.isReturn
           ? 'Returned: '
-          : (itemType == TaskItemType.toolsOwn
-                ? 'Tool hire: '
-                : 'Material: ');
+          : (itemType == TaskItemType.toolsOwn ? 'Tool hire: ' : 'Material: ');
       final lineDescription = '$descriptionPrefix${taskItem.description}';
 
       // Insert the invoice line
@@ -268,9 +266,7 @@ Future<Money> _createFixedPriceInvoiceForTasks(
 
       final descriptionPrefix = taskItem.isReturn
           ? 'Returned: '
-          : (itemType == TaskItemType.toolsOwn
-                ? 'Tool hire: '
-                : 'Material: ');
+          : (itemType == TaskItemType.toolsOwn ? 'Tool hire: ' : 'Material: ');
       final lineDescription = '$descriptionPrefix${taskItem.description}';
 
       final invoiceLine = InvoiceLine.forInsert(
