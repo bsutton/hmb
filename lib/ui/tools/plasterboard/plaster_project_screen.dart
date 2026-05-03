@@ -24,6 +24,7 @@ import '../../nav/nav.g.dart';
 import '../../widgets/blocking_ui.dart';
 import '../../widgets/color_ex.dart';
 import '../../widgets/hmb_child_crud_card.dart';
+import '../../widgets/icons/help_button.dart';
 import '../../widgets/media/pdf_preview.dart';
 import '../../widgets/select/hmb_select_job.dart';
 import '../../widgets/select/hmb_select_supplier.dart';
@@ -2502,6 +2503,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                         ),
                         keyboardType: TextInputType.number,
                         onSubmitted: (_) => unawaited(_saveProject()),
+                      ).help(
+                        'Waste Allowance',
+                        '''
+Adds extra sheets to the final order quantity. Layout waste is still calculated from the actual sheet cuts; this percentage is a purchasing contingency.''',
                       ),
                       const SizedBox(height: 8),
                       TextField(
@@ -2515,6 +2520,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                           decimal: true,
                         ),
                         onSubmitted: (_) => unawaited(_saveProject()),
+                      ).help(
+                        'Default Wall Stud Spacing',
+                        '''
+Default center-to-center spacing for wall studs. Wall butt joints are placed on stud centerlines unless a wall override is set.''',
                       ),
                       TextField(
                         controller: _wallStudOffsetController,
@@ -2527,6 +2536,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                           decimal: true,
                         ),
                         onSubmitted: (_) => unawaited(_saveProject()),
+                      ).help(
+                        'Default Wall Stud Offset',
+                        '''
+Distance from the start of a wall to the first stud centerline. Use wall overrides when a specific wall starts on a different framing position.''',
                       ),
                       TextField(
                         controller: _wallFixingFaceWidthController,
@@ -2539,6 +2552,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                           decimal: true,
                         ),
                         onSubmitted: (_) => unawaited(_saveProject()),
+                      ).help(
+                        'Default Wall Fixing Face Width',
+                        '''
+Width of the stud face available for fixing. It is stored with the project so framing details are complete for layout rules.''',
                       ),
                       TextField(
                         controller: _ceilingFramingSpacingController,
@@ -2551,6 +2568,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                           decimal: true,
                         ),
                         onSubmitted: (_) => unawaited(_saveProject()),
+                      ).help(
+                        'Default Ceiling Framing Spacing',
+                        '''
+Default center-to-center ceiling framing spacing. Ceiling butt joints are placed on framing centerlines unless a room override is set.''',
                       ),
                       TextField(
                         controller: _ceilingFramingOffsetController,
@@ -2563,6 +2584,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                           decimal: true,
                         ),
                         onSubmitted: (_) => unawaited(_saveProject()),
+                      ).help(
+                        'Default Ceiling Framing Offset',
+                        '''
+Distance from the ceiling origin to the first framing centerline. Use room overrides when a ceiling has different framing alignment.''',
                       ),
                       TextField(
                         controller: _ceilingFixingFaceWidthController,
@@ -2575,6 +2600,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                           decimal: true,
                         ),
                         onSubmitted: (_) => unawaited(_saveProject()),
+                      ).help(
+                        'Default Ceiling Fixing Face Width',
+                        '''
+Width of the ceiling framing face available for fixing. It is saved with the project for complete framing metadata.''',
                       ),
                       const SizedBox(height: 12),
                       HMBChildCrudCard(
