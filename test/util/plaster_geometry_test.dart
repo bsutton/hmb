@@ -269,6 +269,50 @@ void main() {
       );
     });
 
+    test('square set ceilings trim wall layout height', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Square Set',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        squareSetCeiling: true,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      final selectedWallOnly = [
+        lines[0],
+        lines[1].copyWith(plasterSelected: false),
+        lines[2].copyWith(plasterSelected: false),
+        lines[3].copyWith(plasterSelected: false),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '6000 x 1200',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 60000,
+          height: 12000,
+        ),
+      ];
+
+      final layout = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(
+          room: room,
+          lines: selectedWallOnly,
+          openings: const [],
+        ),
+      ], materials).firstWhere((layout) => !layout.isCeiling);
+
+      expect(
+        layout.height,
+        room.ceilingHeight -
+            PlasterGeometry.squareSetCeilingTrim(room.unitSystem),
+      );
+      expect(layout.area, lines[0].length * layout.height);
+    });
+
     test('auto wall layouts prefer landscape over portrait when valid', () {
       final room = PlasterRoom.forInsert(
         projectId: 1,
