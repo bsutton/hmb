@@ -346,6 +346,38 @@ void main() {
     },
   );
 
+  test('getByFilter searches local and remote invoice numbers', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.timeAndMaterial,
+      hourlyRate: MoneyEx.zero,
+      summary: 'Invoice number search job',
+    );
+
+    final invoice = Invoice.forInsert(
+      jobId: job.id,
+      dueDate: LocalDate.today(),
+      totalAmount: Money.fromInt(1000, isoCode: 'AUD'),
+      billingContactId: job.billingContactId,
+      externalInvoiceId: 'XERO-351',
+      paid: true,
+      paidDate: DateTime.now().subtract(const Duration(days: 60)),
+    );
+    await DaoInvoice().insert(invoice);
+    await DaoInvoice().update(invoice.copyWith(invoiceNum: 'LOCAL-351'));
+
+    final byLocalNumber = await DaoInvoice().getByFilter(
+      'LOCAL-351',
+      includePaid: true,
+    );
+    final byRemoteNumber = await DaoInvoice().getByFilter(
+      'XERO-351',
+      includePaid: true,
+    );
+
+    expect(byLocalNumber.map((i) => i.id), contains(invoice.id));
+    expect(byRemoteNumber.map((i) => i.id), contains(invoice.id));
+  });
+
   test(
     'voidInvoice records description and hides invoice by default',
     () async {
