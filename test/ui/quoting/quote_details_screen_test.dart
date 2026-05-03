@@ -90,6 +90,7 @@ void main() {
     expect(find.text('Unreject'), findsNothing);
     expect(find.text('Reject Quote Group'), findsNothing);
     expect(find.byIcon(Icons.edit), findsNothing);
+    expect(find.text('Fixed Price Quote #$quoteId'), findsOneWidget);
   });
 
   testWidgets('approved quote details render without actions panel', (
