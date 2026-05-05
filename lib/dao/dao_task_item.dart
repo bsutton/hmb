@@ -15,6 +15,7 @@ import 'package:money2/money2.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.g.dart';
+import '../util/dart/fixed_ex.dart';
 import '../util/dart/money_ex.dart';
 import 'dao.dart';
 
@@ -36,6 +37,47 @@ class DaoTaskItem extends Dao<TaskItem> {
 
   @override
   TaskItem fromMap(Map<String, dynamic> map) => TaskItem.fromMap(map);
+
+  @override
+  Future<int> insert(TaskItem entity, [Transaction? transaction]) {
+    _normalizeCompletedMaterialActuals(entity);
+    return super.insert(entity, transaction);
+  }
+
+  @override
+  Future<int> update(TaskItem entity, [Transaction? transaction]) {
+    _normalizeCompletedMaterialActuals(entity);
+    return super.update(entity, transaction);
+  }
+
+  void _normalizeCompletedMaterialActuals(TaskItem item) {
+    if (!item.completed || item.itemType == TaskItemType.labour) {
+      return;
+    }
+
+    final estimatedUnitCost = item.estimatedMaterialUnitCost;
+    final estimatedQuantity = item.estimatedMaterialQuantity;
+    if (estimatedUnitCost == null || estimatedQuantity == null) {
+      return;
+    }
+
+    if (MoneyEx.isZeroOrNull(item.actualMaterialUnitCost)) {
+      item.actualMaterialUnitCost = estimatedUnitCost;
+    }
+    if (FixedEx.isZeroOrNull(item.actualMaterialQuantity)) {
+      item.actualMaterialQuantity = estimatedQuantity;
+    }
+
+    final actualUnitCost = item.actualMaterialUnitCost;
+    final actualQuantity = item.actualMaterialQuantity;
+    if (actualUnitCost == null || actualQuantity == null) {
+      return;
+    }
+
+    if (MoneyEx.isZeroOrNull(item.actualCost)) {
+      item.actualCost = actualUnitCost.multiplyByFixed(actualQuantity);
+    }
+  }
 
   Future<List<TaskItem>> getByTask(int? taskId) async {
     final db = withoutTransaction();
