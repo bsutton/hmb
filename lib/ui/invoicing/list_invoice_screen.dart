@@ -172,7 +172,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
       }
       if (invoiceOptions.selectedTaskIds.isNotEmpty ||
           invoiceOptions.billBookingFee) {
-        return await createInvoice(
+        return await createInvoiceForSelectedTasks(
           job,
           invoiceOptions.contact,
           invoiceOptions.selectedTaskIds,

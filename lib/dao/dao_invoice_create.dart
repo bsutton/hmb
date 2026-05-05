@@ -21,7 +21,7 @@ import '../util/dart/local_date.dart';
 import '../util/dart/money_ex.dart';
 import 'dao.g.dart';
 
-Future<Invoice> createInvoice(
+Future<Invoice> createInvoiceForSelectedTasks(
   Job job,
   Contact billingContact,
   List<int> selectedTaskIds, {
@@ -79,7 +79,7 @@ Future<Invoice> createInvoice(
     }
   }
 
-  totalAmount += await _createInvoiceForSelectedTasks(
+  totalAmount += await _createInvoiceLinesForSelectedTasks(
     invoiceId,
     job,
     selectedTaskIds,
@@ -93,7 +93,7 @@ Future<Invoice> createInvoice(
   return updatedInvoice;
 }
 
-Future<Money> _createInvoiceForSelectedTasks(
+Future<Money> _createInvoiceLinesForSelectedTasks(
   int invoiceId,
   Job job,
   List<int> selectedTaskIds, {

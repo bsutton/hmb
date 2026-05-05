@@ -62,7 +62,7 @@ should create an invoice for time and materials job with correct rates and mark 
         );
 
         // Create invoice for the job
-        final invoice = await createInvoice(
+        final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
           [task.id],
@@ -130,7 +130,7 @@ should create an invoice for time and materials job with correct rates and mark 
     );
 
     // Create invoice grouped by date
-    final invoice = await createInvoice(
+    final invoice = await createInvoiceForSelectedTasks(
       job,
       await createContact('Brett', 'Sutton'),
       [task1.id, task2.id],
@@ -173,7 +173,7 @@ should create an invoice for time and materials job with correct rates and mark 
     );
 
     // Create invoice grouped by task
-    final invoice = await createInvoice(
+    final invoice = await createInvoiceForSelectedTasks(
       job,
       await createContact('Brett', 'Sutton'),
       [task1.id, task2.id],
