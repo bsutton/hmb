@@ -179,7 +179,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     final name = quote.summary.trim();
     final suffix = name.isEmpty ? '' : ' - $name';
     final issued = formatDate(quote.createdDate);
-    return 'Quote #${quote.id}$suffix - Issued: $issued';
+    return 'Fixed Price Quote #${quote.id}$suffix - Issued: $issued';
   }
 
   Widget _buildQuoteCard(Quote quote) => QuoteCard(
