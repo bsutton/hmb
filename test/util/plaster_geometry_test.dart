@@ -86,6 +86,71 @@ void main() {
       );
     });
 
+    test('provides framing defaults for both unit systems', () {
+      expect(
+        PlasterGeometry.defaultWallStudSpacing(PreferredUnitSystem.metric),
+        6000,
+      );
+      expect(
+        PlasterGeometry.defaultWallStudSpacing(PreferredUnitSystem.imperial),
+        16000,
+      );
+      expect(
+        PlasterGeometry.defaultWallFixingFaceWidth(PreferredUnitSystem.metric),
+        450,
+      );
+      expect(
+        PlasterGeometry.defaultWallFixingFaceWidth(
+          PreferredUnitSystem.imperial,
+        ),
+        1500,
+      );
+      expect(
+        PlasterGeometry.defaultCeilingFramingSpacing(
+          PreferredUnitSystem.metric,
+        ),
+        4500,
+      );
+      expect(
+        PlasterGeometry.defaultCeilingFramingSpacing(
+          PreferredUnitSystem.imperial,
+        ),
+        16000,
+      );
+    });
+
+    test('provides standard material sizes for both unit systems', () {
+      final metric = PlasterGeometry.defaultMaterialSizes(
+        1,
+        PreferredUnitSystem.metric,
+      );
+      expect(metric.map((size) => size.name), contains('1200 x 4200'));
+      expect(
+        metric.every((size) => size.unitSystem == PreferredUnitSystem.metric),
+        isTrue,
+      );
+
+      final imperial = PlasterGeometry.defaultMaterialSizes(
+        1,
+        PreferredUnitSystem.imperial,
+      );
+      expect(imperial.map((size) => size.name), contains('4 x 12'));
+      expect(
+        imperial.every(
+          (size) => size.unitSystem == PreferredUnitSystem.imperial,
+        ),
+        isTrue,
+      );
+    });
+
+    test('formats joint tape as whole metres rounded up', () {
+      expect(PlasterGeometry.formatJointTapeLength(0), '0 m');
+      expect(PlasterGeometry.formatJointTapeLength(1), '1 m');
+      expect(PlasterGeometry.formatJointTapeLength(9999), '1 m');
+      expect(PlasterGeometry.formatJointTapeLength(10000), '1 m');
+      expect(PlasterGeometry.formatJointTapeLength(10001), '2 m');
+    });
+
     test('convert room bundle converts room, lines and openings', () {
       final room = PlasterRoom.forInsert(
         projectId: 1,

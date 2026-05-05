@@ -117,19 +117,22 @@ class MiniJobDashboard extends StatelessWidget {
               size: dashletSize,
             ),
             _dashlet(
-              child: DashletCard<int>.builder(
-                label: 'Quotes',
-                hint: 'Quote a job based on an Estimate',
-                icon: Icons.format_quote,
-                compact: true,
-                value: () async {
-                  final all = await DaoQuote().getByFilter(null);
-                  final list = all.where((q) => q.jobId == job.id).toList();
-                  return DashletValue<int>(list.length);
-                },
-                builder: (_, _) => HMBFullPageChildScreen(
-                  title: 'Quotes',
-                  child: QuoteListScreen(job: job),
+              child: DaoJuneBuilder.builder(
+                DaoQuote(),
+                builder: (context) => DashletCard<int>.builder(
+                  label: 'Quotes',
+                  hint: 'Quote a job based on an Estimate',
+                  icon: Icons.format_quote,
+                  compact: true,
+                  value: () async {
+                    final all = await DaoQuote().getByFilter(null);
+                    final list = all.where((q) => q.jobId == job.id).toList();
+                    return DashletValue<int>(list.length);
+                  },
+                  builder: (_, _) => HMBFullPageChildScreen(
+                    title: 'Quotes',
+                    child: QuoteListScreen(job: job),
+                  ),
                 ),
               ),
               size: dashletSize,

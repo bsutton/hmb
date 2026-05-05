@@ -6,6 +6,7 @@ import '../../../util/dart/app_settings.dart';
 import '../../../util/dart/plaster_layout_scoring.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/icons/help_button.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/save_and_close.dart';
 
@@ -141,48 +142,80 @@ class _PlasterboardLayoutSettingsScreenState
                 labelText: 'Extra sheet weight',
                 keyboardType: TextInputType.number,
                 validator: _validateInt,
+              ).help(
+                'Extra Sheet Weight',
+                '''
+How strongly the optimizer avoids using additional sheets. Increase this when fewer ordered sheets matters more than join placement or offcut quality.''',
               ),
               HMBTextField(
                 controller: _jointLengthController,
                 labelText: 'Joint length weight',
                 keyboardType: TextInputType.number,
                 validator: _validateInt,
+              ).help(
+                'Joint Length Weight',
+                '''
+How strongly the optimizer avoids long sheet joints. Increase this to prefer layouts with less tape and finishing work.''',
               ),
               HMBTextField(
                 controller: _cutPieceController,
                 labelText: 'Cut piece weight',
                 keyboardType: TextInputType.number,
                 validator: _validateInt,
+              ).help(
+                'Cut Piece Weight',
+                '''
+How strongly the optimizer avoids extra cut pieces. Increase this to prefer simpler layouts with more full sheets.''',
               ),
               HMBTextField(
                 controller: _buttJointController,
                 labelText: 'Butt joint weight',
                 keyboardType: TextInputType.number,
                 validator: _validateInt,
+              ).help(
+                'Butt Joint Weight',
+                '''
+How strongly the optimizer avoids butt joints. Increase this when butt joints are more expensive or harder to finish on site.''',
               ),
               HMBTextField(
                 controller: _highJointController,
                 labelText: 'High joint weight',
                 keyboardType: TextInputType.number,
                 validator: _validateInt,
+              ).help(
+                'High Joint Weight',
+                '''
+How strongly the optimizer avoids high wall joints. Increase this to prefer joints that are easier to reach from the floor.''',
               ),
               HMBTextField(
                 controller: _smallPieceController,
                 labelText: 'Small piece weight',
                 keyboardType: TextInputType.number,
                 validator: _validateInt,
+              ).help(
+                'Small Piece Weight',
+                '''
+How strongly the optimizer avoids small edge pieces. Increase this to prefer larger, stronger pieces at sheet edges.''',
               ),
               HMBTextField(
                 controller: _fragmentationController,
                 labelText: 'Fragmentation weight',
                 keyboardType: TextInputType.number,
                 validator: _validateInt,
+              ).help(
+                'Fragmentation Weight',
+                '''
+How strongly the optimizer avoids layouts made from many separate fragments. Increase this to prefer cleaner sheet usage.''',
               ),
               HMBTextField(
                 controller: _verticalWallPenaltyController,
                 labelText: 'Vertical wall penalty weight',
                 keyboardType: TextInputType.number,
                 validator: _validateInt,
+              ).help(
+                'Vertical Wall Penalty Weight',
+                '''
+How strongly the optimizer prefers landscape wall layouts over portrait wall layouts when both are otherwise valid.''',
               ),
             ],
           ),
