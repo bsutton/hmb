@@ -3,6 +3,31 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:room_editor/room_editor.dart';
 
 void main() {
+  testWidgets('canvas supports pan and pinch zoom when idle', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 900,
+            height: 700,
+            child: RoomEditorWorkspace(
+              document: _document,
+              editorOnly: true,
+              onDocumentCommitted: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final viewer = tester.widget<InteractiveViewer>(
+      find.byType(InteractiveViewer),
+    );
+    expect(viewer.panEnabled, isTrue);
+    expect(viewer.scaleEnabled, isTrue);
+    expect(viewer.maxScale, greaterThan(1));
+  });
+
   test('dragged opening shows adjacent wall distance labels', () {
     final document = RoomEditorDocument(
       bundle: buildRoomEditorBundle(

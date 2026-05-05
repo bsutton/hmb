@@ -234,7 +234,8 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
 
   bool _isSecondaryMousePanEvent(PointerEvent event) =>
       event.kind == PointerDeviceKind.mouse &&
-      (event.buttons & kSecondaryMouseButton) != 0;
+      ((event.buttons & kSecondaryMouseButton) != 0 ||
+          (event.buttons & kMiddleMouseButton) != 0);
 
   List<_ConstraintVisual> _constraintVisuals(_CanvasTransform transform) =>
       buildConstraintVisuals(
