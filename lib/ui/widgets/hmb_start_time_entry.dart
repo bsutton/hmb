@@ -63,7 +63,7 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
             ActiveTimeEntryState.new,
           ).activeTimeEntry;
 
-          if (timeEntry != null && activeEntry != timeEntry) {
+          if (timeEntry != null && !_isSameTimeEntry(activeEntry, timeEntry)) {
             /// we are no longer the active timer.
             timeEntry = null;
             _timer?.cancel();
@@ -74,16 +74,18 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
   @override
   Future<void> asyncInitState() async {
     final entry = await DaoTimeEntry().getActiveEntry();
+    final task = widget.task;
+    final isThisTaskActive = entry != null && entry.taskId == task?.id;
 
-    if (entry != null && entry.taskId == widget.task?.id) {
+    if (isThisTaskActive) {
       timeEntry = entry;
     } else {
       timeEntry = null;
     }
     if (mounted) {
       setState(() {
-        _initTimer(entry);
-        if (entry != null) {
+        if (isThisTaskActive) {
+          _initTimer(entry);
           final task = widget.task;
           June.getState<ActiveTimeEntryState>(
             ActiveTimeEntryState.new,
@@ -103,7 +105,7 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
           builder: (timeEntryState) {
             final isActive =
                 timeEntryState.activeTimeEntry != null &&
-                timeEntry == timeEntryState.activeTimeEntry;
+                _isSameTimeEntry(timeEntry, timeEntryState.activeTimeEntry);
 
             return IconButton(
               padding: const EdgeInsets.only(top: 8, bottom: 8),
@@ -438,6 +440,9 @@ The Task must be ${TaskStatus.approved.name} or ${TaskStatus.inProgress.name} in
     });
   }
 
+  bool _isSameTimeEntry(TimeEntry? left, TimeEntry? right) =>
+      left != null && right != null && left.id == right.id;
+
   @override
   void dispose() {
     super.dispose();
@@ -473,12 +478,10 @@ class ActiveTimeEntryState extends JuneState {
     Task? task, {
     bool doRefresh = true,
   }) {
-    if (activeTimeEntry != entry) {
-      activeTimeEntry = entry;
-      this.task = task;
-      if (doRefresh) {
-        setState();
-      }
+    activeTimeEntry = entry;
+    this.task = task;
+    if (doRefresh) {
+      setState();
     }
   }
 

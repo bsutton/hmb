@@ -24,10 +24,12 @@ import '../../nav/nav.g.dart';
 import '../../widgets/blocking_ui.dart';
 import '../../widgets/color_ex.dart';
 import '../../widgets/hmb_child_crud_card.dart';
+import '../../widgets/icons/help_button.dart';
 import '../../widgets/media/pdf_preview.dart';
 import '../../widgets/select/hmb_select_job.dart';
 import '../../widgets/select/hmb_select_supplier.dart';
 import '../../widgets/select/hmb_select_task.dart';
+import 'plaster_attribute_fields.dart';
 import 'plaster_material_size_list_screen.dart';
 import 'plaster_project_pdf.dart';
 import 'plaster_room_list_screen.dart';
@@ -52,6 +54,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   final _roomNameController = TextEditingController();
   final _wasteController = TextEditingController();
   final _ceilingHeightController = TextEditingController();
+  final _roomBoardThicknessController = TextEditingController();
   final _wallStudSpacingController = TextEditingController();
   final _wallStudOffsetController = TextEditingController();
   final _wallFixingFaceWidthController = TextEditingController();
@@ -64,9 +67,11 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   final _lineStudSpacingController = TextEditingController();
   final _lineStudOffsetController = TextEditingController();
   final _lineFixingFaceWidthController = TextEditingController();
+  final _lineBoardThicknessController = TextEditingController();
   final _selectedJob = SelectedJob();
   final _selectedTask = SelectedTask();
   final _selectedSupplier = SelectedSupplier();
+  final _editorSelectionController = RoomEditorSelectionController();
   final _undo = <_RoomBundle>[];
   final _redo = <_RoomBundle>[];
 
@@ -75,7 +80,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   Task? _task;
   Supplier? _supplier;
   var _selectedRoomIndex = 0;
-  int? _selectedLineIndex;
+  Set<int> _selectedLineIndices = {};
   List<_RoomBundle> _rooms = [];
   List<PlasterMaterialSize> _materials = [];
   List<PlasterSurfaceLayout> _layouts = const [];
@@ -98,7 +103,12 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   bool get _isRoomEditorOnly => widget.editorOnlyRoomId != null;
 
   @override
-  Future<void> asyncInitState() => _load();
+  Future<void> asyncInitState() {
+    _editorSelectionController.addListener(
+      _handleEditorSelectionControllerChanged,
+    );
+    return _load();
+  }
 
   Future<void> _load() async {
     final initialProject =
@@ -134,6 +144,11 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     if (!mounted) {
       return;
     }
+    final shouldAnalyze = _shouldAnalyzeAfterLoad(
+      project: project,
+      rooms: bundles,
+      materials: materials,
+    );
     final roomIndex = widget.editorOnlyRoomId == null
         ? 0
         : bundles.indexWhere(
@@ -194,7 +209,159 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     if (_isRoomEditorOnly && bundles.isNotEmpty) {
       _logRoomEditorDebugDump(bundles[_selectedRoomIndex]);
     }
-    unawaited(_startAnalysis());
+    if (shouldAnalyze) {
+      unawaited(_startAnalysis());
+    }
+  }
+
+  bool _shouldAnalyzeAfterLoad({
+    required PlasterProject project,
+    required List<_RoomBundle> rooms,
+    required List<PlasterMaterialSize> materials,
+  }) {
+    if (!_hasLoadedProjectState || _layouts.isEmpty) {
+      return true;
+    }
+    if (_projectAffectsLayout(_project, project)) {
+      return true;
+    }
+    if (!_sameRoomBundles(_rooms, rooms)) {
+      return true;
+    }
+
+    final materialsById = {
+      for (final material in materials) material.id: material,
+    };
+    for (final layout in _layouts) {
+      final current = materialsById[layout.material.id];
+      if (current == null ||
+          !_sameMaterialForLayout(layout.material, current)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _projectAffectsLayout(PlasterProject left, PlasterProject right) =>
+      left.supplierId != right.supplierId ||
+      left.wastePercent != right.wastePercent ||
+      left.wallStudSpacing != right.wallStudSpacing ||
+      left.wallStudOffset != right.wallStudOffset ||
+      left.wallFixingFaceWidth != right.wallFixingFaceWidth ||
+      left.ceilingFramingSpacing != right.ceilingFramingSpacing ||
+      left.ceilingFramingOffset != right.ceilingFramingOffset ||
+      left.ceilingFixingFaceWidth != right.ceilingFixingFaceWidth;
+
+  bool _sameMaterialForLayout(
+    PlasterMaterialSize left,
+    PlasterMaterialSize right,
+  ) =>
+      left.supplierId == right.supplierId &&
+      left.name == right.name &&
+      left.unitSystem == right.unitSystem &&
+      left.width == right.width &&
+      left.height == right.height &&
+      left.excludedFromLayout == right.excludedFromLayout;
+
+  bool _sameRoomBundles(List<_RoomBundle> left, List<_RoomBundle> right) {
+    if (left.length != right.length) {
+      return false;
+    }
+    for (var i = 0; i < left.length; i++) {
+      if (!_sameRoomBundle(left[i], right[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _sameRoomBundle(_RoomBundle left, _RoomBundle right) =>
+      _sameRoom(left.room, right.room) &&
+      _sameLines(left.lines, right.lines) &&
+      _sameOpenings(left.openings, right.openings) &&
+      _sameConstraints(left.constraints, right.constraints);
+
+  bool _sameRoom(PlasterRoom left, PlasterRoom right) =>
+      left.id == right.id &&
+      left.projectId == right.projectId &&
+      left.unitSystem == right.unitSystem &&
+      left.ceilingHeight == right.ceilingHeight &&
+      left.plasterCeiling == right.plasterCeiling &&
+      left.ceilingSheetDirection == right.ceilingSheetDirection &&
+      left.ceilingFramingSpacingOverride ==
+          right.ceilingFramingSpacingOverride &&
+      left.ceilingFramingOffsetOverride == right.ceilingFramingOffsetOverride &&
+      left.ceilingFixingFaceWidthOverride ==
+          right.ceilingFixingFaceWidthOverride;
+
+  bool _sameLines(List<PlasterRoomLine> left, List<PlasterRoomLine> right) {
+    if (left.length != right.length) {
+      return false;
+    }
+    for (var i = 0; i < left.length; i++) {
+      final a = left[i];
+      final b = right[i];
+      if (a.id != b.id ||
+          a.roomId != b.roomId ||
+          a.seqNo != b.seqNo ||
+          a.startX != b.startX ||
+          a.startY != b.startY ||
+          a.length != b.length ||
+          a.plasterSelected != b.plasterSelected ||
+          a.sheetDirection != b.sheetDirection ||
+          a.studSpacingOverride != b.studSpacingOverride ||
+          a.studOffsetOverride != b.studOffsetOverride ||
+          a.fixingFaceWidthOverride != b.fixingFaceWidthOverride) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _sameOpenings(
+    List<PlasterRoomOpening> left,
+    List<PlasterRoomOpening> right,
+  ) {
+    if (left.length != right.length) {
+      return false;
+    }
+    for (var i = 0; i < left.length; i++) {
+      final a = left[i];
+      final b = right[i];
+      if (a.id != b.id ||
+          a.lineId != b.lineId ||
+          a.type != b.type ||
+          a.offsetFromStart != b.offsetFromStart ||
+          a.width != b.width ||
+          a.height != b.height ||
+          a.sillHeight != b.sillHeight ||
+          a.distanceToStartWall != b.distanceToStartWall ||
+          a.distanceToEndWall != b.distanceToEndWall) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _sameConstraints(
+    List<PlasterRoomConstraint> left,
+    List<PlasterRoomConstraint> right,
+  ) {
+    if (left.length != right.length) {
+      return false;
+    }
+    for (var i = 0; i < left.length; i++) {
+      final a = left[i];
+      final b = right[i];
+      if (a.id != b.id ||
+          a.roomId != b.roomId ||
+          a.lineId != b.lineId ||
+          a.type != b.type ||
+          a.targetValue != b.targetValue) {
+        return false;
+      }
+    }
+    return true;
   }
 
   void _logRoomEditorDebugDump(_RoomBundle bundle) {
@@ -277,6 +444,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     _roomNameController.dispose();
     _wasteController.dispose();
     _ceilingHeightController.dispose();
+    _roomBoardThicknessController.dispose();
     _wallStudSpacingController.dispose();
     _wallStudOffsetController.dispose();
     _wallFixingFaceWidthController.dispose();
@@ -289,6 +457,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     _lineStudSpacingController.dispose();
     _lineStudOffsetController.dispose();
     _lineFixingFaceWidthController.dispose();
+    _lineBoardThicknessController.dispose();
+    _editorSelectionController
+      ..removeListener(_handleEditorSelectionControllerChanged)
+      ..dispose();
     super.dispose();
   }
 
@@ -520,6 +692,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _currentRoom.room.ceilingHeight,
       _currentRoom.room.unitSystem,
     ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
+    _roomBoardThicknessController.text = _formatLengthEntry(
+      _currentRoom.room.boardThickness,
+      roomUnitSystem: _currentRoom.room.unitSystem,
+    );
     _roomCeilingFramingSpacingController.text =
         _currentRoom.room.ceilingFramingSpacingOverride == null
         ? ''
@@ -541,28 +717,40 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             _currentRoom.room.ceilingFixingFaceWidthOverride!,
             roomUnitSystem: _currentRoom.room.unitSystem,
           );
-    final selectedLine = _selectedLineIndex == null
-        ? null
-        : _currentRoom.lines[_selectedLineIndex!];
-    _lineStudSpacingController.text = selectedLine?.studSpacingOverride == null
-        ? ''
-        : _formatLengthEntry(
-            selectedLine!.studSpacingOverride!,
-            roomUnitSystem: _currentRoom.room.unitSystem,
-          );
-    _lineStudOffsetController.text = selectedLine?.studOffsetOverride == null
-        ? ''
-        : _formatLengthEntry(
-            selectedLine!.studOffsetOverride!,
-            roomUnitSystem: _currentRoom.room.unitSystem,
-          );
-    _lineFixingFaceWidthController.text =
-        selectedLine?.fixingFaceWidthOverride == null
-        ? ''
-        : _formatLengthEntry(
-            selectedLine!.fixingFaceWidthOverride!,
-            roomUnitSystem: _currentRoom.room.unitSystem,
-          );
+    final selectedLines = _selectedLines;
+    _lineStudSpacingController.text = _formatCommonOverride(
+      selectedLines.map((line) => line.studSpacingOverride),
+    );
+    _lineStudOffsetController.text = _formatCommonOverride(
+      selectedLines.map((line) => line.studOffsetOverride),
+    );
+    _lineFixingFaceWidthController.text = _formatCommonOverride(
+      selectedLines.map((line) => line.fixingFaceWidthOverride),
+    );
+    _lineBoardThicknessController.text = _formatCommonOverride(
+      selectedLines.map((line) => line.boardThicknessOverride),
+    );
+  }
+
+  List<PlasterRoomLine> get _selectedLines => [
+    for (final index in _selectedLineIndices)
+      if (index >= 0 && index < _currentRoom.lines.length)
+        _currentRoom.lines[index],
+  ];
+
+  String _formatCommonOverride(Iterable<int?> values) {
+    final selected = values.toList();
+    if (selected.isEmpty) {
+      return '';
+    }
+    final first = selected.first;
+    if (selected.any((value) => value != first) || first == null) {
+      return '';
+    }
+    return _formatLengthEntry(
+      first,
+      roomUnitSystem: _currentRoom.room.unitSystem,
+    );
   }
 
   Future<void> _commitRoomName() async {
@@ -605,12 +793,36 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     );
   }
 
+  Future<void> _commitRoomBoardThickness() async {
+    final parsed = PlasterGeometry.parseDisplayLength(
+      _roomBoardThicknessController.text,
+      _currentRoom.room.unitSystem,
+    );
+    if (parsed == null || parsed <= 0) {
+      _syncRoomControllers();
+      if (mounted) {
+        setState(() {});
+      }
+      return;
+    }
+    if (parsed == _currentRoom.room.boardThickness) {
+      return;
+    }
+    await _updateCurrentRoom(
+      _currentRoom.copyWith(
+        room: _currentRoom.room.copyWith(boardThickness: parsed),
+      ),
+      trackUndo: false,
+    );
+  }
+
   Future<void> _commitPendingRoomEdits() async {
     if (_rooms.isEmpty) {
       return;
     }
     await _commitRoomName();
     await _commitCeilingHeight();
+    await _commitRoomBoardThickness();
     await _commitSelectedRoomCeilingOverrides();
     await _commitSelectedLineFramingOverrides();
   }
@@ -715,13 +927,13 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   }
 
   Future<void> _commitSelectedLineFramingOverrides() async {
-    if (_selectedLineIndex == null || _rooms.isEmpty) {
+    if (_selectedLineIndices.isEmpty || _rooms.isEmpty) {
       return;
     }
-    final currentLine = _currentRoom.lines[_selectedLineIndex!];
     final spacingText = _lineStudSpacingController.text.trim();
     final offsetText = _lineStudOffsetController.text.trim();
     final fixingFaceText = _lineFixingFaceWidthController.text.trim();
+    final thicknessText = _lineBoardThicknessController.text.trim();
     final spacing = spacingText.isEmpty
         ? null
         : _parseLengthEntry(
@@ -740,26 +952,46 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             fixingFaceText,
             roomUnitSystem: _currentRoom.room.unitSystem,
           );
+    final thickness = thicknessText.isEmpty
+        ? null
+        : _parseLengthEntry(
+            thicknessText,
+            roomUnitSystem: _currentRoom.room.unitSystem,
+          );
     if ((spacingText.isNotEmpty && spacing == null) ||
         (offsetText.isNotEmpty && offset == null) ||
-        (fixingFaceText.isNotEmpty && fixingFaceWidth == null)) {
+        (fixingFaceText.isNotEmpty && fixingFaceWidth == null) ||
+        (thicknessText.isNotEmpty && thickness == null)) {
       _syncRoomControllers();
       if (mounted) {
         setState(() {});
       }
       return;
     }
-    if (currentLine.studSpacingOverride == spacing &&
-        currentLine.studOffsetOverride == offset &&
-        currentLine.fixingFaceWidthOverride == fixingFaceWidth) {
+    final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
+    var changed = false;
+    for (final index in _selectedLineIndices) {
+      if (index < 0 || index >= lines.length) {
+        continue;
+      }
+      final currentLine = lines[index];
+      if (currentLine.studSpacingOverride == spacing &&
+          currentLine.studOffsetOverride == offset &&
+          currentLine.fixingFaceWidthOverride == fixingFaceWidth &&
+          currentLine.boardThicknessOverride == thickness) {
+        continue;
+      }
+      lines[index] = currentLine.copyWith(
+        studSpacingOverride: spacing,
+        studOffsetOverride: offset,
+        fixingFaceWidthOverride: fixingFaceWidth,
+        boardThicknessOverride: thickness,
+      );
+      changed = true;
+    }
+    if (!changed) {
       return;
     }
-    final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
-    lines[_selectedLineIndex!] = currentLine.copyWith(
-      studSpacingOverride: spacing,
-      studOffsetOverride: offset,
-      fixingFaceWidthOverride: fixingFaceWidth,
-    );
     await _updateCurrentRoom(
       _currentRoom.copyWith(lines: lines),
       trackUndo: false,
@@ -830,6 +1062,106 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     );
   }
 
+  Future<void> _setCurrentRoomAttributeMask(int value) async {
+    if (_rooms.isEmpty || _currentRoom.room.attributeMask == value) {
+      return;
+    }
+    await _updateCurrentRoom(
+      _currentRoom.copyWith(
+        room: _currentRoom.room.copyWith(attributeMask: value),
+      ),
+      trackUndo: false,
+    );
+  }
+
+  Future<void> _setCurrentRoomSquareSetCeiling(bool value) async {
+    if (_rooms.isEmpty || _currentRoom.room.squareSetCeiling == value) {
+      return;
+    }
+    await _updateCurrentRoom(
+      _currentRoom.copyWith(
+        room: _currentRoom.room.copyWith(squareSetCeiling: value),
+      ),
+      trackUndo: false,
+    );
+  }
+
+  Future<void> _setSelectedLineAttributeMaskOverride(int? value) async {
+    if (_rooms.isEmpty || _selectedLineIndices.isEmpty) {
+      return;
+    }
+    final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
+    var changed = false;
+    for (final selectedLineIndex in _selectedLineIndices) {
+      if (selectedLineIndex < 0 || selectedLineIndex >= lines.length) {
+        continue;
+      }
+      final currentLine = lines[selectedLineIndex];
+      if (currentLine.attributeMaskOverride == value) {
+        continue;
+      }
+      lines[selectedLineIndex] = currentLine.copyWith(
+        attributeMaskOverride: value,
+      );
+      changed = true;
+    }
+    if (!changed) {
+      return;
+    }
+    await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
+  }
+
+  Widget _buildEditorAttributeSettings() {
+    final selectedLineIndex = _selectedLineIndices.length == 1
+        ? _selectedLineIndices.first
+        : null;
+    final selectedLine =
+        selectedLineIndex == null ||
+            selectedLineIndex < 0 ||
+            selectedLineIndex >= _currentRoom.lines.length
+        ? null
+        : _currentRoom.lines[selectedLineIndex];
+    final useWallOverride = selectedLine?.attributeMaskOverride != null;
+    final wallAttributeMask =
+        selectedLine?.attributeMaskOverride ?? _currentRoom.room.attributeMask;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        PlasterAttributeFields(
+          value: _currentRoom.room.attributeMask,
+          onChanged: (value) => unawaited(_setCurrentRoomAttributeMask(value)),
+        ),
+        if (selectedLine != null) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Selected wall attributes',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          CheckboxListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Override room attributes'),
+            value: useWallOverride,
+            onChanged: (selected) {
+              unawaited(
+                _setSelectedLineAttributeMaskOverride(
+                  selected ?? false ? _currentRoom.room.attributeMask : null,
+                ),
+              );
+            },
+          ),
+          if (useWallOverride)
+            PlasterAttributeFields(
+              value: wallAttributeMask,
+              onChanged: (value) =>
+                  unawaited(_setSelectedLineAttributeMaskOverride(value)),
+            ),
+        ],
+      ],
+    );
+  }
+
   Future<void> _openEditorFramingSettings() async {
     if (_rooms.isEmpty || !mounted) {
       return;
@@ -851,6 +1183,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
           child: RoomEditorFramingSettingsSheet(
             unitLabel: roomUnitLabel,
             ceilingHeightController: _ceilingHeightController,
+            roomBoardThicknessController: _roomBoardThicknessController,
             roomCeilingFramingSpacingController:
                 _roomCeilingFramingSpacingController,
             roomCeilingFramingOffsetController:
@@ -858,17 +1191,23 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             roomCeilingFixingFaceWidthController:
                 _roomCeilingFixingFaceWidthController,
             plasterCeiling: _currentRoom.room.plasterCeiling,
-            hasSelectedWall: _selectedLineIndex != null,
+            squareSetCeiling: _currentRoom.room.squareSetCeiling,
+            hasSelectedWall: _selectedLineIndices.isNotEmpty,
             lineStudSpacingController: _lineStudSpacingController,
             lineStudOffsetController: _lineStudOffsetController,
             lineFixingFaceWidthController: _lineFixingFaceWidthController,
+            lineBoardThicknessController: _lineBoardThicknessController,
             onPlasterCeilingChanged: _setCurrentRoomPlasterCeiling,
+            onSquareSetCeilingChanged: _setCurrentRoomSquareSetCeiling,
             onCommitCeilingHeight: _commitCeilingHeight,
+            onCommitRoomBoardThickness: _commitRoomBoardThickness,
             onCommitSelectedRoomCeilingOverrides:
                 _commitSelectedRoomCeilingOverrides,
             onCommitSelectedLineOverrides: _commitSelectedLineFramingOverrides,
+            extraContent: _buildEditorAttributeSettings(),
             onApply: () async {
               await _commitCeilingHeight();
+              await _commitRoomBoardThickness();
               await _commitSelectedRoomCeilingOverrides();
               await _commitSelectedLineFramingOverrides();
               if (context.mounted) {
@@ -880,6 +1219,24 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       ),
     );
   }
+
+  void _handleEditorSelectionChanged(RoomEditorSelection selection) {
+    if (_rooms.isEmpty) {
+      return;
+    }
+    final selectedLineIndices = selection.selectedLineIndices;
+    if (_selectedLineIndices.length == selectedLineIndices.length &&
+        _selectedLineIndices.containsAll(selectedLineIndices)) {
+      return;
+    }
+    setState(() {
+      _selectedLineIndices = Set<int>.from(selectedLineIndices);
+      _syncRoomControllers();
+    });
+  }
+
+  void _handleEditorSelectionControllerChanged() =>
+      _handleEditorSelectionChanged(_editorSelectionController.value);
 
   Future<List<PlasterMaterialSize>> _loadMaterialsForSupplier(
     int? supplierId,
@@ -907,56 +1264,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   List<PlasterMaterialSize> _defaultMaterialSizes(
     int supplierId,
     PreferredUnitSystem unitSystem,
-  ) {
-    if (unitSystem == PreferredUnitSystem.metric) {
-      return [
-        PlasterMaterialSize.forInsert(
-          supplierId: supplierId,
-          name: '1200 x 2400',
-          unitSystem: unitSystem,
-          width: 12000,
-          height: 24000,
-        ),
-        PlasterMaterialSize.forInsert(
-          supplierId: supplierId,
-          name: '1200 x 2700',
-          unitSystem: unitSystem,
-          width: 12000,
-          height: 27000,
-        ),
-        PlasterMaterialSize.forInsert(
-          supplierId: supplierId,
-          name: '1200 x 3000',
-          unitSystem: unitSystem,
-          width: 12000,
-          height: 30000,
-        ),
-      ];
-    }
-    return [
-      PlasterMaterialSize.forInsert(
-        supplierId: supplierId,
-        name: '4 x 8',
-        unitSystem: unitSystem,
-        width: 48000,
-        height: 96000,
-      ),
-      PlasterMaterialSize.forInsert(
-        supplierId: supplierId,
-        name: '4 x 9',
-        unitSystem: unitSystem,
-        width: 48000,
-        height: 108000,
-      ),
-      PlasterMaterialSize.forInsert(
-        supplierId: supplierId,
-        name: '4 x 10',
-        unitSystem: unitSystem,
-        width: 48000,
-        height: 120000,
-      ),
-    ];
-  }
+  ) => PlasterGeometry.defaultMaterialSizes(supplierId, unitSystem);
 
   Future<void> _saveRoomBundle(_RoomBundle bundle) async {
     final roomDao = DaoPlasterRoom();
@@ -1960,6 +2268,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         document: _toEditorDocument(_currentRoom),
         landscape: isMobileLandscape,
         editorOnly: true,
+        selectionController: _editorSelectionController,
         onUndo: _undo.isEmpty ? null : () => unawaited(_undoRoomEdit()),
         onRedo: _redo.isEmpty ? null : () => unawaited(_redoRoomEdit()),
         onDocumentCommitted: (document) async {
@@ -1987,6 +2296,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       ceilingHeightController: _ceilingHeightController,
       lineStudSpacingController: _lineStudSpacingController,
       lineStudOffsetController: _lineStudOffsetController,
+      selectionController: _editorSelectionController,
+      onSelectionChanged: _handleEditorSelectionChanged,
       onUnitChanged: (value) async {
         if (value == null) {
           return;
@@ -2030,6 +2341,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       return RoomEditorWorkspace(
         document: _toEditorDocument(_currentRoom),
         landscape: true,
+        selectionController: _editorSelectionController,
         onDocumentCommitted: (document) async {
           await _updateCurrentRoom(
             _fromEditorDocument(document, _currentRoom),
@@ -2096,9 +2408,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final narrow = constraints.maxWidth < 500;
-                  final estimatedTape = PlasterGeometry.formatDisplayLength(
+                  final estimatedTape = PlasterGeometry.formatJointTapeLength(
                     layout.estimatedJointTapeLength,
-                    _unitSystemForLayout(layout),
                   );
                   final details = Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2343,10 +2654,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         ListTile(
           title: const Text('Tape'),
           trailing: Text(
-            PlasterGeometry.formatLinearTakeoffLength(
-              takeoff.tapeLength,
-              unitSystem,
-            ),
+            PlasterGeometry.formatJointTapeLength(takeoff.tapeLength),
           ),
         ),
         ListTile(
@@ -2502,6 +2810,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                         ),
                         keyboardType: TextInputType.number,
                         onSubmitted: (_) => unawaited(_saveProject()),
+                      ).help(
+                        'Waste Allowance',
+                        '''
+Adds extra sheets to the final order quantity. Layout waste is still calculated from the actual sheet cuts; this percentage is a purchasing contingency.''',
                       ),
                       const SizedBox(height: 8),
                       TextField(
@@ -2515,6 +2827,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                           decimal: true,
                         ),
                         onSubmitted: (_) => unawaited(_saveProject()),
+                      ).help(
+                        'Default Wall Stud Spacing',
+                        '''
+Default center-to-center spacing for wall studs. Wall butt joints are placed on stud centerlines unless a wall override is set.''',
                       ),
                       TextField(
                         controller: _wallStudOffsetController,
@@ -2527,6 +2843,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                           decimal: true,
                         ),
                         onSubmitted: (_) => unawaited(_saveProject()),
+                      ).help(
+                        'Default Wall Stud Offset',
+                        '''
+Distance from the start of a wall to the first stud centerline. Use wall overrides when a specific wall starts on a different framing position.''',
                       ),
                       TextField(
                         controller: _wallFixingFaceWidthController,
@@ -2539,6 +2859,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                           decimal: true,
                         ),
                         onSubmitted: (_) => unawaited(_saveProject()),
+                      ).help(
+                        'Default Wall Fixing Face Width',
+                        '''
+Width of the stud face available for fixing. It is stored with the project so framing details are complete for layout rules.''',
                       ),
                       TextField(
                         controller: _ceilingFramingSpacingController,
@@ -2551,6 +2875,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                           decimal: true,
                         ),
                         onSubmitted: (_) => unawaited(_saveProject()),
+                      ).help(
+                        'Default Ceiling Framing Spacing',
+                        '''
+Default center-to-center ceiling framing spacing. Ceiling butt joints are placed on framing centerlines unless a room override is set.''',
                       ),
                       TextField(
                         controller: _ceilingFramingOffsetController,
@@ -2563,6 +2891,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                           decimal: true,
                         ),
                         onSubmitted: (_) => unawaited(_saveProject()),
+                      ).help(
+                        'Default Ceiling Framing Offset',
+                        '''
+Distance from the ceiling origin to the first framing centerline. Use room overrides when a ceiling has different framing alignment.''',
                       ),
                       TextField(
                         controller: _ceilingFixingFaceWidthController,
@@ -2575,6 +2907,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                           decimal: true,
                         ),
                         onSubmitted: (_) => unawaited(_saveProject()),
+                      ).help(
+                        'Default Ceiling Fixing Face Width',
+                        '''
+Width of the ceiling framing face available for fixing. It is saved with the project for complete framing metadata.''',
                       ),
                       const SizedBox(height: 12),
                       HMBChildCrudCard(

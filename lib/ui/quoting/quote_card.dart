@@ -159,20 +159,20 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (context) => PdfPreviewScreen(
-          title: 'Quote #${quote.bestNumber} ${job.summary}',
+          title: 'Fixed Price Quote #${quote.bestNumber} ${job.summary}',
           filePath: quoteFile.path,
           preferredRecipient:
               billingContact?.emailAddress ?? primaryContact.emailAddress,
           emailSubject:
-              '${system.businessName ?? 'Your'} Quote #'
+              '${system.businessName ?? 'Your'} Fixed Price Quote #'
               '${quote.bestNumber}',
           emailBody:
               '''
 ${primaryContact.firstName.trim()},
 
-Please review the attached quote for your job.
+Please review the attached fixed price quote for your job.
 To approve it, reply to this email with:
-"I approve Quote #${quote.bestNumber} for Job ${job.summary}".
+"I approve Fixed Price Quote #${quote.bestNumber} for Job ${job.summary}".
 ''',
           sendEmailDialog:
               ({
@@ -387,6 +387,7 @@ To approve it, reply to this email with:
                   Text(jc.job.summary),
                 ],
               ),
+              if (quote.summary.trim().isNotEmpty) Text(quote.summary),
               Text('Customer: ${jc.customer.name}'),
               Text('Primary Contact: ${jc.primaryContact?.fullname ?? 'N/A'}'),
               Text('Billing Contact: ${jc.billingContact?.fullname ?? 'N/A'}'),

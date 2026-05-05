@@ -24,9 +24,8 @@ class SaveAndClose extends StatelessWidget {
   final AsyncVoidCallback onCancel;
   final bool showSaveOnly;
 
-  /// The [showSaveOnly] argument controls whether the 'Save' button
-  /// will be displayed. We normally only display the save button
-  /// during the insert phase of a CRUD.
+  /// The [showSaveOnly] argument indicates that the first save should keep
+  /// the editor open so child records can be added.
   const SaveAndClose({
     required this.onSave,
     required this.showSaveOnly,
@@ -40,17 +39,12 @@ class SaveAndClose extends StatelessWidget {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        if (showSaveOnly)
-          HMBButton(
-            onPressed: () => unawaited(onSave(close: false)),
-            label: 'Save',
-            hint: "Save your changes but don't close the window",
-          ),
-        const HMBSpacer(width: true),
         HMBButton(
-          label: 'Save & Close',
-          hint: 'Save your changes and close this window',
-          onPressed: () => unawaited(onSave(close: true)),
+          label: 'Save',
+          hint: showSaveOnly
+              ? 'Save your changes so child records can be added'
+              : 'Save your changes',
+          onPressed: () => unawaited(onSave(close: !showSaveOnly)),
         ),
         const HMBSpacer(width: true),
         HMBButton(
