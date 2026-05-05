@@ -21,7 +21,7 @@ Future<void> createInvoiceFor(Job job, BuildContext context) async {
   if (options != null) {
     try {
       if (options.selectedTaskIds.isNotEmpty || options.billBookingFee) {
-        await createTimeAndMaterialsInvoice(
+        await createInvoice(
           job,
           options.contact,
           options.selectedTaskIds,

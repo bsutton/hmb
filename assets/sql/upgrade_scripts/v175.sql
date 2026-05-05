@@ -1,2 +1,2 @@
-ALTER TABLE plaster_room
-ADD COLUMN square_set_ceiling INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE system
+ADD COLUMN default_profit_margin INTEGER;

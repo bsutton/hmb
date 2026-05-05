@@ -10,7 +10,8 @@ class RoomEditorDetailsForm extends StatelessWidget {
   final String unitLabel;
   final TextEditingController roomNameController;
   final TextEditingController ceilingHeightController;
-  final int? selectedLineId;
+  final int selectedLineCount;
+  final int? selectedLineKey;
   final TextEditingController? lineStudSpacingController;
   final TextEditingController? lineStudOffsetController;
   final ValueChanged<RoomEditorUnitSystem?> onUnitChanged;
@@ -32,7 +33,8 @@ class RoomEditorDetailsForm extends StatelessWidget {
     required this.editorTools,
     required this.canvas,
     super.key,
-    this.selectedLineId,
+    this.selectedLineCount = 0,
+    this.selectedLineKey,
     this.lineStudSpacingController,
     this.lineStudOffsetController,
     this.onCommitSelectedLineOverrides,
@@ -126,18 +128,20 @@ class RoomEditorDetailsForm extends StatelessWidget {
             onEditingComplete: () => unawaited(onCommitCeilingHeight()),
             onTapOutside: (_) => unawaited(onCommitCeilingHeight()),
           ),
-          if (selectedLineId != null &&
+          if (selectedLineCount > 0 &&
               lineStudSpacingController != null &&
               lineStudOffsetController != null &&
               onCommitSelectedLineOverrides != null) ...[
             const SizedBox(height: 8),
             TextField(
               key: ValueKey(
-                'line-stud-spacing-$selectedLineId-${unitSystem.name}',
+                'line-stud-spacing-$selectedLineKey-${unitSystem.name}',
               ),
               controller: lineStudSpacingController,
               decoration: InputDecoration(
-                labelText: 'Wall Stud Spacing Override ($unitLabel)',
+                labelText: selectedLineCount == 1
+                    ? 'Wall Stud Spacing Override ($unitLabel)'
+                    : 'Selected Walls Stud Spacing Override ($unitLabel)',
                 helperText: 'Leave blank to use project default.',
               ),
               keyboardType: const TextInputType.numberWithOptions(
@@ -151,11 +155,13 @@ class RoomEditorDetailsForm extends StatelessWidget {
             const SizedBox(height: 8),
             TextField(
               key: ValueKey(
-                'line-stud-offset-$selectedLineId-${unitSystem.name}',
+                'line-stud-offset-$selectedLineKey-${unitSystem.name}',
               ),
               controller: lineStudOffsetController,
               decoration: InputDecoration(
-                labelText: 'Wall Stud Offset Override ($unitLabel)',
+                labelText: selectedLineCount == 1
+                    ? 'Wall Stud Offset Override ($unitLabel)'
+                    : 'Selected Walls Stud Offset Override ($unitLabel)',
                 helperText: 'Leave blank to use project default.',
               ),
               keyboardType: const TextInputType.numberWithOptions(
