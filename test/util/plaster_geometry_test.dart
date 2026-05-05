@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/measurement_type.dart';
@@ -82,6 +84,71 @@ void main() {
         ),
         30000,
       );
+    });
+
+    test('provides framing defaults for both unit systems', () {
+      expect(
+        PlasterGeometry.defaultWallStudSpacing(PreferredUnitSystem.metric),
+        6000,
+      );
+      expect(
+        PlasterGeometry.defaultWallStudSpacing(PreferredUnitSystem.imperial),
+        16000,
+      );
+      expect(
+        PlasterGeometry.defaultWallFixingFaceWidth(PreferredUnitSystem.metric),
+        450,
+      );
+      expect(
+        PlasterGeometry.defaultWallFixingFaceWidth(
+          PreferredUnitSystem.imperial,
+        ),
+        1500,
+      );
+      expect(
+        PlasterGeometry.defaultCeilingFramingSpacing(
+          PreferredUnitSystem.metric,
+        ),
+        4500,
+      );
+      expect(
+        PlasterGeometry.defaultCeilingFramingSpacing(
+          PreferredUnitSystem.imperial,
+        ),
+        16000,
+      );
+    });
+
+    test('provides standard material sizes for both unit systems', () {
+      final metric = PlasterGeometry.defaultMaterialSizes(
+        1,
+        PreferredUnitSystem.metric,
+      );
+      expect(metric.map((size) => size.name), contains('1200 x 4200'));
+      expect(
+        metric.every((size) => size.unitSystem == PreferredUnitSystem.metric),
+        isTrue,
+      );
+
+      final imperial = PlasterGeometry.defaultMaterialSizes(
+        1,
+        PreferredUnitSystem.imperial,
+      );
+      expect(imperial.map((size) => size.name), contains('4 x 12'));
+      expect(
+        imperial.every(
+          (size) => size.unitSystem == PreferredUnitSystem.imperial,
+        ),
+        isTrue,
+      );
+    });
+
+    test('formats joint tape as whole metres rounded up', () {
+      expect(PlasterGeometry.formatJointTapeLength(0), '0 m');
+      expect(PlasterGeometry.formatJointTapeLength(1), '1 m');
+      expect(PlasterGeometry.formatJointTapeLength(9999), '1 m');
+      expect(PlasterGeometry.formatJointTapeLength(10000), '1 m');
+      expect(PlasterGeometry.formatJointTapeLength(10001), '2 m');
     });
 
     test('convert room bundle converts room, lines and openings', () {
@@ -259,13 +326,122 @@ void main() {
       expect(layouts, hasLength(1));
       expect(layouts.single.direction, PlasterSheetDirection.horizontal);
 
+      final baseClearance = PlasterGeometry.wallBaseClearance(room.unitSystem);
       final bottomCourse = layouts.single.placements
-          .where((placement) => placement.y == 0)
+          .where((placement) => placement.y == baseClearance)
           .toList();
       expect(bottomCourse, isNotEmpty);
       expect(
         bottomCourse.every((placement) => placement.height == 6000),
         isTrue,
+      );
+    });
+
+    test('square set ceilings trim wall layout height', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Square Set',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        squareSetCeiling: true,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      final selectedWallOnly = [
+        lines[0].copyWith(sheetDirection: PlasterSheetDirection.horizontal),
+        lines[1].copyWith(plasterSelected: false),
+        lines[2].copyWith(plasterSelected: false),
+        lines[3].copyWith(plasterSelected: false),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '6000 x 1200',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 60000,
+          height: 12000,
+        ),
+      ];
+
+      final layout = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(
+          room: room,
+          lines: selectedWallOnly,
+          openings: const [],
+        ),
+      ], materials).firstWhere((layout) => !layout.isCeiling);
+
+      final expectedHeight =
+          room.ceilingHeight -
+          PlasterGeometry.squareSetCeilingTrim(room.unitSystem);
+      expect(layout.height, expectedHeight);
+      expect(
+        layout.area,
+        lines[0].length *
+            PlasterGeometry.wallBoardCoverageHeight(
+              expectedHeight,
+              room.unitSystem,
+            ),
+      );
+    });
+
+    test('wall layouts leave base and ceiling clearances', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Wall Gaps',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        plasterCeiling: false,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      final selectedWallOnly = [
+        lines[0].copyWith(sheetDirection: PlasterSheetDirection.horizontal),
+        lines[1].copyWith(plasterSelected: false),
+        lines[2].copyWith(plasterSelected: false),
+        lines[3].copyWith(plasterSelected: false),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '6000 x 1200',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 60000,
+          height: 12000,
+        ),
+      ];
+
+      final layout = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(
+          room: room,
+          lines: selectedWallOnly,
+          openings: const [],
+        ),
+      ], materials).single;
+
+      final baseClearance = PlasterGeometry.wallBaseClearance(room.unitSystem);
+      final topClearance = PlasterGeometry.wallTopClearance(room.unitSystem);
+      final minY = layout.placements
+          .map((placement) => placement.y)
+          .reduce(min);
+      final maxY = layout.placements
+          .map((placement) => placement.y + placement.height)
+          .reduce(max);
+
+      expect(minY, baseClearance);
+      expect(maxY, room.ceilingHeight - topClearance);
+      expect(layout.height, room.ceilingHeight);
+      expect(
+        layout.area,
+        lines[0].length *
+            PlasterGeometry.wallBoardCoverageHeight(
+              room.ceilingHeight,
+              room.unitSystem,
+            ),
       );
     });
 

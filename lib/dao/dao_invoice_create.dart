@@ -21,7 +21,7 @@ import '../util/dart/local_date.dart';
 import '../util/dart/money_ex.dart';
 import 'dao.g.dart';
 
-Future<Invoice> createTimeAndMaterialsInvoice(
+Future<Invoice> createInvoice(
   Job job,
   Contact billingContact,
   List<int> selectedTaskIds, {
