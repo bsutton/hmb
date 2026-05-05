@@ -61,6 +61,7 @@ class _PlasterRoomEditScreenState extends DeferredState<PlasterRoomEditScreen> {
         name: 'Room ${rooms.length + 1}',
         unitSystem: unitSystem,
         ceilingHeight: PlasterGeometry.defaultCeilingHeight(unitSystem),
+        boardThickness: PlasterGeometry.defaultBoardThickness(unitSystem),
       );
     }
     _syncControllers();

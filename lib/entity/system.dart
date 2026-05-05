@@ -90,6 +90,7 @@ class System extends Entity<System> {
   Money? defaultHourlyRate;
   String? termsUrl;
   Money? defaultBookingFee;
+  Percentage? defaultProfitMargin;
   int? simCardNo;
   String? xeroClientId;
   String? xeroClientSecret;
@@ -151,6 +152,7 @@ class System extends Entity<System> {
     required this.defaultHourlyRate,
     required this.termsUrl,
     required this.defaultBookingFee,
+    required this.defaultProfitMargin,
     required this.simCardNo,
     required this.xeroClientId,
     required this.xeroClientSecret,
@@ -219,6 +221,7 @@ class System extends Entity<System> {
     required this.paymentTermsInDays,
     required this.paymentOptions,
     required this.richTextRemoved,
+    this.defaultProfitMargin,
     this.photoCacheMaxMb = 100,
     this.enableXeroIntegration = true,
     this.preferredUnitSystem = PreferredUnitSystem.metric,
@@ -253,6 +256,7 @@ class System extends Entity<System> {
     Money? defaultHourlyRate,
     String? termsUrl,
     Money? defaultBookingFee,
+    Percentage? defaultProfitMargin,
     int? simCardNo,
     String? xeroClientId,
     String? xeroClientSecret,
@@ -302,6 +306,7 @@ class System extends Entity<System> {
     defaultHourlyRate: defaultHourlyRate ?? this.defaultHourlyRate,
     termsUrl: termsUrl ?? this.termsUrl,
     defaultBookingFee: defaultBookingFee ?? this.defaultBookingFee,
+    defaultProfitMargin: defaultProfitMargin ?? this.defaultProfitMargin,
     simCardNo: simCardNo ?? this.simCardNo,
     xeroClientId: xeroClientId ?? this.xeroClientId,
     xeroClientSecret: xeroClientSecret ?? this.xeroClientSecret,
@@ -366,9 +371,15 @@ class System extends Entity<System> {
       map['default_booking_fee'] as int? ?? 0,
       isoCode: 'AUD',
     ),
+    defaultProfitMargin: map['default_profit_margin'] == null
+        ? null
+        : Percentage.fromInt(
+            map['default_profit_margin'] as int,
+            decimalDigits: 3,
+          ),
     simCardNo: map['sim_card_no'] as int?,
     xeroClientId: map['xero_client_id'] as String?,
-    xeroClientSecret: map['xero_client_secret'] as String?,
+    xeroClientSecret: null,
     invoiceLineRevenueAccountCode: map['invoice_line_account_code'] as String?,
     invoiceLineInventoryItemCode: map['invoice_line_item_code'] as String?,
     enableXeroIntegration: (map['enable_xero_integration'] as int? ?? 1) == 1,
@@ -404,14 +415,14 @@ class System extends Entity<System> {
       return RichTextRemoved.fromOrdinal(parsed);
     }(),
     operatingHours: map['operating_hours'] as String?,
-    chatgptAccessToken: map['chatgpt_access_token'] as String?,
-    chatgptRefreshToken: map['chatgpt_refresh_token'] as String?,
+    chatgptAccessToken: null,
+    chatgptRefreshToken: null,
     chatgptTokenExpiry: map['chatgpt_token_expiry'] != null
         ? DateTime.parse(map['chatgpt_token_expiry'] as String)
         : null,
-    openaiApiKey: map['openai_api_key'] as String?,
+    openaiApiKey: null,
     ihserverUrl: map['ihserver_url'] as String?,
-    ihserverToken: map['ihserver_token'] as String?,
+    ihserverToken: null,
     enableIhserverIntegration:
         (map['enable_ihserver_integration'] as int? ?? 0) == 1,
     createdDate:
@@ -463,9 +474,12 @@ class System extends Entity<System> {
     'default_hourly_rate': defaultHourlyRate?.minorUnits.toInt(),
     'terms_url': termsUrl,
     'default_booking_fee': defaultBookingFee?.minorUnits.toInt(),
+    'default_profit_margin': defaultProfitMargin
+        ?.copyWith(decimalDigits: 3)
+        .minorUnits
+        .toInt(),
     'sim_card_no': simCardNo,
     'xero_client_id': xeroClientId,
-    'xero_client_secret': xeroClientSecret,
     'invoice_line_account_code': invoiceLineRevenueAccountCode,
     'invoice_line_item_code': invoiceLineInventoryItemCode,
     'enable_xero_integration': enableXeroIntegration ? 1 : 0,
@@ -489,12 +503,8 @@ class System extends Entity<System> {
     'surname': surname,
     'rich_text_removed': richTextRemoved.ordinal,
     'operating_hours': operatingHours,
-    'chatgpt_access_token': chatgptAccessToken,
-    'chatgpt_refresh_token': chatgptRefreshToken,
     'chatgpt_token_expiry': chatgptTokenExpiry?.toIso8601String(),
-    'openai_api_key': openaiApiKey,
     'ihserver_url': ihserverUrl,
-    'ihserver_token': ihserverToken,
     'enable_ihserver_integration': enableIhserverIntegration ? 1 : 0,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
