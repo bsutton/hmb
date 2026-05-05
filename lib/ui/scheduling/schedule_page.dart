@@ -389,62 +389,92 @@ class SchedulePageState extends DeferredState<SchedulePage> {
   /// Show the navigation bar with left, right, view dropdown, and today button
   /// Show the navigation bar with left, right, view dropdown, and today button
   Widget _navigationRow() => Padding(
-    padding: const EdgeInsets.only(left: 8, right: 8),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        TextButton.icon(
-          onPressed: onTodayPage, // Go to today's date
-          icon: const Icon(Icons.today, color: Colors.blue),
-          label: const Text(
-            'Today',
-            style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-          ),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            backgroundColor: Colors.grey[900], // Slightly lighter than black
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(color: Colors.blue.shade300),
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompactLayout = constraints.maxWidth < 520;
+
+        if (isCompactLayout) {
+          return HMBColumn(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(child: _todayButton()),
+                  const SizedBox(width: 12),
+                  _extendedHoursToggle(),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _viewDroplist(),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            _todayButton(),
+            const SizedBox(width: 12),
+            _extendedHoursToggle(),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 260),
+                  child: _viewDroplist(),
+                ),
+              ),
             ),
-          ),
-        ),
-        const HMBSpacer(width: true),
-
-        // Extended hours button
-        HMBToggle(
-          label: 'Extended',
-          hint: 'Show full 24 hrs',
-          initialValue: false,
-          onToggled: (value) {
-            setState(() {
-              _showExtendedHours = value;
-            });
-          },
-        ),
-        const HMBSpacer(width: true),
-
-        // Dropdown to select view type (Day, Week, Month)
-        Flexible(
-          child: HMBDroplist<ScheduleView>(
-            selectedItem: () async => selectedView,
-            items: (filter) async => ScheduleView.values,
-            format: (view) => view.name,
-            onChanged: (view) async {
-              _focusDate = await _adjustFocusDate(selectedView);
-              selectedView = view!;
-
-              /// Force the new view to the same date
-              WidgetsBinding.instance.scheduleFrameCallback((_) async {
-                await _jumpToDate(_currentFirstDateOnPage);
-              });
-              setState(() {});
-            },
-            title: 'View',
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     ),
+  );
+
+  Widget _todayButton() => TextButton.icon(
+    onPressed: onTodayPage,
+    icon: const Icon(Icons.today, color: Colors.blue),
+    label: const Text(
+      'Today',
+      style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+    ),
+    style: TextButton.styleFrom(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      backgroundColor: Colors.grey[900],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: Colors.blue.shade300),
+      ),
+    ),
+  );
+
+  Widget _extendedHoursToggle() => HMBToggle(
+    label: 'Extended',
+    hint: 'Show full 24 hrs',
+    initialValue: false,
+    onToggled: (value) {
+      setState(() {
+        _showExtendedHours = value;
+      });
+    },
+  );
+
+  Widget _viewDroplist() => HMBDroplist<ScheduleView>(
+    selectedItem: () async => selectedView,
+    items: (filter) async => ScheduleView.values,
+    format: (view) => view.name,
+    onChanged: (view) async {
+      _focusDate = await _adjustFocusDate(selectedView);
+      selectedView = view!;
+
+      /// Force the new view to the same date
+      WidgetsBinding.instance.scheduleFrameCallback((_) async {
+        await _jumpToDate(_currentFirstDateOnPage);
+      });
+      setState(() {});
+    },
+    title: 'View',
   );
 
   /// Jump to "today" for whichever view is active

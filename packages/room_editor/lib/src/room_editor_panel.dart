@@ -23,10 +23,11 @@ class RoomEditorPanel extends StatefulWidget {
   final ValueChanged<RoomEditorCommand>? onCommand;
   final VoidCallback? onUndo;
   final VoidCallback? onRedo;
+  final ValueChanged<RoomEditorSelection>? onSelectionChanged;
+  final RoomEditorSelectionController? selectionController;
   final List<RoomEditorCustomTool> customTools;
   final Map<int, RoomEditorLinePresentation> linePresentations;
-  final Map<int, RoomEditorIntersectionPresentation>
-  intersectionPresentations;
+  final Map<int, RoomEditorIntersectionPresentation> intersectionPresentations;
 
   const RoomEditorPanel({
     required this.roomId,
@@ -47,6 +48,8 @@ class RoomEditorPanel extends StatefulWidget {
     this.onCommand,
     this.onUndo,
     this.onRedo,
+    this.onSelectionChanged,
+    this.selectionController,
     this.landscape = false,
     this.customTools = const [],
     this.linePresentations = const {},
@@ -63,13 +66,26 @@ class _RoomEditorPanelState extends State<RoomEditorPanel> {
   @override
   void initState() {
     super.initState();
-    _selectionController = RoomEditorSelectionController();
+    _selectionController =
+        widget.selectionController ?? RoomEditorSelectionController();
+    _selectionController.addListener(_notifySelectionChanged);
   }
 
   @override
   void dispose() {
-    _selectionController.dispose();
+    _selectionController.removeListener(_notifySelectionChanged);
+    if (widget.selectionController == null) {
+      _selectionController.dispose();
+    }
     super.dispose();
+  }
+
+  void _notifySelectionChanged() =>
+      widget.onSelectionChanged?.call(_selectionController.value);
+
+  int? _selectionKey(RoomEditorSelection selection) {
+    final selected = selection.selectedLineIndices.toList()..sort();
+    return selected.isEmpty ? null : Object.hashAll(selected);
   }
 
   @override
@@ -82,9 +98,8 @@ class _RoomEditorPanelState extends State<RoomEditorPanel> {
           unitLabel: widget.unitLabel,
           roomNameController: widget.roomNameController,
           ceilingHeightController: widget.ceilingHeightController,
-          selectedLineId: selection.selectedLineIndex == null
-              ? null
-              : widget.document.bundle.lines[selection.selectedLineIndex!].id,
+          selectedLineCount: selection.selectedLineIndices.length,
+          selectedLineKey: _selectionKey(selection),
           lineStudSpacingController: widget.lineStudSpacingController,
           lineStudOffsetController: widget.lineStudOffsetController,
           onUnitChanged: widget.onUnitChanged,
