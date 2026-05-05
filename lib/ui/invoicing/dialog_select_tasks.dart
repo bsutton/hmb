@@ -149,6 +149,7 @@ class DialogTaskSelection extends StatefulWidget {
 class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
   final Map<int, bool> _selectedTasks = {};
   final Map<int, BillingType> _taskBillingTypes = {};
+  late final TextEditingController _quoteNameController;
   var _selectAll = true;
   late bool billBookingFee;
   late bool canBillBookingFee;
@@ -157,6 +158,12 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
   late Customer _customer;
   late Contact _selectedContact;
   List<Contact> _contacts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _quoteNameController = TextEditingController(text: widget.job.summary);
+  }
 
   @override
   Future<void> asyncInitState() async {
@@ -180,6 +187,12 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
     _customer = (await DaoCustomer().getById(widget.job.customerId))!;
     _contacts = await DaoContact().getByCustomer(widget.job.customerId);
     _selectedContact = widget.contact;
+  }
+
+  @override
+  void dispose() {
+    _quoteNameController.dispose();
+    super.dispose();
   }
 
   bool get _hasSelectedTimeAndMaterialsTasks => _selectedTasks.entries.any(
@@ -258,6 +271,11 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
                   });
                 },
               ),
+            if (widget.forQuote)
+              TextField(
+                controller: _quoteNameController,
+                decoration: const InputDecoration(labelText: 'Quote Name'),
+              ),
             if (_selectedTasks.isNotEmpty)
               CheckboxListTile(
                 title: const Text('Select All'),
@@ -302,6 +320,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
               groupByTask: !_hasSelectedTimeAndMaterialsTasks || _groupByTask,
               contact: _selectedContact,
               quoteMargin: widget.job.estimateMargin,
+              quoteName: _quoteNameController.text.trim(),
             ),
           );
         },
