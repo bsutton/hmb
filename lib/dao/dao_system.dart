@@ -44,13 +44,10 @@ class DaoSystem extends Dao<System> {
 
   @override
   Future<int> insert(System entity, [Transaction? transaction]) async {
-    final secretsPersisted = await _secretStore.persist(entity);
+    await _secretStore.persist(entity);
     final executor = withinTransaction(transaction);
 
     final map = entity.toMap()..remove('id');
-    if (secretsPersisted) {
-      _clearSecretFields(map);
-    }
 
     final id = await executor.insert(tablename, map);
     if (id == 0) {
@@ -63,14 +60,11 @@ class DaoSystem extends Dao<System> {
 
   @override
   Future<int> update(System entity, [Transaction? transaction]) async {
-    final secretsPersisted = await _secretStore.persist(entity);
+    await _secretStore.persist(entity);
     final executor = withinTransaction(transaction);
 
     entity.modifiedDate = DateTime.now();
     final map = entity.toMap();
-    if (secretsPersisted) {
-      _clearSecretFields(map);
-    }
 
     final count = await executor.update(
       tablename,
@@ -81,14 +75,6 @@ class DaoSystem extends Dao<System> {
     assert(count == 1, 'We should always be only updating one entity');
     Dao.notifier(this, entity.id);
     return entity.id;
-  }
-
-  void _clearSecretFields(Map<String, dynamic> map) {
-    map['xero_client_secret'] = null;
-    map['chatgpt_access_token'] = null;
-    map['chatgpt_refresh_token'] = null;
-    map['openai_api_key'] = null;
-    map['ihserver_token'] = null;
   }
 
   Future<Money> getHourlyRate() async {
