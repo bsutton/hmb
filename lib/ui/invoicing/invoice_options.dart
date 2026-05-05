@@ -23,6 +23,7 @@ class InvoiceOptions {
   Contact contact;
   Percentage quoteMargin;
   Map<int, Percentage> taskMargins;
+  String? quoteName;
 
   InvoiceOptions({
     required this.selectedTaskIds,
@@ -31,6 +32,7 @@ class InvoiceOptions {
     required this.contact,
     Percentage? quoteMargin,
     Map<int, Percentage>? taskMargins,
+    this.quoteName,
   }) : quoteMargin = quoteMargin ?? Percentage.zero,
        taskMargins = taskMargins ?? {};
 }

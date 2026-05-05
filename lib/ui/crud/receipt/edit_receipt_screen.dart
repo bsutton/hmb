@@ -12,6 +12,8 @@
 */
 
 // lib/src/ui/receipt/receipt_edit_screen.dart
+import 'dart:async';
+
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:strings/strings.dart';
@@ -53,6 +55,8 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   late HMBMoneyEditingController _taxCtrl;
   late HMBMoneyEditingController _totalInclCtrl;
   late PhotoController<Receipt> _photoCtrl;
+  final _linkedTaskItemIds = <int>{};
+  var _linkableTaskItems = <TaskItem>[];
 
   var _isCalculating = false;
 
@@ -110,6 +114,12 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       parent: currentEntity,
       parentType: ParentType.receipt,
     );
+    if (currentEntity != null) {
+      _linkedTaskItemIds.addAll(
+        await DaoReceipt().getLinkedTaskItemIds(currentEntity!.id),
+      );
+    }
+    await _reloadLinkableTaskItems();
   }
 
   @override
@@ -139,19 +149,25 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       HMBSelectJob(
         selectedJob: _selectedJob,
         required: true,
-        onSelected: (job) => setState(() {
-          _selectedJob.jobId = job?.id;
-        }),
+        onSelected: (job) {
+          setState(() {
+            _selectedJob.jobId = job?.id;
+          });
+          unawaited(_reloadLinkableTaskItems());
+        },
       ),
       // SUPPLIER: now using your SelectSupplier widget
       HMBSelectSupplier(
         selectedSupplier: selectedSupplier,
         required: true,
 
-        onSelected: (supplier) => setState(() {
-          _supplierId = supplier?.id;
-          selectedSupplier.selected = supplier?.id;
-        }),
+        onSelected: (supplier) {
+          setState(() {
+            _supplierId = supplier?.id;
+            selectedSupplier.selected = supplier?.id;
+          });
+          unawaited(_reloadLinkableTaskItems());
+        },
       ),
 
       // MONEY FIELDS: dollars entry
@@ -173,6 +189,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         fieldName: 'Total Excluding Tax',
         focusNode: _taxExFocus,
       ),
+      _buildTaskItemLinks(),
 
       // Photos
       PhotoCrud<Receipt>(
@@ -210,8 +227,104 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       parent: currentEntity,
       parentType: ParentType.receipt,
     );
+    if (currentEntity != null) {
+      await DaoReceipt().replaceTaskItemLinks(
+        currentEntity!.id,
+        _linkedTaskItemIds,
+      );
+    }
     await _photoCtrl.load();
+    await _reloadLinkableTaskItems();
     setState(() {});
+  }
+
+  Widget _buildTaskItemLinks() {
+    final jobId = _selectedJob.jobId;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Text(
+          'Linked task items',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        Text(
+          'Optional. Select the purchased items this receipt covers.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        if (jobId == null)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text('Select a job before linking task items.'),
+          )
+        else if (_linkableTaskItems.isEmpty)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text(
+              'No completed buy items are available for this job and supplier.',
+            ),
+          )
+        else
+          ..._linkableTaskItems.map(
+            (item) => CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(item.description),
+              subtitle: Text(_formatTaskItemCost(item)),
+              value: _linkedTaskItemIds.contains(item.id),
+              onChanged: (selected) {
+                setState(() {
+                  if (selected ?? false) {
+                    _linkedTaskItemIds.add(item.id);
+                  } else {
+                    _linkedTaskItemIds.remove(item.id);
+                  }
+                });
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _reloadLinkableTaskItems() async {
+    final jobId = _selectedJob.jobId;
+    if (jobId == null) {
+      _linkableTaskItems = [];
+      if (mounted) {
+        setState(() {});
+      }
+      return;
+    }
+
+    final candidates = await DaoTaskItem().getPurchasedItemsForReceiptLink(
+      jobId: jobId,
+      supplierId: _supplierId,
+    );
+    final linked = currentEntity == null
+        ? <TaskItem>[]
+        : await DaoReceipt().getLinkedTaskItems(currentEntity!.id);
+    final byId = <int, TaskItem>{
+      for (final item in candidates) item.id: item,
+      for (final item in linked) item.id: item,
+    };
+    _linkableTaskItems = byId.values.toList()
+      ..sort((lhs, rhs) => rhs.modifiedDate.compareTo(lhs.modifiedDate));
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  String _formatTaskItemCost(TaskItem item) {
+    final unitCost =
+        item.actualMaterialUnitCost ?? item.estimatedMaterialUnitCost;
+    final quantity =
+        item.actualMaterialQuantity ?? item.estimatedMaterialQuantity;
+    if (unitCost == null || quantity == null) {
+      return item.itemType.label;
+    }
+
+    final total = unitCost.multiplyByFixed(quantity);
+    return '${item.itemType.label} - $quantity x $unitCost = $total';
   }
 
   void _recalculate() {

@@ -141,6 +141,14 @@ void main() {
       );
     });
 
+    test('formats joint tape as whole metres rounded up', () {
+      expect(PlasterGeometry.formatJointTapeLength(0), '0 m');
+      expect(PlasterGeometry.formatJointTapeLength(1), '1 m');
+      expect(PlasterGeometry.formatJointTapeLength(9999), '1 m');
+      expect(PlasterGeometry.formatJointTapeLength(10000), '1 m');
+      expect(PlasterGeometry.formatJointTapeLength(10001), '2 m');
+    });
+
     test('convert room bundle converts room, lines and openings', () {
       final room = PlasterRoom.forInsert(
         projectId: 1,

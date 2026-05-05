@@ -968,6 +968,12 @@ class PlasterGeometry {
     return '${feet.toStringAsFixed(2)} ft';
   }
 
+  static String formatJointTapeLength(int value) {
+    const unitsPerMeter = metricUnitsPerMm * 1000;
+    final meters = (value + unitsPerMeter - 1) ~/ unitsPerMeter;
+    return '$meters m';
+  }
+
   static int? parseDisplayLength(String raw, PreferredUnitSystem unitSystem) {
     final value = raw.trim();
     if (value.isEmpty) {
