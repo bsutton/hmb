@@ -285,23 +285,6 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
             selectedSupplier: _selectedSupplier,
             onSelected: (supplier) => _supplier = supplier,
           ),
-          DropdownButtonFormField<PreferredUnitSystem>(
-            initialValue: _unitSystem,
-            decoration: const InputDecoration(labelText: 'Units'),
-            items: const [
-              DropdownMenuItem(
-                value: PreferredUnitSystem.metric,
-                child: Text('Metric'),
-              ),
-              DropdownMenuItem(
-                value: PreferredUnitSystem.imperial,
-                child: Text('Imperial'),
-              ),
-            ],
-            onChanged: (value) => setState(() {
-              _unitSystem = value ?? PreferredUnitSystem.metric;
-            }),
-          ),
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),

@@ -66,11 +66,19 @@ class _PlasterMaterialSizeEditScreenState
     }
 
     _supplierId = widget.project.supplierId;
-    _unitSystem = (await DaoSystem().get()).preferredUnitSystem;
+    _unitSystem = await _projectUnitSystem();
     _thicknessController.text = PlasterGeometry.formatDisplayLength(
       PlasterGeometry.defaultBoardThickness(_unitSystem),
       _unitSystem,
     ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
+  }
+
+  Future<PreferredUnitSystem> _projectUnitSystem() async {
+    final rooms = await DaoPlasterRoom().getByProject(widget.project.id);
+    if (rooms.isNotEmpty) {
+      return rooms.first.unitSystem;
+    }
+    return (await DaoSystem().get()).preferredUnitSystem;
   }
 
   @override
@@ -172,27 +180,6 @@ class _PlasterMaterialSizeEditScreenState
           TextField(
             controller: _nameController,
             decoration: const InputDecoration(labelText: 'Material Name'),
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<PreferredUnitSystem>(
-            initialValue: _unitSystem,
-            decoration: const InputDecoration(labelText: 'Units'),
-            items: const [
-              DropdownMenuItem(
-                value: PreferredUnitSystem.metric,
-                child: Text('Metric'),
-              ),
-              DropdownMenuItem(
-                value: PreferredUnitSystem.imperial,
-                child: Text('Imperial'),
-              ),
-            ],
-            onChanged: (value) {
-              if (value == null) {
-                return;
-              }
-              setState(() => _unitSystem = value);
-            },
           ),
           const SizedBox(height: 12),
           TextField(
