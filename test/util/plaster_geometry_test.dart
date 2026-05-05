@@ -990,6 +990,140 @@ void main() {
       );
     });
 
+    test('wall screw estimate increases with tighter stud spacing', () {
+      final looseProject = PlasterProject.forInsert(
+        name: 'Loose studs',
+        jobId: 1,
+        wastePercent: 15,
+      );
+      final tightProject = PlasterProject.forInsert(
+        name: 'Tight studs',
+        jobId: 1,
+        wastePercent: 15,
+        wallStudSpacing: 3000,
+      );
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Room 1',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        plasterCeiling: false,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '1200 x 2400',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 12000,
+          height: 24000,
+        ),
+      ];
+
+      final looseShape = PlasterRoomShape(
+        project: looseProject,
+        room: room,
+        lines: lines,
+        openings: const [],
+      );
+      final tightShape = PlasterRoomShape(
+        project: tightProject,
+        room: room,
+        lines: lines,
+        openings: const [],
+      );
+
+      final looseLayouts = PlasterGeometry.calculateLayout([
+        looseShape,
+      ], materials);
+      final tightLayouts = PlasterGeometry.calculateLayout([
+        tightShape,
+      ], materials);
+      final looseTakeoff = PlasterGeometry.calculateTakeoff(
+        [looseShape],
+        looseLayouts,
+        15,
+      );
+      final tightTakeoff = PlasterGeometry.calculateTakeoff(
+        [tightShape],
+        tightLayouts,
+        15,
+      );
+
+      expect(tightTakeoff.screwCount, greaterThan(looseTakeoff.screwCount));
+    });
+
+    test('ceiling screw estimate increases with tighter framing spacing', () {
+      final looseProject = PlasterProject.forInsert(
+        name: 'Loose ceiling',
+        jobId: 1,
+        wastePercent: 15,
+      );
+      final tightProject = PlasterProject.forInsert(
+        name: 'Tight ceiling',
+        jobId: 1,
+        wastePercent: 15,
+        ceilingFramingSpacing: 3000,
+      );
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Room 1',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+      );
+      final lines = [
+        for (final line in PlasterGeometry.defaultLines(
+          roomId: 1,
+          unitSystem: PreferredUnitSystem.metric,
+        ))
+          line.copyWith(plasterSelected: false),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '1200 x 2400',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 12000,
+          height: 24000,
+        ),
+      ];
+
+      final looseShape = PlasterRoomShape(
+        project: looseProject,
+        room: room,
+        lines: lines,
+        openings: const [],
+      );
+      final tightShape = PlasterRoomShape(
+        project: tightProject,
+        room: room,
+        lines: lines,
+        openings: const [],
+      );
+
+      final looseLayouts = PlasterGeometry.calculateLayout([
+        looseShape,
+      ], materials);
+      final tightLayouts = PlasterGeometry.calculateLayout([
+        tightShape,
+      ], materials);
+      final looseTakeoff = PlasterGeometry.calculateTakeoff(
+        [looseShape],
+        looseLayouts,
+        15,
+      );
+      final tightTakeoff = PlasterGeometry.calculateTakeoff(
+        [tightShape],
+        tightLayouts,
+        15,
+      );
+
+      expect(tightTakeoff.screwCount, greaterThan(looseTakeoff.screwCount));
+    });
+
     test('project takeoff does not exceed summed raw layout sheets', () {
       final room1 = PlasterRoom.forInsert(
         projectId: 1,

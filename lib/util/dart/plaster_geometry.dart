@@ -1488,6 +1488,7 @@ class PlasterGeometry {
               area: area,
               direction: candidate.$1,
               isCeiling: isCeiling,
+              framingSpacing: framingSpacing,
             ),
             estimatedGlueKg: _estimateGlueKg(area, isCeiling),
             estimatedPlasterKg: _estimatePlasterKg(area),
@@ -2990,6 +2991,7 @@ class PlasterGeometry {
     required int area,
     required PlasterSheetDirection direction,
     required bool isCeiling,
+    required int framingSpacing,
   }) {
     final areaSqM = area / (metricUnitsPerMm * metricUnitsPerMm) / 1000000;
     final perHundredSqM = isCeiling
@@ -2997,7 +2999,11 @@ class PlasterGeometry {
               ? 1150
               : 820
         : 620;
-    return max(1, (areaSqM * perHundredSqM / 100).ceil());
+    final standardSpacing = isCeiling ? 4500 : 6000;
+    final spacingFactor = framingSpacing <= 0
+        ? 1.0
+        : standardSpacing / framingSpacing;
+    return max(1, (areaSqM * perHundredSqM * spacingFactor / 100).ceil());
   }
 
   static double _estimateGlueKg(int area, bool isCeiling) {
