@@ -1,0 +1,2 @@
+ALTER TABLE task
+ADD COLUMN estimate_complete INTEGER NOT NULL DEFAULT 0;

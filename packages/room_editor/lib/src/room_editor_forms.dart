@@ -10,7 +10,8 @@ class RoomEditorDetailsForm extends StatelessWidget {
   final String unitLabel;
   final TextEditingController roomNameController;
   final TextEditingController ceilingHeightController;
-  final int? selectedLineId;
+  final int selectedLineCount;
+  final int? selectedLineKey;
   final TextEditingController? lineStudSpacingController;
   final TextEditingController? lineStudOffsetController;
   final ValueChanged<RoomEditorUnitSystem?> onUnitChanged;
@@ -32,7 +33,8 @@ class RoomEditorDetailsForm extends StatelessWidget {
     required this.editorTools,
     required this.canvas,
     super.key,
-    this.selectedLineId,
+    this.selectedLineCount = 0,
+    this.selectedLineKey,
     this.lineStudSpacingController,
     this.lineStudOffsetController,
     this.onCommitSelectedLineOverrides,
@@ -126,18 +128,20 @@ class RoomEditorDetailsForm extends StatelessWidget {
             onEditingComplete: () => unawaited(onCommitCeilingHeight()),
             onTapOutside: (_) => unawaited(onCommitCeilingHeight()),
           ),
-          if (selectedLineId != null &&
+          if (selectedLineCount > 0 &&
               lineStudSpacingController != null &&
               lineStudOffsetController != null &&
               onCommitSelectedLineOverrides != null) ...[
             const SizedBox(height: 8),
             TextField(
               key: ValueKey(
-                'line-stud-spacing-$selectedLineId-${unitSystem.name}',
+                'line-stud-spacing-$selectedLineKey-${unitSystem.name}',
               ),
               controller: lineStudSpacingController,
               decoration: InputDecoration(
-                labelText: 'Wall Stud Spacing Override ($unitLabel)',
+                labelText: selectedLineCount == 1
+                    ? 'Wall Stud Spacing Override ($unitLabel)'
+                    : 'Selected Walls Stud Spacing Override ($unitLabel)',
                 helperText: 'Leave blank to use project default.',
               ),
               keyboardType: const TextInputType.numberWithOptions(
@@ -151,11 +155,13 @@ class RoomEditorDetailsForm extends StatelessWidget {
             const SizedBox(height: 8),
             TextField(
               key: ValueKey(
-                'line-stud-offset-$selectedLineId-${unitSystem.name}',
+                'line-stud-offset-$selectedLineKey-${unitSystem.name}',
               ),
               controller: lineStudOffsetController,
               decoration: InputDecoration(
-                labelText: 'Wall Stud Offset Override ($unitLabel)',
+                labelText: selectedLineCount == 1
+                    ? 'Wall Stud Offset Override ($unitLabel)'
+                    : 'Selected Walls Stud Offset Override ($unitLabel)',
                 helperText: 'Leave blank to use project default.',
               ),
               keyboardType: const TextInputType.numberWithOptions(
@@ -205,12 +211,15 @@ class RoomEditorFramingSettingsSheet extends StatefulWidget {
   final TextEditingController roomCeilingFramingOffsetController;
   final TextEditingController roomCeilingFixingFaceWidthController;
   final bool plasterCeiling;
+  final bool squareSetCeiling;
   final bool hasSelectedWall;
   final TextEditingController? lineStudSpacingController;
   final TextEditingController? lineStudOffsetController;
   final TextEditingController? lineFixingFaceWidthController;
   // ignore: avoid_positional_boolean_parameters
   final Future<void> Function(bool value) onPlasterCeilingChanged;
+  // ignore: avoid_positional_boolean_parameters
+  final Future<void> Function(bool value) onSquareSetCeilingChanged;
   final Future<void> Function() onCommitCeilingHeight;
   final Future<void> Function() onCommitSelectedRoomCeilingOverrides;
   final Future<void> Function()? onCommitSelectedLineOverrides;
@@ -223,8 +232,10 @@ class RoomEditorFramingSettingsSheet extends StatefulWidget {
     required this.roomCeilingFramingOffsetController,
     required this.roomCeilingFixingFaceWidthController,
     required this.plasterCeiling,
+    required this.squareSetCeiling,
     required this.hasSelectedWall,
     required this.onPlasterCeilingChanged,
+    required this.onSquareSetCeilingChanged,
     required this.onCommitCeilingHeight,
     required this.onCommitSelectedRoomCeilingOverrides,
     required this.onApply,
@@ -243,16 +254,23 @@ class RoomEditorFramingSettingsSheet extends StatefulWidget {
 class _RoomEditorFramingSettingsSheetState
     extends State<RoomEditorFramingSettingsSheet> {
   late bool _plasterCeiling;
+  late bool _squareSetCeiling;
 
   @override
   void initState() {
     super.initState();
     _plasterCeiling = widget.plasterCeiling;
+    _squareSetCeiling = widget.squareSetCeiling;
   }
 
   Future<void> _setPlasterCeiling(bool value) async {
     setState(() => _plasterCeiling = value);
     await widget.onPlasterCeilingChanged(value);
+  }
+
+  Future<void> _setSquareSetCeiling(bool value) async {
+    setState(() => _squareSetCeiling = value);
+    await widget.onSquareSetCeilingChanged(value);
   }
 
   @override
@@ -275,6 +293,18 @@ class _RoomEditorFramingSettingsSheetState
           ),
           value: _plasterCeiling,
           onChanged: (value) => unawaited(_setPlasterCeiling(value)),
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Square set ceiling'),
+          subtitle: const Text(
+            'Adds a top-edge trim allowance to wall sheets where they meet '
+            'the ceiling.',
+          ),
+          value: _squareSetCeiling,
+          onChanged: _plasterCeiling
+              ? (value) => unawaited(_setSquareSetCeiling(value))
+              : null,
         ),
         const SizedBox(height: 8),
         TextField(
