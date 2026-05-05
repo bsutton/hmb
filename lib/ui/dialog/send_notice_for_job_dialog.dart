@@ -78,19 +78,18 @@ class SendNoticeForJobDialog extends StatefulWidget {
     String? preferredEmailRecipient,
     String? preferredMobileRecipient,
     NoticeChannel initialChannel = NoticeChannel.sms,
-  }) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (_) => SendNoticeForJobDialog(
-            job: job,
-            jobActivity: jobActivity,
-            preferredEmailRecipient: preferredEmailRecipient,
-            preferredMobileRecipient: preferredMobileRecipient,
-            initialChannel: initialChannel,
-          ),
-        ) ??
-        false;
-  }
+  }) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (_) => SendNoticeForJobDialog(
+          job: job,
+          jobActivity: jobActivity,
+          preferredEmailRecipient: preferredEmailRecipient,
+          preferredMobileRecipient: preferredMobileRecipient,
+          initialChannel: initialChannel,
+        ),
+      ) ??
+      false;
 }
 
 class _SendNoticeForJobDialogState
