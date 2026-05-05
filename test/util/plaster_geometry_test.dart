@@ -288,6 +288,98 @@ void main() {
       expect(layouts.single.material.name, '2400 x 1200');
     });
 
+    test('calculate layout matches material to room board thickness', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Room 1',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        plasterCeiling: false,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      final selectedWallOnly = [
+        lines[0],
+        for (final line in lines.skip(1)) line.copyWith(plasterSelected: false),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '13mm',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 24000,
+          height: 12000,
+          thickness: 130,
+        ),
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '10mm',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 24000,
+          height: 12000,
+        ),
+      ];
+
+      final layouts = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(
+          room: room,
+          lines: selectedWallOnly,
+          openings: const [],
+        ),
+      ], materials);
+
+      expect(layouts, hasLength(1));
+      expect(layouts.single.material.name, '10mm');
+    });
+
+    test('calculate layout uses wall board thickness override', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Room 1',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        plasterCeiling: false,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      final selectedWallOnly = [
+        lines[0].copyWith(boardThicknessOverride: 130),
+        for (final line in lines.skip(1)) line.copyWith(plasterSelected: false),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '10mm',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 24000,
+          height: 12000,
+        ),
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '13mm',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 24000,
+          height: 12000,
+          thickness: 130,
+        ),
+      ];
+
+      final layouts = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(
+          room: room,
+          lines: selectedWallOnly,
+          openings: const [],
+        ),
+      ], materials);
+
+      expect(layouts, hasLength(1));
+      expect(layouts.single.material.name, '13mm');
+    });
+
     test('calculate layout requires material room attributes', () {
       final room = PlasterRoom.forInsert(
         projectId: 1,
@@ -320,6 +412,14 @@ void main() {
           width: 24000,
           height: 12000,
           attributeMask: PlasterBoardAttribute.moistureMouldResistant.bit,
+        ),
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: 'Fire rated',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 24000,
+          height: 12000,
+          attributeMask: PlasterBoardAttribute.fireResistant.bit,
         ),
       ];
 

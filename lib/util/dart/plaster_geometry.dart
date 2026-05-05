@@ -648,6 +648,9 @@ class PlasterGeometry {
   static int defaultCeilingHeight(PreferredUnitSystem unitSystem) =>
       unitSystem == PreferredUnitSystem.metric ? 24000 : 96000;
 
+  static int defaultBoardThickness(PreferredUnitSystem unitSystem) =>
+      unitSystem == PreferredUnitSystem.metric ? 100 : 500;
+
   static int squareSetCeilingTrim(PreferredUnitSystem unitSystem) =>
       convertLength(
         metricSquareSetCeilingTrim,
@@ -709,6 +712,7 @@ class PlasterGeometry {
           unitSystem: unitSystem,
           width: 12000,
           height: 24000,
+          thickness: defaultBoardThickness(unitSystem),
         ),
         PlasterMaterialSize.forInsert(
           supplierId: supplierId,
@@ -716,6 +720,7 @@ class PlasterGeometry {
           unitSystem: unitSystem,
           width: 12000,
           height: 27000,
+          thickness: defaultBoardThickness(unitSystem),
         ),
         PlasterMaterialSize.forInsert(
           supplierId: supplierId,
@@ -723,6 +728,7 @@ class PlasterGeometry {
           unitSystem: unitSystem,
           width: 12000,
           height: 30000,
+          thickness: defaultBoardThickness(unitSystem),
         ),
         PlasterMaterialSize.forInsert(
           supplierId: supplierId,
@@ -730,6 +736,7 @@ class PlasterGeometry {
           unitSystem: unitSystem,
           width: 12000,
           height: 36000,
+          thickness: defaultBoardThickness(unitSystem),
         ),
         PlasterMaterialSize.forInsert(
           supplierId: supplierId,
@@ -737,6 +744,7 @@ class PlasterGeometry {
           unitSystem: unitSystem,
           width: 12000,
           height: 42000,
+          thickness: defaultBoardThickness(unitSystem),
         ),
       ];
     }
@@ -747,6 +755,7 @@ class PlasterGeometry {
         unitSystem: unitSystem,
         width: 48000,
         height: 96000,
+        thickness: defaultBoardThickness(unitSystem),
       ),
       PlasterMaterialSize.forInsert(
         supplierId: supplierId,
@@ -754,6 +763,7 @@ class PlasterGeometry {
         unitSystem: unitSystem,
         width: 48000,
         height: 108000,
+        thickness: defaultBoardThickness(unitSystem),
       ),
       PlasterMaterialSize.forInsert(
         supplierId: supplierId,
@@ -761,6 +771,7 @@ class PlasterGeometry {
         unitSystem: unitSystem,
         width: 48000,
         height: 120000,
+        thickness: defaultBoardThickness(unitSystem),
       ),
       PlasterMaterialSize.forInsert(
         supplierId: supplierId,
@@ -768,6 +779,7 @@ class PlasterGeometry {
         unitSystem: unitSystem,
         width: 48000,
         height: 144000,
+        thickness: defaultBoardThickness(unitSystem),
       ),
     ];
   }
@@ -1381,9 +1393,30 @@ class PlasterGeometry {
         'framingSpacing=$framingSpacing, '
         'framingOffset=$framingOffset, '
         'fixingFaceWidth=$fixingFaceWidth';
+    final requiredThickness =
+        line?.boardThicknessOverride ?? room.boardThickness;
     final requiredAttributes =
         line?.attributeMaskOverride ?? room.attributeMask;
     for (final material in materials) {
+      final materialThickness = convertLength(
+        material.thickness,
+        material.unitSystem,
+        room.unitSystem,
+      );
+      if (materialThickness != requiredThickness) {
+        _logSurfaceCandidateDecision(
+          label: label,
+          material: material,
+          direction: direction,
+          decision: 'rejected',
+          detail:
+              'thickness '
+              '${formatDisplayLength(materialThickness, room.unitSystem)} '
+              'does not match required '
+              '${formatDisplayLength(requiredThickness, room.unitSystem)}',
+        );
+        continue;
+      }
       if (!material.attributeMask.includesPlasterBoardAttributes(
         requiredAttributes,
       )) {

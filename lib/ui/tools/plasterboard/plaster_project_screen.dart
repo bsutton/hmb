@@ -54,6 +54,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   final _roomNameController = TextEditingController();
   final _wasteController = TextEditingController();
   final _ceilingHeightController = TextEditingController();
+  final _roomBoardThicknessController = TextEditingController();
   final _wallStudSpacingController = TextEditingController();
   final _wallStudOffsetController = TextEditingController();
   final _wallFixingFaceWidthController = TextEditingController();
@@ -66,6 +67,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   final _lineStudSpacingController = TextEditingController();
   final _lineStudOffsetController = TextEditingController();
   final _lineFixingFaceWidthController = TextEditingController();
+  final _lineBoardThicknessController = TextEditingController();
   final _selectedJob = SelectedJob();
   final _selectedTask = SelectedTask();
   final _selectedSupplier = SelectedSupplier();
@@ -442,6 +444,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     _roomNameController.dispose();
     _wasteController.dispose();
     _ceilingHeightController.dispose();
+    _roomBoardThicknessController.dispose();
     _wallStudSpacingController.dispose();
     _wallStudOffsetController.dispose();
     _wallFixingFaceWidthController.dispose();
@@ -454,6 +457,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     _lineStudSpacingController.dispose();
     _lineStudOffsetController.dispose();
     _lineFixingFaceWidthController.dispose();
+    _lineBoardThicknessController.dispose();
     _editorSelectionController
       ..removeListener(_handleEditorSelectionControllerChanged)
       ..dispose();
@@ -688,6 +692,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _currentRoom.room.ceilingHeight,
       _currentRoom.room.unitSystem,
     ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
+    _roomBoardThicknessController.text = _formatLengthEntry(
+      _currentRoom.room.boardThickness,
+      roomUnitSystem: _currentRoom.room.unitSystem,
+    );
     _roomCeilingFramingSpacingController.text =
         _currentRoom.room.ceilingFramingSpacingOverride == null
         ? ''
@@ -718,6 +726,9 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     );
     _lineFixingFaceWidthController.text = _formatCommonOverride(
       selectedLines.map((line) => line.fixingFaceWidthOverride),
+    );
+    _lineBoardThicknessController.text = _formatCommonOverride(
+      selectedLines.map((line) => line.boardThicknessOverride),
     );
   }
 
@@ -782,12 +793,36 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     );
   }
 
+  Future<void> _commitRoomBoardThickness() async {
+    final parsed = PlasterGeometry.parseDisplayLength(
+      _roomBoardThicknessController.text,
+      _currentRoom.room.unitSystem,
+    );
+    if (parsed == null || parsed <= 0) {
+      _syncRoomControllers();
+      if (mounted) {
+        setState(() {});
+      }
+      return;
+    }
+    if (parsed == _currentRoom.room.boardThickness) {
+      return;
+    }
+    await _updateCurrentRoom(
+      _currentRoom.copyWith(
+        room: _currentRoom.room.copyWith(boardThickness: parsed),
+      ),
+      trackUndo: false,
+    );
+  }
+
   Future<void> _commitPendingRoomEdits() async {
     if (_rooms.isEmpty) {
       return;
     }
     await _commitRoomName();
     await _commitCeilingHeight();
+    await _commitRoomBoardThickness();
     await _commitSelectedRoomCeilingOverrides();
     await _commitSelectedLineFramingOverrides();
   }
@@ -898,6 +933,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     final spacingText = _lineStudSpacingController.text.trim();
     final offsetText = _lineStudOffsetController.text.trim();
     final fixingFaceText = _lineFixingFaceWidthController.text.trim();
+    final thicknessText = _lineBoardThicknessController.text.trim();
     final spacing = spacingText.isEmpty
         ? null
         : _parseLengthEntry(
@@ -916,9 +952,16 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             fixingFaceText,
             roomUnitSystem: _currentRoom.room.unitSystem,
           );
+    final thickness = thicknessText.isEmpty
+        ? null
+        : _parseLengthEntry(
+            thicknessText,
+            roomUnitSystem: _currentRoom.room.unitSystem,
+          );
     if ((spacingText.isNotEmpty && spacing == null) ||
         (offsetText.isNotEmpty && offset == null) ||
-        (fixingFaceText.isNotEmpty && fixingFaceWidth == null)) {
+        (fixingFaceText.isNotEmpty && fixingFaceWidth == null) ||
+        (thicknessText.isNotEmpty && thickness == null)) {
       _syncRoomControllers();
       if (mounted) {
         setState(() {});
@@ -934,13 +977,15 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       final currentLine = lines[index];
       if (currentLine.studSpacingOverride == spacing &&
           currentLine.studOffsetOverride == offset &&
-          currentLine.fixingFaceWidthOverride == fixingFaceWidth) {
+          currentLine.fixingFaceWidthOverride == fixingFaceWidth &&
+          currentLine.boardThicknessOverride == thickness) {
         continue;
       }
       lines[index] = currentLine.copyWith(
         studSpacingOverride: spacing,
         studOffsetOverride: offset,
         fixingFaceWidthOverride: fixingFaceWidth,
+        boardThicknessOverride: thickness,
       );
       changed = true;
     }
@@ -1138,6 +1183,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
           child: RoomEditorFramingSettingsSheet(
             unitLabel: roomUnitLabel,
             ceilingHeightController: _ceilingHeightController,
+            roomBoardThicknessController: _roomBoardThicknessController,
             roomCeilingFramingSpacingController:
                 _roomCeilingFramingSpacingController,
             roomCeilingFramingOffsetController:
@@ -1150,15 +1196,18 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             lineStudSpacingController: _lineStudSpacingController,
             lineStudOffsetController: _lineStudOffsetController,
             lineFixingFaceWidthController: _lineFixingFaceWidthController,
+            lineBoardThicknessController: _lineBoardThicknessController,
             onPlasterCeilingChanged: _setCurrentRoomPlasterCeiling,
             onSquareSetCeilingChanged: _setCurrentRoomSquareSetCeiling,
             onCommitCeilingHeight: _commitCeilingHeight,
+            onCommitRoomBoardThickness: _commitRoomBoardThickness,
             onCommitSelectedRoomCeilingOverrides:
                 _commitSelectedRoomCeilingOverrides,
             onCommitSelectedLineOverrides: _commitSelectedLineFramingOverrides,
             extraContent: _buildEditorAttributeSettings(),
             onApply: () async {
               await _commitCeilingHeight();
+              await _commitRoomBoardThickness();
               await _commitSelectedRoomCeilingOverrides();
               await _commitSelectedLineFramingOverrides();
               if (context.mounted) {

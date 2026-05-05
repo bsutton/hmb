@@ -24,6 +24,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
   final PreferredUnitSystem unitSystem;
   final int ceilingHeight;
   final bool plasterCeiling;
+  final int boardThickness;
   final int attributeMask;
   final bool squareSetCeiling;
   final PlasterSheetDirection ceilingSheetDirection;
@@ -38,6 +39,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
     required this.unitSystem,
     required this.ceilingHeight,
     required this.plasterCeiling,
+    required this.boardThickness,
     required this.attributeMask,
     required this.squareSetCeiling,
     required this.ceilingSheetDirection,
@@ -53,6 +55,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
     required this.name,
     required this.unitSystem,
     required this.ceilingHeight,
+    this.boardThickness = 100,
     this.plasterCeiling = true,
     this.attributeMask = 0,
     this.squareSetCeiling = false,
@@ -68,6 +71,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
     PreferredUnitSystem? unitSystem,
     int? ceilingHeight,
     bool? plasterCeiling,
+    int? boardThickness,
     int? attributeMask,
     bool? squareSetCeiling,
     PlasterSheetDirection? ceilingSheetDirection,
@@ -81,6 +85,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
     unitSystem: unitSystem ?? this.unitSystem,
     ceilingHeight: ceilingHeight ?? this.ceilingHeight,
     plasterCeiling: plasterCeiling ?? this.plasterCeiling,
+    boardThickness: boardThickness ?? this.boardThickness,
     attributeMask: attributeMask ?? this.attributeMask,
     squareSetCeiling: squareSetCeiling ?? this.squareSetCeiling,
     ceilingSheetDirection: ceilingSheetDirection ?? this.ceilingSheetDirection,
@@ -100,29 +105,35 @@ class PlasterRoom extends Entity<PlasterRoom> {
     modifiedDate: DateTime.now(),
   );
 
-  factory PlasterRoom.fromMap(Map<String, dynamic> map) => PlasterRoom._(
-    id: map['id'] as int,
-    projectId: map['project_id'] as int,
-    name: map['name'] as String? ?? '',
-    unitSystem: (map['unit_system'] as String?) == 'imperial'
+  factory PlasterRoom.fromMap(Map<String, dynamic> map) {
+    final unitSystem = (map['unit_system'] as String?) == 'imperial'
         ? PreferredUnitSystem.imperial
-        : PreferredUnitSystem.metric,
-    ceilingHeight: map['ceiling_height'] as int? ?? 24000,
-    plasterCeiling: (map['plaster_ceiling'] as int? ?? 1) == 1,
-    attributeMask: map['attribute_mask'] as int? ?? 0,
-    squareSetCeiling: (map['square_set_ceiling'] as int? ?? 0) == 1,
-    ceilingSheetDirection: PlasterSheetDirectionX.fromStorage(
-      map['ceiling_sheet_direction'] as String?,
-    ),
-    ceilingFramingSpacingOverride:
-        map['ceiling_framing_spacing_override'] as int?,
-    ceilingFramingOffsetOverride:
-        map['ceiling_framing_offset_override'] as int?,
-    ceilingFixingFaceWidthOverride:
-        map['ceiling_fixing_face_width_override'] as int?,
-    createdDate: DateTime.parse(map['created_date'] as String),
-    modifiedDate: DateTime.parse(map['modified_date'] as String),
-  );
+        : PreferredUnitSystem.metric;
+    return PlasterRoom._(
+      id: map['id'] as int,
+      projectId: map['project_id'] as int,
+      name: map['name'] as String? ?? '',
+      unitSystem: unitSystem,
+      ceilingHeight: map['ceiling_height'] as int? ?? 24000,
+      plasterCeiling: (map['plaster_ceiling'] as int? ?? 1) == 1,
+      boardThickness:
+          map['board_thickness'] as int? ??
+          (unitSystem == PreferredUnitSystem.metric ? 100 : 500),
+      attributeMask: map['attribute_mask'] as int? ?? 0,
+      squareSetCeiling: (map['square_set_ceiling'] as int? ?? 0) == 1,
+      ceilingSheetDirection: PlasterSheetDirectionX.fromStorage(
+        map['ceiling_sheet_direction'] as String?,
+      ),
+      ceilingFramingSpacingOverride:
+          map['ceiling_framing_spacing_override'] as int?,
+      ceilingFramingOffsetOverride:
+          map['ceiling_framing_offset_override'] as int?,
+      ceilingFixingFaceWidthOverride:
+          map['ceiling_fixing_face_width_override'] as int?,
+      createdDate: DateTime.parse(map['created_date'] as String),
+      modifiedDate: DateTime.parse(map['modified_date'] as String),
+    );
+  }
 
   @override
   Map<String, dynamic> toMap() => {
@@ -132,6 +143,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
     'unit_system': unitSystem.name,
     'ceiling_height': ceilingHeight,
     'plaster_ceiling': plasterCeiling ? 1 : 0,
+    'board_thickness': boardThickness,
     'attribute_mask': attributeMask,
     'square_set_ceiling': squareSetCeiling ? 1 : 0,
     'ceiling_sheet_direction': ceilingSheetDirection.storageValue,

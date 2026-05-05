@@ -53,8 +53,13 @@ class PlasterMaterialSizeListScreen extends StatelessWidget {
             material.height,
             material.unitSystem,
           );
+          final thicknessLabel = PlasterGeometry.formatDisplayLength(
+            material.thickness,
+            material.unitSystem,
+          );
           final widthText = Text('Width: $widthLabel');
           final lengthText = Text('Length: $lengthLabel');
+          final thicknessText = Text('Thickness: $thicknessLabel');
           final attributesText = Text(
             formatPlasterBoardAttributes(material.attributeMask),
           );
@@ -78,6 +83,8 @@ class PlasterMaterialSizeListScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 lengthText,
                 const SizedBox(height: 4),
+                thicknessText,
+                const SizedBox(height: 4),
                 attributesText,
                 const SizedBox(height: 4),
                 statusText,
@@ -90,6 +97,9 @@ class PlasterMaterialSizeListScreen extends StatelessWidget {
               Expanded(child: widthText),
               const SizedBox(width: 12),
               Expanded(child: lengthText),
+              const SizedBox(width: 12),
+              Expanded(child: thicknessText),
+              Expanded(child: thicknessText),
               const SizedBox(width: 12),
               Expanded(child: attributesText),
               const SizedBox(width: 12),

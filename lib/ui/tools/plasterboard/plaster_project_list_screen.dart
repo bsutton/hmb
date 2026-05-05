@@ -100,6 +100,7 @@ class _PlasterProjectListScreenState extends State<PlasterProjectListScreen> {
       name: 'Room 1',
       unitSystem: draft.unitSystem,
       ceilingHeight: PlasterGeometry.defaultCeilingHeight(draft.unitSystem),
+      boardThickness: PlasterGeometry.defaultBoardThickness(draft.unitSystem),
     );
     final roomId = await DaoPlasterRoom().insert(room);
     final defaultLines = PlasterGeometry.defaultLines(
