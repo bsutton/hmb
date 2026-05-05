@@ -34,7 +34,7 @@ enum TaxDisplayMode {
 class AppSettings {
   static const photoCacheMaxMbDefault = 100;
   static const _photoCacheMaxMbKey = 'photoCacheMaxMb';
-  static const defaultProfitMarginTextDefault = '0';
+  static const defaultProfitMarginTextDefault = '20';
   static const _defaultProfitMarginTextKey = 'defaultProfitMarginText';
   static const _taxDisplayModeKey = 'taxDisplayMode';
   static const _taxLabelKey = 'taxLabel';
@@ -45,8 +45,7 @@ class AppSettings {
   static const _plasterButtJointWeightKey = 'plasterButtJointWeight';
   static const _plasterHighJointWeightKey = 'plasterHighJointWeight';
   static const _plasterSmallPieceWeightKey = 'plasterSmallPieceWeight';
-  static const _plasterFragmentationWeightKey =
-      'plasterFragmentationWeight';
+  static const _plasterFragmentationWeightKey = 'plasterFragmentationWeight';
   static const _plasterVerticalWallPenaltyWeightKey =
       'plasterVerticalWallPenaltyWeight';
 

@@ -37,7 +37,7 @@ typedef DashletWidgetBuilder<T> =
 
 /// Maximum size constraints for dashlets (desktop screens)
 
-typedef OnTap = void Function(BuildContext context);
+typedef OnTap = FutureOr<void> Function(BuildContext context);
 
 /// A reusable dashlet card widget that reloads its data when the
 /// dashboard resumes.
@@ -55,6 +55,7 @@ class DashletCard<T> extends StatefulWidget {
   final String? route;
   final DashletWidgetBuilder<T>? builder;
   final OnTap? onTap;
+  final OnTap? onBeforeOpen;
   final bool compact;
 
   /// Create a [DashletCard] that when tapped navigates to a full screen
@@ -66,6 +67,7 @@ class DashletCard<T> extends StatefulWidget {
     required this.value,
     required this.builder,
     this.valueBuilder,
+    this.onBeforeOpen,
     this.compact = false,
     super.key,
   }) : route = null,
@@ -80,6 +82,7 @@ class DashletCard<T> extends StatefulWidget {
     required OnTap this.onTap,
     required this.value,
     this.valueBuilder,
+    this.onBeforeOpen,
     this.compact = false,
     super.key,
   }) : route = null,
@@ -94,6 +97,7 @@ class DashletCard<T> extends StatefulWidget {
     required this.value,
     required String this.route,
     this.valueBuilder,
+    this.onBeforeOpen,
     this.compact = false,
     super.key,
   }) : builder = null,
@@ -122,9 +126,7 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
       hint: widget.hint,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => widget.onTap != null
-            ? widget.onTap!(context)
-            : unawaited(_handleTap(context)),
+        onTap: () => unawaited(_handleTap(context)),
         child: Card(
           color: theme.colorScheme.surface,
           shape: RoundedRectangleBorder(
@@ -196,13 +198,18 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
   }
 
   Future<void> _handleTap(BuildContext context) async {
+    await widget.onBeforeOpen?.call(context);
+    if (!context.mounted) {
+      return;
+    }
+
     if (widget.route != null) {
       await GoRouter.of(context).push(widget.route!);
       return;
     }
 
     if (widget.onTap != null) {
-      widget.onTap!(context);
+      await widget.onTap!(context);
       return;
     }
     if (widget.builder != null) {

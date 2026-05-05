@@ -347,6 +347,55 @@ void main() {
   );
 
   test(
+    'getByFilter matches job description and secondary customer contact name',
+    () async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.zero,
+        summary: 'Bathroom update',
+      );
+
+      final updatedJob = job.copyWith(description: 'Replace leaking skylight');
+      await DaoJob().update(updatedJob);
+
+      final secondaryContact = Contact.forInsert(
+        firstName: 'Morgan',
+        surname: 'Builder',
+        mobileNumber: '0400111222',
+        landLine: '',
+        officeNumber: '',
+        emailAddress: 'morgan.builder@example.com',
+      );
+      await DaoContact().insert(secondaryContact);
+      final customer = (await DaoCustomer().getById(job.customerId))!;
+      await DaoContactCustomer().insertJoin(secondaryContact, customer);
+
+      final invoice = Invoice.forInsert(
+        jobId: job.id,
+        dueDate: LocalDate.today(),
+        totalAmount: Money.fromInt(1000, isoCode: 'AUD'),
+        billingContactId: job.billingContactId,
+      );
+      await DaoInvoice().insert(invoice);
+      await DaoInvoice().update(
+        invoice.copyWith(invoiceNum: 'INV-DESCRIPTION'),
+      );
+
+      final byDescription = await DaoInvoice().getByFilter('skylight');
+      final bySecondaryContact = await DaoInvoice().getByFilter('morgan');
+
+      expect(
+        byDescription.map((i) => i.invoiceNum),
+        contains('INV-DESCRIPTION'),
+      );
+      expect(
+        bySecondaryContact.map((i) => i.invoiceNum),
+        contains('INV-DESCRIPTION'),
+      );
+    },
+  );
+
+  test(
     'voidInvoice records description and hides invoice by default',
     () async {
       final job = await createJobWithCustomer(

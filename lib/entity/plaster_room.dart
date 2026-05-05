@@ -25,6 +25,8 @@ class PlasterRoom extends Entity<PlasterRoom> {
   final int ceilingHeight;
   final bool plasterCeiling;
   final int boardThickness;
+  final int attributeMask;
+  final bool squareSetCeiling;
   final PlasterSheetDirection ceilingSheetDirection;
   final int? ceilingFramingSpacingOverride;
   final int? ceilingFramingOffsetOverride;
@@ -38,6 +40,8 @@ class PlasterRoom extends Entity<PlasterRoom> {
     required this.ceilingHeight,
     required this.plasterCeiling,
     required this.boardThickness,
+    required this.attributeMask,
+    required this.squareSetCeiling,
     required this.ceilingSheetDirection,
     required this.ceilingFramingSpacingOverride,
     required this.ceilingFramingOffsetOverride,
@@ -53,6 +57,8 @@ class PlasterRoom extends Entity<PlasterRoom> {
     required this.ceilingHeight,
     this.boardThickness = 100,
     this.plasterCeiling = true,
+    this.attributeMask = 0,
+    this.squareSetCeiling = false,
     this.ceilingSheetDirection = PlasterSheetDirection.auto,
     this.ceilingFramingSpacingOverride,
     this.ceilingFramingOffsetOverride,
@@ -66,6 +72,8 @@ class PlasterRoom extends Entity<PlasterRoom> {
     int? ceilingHeight,
     bool? plasterCeiling,
     int? boardThickness,
+    int? attributeMask,
+    bool? squareSetCeiling,
     PlasterSheetDirection? ceilingSheetDirection,
     Object? ceilingFramingSpacingOverride = _unsetPlasterRoomField,
     Object? ceilingFramingOffsetOverride = _unsetPlasterRoomField,
@@ -78,6 +86,8 @@ class PlasterRoom extends Entity<PlasterRoom> {
     ceilingHeight: ceilingHeight ?? this.ceilingHeight,
     plasterCeiling: plasterCeiling ?? this.plasterCeiling,
     boardThickness: boardThickness ?? this.boardThickness,
+    attributeMask: attributeMask ?? this.attributeMask,
+    squareSetCeiling: squareSetCeiling ?? this.squareSetCeiling,
     ceilingSheetDirection: ceilingSheetDirection ?? this.ceilingSheetDirection,
     ceilingFramingSpacingOverride:
         identical(ceilingFramingSpacingOverride, _unsetPlasterRoomField)
@@ -109,6 +119,8 @@ class PlasterRoom extends Entity<PlasterRoom> {
       boardThickness:
           map['board_thickness'] as int? ??
           (unitSystem == PreferredUnitSystem.metric ? 100 : 500),
+      attributeMask: map['attribute_mask'] as int? ?? 0,
+      squareSetCeiling: (map['square_set_ceiling'] as int? ?? 0) == 1,
       ceilingSheetDirection: PlasterSheetDirectionX.fromStorage(
         map['ceiling_sheet_direction'] as String?,
       ),
@@ -132,6 +144,8 @@ class PlasterRoom extends Entity<PlasterRoom> {
     'ceiling_height': ceilingHeight,
     'plaster_ceiling': plasterCeiling ? 1 : 0,
     'board_thickness': boardThickness,
+    'attribute_mask': attributeMask,
+    'square_set_ceiling': squareSetCeiling ? 1 : 0,
     'ceiling_sheet_direction': ceilingSheetDirection.storageValue,
     'ceiling_framing_spacing_override': ceilingFramingSpacingOverride,
     'ceiling_framing_offset_override': ceilingFramingOffsetOverride,

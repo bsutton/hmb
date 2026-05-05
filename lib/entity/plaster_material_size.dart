@@ -14,6 +14,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
   final int height;
   final int thickness;
   final bool excludedFromLayout;
+  final int attributeMask;
 
   PlasterMaterialSize._({
     required super.id,
@@ -24,6 +25,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
     required this.height,
     required this.thickness,
     required this.excludedFromLayout,
+    required this.attributeMask,
     required super.createdDate,
     required super.modifiedDate,
   });
@@ -36,6 +38,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
     required this.height,
     this.thickness = 100,
     this.excludedFromLayout = false,
+    this.attributeMask = 0,
   }) : super.forInsert();
 
   PlasterMaterialSize copyWith({
@@ -46,6 +49,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
     int? height,
     int? thickness,
     bool? excludedFromLayout,
+    int? attributeMask,
   }) => PlasterMaterialSize._(
     id: id,
     supplierId: supplierId ?? this.supplierId,
@@ -55,6 +59,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
     height: height ?? this.height,
     thickness: thickness ?? this.thickness,
     excludedFromLayout: excludedFromLayout ?? this.excludedFromLayout,
+    attributeMask: attributeMask ?? this.attributeMask,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
   );
@@ -74,6 +79,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
           map['thickness'] as int? ??
           (unitSystem == PreferredUnitSystem.metric ? 100 : 500),
       excludedFromLayout: (map['excluded_from_layout'] as int? ?? 0) == 1,
+      attributeMask: map['attribute_mask'] as int? ?? 0,
       createdDate: DateTime.parse(map['created_date'] as String),
       modifiedDate: DateTime.parse(map['modified_date'] as String),
     );
@@ -89,6 +95,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
     'height': height,
     'thickness': thickness,
     'excluded_from_layout': excludedFromLayout ? 1 : 0,
+    'attribute_mask': attributeMask,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };

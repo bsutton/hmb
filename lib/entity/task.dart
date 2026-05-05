@@ -30,6 +30,7 @@ class Task extends Entity<Task> {
   BillingType? billingType;
 
   TaskStatus status;
+  bool estimateComplete;
 
   Task._({
     required super.id,
@@ -39,6 +40,7 @@ class Task extends Entity<Task> {
     required this.assumption,
     required this.internalNotes,
     required this.status,
+    required this.estimateComplete,
     required super.createdDate,
     required super.modifiedDate,
     this.billingType,
@@ -49,6 +51,7 @@ class Task extends Entity<Task> {
     required this.name,
     required this.description,
     required this.status,
+    this.estimateComplete = false,
     this.assumption = '',
     this.internalNotes = '',
     this.billingType,
@@ -61,6 +64,7 @@ class Task extends Entity<Task> {
     String? assumption,
     String? internalNotes,
     TaskStatus? status,
+    bool? estimateComplete,
     BillingType? billingType,
   }) => Task._(
     id: id,
@@ -70,6 +74,7 @@ class Task extends Entity<Task> {
     assumption: assumption ?? this.assumption,
     internalNotes: internalNotes ?? this.internalNotes,
     status: status ?? this.status,
+    estimateComplete: estimateComplete ?? this.estimateComplete,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
     billingType: billingType ?? this.billingType,
@@ -87,6 +92,7 @@ class Task extends Entity<Task> {
     assumption: map['assumption'] as String? ?? '',
     internalNotes: map['internal_notes'] as String? ?? '',
     status: TaskStatus.fromId(map['task_status_id'] as int),
+    estimateComplete: (map['estimate_complete'] as int? ?? 0) == 1,
     createdDate: DateTime.parse(map['createdDate'] as String),
     modifiedDate: DateTime.parse(map['modifiedDate'] as String),
     billingType: (map['billing_type'] as String?) == null
@@ -103,6 +109,7 @@ class Task extends Entity<Task> {
     'assumption': assumption,
     'internal_notes': internalNotes,
     'task_status_id': status.id,
+    'estimate_complete': estimateComplete ? 1 : 0,
     'billing_type': billingType?.name,
     'createdDate': createdDate.toIso8601String(),
     'modifiedDate': modifiedDate.toIso8601String(),
@@ -111,6 +118,7 @@ class Task extends Entity<Task> {
   @override
   String toString() =>
       'Task(id: $id, jobId: $jobId, name: $name, status: ${status.name}, '
-      'assumption: $assumption, internalNotes: $internalNotes, '
+      'estimateComplete: $estimateComplete, assumption: $assumption, '
+      'internalNotes: $internalNotes, '
       'billingType: ${billingType?.name})';
 }
