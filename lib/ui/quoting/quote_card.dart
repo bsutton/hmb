@@ -24,6 +24,7 @@ import '../../util/dart/types.dart';
 import '../crud/job/full_page_list_job_card.dart';
 import '../crud/milestone/edit_milestone_payment.dart';
 import '../dialog/email_dialog_for_job.dart';
+import '../invoicing/dialog_select_tasks.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/media/pdf_preview.dart';
 import '../widgets/widgets.g.dart';
@@ -331,6 +332,31 @@ To approve it, reply to this email with:
     ),
   );
 
+  Future<void> _amendQuote() async {
+    final job = await DaoJob().getById(quote.jobId);
+    if (job == null || !mounted) {
+      return;
+    }
+    final options = await selectTaskToQuote(
+      context: context,
+      job: job,
+      title: 'Amend Quote Tasks',
+    );
+    if (options == null) {
+      return;
+    }
+
+    final amended = await DaoQuote().amendQuote(quote, options);
+    quote = (await DaoQuote().getById(quote.id))!;
+    widget.onStateChanged(quote);
+    if (mounted) {
+      HMBToast.info(
+        'Quote #${quote.id} rejected. Created amended quote #${amended.id}.',
+      );
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isApproved = quote.state == QuoteState.approved;
@@ -400,6 +426,12 @@ To approve it, reply to this email with:
                 hint: 'Create invoice(s) from quote milestones',
                 enabled: !isRejected && !isWithdrawn,
                 onPressed: _openInvoiceAction,
+              ),
+              HMBButton(
+                label: 'Amend',
+                hint: 'Create a replacement quote and reject this quote',
+                enabled: !isRejected && !isWithdrawn,
+                onPressed: _amendQuote,
               ),
             ],
           ),
