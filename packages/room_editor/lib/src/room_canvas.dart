@@ -839,6 +839,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
                     selectedIntersectionIndices:
                         widget.selection.selectedIntersectionIndices,
                     selectedOpeningIndex: widget.selection.selectedOpeningIndex,
+                    draggedOpeningIndex: _dragOpeningIndex,
                     selectedOpeningDimensionKey:
                         widget.selection.selectedOpeningDimensionKey,
                   ),
@@ -866,6 +867,7 @@ class _RoomPainter extends CustomPainter {
   final Set<int> selectedLineIndices;
   final Set<int> selectedIntersectionIndices;
   final int? selectedOpeningIndex;
+  final int? draggedOpeningIndex;
   final RoomEditorOpeningDimensionKey? selectedOpeningDimensionKey;
 
   RoomEditorBundle get bundle => document.bundle;
@@ -884,6 +886,7 @@ class _RoomPainter extends CustomPainter {
     required this.selectedLineIndices,
     required this.selectedIntersectionIndices,
     required this.selectedOpeningIndex,
+    required this.draggedOpeningIndex,
     required this.selectedOpeningDimensionKey,
   });
 
@@ -1122,7 +1125,7 @@ class _RoomPainter extends CustomPainter {
     final openingDimensionVisuals = buildOpeningDimensionVisuals(
       document: document,
       selection: RoomEditorSelection(
-        selectedOpeningIndex: selectedOpeningIndex,
+        selectedOpeningIndex: draggedOpeningIndex ?? selectedOpeningIndex,
         selectedOpeningDimensionKey: selectedOpeningDimensionKey,
       ),
       transform: transform,
@@ -1380,6 +1383,7 @@ class _RoomPainter extends CustomPainter {
         intersectionPresentations,
       ) ||
       oldDelegate.selectedOpeningIndex != selectedOpeningIndex ||
+      oldDelegate.draggedOpeningIndex != draggedOpeningIndex ||
       oldDelegate.selectedOpeningDimensionKey != selectedOpeningDimensionKey;
 }
 
@@ -1408,6 +1412,20 @@ class RoomEditorConstraintVisualDebug {
     this.label,
     this.constrained = true,
     this.selected = false,
+  });
+}
+
+class RoomEditorOpeningDimensionVisualDebug {
+  final RoomEditorOpeningDimensionKey key;
+  final String label;
+  final bool selected;
+  final Rect hitBox;
+
+  const RoomEditorOpeningDimensionVisualDebug({
+    required this.key,
+    required this.label,
+    required this.selected,
+    required this.hitBox,
   });
 }
 
@@ -2155,6 +2173,42 @@ List<_OpeningDimensionVisual> buildOpeningDimensionVisuals({
     );
   }
   return visuals;
+}
+
+List<RoomEditorOpeningDimensionVisualDebug>
+debugDescribeOpeningDimensionVisuals({
+  required RoomEditorDocument document,
+  int? selectedOpeningIndex,
+  int? draggedOpeningIndex,
+  RoomEditorOpeningDimensionKey? selectedOpeningDimensionKey,
+  Size size = const Size(800, 600),
+}) {
+  final lines = document.bundle.lines;
+  if (lines.isEmpty) {
+    return const [];
+  }
+  final transform = _CanvasTransform(
+    lines,
+    size,
+    bounds: _CanvasWorldBounds.fromLines(lines),
+  );
+  final visuals = buildOpeningDimensionVisuals(
+    document: document,
+    selection: RoomEditorSelection(
+      selectedOpeningIndex: draggedOpeningIndex ?? selectedOpeningIndex,
+      selectedOpeningDimensionKey: selectedOpeningDimensionKey,
+    ),
+    transform: transform,
+  );
+  return [
+    for (final visual in visuals)
+      RoomEditorOpeningDimensionVisualDebug(
+        key: visual.key,
+        label: visual.label,
+        selected: visual.selected,
+        hitBox: visual.hitBox,
+      ),
+  ];
 }
 
 List<RoomEditorConstraintVisualDebug> debugDescribeConstraintVisuals({

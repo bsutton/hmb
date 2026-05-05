@@ -18,12 +18,17 @@ import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/system.dart';
-import '../util//dart/exceptions.dart' as hmb;
+import '../util/dart/app_settings.dart';
+import '../util/dart/exceptions.dart' as hmb;
 import 'dao.dart';
 import 'system_secret_store.dart';
 
 class DaoSystem extends Dao<System> {
   static const tableName = 'system';
+  static final defaultProfitMargin = Percentage.fromInt(
+    20000,
+    decimalDigits: 3,
+  );
   final _secretStore = SystemSecretStore();
   DaoSystem() : super(tableName);
   Future<void> createTable(Database db, int version) async {}
@@ -39,13 +44,10 @@ class DaoSystem extends Dao<System> {
 
   @override
   Future<int> insert(System entity, [Transaction? transaction]) async {
-    final secretsPersisted = await _secretStore.persist(entity);
+    await _secretStore.persist(entity);
     final executor = withinTransaction(transaction);
 
     final map = entity.toMap()..remove('id');
-    if (secretsPersisted) {
-      _clearSecretFields(map);
-    }
 
     final id = await executor.insert(tablename, map);
     if (id == 0) {
@@ -58,14 +60,11 @@ class DaoSystem extends Dao<System> {
 
   @override
   Future<int> update(System entity, [Transaction? transaction]) async {
-    final secretsPersisted = await _secretStore.persist(entity);
+    await _secretStore.persist(entity);
     final executor = withinTransaction(transaction);
 
     entity.modifiedDate = DateTime.now();
     final map = entity.toMap();
-    if (secretsPersisted) {
-      _clearSecretFields(map);
-    }
 
     final count = await executor.update(
       tablename,
@@ -78,18 +77,22 @@ class DaoSystem extends Dao<System> {
     return entity.id;
   }
 
-  void _clearSecretFields(Map<String, dynamic> map) {
-    map['xero_client_secret'] = null;
-    map['chatgpt_access_token'] = null;
-    map['chatgpt_refresh_token'] = null;
-    map['openai_api_key'] = null;
-    map['ihserver_token'] = null;
-  }
-
   Future<Money> getHourlyRate() async {
     final system = await get();
 
     return system.defaultHourlyRate ?? Money.parse('100', isoCode: 'AUD');
+  }
+
+  Future<Percentage> getDefaultProfitMargin() async {
+    final system = await get();
+    if (system.defaultProfitMargin != null) {
+      return system.defaultProfitMargin!;
+    }
+
+    final legacyMargin = Percentage.tryParse(
+      await AppSettings.getDefaultProfitMarginText(),
+    );
+    return legacyMargin ?? defaultProfitMargin;
   }
 }
 

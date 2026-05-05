@@ -20,6 +20,7 @@ import '../../../entity/entity.g.dart';
 import '../../../util/dart/date_time_ex.dart';
 import '../../../util/dart/format.dart';
 import '../../../util/dart/local_date.dart';
+import '../../widgets/icons/hmb_edit_icon.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/hmb_email_text.dart';
 import '../../widgets/text/hmb_phone_text.dart';
@@ -28,6 +29,7 @@ import '../../widgets/text/hmb_text.dart';
 import '../../widgets/text/hmb_text_block.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../../widgets/widgets.g.dart';
+import '../customer/edit_customer_screen.dart';
 import 'mini_job_dashboard.dart';
 
 class ListJobCard extends StatefulWidget {
@@ -43,13 +45,17 @@ class ListJobCard extends StatefulWidget {
 class _ListJobCardState extends DeferredState<ListJobCard> {
   late Job job;
   late final JobActivity? nextActivity;
-  late final Customer? customer;
-  late final Contact? primaryContact;
+  late Customer? customer;
+  late Contact? primaryContact;
 
   @override
   Future<void> asyncInitState() async {
     job = widget.job;
     nextActivity = await DaoJobActivity().getNextActivityByJob(job.id);
+    await _loadCustomerDetails();
+  }
+
+  Future<void> _loadCustomerDetails() async {
     customer = await DaoCustomer().getById(job.customerId);
     final contact = await DaoContact().getPrimaryForJob(job.id);
 
@@ -87,7 +93,7 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
 
       children: [
-        HMBCardHeading(customer?.name ?? 'Not Set'),
+        _buildCustomerHeading(),
         if (primaryContact != null)
           HMBTextHeadline2(primaryContact?.fullname ?? 'Not Set'),
         _buildContactPoints(),
@@ -112,6 +118,35 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
       ],
     ),
   );
+
+  Widget _buildCustomerHeading() => HMBRow(
+    children: [
+      Expanded(child: HMBCardHeading(customer?.name ?? 'Not Set')),
+      if (customer != null)
+        HMBEditIcon(
+          onPressed: _editCustomer,
+          hint: 'Edit customer contacts and sites',
+        ),
+    ],
+  );
+
+  Future<void> _editCustomer() async {
+    final selectedCustomer = customer;
+    if (selectedCustomer == null) {
+      HMBToast.error('No customer is linked to this job.');
+      return;
+    }
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => CustomerEditScreen(customer: selectedCustomer),
+      ),
+    );
+    await _loadCustomerDetails();
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   Widget _buildNextActivity() {
     String activity;
