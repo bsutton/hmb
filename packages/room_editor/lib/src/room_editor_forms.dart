@@ -211,12 +211,15 @@ class RoomEditorFramingSettingsSheet extends StatefulWidget {
   final TextEditingController roomCeilingFramingOffsetController;
   final TextEditingController roomCeilingFixingFaceWidthController;
   final bool plasterCeiling;
+  final bool squareSetCeiling;
   final bool hasSelectedWall;
   final TextEditingController? lineStudSpacingController;
   final TextEditingController? lineStudOffsetController;
   final TextEditingController? lineFixingFaceWidthController;
   // ignore: avoid_positional_boolean_parameters
   final Future<void> Function(bool value) onPlasterCeilingChanged;
+  // ignore: avoid_positional_boolean_parameters
+  final Future<void> Function(bool value) onSquareSetCeilingChanged;
   final Future<void> Function() onCommitCeilingHeight;
   final Future<void> Function() onCommitSelectedRoomCeilingOverrides;
   final Future<void> Function()? onCommitSelectedLineOverrides;
@@ -229,8 +232,10 @@ class RoomEditorFramingSettingsSheet extends StatefulWidget {
     required this.roomCeilingFramingOffsetController,
     required this.roomCeilingFixingFaceWidthController,
     required this.plasterCeiling,
+    required this.squareSetCeiling,
     required this.hasSelectedWall,
     required this.onPlasterCeilingChanged,
+    required this.onSquareSetCeilingChanged,
     required this.onCommitCeilingHeight,
     required this.onCommitSelectedRoomCeilingOverrides,
     required this.onApply,
@@ -249,16 +254,23 @@ class RoomEditorFramingSettingsSheet extends StatefulWidget {
 class _RoomEditorFramingSettingsSheetState
     extends State<RoomEditorFramingSettingsSheet> {
   late bool _plasterCeiling;
+  late bool _squareSetCeiling;
 
   @override
   void initState() {
     super.initState();
     _plasterCeiling = widget.plasterCeiling;
+    _squareSetCeiling = widget.squareSetCeiling;
   }
 
   Future<void> _setPlasterCeiling(bool value) async {
     setState(() => _plasterCeiling = value);
     await widget.onPlasterCeilingChanged(value);
+  }
+
+  Future<void> _setSquareSetCeiling(bool value) async {
+    setState(() => _squareSetCeiling = value);
+    await widget.onSquareSetCeilingChanged(value);
   }
 
   @override
@@ -281,6 +293,18 @@ class _RoomEditorFramingSettingsSheetState
           ),
           value: _plasterCeiling,
           onChanged: (value) => unawaited(_setPlasterCeiling(value)),
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Square set ceiling'),
+          subtitle: const Text(
+            'Adds a top-edge trim allowance to wall sheets where they meet '
+            'the ceiling.',
+          ),
+          value: _squareSetCeiling,
+          onChanged: _plasterCeiling
+              ? (value) => unawaited(_setSquareSetCeiling(value))
+              : null,
         ),
         const SizedBox(height: 8),
         TextField(

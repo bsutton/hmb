@@ -337,6 +337,56 @@ void main() {
       );
     });
 
+    test('square set ceilings trim wall layout height', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Square Set',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        squareSetCeiling: true,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      final selectedWallOnly = [
+        lines[0].copyWith(sheetDirection: PlasterSheetDirection.horizontal),
+        lines[1].copyWith(plasterSelected: false),
+        lines[2].copyWith(plasterSelected: false),
+        lines[3].copyWith(plasterSelected: false),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '6000 x 1200',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 60000,
+          height: 12000,
+        ),
+      ];
+
+      final layout = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(
+          room: room,
+          lines: selectedWallOnly,
+          openings: const [],
+        ),
+      ], materials).firstWhere((layout) => !layout.isCeiling);
+
+      final expectedHeight =
+          room.ceilingHeight -
+          PlasterGeometry.squareSetCeilingTrim(room.unitSystem);
+      expect(layout.height, expectedHeight);
+      expect(
+        layout.area,
+        lines[0].length *
+            PlasterGeometry.wallBoardCoverageHeight(
+              expectedHeight,
+              room.unitSystem,
+            ),
+      );
+    });
+
     test('wall layouts leave base and ceiling clearances', () {
       final room = PlasterRoom.forInsert(
         projectId: 1,

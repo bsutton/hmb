@@ -637,6 +637,7 @@ class PlasterGeometry {
   static const imperialGrid = 6000;
   static const metricMinEdgePiece = 3000;
   static const imperialMinEdgePiece = 11811;
+  static const metricSquareSetCeilingTrim = 500;
   static const metricWallBaseClearance = 100;
   static const metricWallTopClearance = 50;
 
@@ -645,6 +646,19 @@ class PlasterGeometry {
 
   static int defaultCeilingHeight(PreferredUnitSystem unitSystem) =>
       unitSystem == PreferredUnitSystem.metric ? 24000 : 96000;
+
+  static int squareSetCeilingTrim(PreferredUnitSystem unitSystem) =>
+      convertLength(
+        metricSquareSetCeilingTrim,
+        PreferredUnitSystem.metric,
+        unitSystem,
+      );
+
+  static int wallLayoutHeight(PlasterRoom room) => max(
+    0,
+    room.ceilingHeight -
+        (room.squareSetCeiling ? squareSetCeilingTrim(room.unitSystem) : 0),
+  );
 
   static int wallBaseClearance(PreferredUnitSystem unitSystem) => convertLength(
     metricWallBaseClearance,
@@ -932,7 +946,7 @@ class PlasterGeometry {
     final openingAreaSum = openings
         .where((opening) => opening.lineId == line.id)
         .fold<int>(0, (sum, opening) => sum + openingArea(opening));
-    return max(0, line.length * room.ceilingHeight - openingAreaSum);
+    return max(0, line.length * wallLayoutHeight(room) - openingAreaSum);
   }
 
   static int lineBoardArea(
@@ -946,7 +960,7 @@ class PlasterGeometry {
         .where((opening) => opening.lineId == line.id)
         .fold<int>(0, (sum, opening) => sum + openingArea(opening));
     final coverageHeight = wallBoardCoverageHeight(
-      room.ceilingHeight,
+      wallLayoutHeight(room),
       room.unitSystem,
     );
     return max(0, line.length * coverageHeight - openingAreaSum);
@@ -1287,6 +1301,7 @@ class PlasterGeometry {
         if (!line.plasterSelected) {
           continue;
         }
+        final wallHeight = wallLayoutHeight(shape.room);
         final candidates = _surfaceCandidates(
           shape: shape,
           line: line,
@@ -1295,13 +1310,13 @@ class PlasterGeometry {
           isCeiling: false,
           direction: line.sheetDirection,
           width: line.length,
-          height: shape.room.ceilingHeight,
+          height: wallHeight,
           area: lineBoardArea(shape.room, shape.lines, shape.openings, i),
           materials: materials,
           label: _surfaceLabel(
             name: '${shape.room.name} wall ${i + 1}',
             width: line.length,
-            height: shape.room.ceilingHeight,
+            height: wallHeight,
             unitSystem: shape.room.unitSystem,
           ),
         );

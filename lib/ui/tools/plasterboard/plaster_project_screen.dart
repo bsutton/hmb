@@ -859,6 +859,18 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     );
   }
 
+  Future<void> _setCurrentRoomSquareSetCeiling(bool value) async {
+    if (_rooms.isEmpty || _currentRoom.room.squareSetCeiling == value) {
+      return;
+    }
+    await _updateCurrentRoom(
+      _currentRoom.copyWith(
+        room: _currentRoom.room.copyWith(squareSetCeiling: value),
+      ),
+      trackUndo: false,
+    );
+  }
+
   Future<void> _openEditorFramingSettings() async {
     if (_rooms.isEmpty || !mounted) {
       return;
@@ -887,11 +899,13 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             roomCeilingFixingFaceWidthController:
                 _roomCeilingFixingFaceWidthController,
             plasterCeiling: _currentRoom.room.plasterCeiling,
+            squareSetCeiling: _currentRoom.room.squareSetCeiling,
             hasSelectedWall: _selectedLineIndices.isNotEmpty,
             lineStudSpacingController: _lineStudSpacingController,
             lineStudOffsetController: _lineStudOffsetController,
             lineFixingFaceWidthController: _lineFixingFaceWidthController,
             onPlasterCeilingChanged: _setCurrentRoomPlasterCeiling,
+            onSquareSetCeilingChanged: _setCurrentRoomSquareSetCeiling,
             onCommitCeilingHeight: _commitCeilingHeight,
             onCommitSelectedRoomCeilingOverrides:
                 _commitSelectedRoomCeilingOverrides,
