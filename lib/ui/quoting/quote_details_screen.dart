@@ -53,7 +53,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Quote Details')),
+    appBar: AppBar(title: const Text('Fixed Price Quote Details')),
     body: DeferredBuilder(
       this,
       builder: (context) => SingleChildScrollView(
@@ -74,7 +74,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Quote #${_quote.id}',
+          'Fixed Price Quote #${_quote.id}',
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         Text('Issued: ${formatDate(_quote.createdDate)}'),

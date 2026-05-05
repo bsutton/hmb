@@ -32,7 +32,6 @@ import '../../../entity/system.dart';
 import '../../../entity/task.dart';
 import '../../../entity/task_item.dart';
 import '../../../entity/task_item_type.dart';
-import '../../../util/dart/app_settings.dart';
 import '../../../util/dart/fixed_ex.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/money_ex.dart';
@@ -152,7 +151,8 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   @override
   Future<System> asyncInitState() async {
     final system = await DaoSystem().get();
-    final defaultMarginText = await AppSettings.getDefaultProfitMarginText();
+    final defaultMarginText = (await DaoSystem().getDefaultProfitMargin())
+        .toString();
     var selectedUnits = June.getState(SelectedUnits.new).selected;
 
     June.getState(SelectedSupplier.new).selected = currentEntity?.supplierId;
