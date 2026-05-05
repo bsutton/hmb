@@ -140,6 +140,33 @@ SELECT ti.*
     return toList(rows);
   }
 
+  Future<List<TaskItem>> getPurchasedItemsForReceiptLink({
+    required int jobId,
+    int? supplierId,
+  }) async {
+    final db = withoutTransaction();
+    final supplierClause = supplierId == null ? '' : 'AND ti.supplier_id = ?';
+    final rows = await db.rawQuery(
+      '''
+SELECT ti.*
+  FROM task_item ti
+  JOIN task t ON ti.task_id = t.id
+ WHERE t.job_id = ?
+   AND ti.item_type_id IN (
+     ${TaskItemType.materialsBuy.id},
+     ${TaskItemType.toolsBuy.id},
+     ${TaskItemType.consumablesBuy.id}
+   )
+   AND ti.completed = 1
+   AND ti.is_return = 0
+   $supplierClause
+ ORDER BY ti.modified_date DESC
+''',
+      [jobId, if (supplierId != null) supplierId],
+    );
+    return toList(rows);
+  }
+
   /// Get items that need to be packed.
   Future<List<TaskItem>> getPackingItems({
     required bool showPreScheduledJobs,
@@ -234,7 +261,7 @@ SELECT ti.*
         .map((id) => "'$id'")
         .join(', ');
 
-  final sql =
+    final sql =
         '''
 SELECT ti.*
   FROM task_item ti

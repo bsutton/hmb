@@ -183,7 +183,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
                   Text('Notice sent on: ${formatDateTime(_noticeSentDate!)}'),
 
                 // Contact option
-                if (widget.isEditing || _selectedJob.jobId != null)
+                if (widget.isEditing)
                   HMBButtonSecondary(
                     onPressed: _showContactOptions,
                     label: 'Send Notice',
@@ -629,7 +629,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     Job job,
     JobActivity jobActivity,
   ) async {
-    await SendNoticeForJobDialog.show(
+    final sent = await SendNoticeForJobDialog.show(
       context,
       job,
       jobActivity,
@@ -643,6 +643,9 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
           ? NoticeChannel.email
           : NoticeChannel.sms,
     );
+    if (!sent) {
+      return;
+    }
 
     // Record the date the notice was sent
     setState(() {
