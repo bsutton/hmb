@@ -160,7 +160,7 @@ Future<File> generateQuotePdf(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text(
-                          'Quote: ${quote.bestNumber}',
+                          'Fixed Price Quote: ${quote.bestNumber}',
                           style: pw.TextStyle(
                             fontSize: 18,
                             fontWeight: pw.FontWeight.bold,
