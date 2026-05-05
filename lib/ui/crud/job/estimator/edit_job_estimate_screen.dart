@@ -26,7 +26,6 @@ import '../../../../entity/job.dart';
 import '../../../../entity/task.dart';
 import '../../../../entity/task_item.dart';
 import '../../../../entity/task_item_type.dart';
-import '../../../../entity/task_status.dart';
 import '../../../../util/dart/measurement_type.dart';
 import '../../../../util/dart/money_ex.dart';
 import '../../../../util/dart/units.dart';
@@ -151,8 +150,10 @@ class _JobEstimateBuilderScreenState
         .where(
           (task) =>
               _showActive && task.status.isActive() ||
-              _showCompleted && task.status.isComplete() ||
-              _showToBeEstimated && task.status.toBeEstimated() ||
+              _showCompleted && task.estimateComplete ||
+              _showToBeEstimated &&
+                  !task.estimateComplete &&
+                  !task.status.isWithdrawn() ||
               _showWithdrawn && task.status.isWithdrawn(),
         )
         .toList();
@@ -205,7 +206,7 @@ class _JobEstimateBuilderScreenState
     final estimateTasks = _tasks.where((t) => !t.status.isWithdrawn()).toList();
     _estimateComplete =
         estimateTasks.isNotEmpty &&
-        estimateTasks.every((t) => t.status.isComplete());
+        estimateTasks.every((t) => t.estimateComplete);
   }
 
   Future<void> _addNewTask() async {
@@ -402,7 +403,7 @@ class _JobEstimateBuilderScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Checkbox(
-                  value: task.status.isComplete(),
+                  value: task.estimateComplete,
                   onChanged: task.status.isWithdrawn()
                       ? null
                       : (checked) async {
@@ -657,10 +658,7 @@ class _JobEstimateBuilderScreenState
 
   Future<void> _setTaskCompletion(Task task, bool isCompleted) async {
     final previousCompleteState = _estimateComplete;
-    final status = isCompleted
-        ? TaskStatus.completed
-        : TaskStatus.awaitingApproval;
-    final updated = task.copyWith(status: status);
+    final updated = task.copyWith(estimateComplete: isCompleted);
     await DaoTask().update(updated);
 
     final index = _tasks.indexWhere((t) => t.id == task.id);
@@ -725,11 +723,11 @@ class _JobEstimateBuilderScreenState
       _buildFilterToggle(
         label: 'Show To Be Estimated',
         hint:
-            '''Show tasks that can be estimated as they have not started no been cancelled''',
+            'Show tasks whose estimate scope and pricing are still in progress',
         helpTitle: 'To Be Estimated',
         helpDetails:
             'Shows tasks that still need estimate work. These are tasks '
-            'that are not completed and not withdrawn.',
+            'that are not estimate-complete and not withdrawn.',
         initialValue: _showToBeEstimated,
         onToggled: (value) {
           _showToBeEstimated = value;
@@ -738,10 +736,10 @@ class _JobEstimateBuilderScreenState
       ),
       _buildFilterToggle(
         label: 'Show Complete',
-        hint: 'Show tasks that have been completed or cancelled',
+        hint: 'Show tasks whose estimate scope and pricing are finalized',
         helpTitle: 'Complete',
         helpDetails:
-            'Shows tasks marked complete. Use this to review tasks where '
+            'Shows tasks marked estimate-complete. Use this to review where '
             'estimate scope and pricing are finalized.',
         initialValue: _showCompleted,
         onToggled: (value) {
