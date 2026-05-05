@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/measurement_type.dart';
+import 'package:hmb/util/dart/plaster_board_attribute.dart';
 import 'package:hmb/util/dart/plaster_geometry.dart';
 import 'package:hmb/util/dart/plaster_sheet_direction.dart';
 
@@ -285,6 +286,103 @@ void main() {
 
       expect(layouts, hasLength(1));
       expect(layouts.single.material.name, '2400 x 1200');
+    });
+
+    test('calculate layout requires material room attributes', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Wet Area',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        plasterCeiling: false,
+        attributeMask: PlasterBoardAttribute.moistureMouldResistant.bit,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      final selectedWallOnly = [
+        lines[0],
+        for (final line in lines.skip(1)) line.copyWith(plasterSelected: false),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: 'Standard',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 24000,
+          height: 12000,
+        ),
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: 'Wet area',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 24000,
+          height: 12000,
+          attributeMask: PlasterBoardAttribute.moistureMouldResistant.bit,
+        ),
+      ];
+
+      final layouts = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(
+          room: room,
+          lines: selectedWallOnly,
+          openings: const [],
+        ),
+      ], materials);
+
+      expect(layouts, hasLength(1));
+      expect(layouts.single.material.name, 'Wet area');
+    });
+
+    test('wall attribute override replaces room attributes', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Room',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        plasterCeiling: false,
+        attributeMask: PlasterBoardAttribute.moistureMouldResistant.bit,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      final selectedWallOnly = [
+        lines[0].copyWith(
+          attributeMaskOverride: PlasterBoardAttribute.fireResistant.bit,
+        ),
+        for (final line in lines.skip(1)) line.copyWith(plasterSelected: false),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: 'Wet area',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 24000,
+          height: 12000,
+          attributeMask: PlasterBoardAttribute.moistureMouldResistant.bit,
+        ),
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: 'Fire rated',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 24000,
+          height: 12000,
+          attributeMask: PlasterBoardAttribute.fireResistant.bit,
+        ),
+      ];
+
+      final layouts = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(
+          room: room,
+          lines: selectedWallOnly,
+          openings: const [],
+        ),
+      ], materials);
+
+      expect(layouts, hasLength(1));
+      expect(layouts.single.material.name, 'Fire rated');
     });
 
     test('horizontal wall layouts use a half-height starter course', () {

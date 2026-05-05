@@ -12,6 +12,7 @@ import '../../entity/plaster_room_line.dart';
 import '../../entity/plaster_room_opening.dart';
 import 'log.dart';
 import 'measurement_type.dart';
+import 'plaster_board_attribute.dart';
 import 'plaster_layout_scoring.dart';
 import 'plaster_sheet_direction.dart';
 
@@ -1380,7 +1381,23 @@ class PlasterGeometry {
         'framingSpacing=$framingSpacing, '
         'framingOffset=$framingOffset, '
         'fixingFaceWidth=$fixingFaceWidth';
+    final requiredAttributes =
+        line?.attributeMaskOverride ?? room.attributeMask;
     for (final material in materials) {
+      if (!material.attributeMask.includesPlasterBoardAttributes(
+        requiredAttributes,
+      )) {
+        _logSurfaceCandidateDecision(
+          label: label,
+          material: material,
+          direction: direction,
+          decision: 'rejected',
+          detail:
+              'missing required attributes '
+              '${formatPlasterBoardAttributes(requiredAttributes)}',
+        );
+        continue;
+      }
       final sheetWidth = convertLength(
         material.width,
         material.unitSystem,

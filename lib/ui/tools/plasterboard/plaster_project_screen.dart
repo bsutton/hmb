@@ -29,6 +29,7 @@ import '../../widgets/media/pdf_preview.dart';
 import '../../widgets/select/hmb_select_job.dart';
 import '../../widgets/select/hmb_select_supplier.dart';
 import '../../widgets/select/hmb_select_task.dart';
+import 'plaster_attribute_fields.dart';
 import 'plaster_material_size_list_screen.dart';
 import 'plaster_project_pdf.dart';
 import 'plaster_room_list_screen.dart';
@@ -1016,6 +1017,18 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     );
   }
 
+  Future<void> _setCurrentRoomAttributeMask(int value) async {
+    if (_rooms.isEmpty || _currentRoom.room.attributeMask == value) {
+      return;
+    }
+    await _updateCurrentRoom(
+      _currentRoom.copyWith(
+        room: _currentRoom.room.copyWith(attributeMask: value),
+      ),
+      trackUndo: false,
+    );
+  }
+
   Future<void> _setCurrentRoomSquareSetCeiling(bool value) async {
     if (_rooms.isEmpty || _currentRoom.room.squareSetCeiling == value) {
       return;
@@ -1025,6 +1038,82 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         room: _currentRoom.room.copyWith(squareSetCeiling: value),
       ),
       trackUndo: false,
+    );
+  }
+
+  Future<void> _setSelectedLineAttributeMaskOverride(int? value) async {
+    if (_rooms.isEmpty || _selectedLineIndices.isEmpty) {
+      return;
+    }
+    final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
+    var changed = false;
+    for (final selectedLineIndex in _selectedLineIndices) {
+      if (selectedLineIndex < 0 || selectedLineIndex >= lines.length) {
+        continue;
+      }
+      final currentLine = lines[selectedLineIndex];
+      if (currentLine.attributeMaskOverride == value) {
+        continue;
+      }
+      lines[selectedLineIndex] = currentLine.copyWith(
+        attributeMaskOverride: value,
+      );
+      changed = true;
+    }
+    if (!changed) {
+      return;
+    }
+    await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
+  }
+
+  Widget _buildEditorAttributeSettings() {
+    final selectedLineIndex = _selectedLineIndices.length == 1
+        ? _selectedLineIndices.first
+        : null;
+    final selectedLine =
+        selectedLineIndex == null ||
+            selectedLineIndex < 0 ||
+            selectedLineIndex >= _currentRoom.lines.length
+        ? null
+        : _currentRoom.lines[selectedLineIndex];
+    final useWallOverride = selectedLine?.attributeMaskOverride != null;
+    final wallAttributeMask =
+        selectedLine?.attributeMaskOverride ?? _currentRoom.room.attributeMask;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        PlasterAttributeFields(
+          value: _currentRoom.room.attributeMask,
+          onChanged: (value) => unawaited(_setCurrentRoomAttributeMask(value)),
+        ),
+        if (selectedLine != null) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Selected wall attributes',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          CheckboxListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Override room attributes'),
+            value: useWallOverride,
+            onChanged: (selected) {
+              unawaited(
+                _setSelectedLineAttributeMaskOverride(
+                  selected ?? false ? _currentRoom.room.attributeMask : null,
+                ),
+              );
+            },
+          ),
+          if (useWallOverride)
+            PlasterAttributeFields(
+              value: wallAttributeMask,
+              onChanged: (value) =>
+                  unawaited(_setSelectedLineAttributeMaskOverride(value)),
+            ),
+        ],
+      ],
     );
   }
 
@@ -1067,6 +1156,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             onCommitSelectedRoomCeilingOverrides:
                 _commitSelectedRoomCeilingOverrides,
             onCommitSelectedLineOverrides: _commitSelectedLineFramingOverrides,
+            extraContent: _buildEditorAttributeSettings(),
             onApply: () async {
               await _commitCeilingHeight();
               await _commitSelectedRoomCeilingOverrides();

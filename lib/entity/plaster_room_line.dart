@@ -15,6 +15,7 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
   final int startY;
   final int length;
   final bool plasterSelected;
+  final int? attributeMaskOverride;
   final PlasterSheetDirection sheetDirection;
   final int? studSpacingOverride;
   final int? studOffsetOverride;
@@ -28,6 +29,7 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
     required this.startY,
     required this.length,
     required this.plasterSelected,
+    required this.attributeMaskOverride,
     required this.sheetDirection,
     required this.studSpacingOverride,
     required this.studOffsetOverride,
@@ -43,6 +45,7 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
     required this.startY,
     required this.length,
     this.plasterSelected = true,
+    this.attributeMaskOverride,
     this.sheetDirection = PlasterSheetDirection.auto,
     this.studSpacingOverride,
     this.studOffsetOverride,
@@ -56,6 +59,7 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
     int? startY,
     int? length,
     bool? plasterSelected,
+    Object? attributeMaskOverride = _unsetPlasterRoomLineField,
     PlasterSheetDirection? sheetDirection,
     Object? studSpacingOverride = _unsetPlasterRoomLineField,
     Object? studOffsetOverride = _unsetPlasterRoomLineField,
@@ -68,6 +72,10 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
     startY: startY ?? this.startY,
     length: length ?? this.length,
     plasterSelected: plasterSelected ?? this.plasterSelected,
+    attributeMaskOverride:
+        identical(attributeMaskOverride, _unsetPlasterRoomLineField)
+        ? this.attributeMaskOverride
+        : attributeMaskOverride as int?,
     sheetDirection: sheetDirection ?? this.sheetDirection,
     studSpacingOverride:
         identical(studSpacingOverride, _unsetPlasterRoomLineField)
@@ -94,6 +102,7 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
         startY: map['start_y'] as int? ?? 0,
         length: map['length'] as int? ?? 0,
         plasterSelected: (map['plaster_selected'] as int? ?? 1) == 1,
+        attributeMaskOverride: map['attribute_mask_override'] as int?,
         sheetDirection: PlasterSheetDirectionX.fromStorage(
           map['sheet_direction'] as String?,
         ),
@@ -113,6 +122,7 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
     'start_y': startY,
     'length': length,
     'plaster_selected': plasterSelected ? 1 : 0,
+    'attribute_mask_override': attributeMaskOverride,
     'sheet_direction': sheetDirection.storageValue,
     'stud_spacing_override': studSpacingOverride,
     'stud_offset_override': studOffsetOverride,
