@@ -1,7 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/system_secret_backend.dart';
 import 'package:hmb/dao/system_secret_store.dart';
+import 'package:hmb/database/versions/db_upgrade.dart';
+import 'package:hmb/database/versions/implementations/project_script_source.dart';
 import 'package:hmb/database/versions/post_upgrade/post_upgrade_168.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import 'db_utility_test_helper.dart';
 
@@ -27,6 +30,7 @@ void main() {
     final db = await setupTestDb();
 
     try {
+      await _ensureLegacySecretColumns(db);
       await db.update(
         'system',
         {
@@ -64,4 +68,68 @@ void main() {
       await tearDownTestDb();
     }
   });
+
+  test(
+    'v176 drops legacy system secret columns after v168 migration',
+    () async {
+      final db = await setupTestDb();
+
+      try {
+        await _ensureLegacySecretColumns(db);
+        await db.update(
+          'system',
+          {
+            'xero_client_secret': 'xero-secret',
+            'chatgpt_access_token': 'chatgpt-access',
+            'chatgpt_refresh_token': 'chatgpt-refresh',
+            'openai_api_key': 'openai-key',
+            'ihserver_token': 'ihserver-token',
+          },
+          where: 'id = ?',
+          whereArgs: [1],
+        );
+        final backend = _FakeSystemSecretBackend();
+        await postv168Upgrade(
+          db,
+          secretStore: SystemSecretStore(backend: backend),
+        );
+
+        final source = ProjectScriptSource();
+        final sql = await source.loadSQL('assets/sql/upgrade_scripts/v176.sql');
+        final statements = await parseSqlFile(sql);
+        for (final statement in statements) {
+          await db.execute(statement);
+        }
+
+        final columns = await db.rawQuery('PRAGMA table_info(system)');
+        final names = {for (final row in columns) row['name'] as String? ?? ''};
+
+        expect(names.contains('xero_client_secret'), isFalse);
+        expect(names.contains('chatgpt_access_token'), isFalse);
+        expect(names.contains('chatgpt_refresh_token'), isFalse);
+        expect(names.contains('openai_api_key'), isFalse);
+        expect(names.contains('ihserver_token'), isFalse);
+        expect(backend.values['system.xero_client_secret'], 'xero-secret');
+        expect(backend.values['system.openai_api_key'], 'openai-key');
+      } finally {
+        await tearDownTestDb();
+      }
+    },
+  );
+}
+
+Future<void> _ensureLegacySecretColumns(DatabaseExecutor db) async {
+  final columns = await db.rawQuery('PRAGMA table_info(system)');
+  final names = {for (final row in columns) row['name'] as String? ?? ''};
+  for (final name in [
+    'xero_client_secret',
+    'chatgpt_access_token',
+    'chatgpt_refresh_token',
+    'openai_api_key',
+    'ihserver_token',
+  ]) {
+    if (!names.contains(name)) {
+      await db.execute('ALTER TABLE system ADD COLUMN $name TEXT');
+    }
+  }
 }
