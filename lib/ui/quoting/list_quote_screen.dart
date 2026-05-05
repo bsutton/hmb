@@ -150,7 +150,8 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     entityNamePlural: 'Quotes',
     dao: DaoQuote(),
     listCardTitle: (quote) => Text(
-      'Quote #${quote.id} - Issued: ${formatDate(quote.createdDate)}',
+      'Fixed Price Quote #${quote.id} - '
+      'Issued: ${formatDate(quote.createdDate)}',
       style: const TextStyle(fontWeight: FontWeight.bold),
     ),
     fetchList: _fetchFilteredQuotes,
