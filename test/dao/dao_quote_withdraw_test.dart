@@ -139,7 +139,7 @@ void main() {
       billingType: BillingType.fixedPrice,
       hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
     );
-    final activeJob = job.copyWith(status: JobStatus.inProgress);
+    final activeJob = job.copyWith(status: JobStatus.scheduled);
     await DaoJob().update(activeJob);
 
     final quoteId = await DaoQuote().insert(
@@ -155,8 +155,9 @@ void main() {
 
     final quote = await DaoQuote().getById(quoteId);
     expect(quote?.state, QuoteState.sent);
+    expect(quote?.dateSent, isNotNull);
 
     final updatedJob = await DaoJob().getById(job.id);
-    expect(updatedJob?.status, JobStatus.inProgress);
+    expect(updatedJob?.status, JobStatus.scheduled);
   });
 }
