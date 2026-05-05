@@ -644,6 +644,97 @@ class PlasterGeometry {
   static int defaultCeilingHeight(PreferredUnitSystem unitSystem) =>
       unitSystem == PreferredUnitSystem.metric ? 24000 : 96000;
 
+  static int defaultWallStudSpacing(PreferredUnitSystem unitSystem) =>
+      unitSystem == PreferredUnitSystem.metric ? 6000 : 16000;
+
+  static int defaultWallStudOffset(PreferredUnitSystem unitSystem) => 0;
+
+  static int defaultWallFixingFaceWidth(PreferredUnitSystem unitSystem) =>
+      unitSystem == PreferredUnitSystem.metric ? 450 : 1500;
+
+  static int defaultCeilingFramingSpacing(PreferredUnitSystem unitSystem) =>
+      unitSystem == PreferredUnitSystem.metric ? 4500 : 16000;
+
+  static int defaultCeilingFramingOffset(PreferredUnitSystem unitSystem) => 0;
+
+  static int defaultCeilingFixingFaceWidth(PreferredUnitSystem unitSystem) =>
+      unitSystem == PreferredUnitSystem.metric ? 450 : 1500;
+
+  static List<PlasterMaterialSize> defaultMaterialSizes(
+    int supplierId,
+    PreferredUnitSystem unitSystem,
+  ) {
+    if (unitSystem == PreferredUnitSystem.metric) {
+      return [
+        PlasterMaterialSize.forInsert(
+          supplierId: supplierId,
+          name: '1200 x 2400',
+          unitSystem: unitSystem,
+          width: 12000,
+          height: 24000,
+        ),
+        PlasterMaterialSize.forInsert(
+          supplierId: supplierId,
+          name: '1200 x 2700',
+          unitSystem: unitSystem,
+          width: 12000,
+          height: 27000,
+        ),
+        PlasterMaterialSize.forInsert(
+          supplierId: supplierId,
+          name: '1200 x 3000',
+          unitSystem: unitSystem,
+          width: 12000,
+          height: 30000,
+        ),
+        PlasterMaterialSize.forInsert(
+          supplierId: supplierId,
+          name: '1200 x 3600',
+          unitSystem: unitSystem,
+          width: 12000,
+          height: 36000,
+        ),
+        PlasterMaterialSize.forInsert(
+          supplierId: supplierId,
+          name: '1200 x 4200',
+          unitSystem: unitSystem,
+          width: 12000,
+          height: 42000,
+        ),
+      ];
+    }
+    return [
+      PlasterMaterialSize.forInsert(
+        supplierId: supplierId,
+        name: '4 x 8',
+        unitSystem: unitSystem,
+        width: 48000,
+        height: 96000,
+      ),
+      PlasterMaterialSize.forInsert(
+        supplierId: supplierId,
+        name: '4 x 9',
+        unitSystem: unitSystem,
+        width: 48000,
+        height: 108000,
+      ),
+      PlasterMaterialSize.forInsert(
+        supplierId: supplierId,
+        name: '4 x 10',
+        unitSystem: unitSystem,
+        width: 48000,
+        height: 120000,
+      ),
+      PlasterMaterialSize.forInsert(
+        supplierId: supplierId,
+        name: '4 x 12',
+        unitSystem: unitSystem,
+        width: 48000,
+        height: 144000,
+      ),
+    ];
+  }
+
   static List<PlasterRoomLine> defaultLines({
     required int roomId,
     required PreferredUnitSystem unitSystem,

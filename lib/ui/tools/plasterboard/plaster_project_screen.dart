@@ -908,56 +908,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   List<PlasterMaterialSize> _defaultMaterialSizes(
     int supplierId,
     PreferredUnitSystem unitSystem,
-  ) {
-    if (unitSystem == PreferredUnitSystem.metric) {
-      return [
-        PlasterMaterialSize.forInsert(
-          supplierId: supplierId,
-          name: '1200 x 2400',
-          unitSystem: unitSystem,
-          width: 12000,
-          height: 24000,
-        ),
-        PlasterMaterialSize.forInsert(
-          supplierId: supplierId,
-          name: '1200 x 2700',
-          unitSystem: unitSystem,
-          width: 12000,
-          height: 27000,
-        ),
-        PlasterMaterialSize.forInsert(
-          supplierId: supplierId,
-          name: '1200 x 3000',
-          unitSystem: unitSystem,
-          width: 12000,
-          height: 30000,
-        ),
-      ];
-    }
-    return [
-      PlasterMaterialSize.forInsert(
-        supplierId: supplierId,
-        name: '4 x 8',
-        unitSystem: unitSystem,
-        width: 48000,
-        height: 96000,
-      ),
-      PlasterMaterialSize.forInsert(
-        supplierId: supplierId,
-        name: '4 x 9',
-        unitSystem: unitSystem,
-        width: 48000,
-        height: 108000,
-      ),
-      PlasterMaterialSize.forInsert(
-        supplierId: supplierId,
-        name: '4 x 10',
-        unitSystem: unitSystem,
-        width: 48000,
-        height: 120000,
-      ),
-    ];
-  }
+  ) => PlasterGeometry.defaultMaterialSizes(supplierId, unitSystem);
 
   Future<void> _saveRoomBundle(_RoomBundle bundle) async {
     final roomDao = DaoPlasterRoom();
