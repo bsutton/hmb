@@ -44,6 +44,7 @@ class DaoReceipt extends Dao<Receipt> {
 
   /// Filter receipts by optional criteria
   Future<List<Receipt>> getByFilter({
+    String? supplierFilter,
     int? jobId,
     int? supplierId,
     DateTime? dateFrom,
@@ -62,6 +63,19 @@ class DaoReceipt extends Dao<Receipt> {
     if (supplierId != null) {
       where.add('supplier_id = ?');
       args.add(supplierId);
+    }
+    if (supplierFilter != null && supplierFilter.trim().isNotEmpty) {
+      final like = '%${supplierFilter.trim()}%';
+      where.add('''
+supplier_id IN (
+  SELECT id
+  FROM supplier
+  WHERE name LIKE ?
+  OR description LIKE ?
+  OR service LIKE ?
+)
+''');
+      args.addAll([like, like, like]);
     }
     if (dateFrom != null) {
       where.add('receipt_date >= ?');
