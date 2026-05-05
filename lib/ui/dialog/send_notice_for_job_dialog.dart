@@ -28,7 +28,7 @@ import '../widgets/icons/help_button.dart';
 import '../widgets/select/hmb_select_email_multi.dart';
 import '../widgets/select/hmb_select_mobile_multi.dart';
 
-enum _Channel { email, sms }
+enum NoticeChannel { email, sms }
 
 String noticeEmailGreetingForContact(Contact? contact) {
   final name = _noticeContactName(contact);
@@ -55,6 +55,7 @@ class SendNoticeForJobDialog extends StatefulWidget {
   /// If provided, we’ll try to preselect these (email or mobile based on tab).
   final String? preferredEmailRecipient;
   final String? preferredMobileRecipient;
+  final NoticeChannel initialChannel;
 
   const SendNoticeForJobDialog({
     required this.job,
@@ -63,6 +64,7 @@ class SendNoticeForJobDialog extends StatefulWidget {
     this.initialBody,
     this.preferredEmailRecipient,
     this.preferredMobileRecipient,
+    this.initialChannel = NoticeChannel.sms,
     super.key,
   });
 
@@ -72,14 +74,23 @@ class SendNoticeForJobDialog extends StatefulWidget {
   static Future<bool> show(
     BuildContext context,
     Job job,
-    JobActivity jobActivity,
-  ) async =>
-      await showDialog<bool>(
-        context: context,
-        builder: (_) =>
-            SendNoticeForJobDialog(job: job, jobActivity: jobActivity),
-      ) ??
-      false;
+    JobActivity jobActivity, {
+    String? preferredEmailRecipient,
+    String? preferredMobileRecipient,
+    NoticeChannel initialChannel = NoticeChannel.sms,
+  }) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (_) => SendNoticeForJobDialog(
+            job: job,
+            jobActivity: jobActivity,
+            preferredEmailRecipient: preferredEmailRecipient,
+            preferredMobileRecipient: preferredMobileRecipient,
+            initialChannel: initialChannel,
+          ),
+        ) ??
+        false;
+  }
 }
 
 class _SendNoticeForJobDialogState
@@ -89,7 +100,7 @@ class _SendNoticeForJobDialogState
   late TextEditingController _bodyCtl;
   late TextEditingController _smsBodyCtl;
 
-  _Channel _channel = _Channel.sms;
+  NoticeChannel _channel = NoticeChannel.sms;
 
   List<String> _toEmails = [];
   List<String> _ccEmails = [];
@@ -132,7 +143,7 @@ ${Strings.isNotBlank(_system.businessNumber) ? '${Strings.orElseOnBlank(_system.
     );
 
     // Smart default: prefer SMS tab and preselect primary contact mobile.
-    _channel = _Channel.sms;
+    _channel = widget.initialChannel;
     if (primary != null && Strings.isNotBlank(primary.mobileNumber)) {
       _toMobiles = [primary.mobileNumber];
     }
@@ -156,15 +167,15 @@ ${Strings.isNotBlank(_system.businessNumber) ? '${Strings.orElseOnBlank(_system.
           mainAxisSize: MainAxisSize.min,
           children: [
             // Channel toggle
-            SegmentedButton<_Channel>(
+            SegmentedButton<NoticeChannel>(
               segments: const [
                 ButtonSegment(
-                  value: _Channel.sms,
+                  value: NoticeChannel.sms,
                   label: Text('SMS'),
                   icon: Icon(Icons.sms),
                 ),
                 ButtonSegment(
-                  value: _Channel.email,
+                  value: NoticeChannel.email,
                   label: Text('Email'),
                   icon: Icon(Icons.email),
                 ),
@@ -178,7 +189,7 @@ ${Strings.isNotBlank(_system.businessNumber) ? '${Strings.orElseOnBlank(_system.
             ),
             const SizedBox(height: 12),
 
-            if (_channel == _Channel.sms) ...[
+            if (_channel == NoticeChannel.sms) ...[
               HMBSelectMobileMulti(
                 job: widget.job,
                 initialMobiles: _toMobiles,
@@ -240,7 +251,7 @@ Add additional recipients who should receive a copy of the email.'''),
           label: 'Send...',
           hint: 'Launch your device app to review and send the message.',
           onPressed: () async {
-            if (_channel == _Channel.sms) {
+            if (_channel == NoticeChannel.sms) {
               await _sendSms(context);
             } else {
               await _sendEmail(context);
