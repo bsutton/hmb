@@ -146,8 +146,8 @@ void main() {
     }
   });
 
-  test('v175 adds square set ceiling flag', () async {
-    final dbPath = join(createTempDir(), 'plaster_square_set_v175.db');
+  test('v178 adds square set ceiling flag', () async {
+    final dbPath = join(createTempDir(), 'plaster_square_set_v178.db');
     final db = await CliDatabaseFactory().openDatabase(
       dbPath,
       options: OpenDatabaseOptions(),
@@ -158,7 +158,7 @@ void main() {
       for (final script in [
         'assets/sql/upgrade_scripts/v163.sql',
         'assets/sql/upgrade_scripts/v166.sql',
-        'assets/sql/upgrade_scripts/v175.sql',
+        'assets/sql/upgrade_scripts/v178.sql',
       ]) {
         final sql = await source.loadSQL(script);
         final statements = await parseSqlFile(sql);

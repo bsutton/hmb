@@ -70,7 +70,7 @@ void main() {
   });
 
   test(
-    'v176 drops legacy system secret columns after v168 migration',
+    'v179 drops legacy system secret columns after v168 migration',
     () async {
       final db = await setupTestDb();
 
@@ -95,7 +95,7 @@ void main() {
         );
 
         final source = ProjectScriptSource();
-        final sql = await source.loadSQL('assets/sql/upgrade_scripts/v176.sql');
+        final sql = await source.loadSQL('assets/sql/upgrade_scripts/v179.sql');
         final statements = await parseSqlFile(sql);
         for (final statement in statements) {
           await db.execute(statement);
