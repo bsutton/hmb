@@ -26,7 +26,6 @@ import '../../../../entity/job.dart';
 import '../../../../entity/task.dart';
 import '../../../../entity/task_item.dart';
 import '../../../../entity/task_item_type.dart';
-import '../../../../entity/task_status.dart';
 import '../../../../util/dart/measurement_type.dart';
 import '../../../../util/dart/money_ex.dart';
 import '../../../../util/dart/units.dart';
@@ -62,6 +61,7 @@ class JobEstimateBuilderScreen extends StatefulWidget {
 class _JobEstimateBuilderScreenState
     extends DeferredState<JobEstimateBuilderScreen> {
   List<Task> _tasks = [];
+  final _itemsByTaskId = <int, ItemsAndRate>{};
   Money _totalLabourCost = MoneyEx.zero;
   Money _totalMaterialsCost = MoneyEx.zero;
   Money _totalCombinedCost = MoneyEx.zero;
@@ -134,10 +134,15 @@ class _JobEstimateBuilderScreenState
 
   Future<void> _loadTasks() async {
     _tasks = await DaoTask().getTasksByJob(widget.job.id);
+    await Future.wait(_tasks.map(_reloadTaskItems));
 
     await _calculateTotals();
     _recomputeEstimateCompletion();
     setState(() {});
+  }
+
+  Future<void> _reloadTaskItems(Task task) async {
+    _itemsByTaskId[task.id] = await ItemsAndRate.fromTask(task);
   }
 
   List<Task> filteredTasks() {
@@ -145,8 +150,10 @@ class _JobEstimateBuilderScreenState
         .where(
           (task) =>
               _showActive && task.status.isActive() ||
-              _showCompleted && task.status.isComplete() ||
-              _showToBeEstimated && task.status.toBeEstimated() ||
+              _showCompleted && task.estimateComplete ||
+              _showToBeEstimated &&
+                  !task.estimateComplete &&
+                  !task.status.isWithdrawn() ||
               _showWithdrawn && task.status.isWithdrawn(),
         )
         .toList();
@@ -172,7 +179,7 @@ class _JobEstimateBuilderScreenState
       if (task.status.isWithdrawn()) {
         continue;
       }
-      final items = await DaoTaskItem().getByTask(task.id);
+      final items = _itemsByTaskId[task.id]?.items ?? const <TaskItem>[];
 
       final hourlyRate = await DaoTask().getHourlyRate(task);
       for (final item in items) {
@@ -199,7 +206,7 @@ class _JobEstimateBuilderScreenState
     final estimateTasks = _tasks.where((t) => !t.status.isWithdrawn()).toList();
     _estimateComplete =
         estimateTasks.isNotEmpty &&
-        estimateTasks.every((t) => t.status.isComplete());
+        estimateTasks.every((t) => t.estimateComplete);
   }
 
   Future<void> _addNewTask() async {
@@ -208,6 +215,7 @@ class _JobEstimateBuilderScreenState
     );
 
     if (newTask != null) {
+      await _reloadTaskItems(newTask);
       await _calculateTotals();
       setState(() {
         _tasks.add(newTask);
@@ -223,6 +231,7 @@ class _JobEstimateBuilderScreenState
     );
 
     if (updatedTask != null) {
+      await _reloadTaskItems(updatedTask);
       await _calculateTotals();
       setState(() {
         final index = _tasks.indexWhere((t) => t.id == updatedTask.id);
@@ -243,6 +252,7 @@ class _JobEstimateBuilderScreenState
         try {
           await DaoTask().delete(task.id);
           _tasks.removeWhere((t) => t.id == task.id);
+          _itemsByTaskId.remove(task.id);
           await _calculateTotals();
           setState(() {});
         } catch (e) {
@@ -393,7 +403,7 @@ class _JobEstimateBuilderScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Checkbox(
-                  value: task.status.isComplete(),
+                  value: task.estimateComplete,
                   onChanged: task.status.isWithdrawn()
                       ? null
                       : (checked) async {
@@ -431,10 +441,13 @@ class _JobEstimateBuilderScreenState
     ],
   );
 
-  Widget _buildTaskItems(Task task) => FutureBuilderEx<ItemsAndRate>(
-    future: ItemsAndRate.fromTask(task),
-    builder: (context, itemAndRate) => HMBColumn(
-      children: itemAndRate!.items
+  Widget _buildTaskItems(Task task) {
+    final itemAndRate = _itemsByTaskId[task.id];
+    if (itemAndRate == null) {
+      return const SizedBox.shrink();
+    }
+    return HMBColumn(
+      children: itemAndRate.items
           .map(
             (item) => _buildItemTile(
               item,
@@ -444,8 +457,8 @@ class _JobEstimateBuilderScreenState
             ),
           )
           .toList(),
-    ),
-  );
+    );
+  }
 
   Widget _buildItemTile(
     TaskItem item,
@@ -467,7 +480,7 @@ class _JobEstimateBuilderScreenState
               hint: 'Edit Estimate',
             ),
             HMBDeleteIcon(
-              onPressed: () => _deleteItem(item),
+              onPressed: () => _deleteItem(item, task),
               hint: 'Delete Estimate',
             ),
           ],
@@ -496,6 +509,7 @@ class _JobEstimateBuilderScreenState
       ),
     );
     if (newItem != null) {
+      await _reloadTaskItems(task);
       await _calculateTotals();
       setState(() {});
     }
@@ -518,12 +532,13 @@ class _JobEstimateBuilderScreenState
     );
 
     if (updatedItem != null) {
+      await _reloadTaskItems(task);
       await _calculateTotals();
       setState(() {});
     }
   }
 
-  Future<void> _deleteItem(TaskItem item) async {
+  Future<void> _deleteItem(TaskItem item, Task task) async {
     await showConfirmDeleteDialog(
       context: context,
       nameSingular: 'Task item',
@@ -532,6 +547,7 @@ class _JobEstimateBuilderScreenState
       onConfirmed: () async {
         try {
           await DaoTaskItem().delete(item.id);
+          await _reloadTaskItems(task);
           await _calculateTotals();
           setState(() {});
         } catch (e) {
@@ -565,6 +581,7 @@ class _JobEstimateBuilderScreenState
         inserted++;
       }
 
+      await _reloadTaskItems(task);
       await _calculateTotals();
       setState(() {});
       HMBToast.info('Added $inserted estimate item(s) from AI.');
@@ -641,10 +658,7 @@ class _JobEstimateBuilderScreenState
 
   Future<void> _setTaskCompletion(Task task, bool isCompleted) async {
     final previousCompleteState = _estimateComplete;
-    final status = isCompleted
-        ? TaskStatus.completed
-        : TaskStatus.awaitingApproval;
-    final updated = task.copyWith(status: status);
+    final updated = task.copyWith(estimateComplete: isCompleted);
     await DaoTask().update(updated);
 
     final index = _tasks.indexWhere((t) => t.id == task.id);
@@ -709,11 +723,11 @@ class _JobEstimateBuilderScreenState
       _buildFilterToggle(
         label: 'Show To Be Estimated',
         hint:
-            '''Show tasks that can be estimated as they have not started no been cancelled''',
+            'Show tasks whose estimate scope and pricing are still in progress',
         helpTitle: 'To Be Estimated',
         helpDetails:
             'Shows tasks that still need estimate work. These are tasks '
-            'that are not completed and not withdrawn.',
+            'that are not estimate-complete and not withdrawn.',
         initialValue: _showToBeEstimated,
         onToggled: (value) {
           _showToBeEstimated = value;
@@ -722,10 +736,10 @@ class _JobEstimateBuilderScreenState
       ),
       _buildFilterToggle(
         label: 'Show Complete',
-        hint: 'Show tasks that have been completed or cancelled',
+        hint: 'Show tasks whose estimate scope and pricing are finalized',
         helpTitle: 'Complete',
         helpDetails:
-            'Shows tasks marked complete. Use this to review tasks where '
+            'Shows tasks marked estimate-complete. Use this to review where '
             'estimate scope and pricing are finalized.',
         initialValue: _showCompleted,
         onToggled: (value) {

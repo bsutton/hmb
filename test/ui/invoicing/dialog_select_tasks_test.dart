@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/invoicing/dialog_select_tasks.dart';
-import 'package:hmb/ui/invoicing/invoice_options.dart';
 import 'package:money2/money2.dart';
 
+import '../../dao/invoice/utility.dart';
 import '../../database/management/db_utility_test_helper.dart';
 import '../ui_test_helpers.dart';
 
@@ -37,57 +37,61 @@ void main() {
     await tearDownTestDb();
   });
 
-  testWidgets('fixed price quote selection can include booking fee', (
-    tester,
-  ) async {
-    final fixture = (await tester.runAsync(() async {
+  testWidgets('fixed price quote can include booking fee', (tester) async {
+    final dialog = await tester.runAsync(() async {
       final job = await createJobWithCustomer(
         billingType: BillingType.fixedPrice,
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
         bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
       );
-      final contact = (await DaoContact().getById(job.billingContactId))!;
-      final task = Task.forInsert(
-        jobId: job.id,
-        name: 'Fixed price task',
-        description: '',
-        status: TaskStatus.approved,
+      final task = await createTask(job, 'Quote task');
+      final contact = await DaoContact().getBillingContactByJob(job);
+
+      return DialogTaskSelection(
+        job: job,
+        contact: contact!,
+        title: 'Tasks to Quote',
+        forQuote: true,
+        taskSelectors: [
+          TaskSelector(task, task.name, Money.fromInt(25000, isoCode: 'AUD')),
+        ],
       );
-      await DaoTask().insert(task);
-      return (job, contact, task);
-    }))!;
+    });
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Builder(
-          builder: (context) => TextButton(
-            onPressed: () => showDialog<InvoiceOptions>(
-              context: context,
-              builder: (_) => DialogTaskSelection(
-                job: fixture.$1,
-                contact: fixture.$2,
-                title: 'Tasks to Quote',
-                forQuote: true,
-                taskSelectors: [
-                  TaskSelector(
-                    fixture.$3,
-                    fixture.$3.name,
-                    Money.fromInt(25000, isoCode: 'AUD'),
-                  ),
-                ],
-              ),
-            ),
-            child: const Text('Open'),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Open'));
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: dialog)));
     await tester.pumpAndSettle();
-    await waitForText(tester, 'Bill booking Fee');
+    await waitForText(tester, 'Select All');
 
     expect(find.text('Bill booking Fee'), findsOneWidget);
-    expect(find.byType(CheckboxListTile), findsWidgets);
+  });
+
+  testWidgets('fixed price invoice does not show booking fee toggle', (
+    tester,
+  ) async {
+    final dialog = await tester.runAsync(() async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.fixedPrice,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+      );
+      final task = await createTask(job, 'Invoice task');
+      final contact = await DaoContact().getBillingContactByJob(job);
+
+      return DialogTaskSelection(
+        job: job,
+        contact: contact!,
+        title: 'Tasks to Invoice',
+        forQuote: false,
+        taskSelectors: [
+          TaskSelector(task, task.name, Money.fromInt(25000, isoCode: 'AUD')),
+        ],
+      );
+    });
+
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: dialog)));
+    await tester.pumpAndSettle();
+    await waitForText(tester, 'Select All');
+
+    expect(find.text('Bill booking Fee'), findsNothing);
   });
 }

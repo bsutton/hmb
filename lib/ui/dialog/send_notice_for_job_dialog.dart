@@ -28,7 +28,19 @@ import '../widgets/icons/help_button.dart';
 import '../widgets/select/hmb_select_email_multi.dart';
 import '../widgets/select/hmb_select_mobile_multi.dart';
 
-enum _Channel { email, sms }
+enum NoticeChannel { email, sms }
+
+String noticeEmailGreetingForContact(Contact? contact) {
+  final name = _noticeContactName(contact);
+  return Strings.isBlank(name) ? 'Hello,' : '$name,';
+}
+
+String noticeSmsGreetingForContact(Contact? contact) {
+  final name = _noticeContactName(contact);
+  return Strings.isBlank(name) ? 'Hi,' : 'Hi $name,';
+}
+
+String _noticeContactName(Contact? contact) => contact?.fullname.trim() ?? '';
 
 class SendNoticeForJobDialog extends StatefulWidget {
   final Job job;
@@ -43,6 +55,7 @@ class SendNoticeForJobDialog extends StatefulWidget {
   /// If provided, we’ll try to preselect these (email or mobile based on tab).
   final String? preferredEmailRecipient;
   final String? preferredMobileRecipient;
+  final NoticeChannel initialChannel;
 
   const SendNoticeForJobDialog({
     required this.job,
@@ -51,28 +64,32 @@ class SendNoticeForJobDialog extends StatefulWidget {
     this.initialBody,
     this.preferredEmailRecipient,
     this.preferredMobileRecipient,
+    this.initialChannel = NoticeChannel.sms,
     super.key,
   });
 
   @override
   State<SendNoticeForJobDialog> createState() => _SendNoticeForJobDialogState();
 
-  static Future<void> show(
+  static Future<bool> show(
     BuildContext context,
     Job job,
-    JobActivity jobActivity,
-  ) async {
-    final sent = await showDialog<bool>(
-      context: context,
-      builder: (_) => SendNoticeForJobDialog(
-        job: job,
-        jobActivity: jobActivity, // optional
-      ),
-    );
-    if (sent ?? false) {
-      // refresh UI if needed
-    }
-  }
+    JobActivity jobActivity, {
+    String? preferredEmailRecipient,
+    String? preferredMobileRecipient,
+    NoticeChannel initialChannel = NoticeChannel.sms,
+  }) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (_) => SendNoticeForJobDialog(
+          job: job,
+          jobActivity: jobActivity,
+          preferredEmailRecipient: preferredEmailRecipient,
+          preferredMobileRecipient: preferredMobileRecipient,
+          initialChannel: initialChannel,
+        ),
+      ) ??
+      false;
 }
 
 class _SendNoticeForJobDialogState
@@ -82,7 +99,7 @@ class _SendNoticeForJobDialogState
   late TextEditingController _bodyCtl;
   late TextEditingController _smsBodyCtl;
 
-  _Channel _channel = _Channel.sms;
+  NoticeChannel _channel = NoticeChannel.sms;
 
   List<String> _toEmails = [];
   List<String> _ccEmails = [];
@@ -91,6 +108,7 @@ class _SendNoticeForJobDialogState
   @override
   Future<void> asyncInitState() async {
     _system = await DaoSystem().get();
+    final primary = await _primaryContactForJob(widget.job);
 
     // Prefill subject/body from schedule if available.
     final scheduleText = await _buildScheduleLine(widget.job);
@@ -98,7 +116,7 @@ class _SendNoticeForJobDialogState
     final defaultBody =
         widget.initialBody ??
         '''
-Hello,
+${noticeEmailGreetingForContact(primary)}
 
 This is a notice for your scheduled job.
 
@@ -118,12 +136,13 @@ ${Strings.isNotBlank(_system.businessNumber) ? '${Strings.orElseOnBlank(_system.
 
     // SMS body is shorter; keep it simple and template-friendly.
     _smsBodyCtl = TextEditingController(
-      text: 'Hi, your job is scheduled. $scheduleText\n${_system.businessName}',
+      text:
+          '${noticeSmsGreetingForContact(primary)} your job is scheduled. '
+          '$scheduleText\n${_system.businessName}',
     );
 
     // Smart default: prefer SMS tab and preselect primary contact mobile.
-    _channel = _Channel.sms;
-    final primary = await _primaryContactForJob(widget.job);
+    _channel = widget.initialChannel;
     if (primary != null && Strings.isNotBlank(primary.mobileNumber)) {
       _toMobiles = [primary.mobileNumber];
     }
@@ -147,15 +166,15 @@ ${Strings.isNotBlank(_system.businessNumber) ? '${Strings.orElseOnBlank(_system.
           mainAxisSize: MainAxisSize.min,
           children: [
             // Channel toggle
-            SegmentedButton<_Channel>(
+            SegmentedButton<NoticeChannel>(
               segments: const [
                 ButtonSegment(
-                  value: _Channel.sms,
+                  value: NoticeChannel.sms,
                   label: Text('SMS'),
                   icon: Icon(Icons.sms),
                 ),
                 ButtonSegment(
-                  value: _Channel.email,
+                  value: NoticeChannel.email,
                   label: Text('Email'),
                   icon: Icon(Icons.email),
                 ),
@@ -169,7 +188,7 @@ ${Strings.isNotBlank(_system.businessNumber) ? '${Strings.orElseOnBlank(_system.
             ),
             const SizedBox(height: 12),
 
-            if (_channel == _Channel.sms) ...[
+            if (_channel == NoticeChannel.sms) ...[
               HMBSelectMobileMulti(
                 job: widget.job,
                 initialMobiles: _toMobiles,
@@ -231,7 +250,7 @@ Add additional recipients who should receive a copy of the email.'''),
           label: 'Send...',
           hint: 'Launch your device app to review and send the message.',
           onPressed: () async {
-            if (_channel == _Channel.sms) {
+            if (_channel == NoticeChannel.sms) {
               await _sendSms(context);
             } else {
               await _sendEmail(context);

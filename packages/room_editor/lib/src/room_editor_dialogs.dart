@@ -15,6 +15,20 @@ Future<int?> showRoomEditorLengthDialog({
       _LengthDialog(unitSystem: unitSystem, initialValue: initialValue),
 );
 
+Future<RoomEditorLengthConstraintDraft?> showRoomEditorLengthConstraintDialog({
+  required BuildContext context,
+  required RoomEditorUnitSystem unitSystem,
+  required int initialValue,
+  required RoomEditorLengthConstraintMode initialMode,
+}) => showDialog<RoomEditorLengthConstraintDraft>(
+  context: context,
+  builder: (_) => _LengthConstraintDialog(
+    unitSystem: unitSystem,
+    initialValue: initialValue,
+    initialMode: initialMode,
+  ),
+);
+
 Future<int?> showRoomEditorAngleDialog({
   required BuildContext context,
   required int initialValue,
@@ -44,6 +58,18 @@ Future<RoomEditorOpeningDraft?> showRoomEditorOpeningDialog({
     confirmLabel: confirmLabel,
   ),
 );
+
+enum RoomEditorLengthConstraintMode { driven, driving }
+
+class RoomEditorLengthConstraintDraft {
+  final RoomEditorLengthConstraintMode mode;
+  final int length;
+
+  const RoomEditorLengthConstraintDraft({
+    required this.mode,
+    required this.length,
+  });
+}
 
 class _LengthDialog extends StatefulWidget {
   final RoomEditorUnitSystem unitSystem;
@@ -201,6 +227,229 @@ class _LengthDialogState extends State<_LengthDialog> {
         },
         child: const Text('Save'),
       ),
+    ],
+  );
+}
+
+class _LengthConstraintDialog extends StatefulWidget {
+  final RoomEditorUnitSystem unitSystem;
+  final int initialValue;
+  final RoomEditorLengthConstraintMode initialMode;
+
+  const _LengthConstraintDialog({
+    required this.unitSystem,
+    required this.initialValue,
+    required this.initialMode,
+  });
+
+  @override
+  State<_LengthConstraintDialog> createState() =>
+      _LengthConstraintDialogState();
+}
+
+class _LengthConstraintDialogState extends State<_LengthConstraintDialog> {
+  late RoomEditorLengthConstraintMode _mode;
+  late final TextEditingController _metricController;
+  late final TextEditingController _feetController;
+  late final TextEditingController _inchesController;
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _mode = widget.initialMode;
+    _metricController = TextEditingController(
+      text: widget.unitSystem == RoomEditorUnitSystem.metric
+          ? RoomCanvasGeometry.formatDisplayLength(
+              widget.initialValue,
+              widget.unitSystem,
+            ).replaceFirst(RegExp(r'\s+mm$'), '')
+          : '',
+    );
+    final totalInches =
+        widget.initialValue / RoomCanvasGeometry.imperialUnitsPerInch;
+    final feet = totalInches ~/ RoomCanvasGeometry.inchesPerFoot;
+    final inches = totalInches - feet * RoomCanvasGeometry.inchesPerFoot;
+    _feetController = TextEditingController(
+      text: widget.unitSystem == RoomEditorUnitSystem.imperial
+          ? feet.toString()
+          : '',
+    );
+    _inchesController = TextEditingController(
+      text: widget.unitSystem == RoomEditorUnitSystem.imperial
+          ? _formatInches(inches)
+          : '',
+    );
+    _focusNode = FocusNode();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _mode != RoomEditorLengthConstraintMode.driving) {
+        return;
+      }
+      _focusLengthField();
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    _metricController.dispose();
+    _feetController.dispose();
+    _inchesController.dispose();
+    super.dispose();
+  }
+
+  int? _parseValue() {
+    if (widget.unitSystem == RoomEditorUnitSystem.metric) {
+      return RoomCanvasGeometry.parseDisplayLength(
+        _metricController.text,
+        widget.unitSystem,
+      );
+    }
+
+    final feet = int.tryParse(_feetController.text.trim()) ?? 0;
+    final inches = double.tryParse(_inchesController.text.trim()) ?? 0;
+    if (feet == 0 && inches == 0) {
+      return null;
+    }
+    final totalInches = feet * RoomCanvasGeometry.inchesPerFoot + inches;
+    return (totalInches * RoomCanvasGeometry.imperialUnitsPerInch).round();
+  }
+
+  String _formatInches(double value) {
+    final rounded = value.toStringAsFixed(3);
+    return rounded.replaceFirst(RegExp(r'\.?0+$'), '');
+  }
+
+  void _focusLengthField() {
+    _focusNode.requestFocus();
+    final controller = widget.unitSystem == RoomEditorUnitSystem.metric
+        ? _metricController
+        : _feetController;
+    controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: controller.text.length,
+    );
+  }
+
+  Widget _buildMetricField() => TextField(
+    controller: _metricController,
+    focusNode: _focusNode,
+    enabled: _mode == RoomEditorLengthConstraintMode.driving,
+    autofocus: _mode == RoomEditorLengthConstraintMode.driving,
+    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
+    decoration: const InputDecoration(labelText: 'Length (mm)'),
+  );
+
+  Widget _buildImperialFields(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _feetController,
+              focusNode: _focusNode,
+              enabled: _mode == RoomEditorLengthConstraintMode.driving,
+              autofocus: _mode == RoomEditorLengthConstraintMode.driving,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(labelText: 'Feet'),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              controller: _inchesController,
+              enabled: _mode == RoomEditorLengthConstraintMode.driving,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+              ],
+              decoration: const InputDecoration(labelText: 'Inches'),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      Text(
+        'Enter feet and inches separately. Decimal inches are supported.',
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+    ],
+  );
+
+  void _save() {
+    if (_mode == RoomEditorLengthConstraintMode.driven) {
+      Navigator.of(context).pop(
+        RoomEditorLengthConstraintDraft(
+          mode: _mode,
+          length: widget.initialValue,
+        ),
+      );
+      return;
+    }
+    final value = _parseValue();
+    if (value == null) {
+      return;
+    }
+    Navigator.of(
+      context,
+    ).pop(RoomEditorLengthConstraintDraft(mode: _mode, length: value));
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Wall Length'),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SegmentedButton<RoomEditorLengthConstraintMode>(
+          segments: const [
+            ButtonSegment(
+              value: RoomEditorLengthConstraintMode.driven,
+              label: Text('Driven'),
+            ),
+            ButtonSegment(
+              value: RoomEditorLengthConstraintMode.driving,
+              label: Text('Driving'),
+            ),
+          ],
+          selected: {_mode},
+          onSelectionChanged: (selection) {
+            final mode = selection.single;
+            setState(() => _mode = mode);
+            if (mode == RoomEditorLengthConstraintMode.driving) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  _focusLengthField();
+                }
+              });
+            }
+          },
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _mode == RoomEditorLengthConstraintMode.driven
+              ? 'Shows the measured length without fixing it.'
+              : 'Fixes this wall to a specific length.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 8),
+        if (widget.unitSystem == RoomEditorUnitSystem.metric)
+          _buildMetricField()
+        else
+          _buildImperialFields(context),
+      ],
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('Cancel'),
+      ),
+      TextButton(onPressed: _save, child: const Text('Save')),
     ],
   );
 }

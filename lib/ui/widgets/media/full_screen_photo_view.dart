@@ -14,7 +14,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:pasteboard/pasteboard.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:strings/strings.dart';
 
@@ -23,6 +22,7 @@ import '../hmb_toast.dart';
 import '../icons/hmb_close_icon.dart';
 import '../icons/hmb_copy_icon.dart';
 import '../layout/layout.g.dart';
+import 'copy_image_to_clipboard.dart';
 
 class FullScreenPhotoViewer extends StatelessWidget {
   final String imagePath;
@@ -88,14 +88,14 @@ class FullScreenPhotoViewer extends StatelessWidget {
               HMBCopyIcon(
                 onPressed: () async {
                   try {
-                    await Pasteboard.writeFiles([imagePath]);
+                    await copyImageToClipboard(imagePath);
                     HMBToast.info('Image copied to clipboard');
                     // ignore: avoid_catches_without_on_clauses
                   } catch (e) {
                     HMBToast.error('Failed to copy image to clipboard');
                   }
                 },
-                hint: 'Copy the photo to the clopboard',
+                hint: 'Copy the photo to the clipboard',
               ),
               HMBCloseIcon(onPressed: () async => Navigator.of(context).pop()),
             ],
