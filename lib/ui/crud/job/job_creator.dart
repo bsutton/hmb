@@ -803,6 +803,7 @@ class _JobCreatorState extends State<JobCreator> {
               system.defaultHourlyRate ?? Money.fromInt(0, isoCode: 'AUD'),
           bookingFee:
               system.defaultBookingFee ?? Money.fromInt(0, isoCode: 'AUD'),
+          estimateMargin: await DaoSystem().getDefaultProfitMargin(),
           billingContactId: contact?.id,
           referrerContactId: _selectedReferrerContact?.id,
         );

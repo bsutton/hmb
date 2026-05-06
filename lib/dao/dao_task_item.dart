@@ -15,6 +15,7 @@ import 'package:money2/money2.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.g.dart';
+import '../util/dart/fixed_ex.dart';
 import '../util/dart/money_ex.dart';
 import 'dao.dart';
 
@@ -36,6 +37,47 @@ class DaoTaskItem extends Dao<TaskItem> {
 
   @override
   TaskItem fromMap(Map<String, dynamic> map) => TaskItem.fromMap(map);
+
+  @override
+  Future<int> insert(TaskItem entity, [Transaction? transaction]) {
+    _normalizeCompletedMaterialActuals(entity);
+    return super.insert(entity, transaction);
+  }
+
+  @override
+  Future<int> update(TaskItem entity, [Transaction? transaction]) {
+    _normalizeCompletedMaterialActuals(entity);
+    return super.update(entity, transaction);
+  }
+
+  void _normalizeCompletedMaterialActuals(TaskItem item) {
+    if (!item.completed || item.itemType == TaskItemType.labour) {
+      return;
+    }
+
+    final estimatedUnitCost = item.estimatedMaterialUnitCost;
+    final estimatedQuantity = item.estimatedMaterialQuantity;
+    if (estimatedUnitCost == null || estimatedQuantity == null) {
+      return;
+    }
+
+    if (MoneyEx.isZeroOrNull(item.actualMaterialUnitCost)) {
+      item.actualMaterialUnitCost = estimatedUnitCost;
+    }
+    if (FixedEx.isZeroOrNull(item.actualMaterialQuantity)) {
+      item.actualMaterialQuantity = estimatedQuantity;
+    }
+
+    final actualUnitCost = item.actualMaterialUnitCost;
+    final actualQuantity = item.actualMaterialQuantity;
+    if (actualUnitCost == null || actualQuantity == null) {
+      return;
+    }
+
+    if (MoneyEx.isZeroOrNull(item.actualCost)) {
+      item.actualCost = actualUnitCost.multiplyByFixed(actualQuantity);
+    }
+  }
 
   Future<List<TaskItem>> getByTask(int? taskId) async {
     final db = withoutTransaction();
@@ -140,6 +182,33 @@ SELECT ti.*
     return toList(rows);
   }
 
+  Future<List<TaskItem>> getPurchasedItemsForReceiptLink({
+    required int jobId,
+    int? supplierId,
+  }) async {
+    final db = withoutTransaction();
+    final supplierClause = supplierId == null ? '' : 'AND ti.supplier_id = ?';
+    final rows = await db.rawQuery(
+      '''
+SELECT ti.*
+  FROM task_item ti
+  JOIN task t ON ti.task_id = t.id
+ WHERE t.job_id = ?
+   AND ti.item_type_id IN (
+     ${TaskItemType.materialsBuy.id},
+     ${TaskItemType.toolsBuy.id},
+     ${TaskItemType.consumablesBuy.id}
+   )
+   AND ti.completed = 1
+   AND ti.is_return = 0
+   $supplierClause
+ ORDER BY ti.modified_date DESC
+''',
+      [jobId, if (supplierId != null) supplierId],
+    );
+    return toList(rows);
+  }
+
   /// Get items that need to be packed.
   Future<List<TaskItem>> getPackingItems({
     required bool showPreScheduledJobs,
@@ -234,7 +303,7 @@ SELECT ti.*
         .map((id) => "'$id'")
         .join(', ');
 
-  final sql =
+    final sql =
         '''
 SELECT ti.*
   FROM task_item ti

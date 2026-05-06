@@ -9,6 +9,7 @@ import 'xero_api.dart';
 
 typedef XeroInvoicePaymentSyncErrorHandler =
     void Function(Object error, StackTrace stackTrace);
+typedef XeroLogin = Future<bool> Function({bool allowInteractive});
 
 class XeroInvoicePaymentSyncService {
   static DateTime? _lastAttempt;
@@ -16,11 +17,17 @@ class XeroInvoicePaymentSyncService {
   static const _minInterval = Duration(hours: 6);
 
   final XeroApi _xeroApi;
+  late final XeroLogin _login;
   final DaoInvoice _daoInvoice;
 
-  XeroInvoicePaymentSyncService({XeroApi? xeroApi, DaoInvoice? daoInvoice})
-    : _xeroApi = xeroApi ?? XeroApi(),
-      _daoInvoice = daoInvoice ?? DaoInvoice();
+  XeroInvoicePaymentSyncService({
+    XeroApi? xeroApi,
+    DaoInvoice? daoInvoice,
+    XeroLogin? login,
+  }) : _xeroApi = xeroApi ?? XeroApi(),
+       _daoInvoice = daoInvoice ?? DaoInvoice() {
+    _login = login ?? _xeroApi.login;
+  }
 
   Future<int> sync({
     bool force = false,
@@ -45,14 +52,19 @@ class XeroInvoicePaymentSyncService {
         return 0;
       }
 
-      final loggedIn = await _xeroApi.login(allowInteractive: false);
+      final pending = await _daoInvoice.getUploadedUnpaid();
+      if (pending.isEmpty) {
+        Log.i('Skipping Xero payment sync because no invoices need syncing.');
+        return 0;
+      }
+
+      final loggedIn = await _login(allowInteractive: false);
       if (!loggedIn) {
         Log.i(
           'Skipping Xero payment sync because silent login was unavailable.',
         );
         return 0;
       }
-      final pending = await _daoInvoice.getUploadedUnpaid();
       var updated = 0;
       for (final invoice in pending) {
         try {
