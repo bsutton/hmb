@@ -228,6 +228,15 @@ status = ? AND parent_type = ? and parent_id = ?''',
     );
   }
 
+  Future<void> deleteByJob(int jobId, {Transaction? transaction}) async {
+    final db = withinTransaction(transaction);
+    await db.delete(
+      tableName,
+      where: 'parent_type = ? AND parent_id = ?',
+      whereArgs: [ToDoParentType.job.name, jobId],
+    );
+  }
+
   Future<List<ToDo>> getByIds(List<int> ids) async {
     if (ids.isEmpty) {
       return [];
