@@ -185,11 +185,10 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
                 // Contact option
                 if (widget.isEditing)
                   HMBButtonSecondary(
-                    onPressed: widget.isEditing ? _showContactOptions : null,
+                    onPressed: _showContactOptions,
                     label: 'Send Notice',
-                    hint: widget.isEditing
-                        ? '''Send a text message to the user confirming the schedule.'''
-                        : 'Save the event before sending a notice.',
+                    hint:
+                        '''Send a text message to the user confirming the schedule.''',
                   ),
                 _buildButtons(context),
               ],
