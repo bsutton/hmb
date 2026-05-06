@@ -14,7 +14,10 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
+import '../../dao/dao.g.dart';
 import '../../util/dart/types.dart';
+import '../dialog/hmb_comfirm_delete_dialog.dart';
+import '../widgets/icons/hmb_delete_icon.dart';
 import '../widgets/icons/hmb_edit_icon.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/widgets.g.dart';
@@ -45,6 +48,14 @@ abstract class ShoppingItemCard extends StatelessWidget {
       title: itemContext.taskItem.description,
       actions: [
         buildActions(context, details!),
+        if (_canDeleteFromShoppingList)
+          HMBDeleteIcon(
+            onPressed: () async {
+              await _deleteItem(context);
+              await onReload();
+            },
+            hint: 'Delete Item',
+          ),
         HMBEditIcon(
           onPressed: () =>
               showShoppingItemDialog(context, itemContext, onReload),
@@ -65,4 +76,22 @@ abstract class ShoppingItemCard extends StatelessWidget {
       ),
     ),
   );
+
+  bool get _canDeleteFromShoppingList {
+    final taskItem = itemContext.taskItem;
+    return !taskItem.completed && !taskItem.billed && !taskItem.isReturn;
+  }
+
+  Future<void> _deleteItem(BuildContext context) async {
+    final taskItem = itemContext.taskItem;
+    await showConfirmDeleteDialog(
+      context: context,
+      nameSingular: 'Item',
+      question: 'Are you sure you want to delete ${taskItem.description}?',
+      onConfirmed: () async {
+        await DaoTaskItem().delete(taskItem.id);
+        HMBToast.info('Item deleted.');
+      },
+    );
+  }
 }

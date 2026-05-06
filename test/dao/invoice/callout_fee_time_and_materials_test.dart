@@ -44,7 +44,7 @@ void main() {
         await _setSystemBookingFee(MoneyEx.dollars(100));
 
         // Create invoice for the job
-        final invoice = await createTimeAndMaterialsInvoice(
+        final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
           [],
@@ -74,7 +74,7 @@ void main() {
         await _setSystemBookingFee(MoneyEx.dollars(100));
 
         // Create invoice for the job
-        final invoice = await createTimeAndMaterialsInvoice(
+        final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
           [],
@@ -106,7 +106,7 @@ void main() {
         await _setSystemBookingFee(MoneyEx.dollars(100));
 
         // Create invoice for the job
-        final invoice = await createTimeAndMaterialsInvoice(
+        final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
           [],
@@ -138,7 +138,7 @@ void main() {
         await _setSystemBookingFee(MoneyEx.zero);
 
         // Create invoice for the job
-        final invoice = await createTimeAndMaterialsInvoice(
+        final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
           [],

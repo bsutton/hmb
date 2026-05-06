@@ -39,17 +39,22 @@ Future<InvoiceOptions?> selectTaskToQuote({
             BillingType.fixedPrice,
       )
       .toList();
+  final canQuoteBookingFee =
+      job.bookingFee != null &&
+      !job.bookingFee!.isZero &&
+      !job.bookingFeeInvoiced;
 
-  if (quoteEligible.isEmpty) {
+  if (quoteEligible.isEmpty && !canQuoteBookingFee) {
     if (tasks.isEmpty) {
       HMBToast.error(
-        'This job has no tasks. Add at least one task before creating a quote.',
+        'This job has no tasks or booking fee. Add at least one task before '
+        'creating a quote.',
         acknowledgmentRequired: true,
       );
     } else {
       HMBToast.error(
         'No tasks are eligible for a quote. Tasks must be Fixed Price, active, '
-        'and have a non-zero estimate.',
+        'and have a non-zero estimate, or the job must have a booking fee.',
         acknowledgmentRequired: true,
       );
     }
@@ -149,6 +154,7 @@ class DialogTaskSelection extends StatefulWidget {
 class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
   final Map<int, bool> _selectedTasks = {};
   final Map<int, BillingType> _taskBillingTypes = {};
+  late final TextEditingController _quoteNameController;
   var _selectAll = true;
   late bool billBookingFee;
   late bool canBillBookingFee;
@@ -159,12 +165,23 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
   List<Contact> _contacts = [];
 
   @override
+  void initState() {
+    super.initState();
+    _quoteNameController = TextEditingController(text: widget.job.summary);
+  }
+
+  @override
   Future<void> asyncInitState() async {
     _groupByTask = true;
 
-    billBookingFee = canBillBookingFee =
-        widget.job.billingType == BillingType.timeAndMaterial &&
-        !widget.job.bookingFeeInvoiced;
+    final hasBookingFee =
+        widget.job.bookingFee != null && !widget.job.bookingFee!.isZero;
+    canBillBookingFee = widget.forQuote
+        ? hasBookingFee && !widget.job.bookingFeeInvoiced
+        : widget.job.billingType == BillingType.timeAndMaterial &&
+              hasBookingFee &&
+              !widget.job.bookingFeeInvoiced;
+    billBookingFee = canBillBookingFee;
 
     for (final accuredValue in widget.taskSelectors) {
       _selectedTasks[accuredValue.task.id] = true;
@@ -175,6 +192,12 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
     _customer = (await DaoCustomer().getById(widget.job.customerId))!;
     _contacts = await DaoContact().getByCustomer(widget.job.customerId);
     _selectedContact = widget.contact;
+  }
+
+  @override
+  void dispose() {
+    _quoteNameController.dispose();
+    super.dispose();
   }
 
   bool get _hasSelectedTimeAndMaterialsTasks => _selectedTasks.entries.any(
@@ -253,6 +276,11 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
                   });
                 },
               ),
+            if (widget.forQuote)
+              TextField(
+                controller: _quoteNameController,
+                decoration: const InputDecoration(labelText: 'Quote Name'),
+              ),
             if (_selectedTasks.isNotEmpty)
               CheckboxListTile(
                 title: const Text('Select All'),
@@ -297,6 +325,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
               groupByTask: !_hasSelectedTimeAndMaterialsTasks || _groupByTask,
               contact: _selectedContact,
               quoteMargin: widget.job.estimateMargin,
+              quoteName: _quoteNameController.text.trim(),
             ),
           );
         },

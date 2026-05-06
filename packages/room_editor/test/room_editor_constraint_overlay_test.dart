@@ -3,6 +3,85 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:room_editor/room_editor.dart';
 
 void main() {
+  testWidgets('canvas supports pan and pinch zoom when idle', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 900,
+            height: 700,
+            child: RoomEditorWorkspace(
+              document: _document,
+              editorOnly: true,
+              onDocumentCommitted: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final viewer = tester.widget<InteractiveViewer>(
+      find.byType(InteractiveViewer),
+    );
+    expect(viewer.panEnabled, isTrue);
+    expect(viewer.scaleEnabled, isTrue);
+    expect(viewer.maxScale, greaterThan(1));
+  });
+
+  test('dragged opening shows adjacent wall distance labels', () {
+    final document = RoomEditorDocument(
+      bundle: buildRoomEditorBundle(
+        roomName: 'Openings',
+        unitSystem: RoomEditorUnitSystem.metric,
+        plasterCeiling: true,
+        lines: const [
+          (id: 1, seqNo: 1, startX: 0, startY: 0, length: 3600),
+          (id: 2, seqNo: 2, startX: 3600, startY: 0, length: 2400),
+          (id: 3, seqNo: 3, startX: 3600, startY: 2400, length: 3600),
+          (id: 4, seqNo: 4, startX: 0, startY: 2400, length: 2400),
+        ],
+        openings: const [
+          (
+            id: 10,
+            lineId: 1,
+            type: RoomEditorOpeningType.door,
+            offsetFromStart: 500,
+            width: 800,
+            height: 2100,
+            sillHeight: 0,
+            distanceToStartWall: null,
+            distanceToEndWall: null,
+          ),
+          (
+            id: 20,
+            lineId: 1,
+            type: RoomEditorOpeningType.window,
+            offsetFromStart: 1800,
+            width: 900,
+            height: 1200,
+            sillHeight: 900,
+            distanceToStartWall: null,
+            distanceToEndWall: null,
+          ),
+        ],
+      ),
+      constraints: const [],
+    );
+
+    final visuals = debugDescribeOpeningDimensionVisuals(
+      document: document,
+      selectedOpeningIndex: 0,
+      draggedOpeningIndex: 1,
+    );
+
+    expect(visuals, hasLength(3));
+    expect(visuals.map((visual) => visual.key.openingId), everyElement(20));
+    expect(
+      visuals.map((visual) => visual.key.type),
+      containsAll(RoomEditorOpeningDimensionType.values),
+    );
+  });
+
   test('selected line exposes visible constraint overlays', () {
     final visuals = debugDescribeConstraintVisuals(
       document: _document,

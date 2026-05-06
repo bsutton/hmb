@@ -33,23 +33,11 @@ class SystemSecretStore {
 
   Future<void> hydrate(System system) async {
     system
-      ..xeroClientSecret = await _read(
-        _xeroClientSecretKey,
-        fallback: system.xeroClientSecret,
-      )
-      ..chatgptAccessToken = await _read(
-        _chatGptAccessTokenKey,
-        fallback: system.chatgptAccessToken,
-      )
-      ..chatgptRefreshToken = await _read(
-        _chatGptRefreshTokenKey,
-        fallback: system.chatgptRefreshToken,
-      )
-      ..openaiApiKey = await _read(_openAiApiKey, fallback: system.openaiApiKey)
-      ..ihserverToken = await _read(
-        _ihserverTokenKey,
-        fallback: system.ihserverToken,
-      );
+      ..xeroClientSecret = await _read(_xeroClientSecretKey)
+      ..chatgptAccessToken = await _read(_chatGptAccessTokenKey)
+      ..chatgptRefreshToken = await _read(_chatGptRefreshTokenKey)
+      ..openaiApiKey = await _read(_openAiApiKey)
+      ..ihserverToken = await _read(_ihserverTokenKey);
   }
 
   Future<bool> migrateFromDb(System system) async {
@@ -106,15 +94,15 @@ class SystemSecretStore {
     );
   }
 
-  Future<String?> _read(String key, {String? fallback}) async {
+  Future<String?> _read(String key) async {
     try {
       final value = await _backend.read(key);
       if (Strings.isBlank(value)) {
-        return fallback;
+        return null;
       }
       return value!.trim();
     } catch (_) {
-      return fallback;
+      return null;
     }
   }
 
