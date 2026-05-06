@@ -12,6 +12,7 @@ import '../../entity/plaster_room_line.dart';
 import '../../entity/plaster_room_opening.dart';
 import 'log.dart';
 import 'measurement_type.dart';
+import 'plaster_board_attribute.dart';
 import 'plaster_layout_scoring.dart';
 import 'plaster_sheet_direction.dart';
 
@@ -637,12 +638,151 @@ class PlasterGeometry {
   static const imperialGrid = 6000;
   static const metricMinEdgePiece = 3000;
   static const imperialMinEdgePiece = 11811;
+  static const metricSquareSetCeilingTrim = 500;
+  static const metricWallBaseClearance = 100;
+  static const metricWallTopClearance = 50;
 
   static int defaultRoomSize(PreferredUnitSystem unitSystem) =>
       unitSystem == PreferredUnitSystem.metric ? 30000 : 120000;
 
   static int defaultCeilingHeight(PreferredUnitSystem unitSystem) =>
       unitSystem == PreferredUnitSystem.metric ? 24000 : 96000;
+
+  static int defaultBoardThickness(PreferredUnitSystem unitSystem) =>
+      unitSystem == PreferredUnitSystem.metric ? 100 : 500;
+
+  static int squareSetCeilingTrim(PreferredUnitSystem unitSystem) =>
+      convertLength(
+        metricSquareSetCeilingTrim,
+        PreferredUnitSystem.metric,
+        unitSystem,
+      );
+
+  static int wallLayoutHeight(PlasterRoom room) => max(
+    0,
+    room.ceilingHeight -
+        (room.squareSetCeiling ? squareSetCeilingTrim(room.unitSystem) : 0),
+  );
+
+  static int wallBaseClearance(PreferredUnitSystem unitSystem) => convertLength(
+    metricWallBaseClearance,
+    PreferredUnitSystem.metric,
+    unitSystem,
+  );
+
+  static int wallTopClearance(PreferredUnitSystem unitSystem) => convertLength(
+    metricWallTopClearance,
+    PreferredUnitSystem.metric,
+    unitSystem,
+  );
+
+  static int wallBoardCoverageHeight(
+    int wallHeight,
+    PreferredUnitSystem unitSystem,
+  ) => max(
+    0,
+    wallHeight - wallBaseClearance(unitSystem) - wallTopClearance(unitSystem),
+  );
+
+  static int defaultWallStudSpacing(PreferredUnitSystem unitSystem) =>
+      unitSystem == PreferredUnitSystem.metric ? 6000 : 16000;
+
+  static int defaultWallStudOffset(PreferredUnitSystem unitSystem) => 0;
+
+  static int defaultWallFixingFaceWidth(PreferredUnitSystem unitSystem) =>
+      unitSystem == PreferredUnitSystem.metric ? 450 : 1500;
+
+  static int defaultCeilingFramingSpacing(PreferredUnitSystem unitSystem) =>
+      unitSystem == PreferredUnitSystem.metric ? 4500 : 16000;
+
+  static int defaultCeilingFramingOffset(PreferredUnitSystem unitSystem) => 0;
+
+  static int defaultCeilingFixingFaceWidth(PreferredUnitSystem unitSystem) =>
+      unitSystem == PreferredUnitSystem.metric ? 450 : 1500;
+
+  static List<PlasterMaterialSize> defaultMaterialSizes(
+    int supplierId,
+    PreferredUnitSystem unitSystem,
+  ) {
+    if (unitSystem == PreferredUnitSystem.metric) {
+      return [
+        PlasterMaterialSize.forInsert(
+          supplierId: supplierId,
+          name: '1200 x 2400',
+          unitSystem: unitSystem,
+          width: 12000,
+          height: 24000,
+          thickness: defaultBoardThickness(unitSystem),
+        ),
+        PlasterMaterialSize.forInsert(
+          supplierId: supplierId,
+          name: '1200 x 2700',
+          unitSystem: unitSystem,
+          width: 12000,
+          height: 27000,
+          thickness: defaultBoardThickness(unitSystem),
+        ),
+        PlasterMaterialSize.forInsert(
+          supplierId: supplierId,
+          name: '1200 x 3000',
+          unitSystem: unitSystem,
+          width: 12000,
+          height: 30000,
+          thickness: defaultBoardThickness(unitSystem),
+        ),
+        PlasterMaterialSize.forInsert(
+          supplierId: supplierId,
+          name: '1200 x 3600',
+          unitSystem: unitSystem,
+          width: 12000,
+          height: 36000,
+          thickness: defaultBoardThickness(unitSystem),
+        ),
+        PlasterMaterialSize.forInsert(
+          supplierId: supplierId,
+          name: '1200 x 4200',
+          unitSystem: unitSystem,
+          width: 12000,
+          height: 42000,
+          thickness: defaultBoardThickness(unitSystem),
+        ),
+      ];
+    }
+    return [
+      PlasterMaterialSize.forInsert(
+        supplierId: supplierId,
+        name: '4 x 8',
+        unitSystem: unitSystem,
+        width: 48000,
+        height: 96000,
+        thickness: defaultBoardThickness(unitSystem),
+      ),
+      PlasterMaterialSize.forInsert(
+        supplierId: supplierId,
+        name: '4 x 9',
+        unitSystem: unitSystem,
+        width: 48000,
+        height: 108000,
+        thickness: defaultBoardThickness(unitSystem),
+      ),
+      PlasterMaterialSize.forInsert(
+        supplierId: supplierId,
+        name: '4 x 10',
+        unitSystem: unitSystem,
+        width: 48000,
+        height: 120000,
+        thickness: defaultBoardThickness(unitSystem),
+      ),
+      PlasterMaterialSize.forInsert(
+        supplierId: supplierId,
+        name: '4 x 12',
+        unitSystem: unitSystem,
+        width: 48000,
+        height: 144000,
+        thickness: defaultBoardThickness(unitSystem),
+      ),
+    ];
+  }
 
   static List<PlasterRoomLine> defaultLines({
     required int roomId,
@@ -819,7 +959,24 @@ class PlasterGeometry {
     final openingAreaSum = openings
         .where((opening) => opening.lineId == line.id)
         .fold<int>(0, (sum, opening) => sum + openingArea(opening));
-    return max(0, line.length * room.ceilingHeight - openingAreaSum);
+    return max(0, line.length * wallLayoutHeight(room) - openingAreaSum);
+  }
+
+  static int lineBoardArea(
+    PlasterRoom room,
+    List<PlasterRoomLine> lines,
+    List<PlasterRoomOpening> openings,
+    int lineIndex,
+  ) {
+    final line = lines[lineIndex];
+    final openingAreaSum = openings
+        .where((opening) => opening.lineId == line.id)
+        .fold<int>(0, (sum, opening) => sum + openingArea(opening));
+    final coverageHeight = wallBoardCoverageHeight(
+      wallLayoutHeight(room),
+      room.unitSystem,
+    );
+    return max(0, line.length * coverageHeight - openingAreaSum);
   }
 
   static double toDisplay(int value, PreferredUnitSystem unitSystem) =>
@@ -875,6 +1032,12 @@ class PlasterGeometry {
 
     final feet = value / imperialUnitsPerInch / inchesPerFoot;
     return '${feet.toStringAsFixed(2)} ft';
+  }
+
+  static String formatJointTapeLength(int value) {
+    const unitsPerMeter = metricUnitsPerMm * 1000;
+    final meters = (value + unitsPerMeter - 1) ~/ unitsPerMeter;
+    return '$meters m';
   }
 
   static int? parseDisplayLength(String raw, PreferredUnitSystem unitSystem) {
@@ -1151,6 +1314,7 @@ class PlasterGeometry {
         if (!line.plasterSelected) {
           continue;
         }
+        final wallHeight = wallLayoutHeight(shape.room);
         final candidates = _surfaceCandidates(
           shape: shape,
           line: line,
@@ -1159,13 +1323,13 @@ class PlasterGeometry {
           isCeiling: false,
           direction: line.sheetDirection,
           width: line.length,
-          height: shape.room.ceilingHeight,
-          area: lineNetArea(shape.room, shape.lines, shape.openings, i),
+          height: wallHeight,
+          area: lineBoardArea(shape.room, shape.lines, shape.openings, i),
           materials: materials,
           label: _surfaceLabel(
             name: '${shape.room.name} wall ${i + 1}',
             width: line.length,
-            height: shape.room.ceilingHeight,
+            height: wallHeight,
             unitSystem: shape.room.unitSystem,
           ),
         );
@@ -1229,7 +1393,44 @@ class PlasterGeometry {
         'framingSpacing=$framingSpacing, '
         'framingOffset=$framingOffset, '
         'fixingFaceWidth=$fixingFaceWidth';
+    final requiredThickness =
+        line?.boardThicknessOverride ?? room.boardThickness;
+    final requiredAttributes =
+        line?.attributeMaskOverride ?? room.attributeMask;
     for (final material in materials) {
+      final materialThickness = convertLength(
+        material.thickness,
+        material.unitSystem,
+        room.unitSystem,
+      );
+      if (materialThickness != requiredThickness) {
+        _logSurfaceCandidateDecision(
+          label: label,
+          material: material,
+          direction: direction,
+          decision: 'rejected',
+          detail:
+              'thickness '
+              '${formatDisplayLength(materialThickness, room.unitSystem)} '
+              'does not match required '
+              '${formatDisplayLength(requiredThickness, room.unitSystem)}',
+        );
+        continue;
+      }
+      if (!material.attributeMask.includesPlasterBoardAttributes(
+        requiredAttributes,
+      )) {
+        _logSurfaceCandidateDecision(
+          label: label,
+          material: material,
+          direction: direction,
+          decision: 'rejected',
+          detail:
+              'missing required attributes '
+              '${formatPlasterBoardAttributes(requiredAttributes)}',
+        );
+        continue;
+      }
       final sheetWidth = convertLength(
         material.width,
         material.unitSystem,
@@ -1240,12 +1441,15 @@ class PlasterGeometry {
         material.unitSystem,
         room.unitSystem,
       );
+      final boardCoverageHeight = isCeiling
+          ? height
+          : wallBoardCoverageHeight(height, room.unitSystem);
       final directionCandidates = _directionCandidates(
         direction: direction,
         sheetWidth: sheetWidth,
         sheetHeight: sheetHeight,
         surfaceWidth: width,
-        surfaceHeight: height,
+        surfaceHeight: boardCoverageHeight,
       );
       if (directionCandidates.isEmpty) {
         _logSurfaceCandidateDecision(
@@ -1259,7 +1463,7 @@ class PlasterGeometry {
       for (final candidate in directionCandidates) {
         if (!isCeiling &&
             candidate.$1 == PlasterSheetDirection.vertical &&
-            candidate.$3 < height) {
+            candidate.$3 < boardCoverageHeight) {
           _logSurfaceCandidateDecision(
             label: label,
             material: material,
@@ -1334,9 +1538,10 @@ class PlasterGeometry {
               area: area,
               direction: candidate.$1,
               isCeiling: isCeiling,
+              framingSpacing: framingSpacing,
             ),
             estimatedGlueKg: _estimateGlueKg(area, isCeiling),
-            estimatedPlasterKg: _estimatePlasterKg(area, candidate.$1),
+            estimatedPlasterKg: _estimatePlasterKg(area),
           );
           candidates.add(surface);
           _logSurfaceCandidateDecision(
@@ -1419,6 +1624,15 @@ class PlasterGeometry {
     required PlasterSheetDirection direction,
     required bool isCeiling,
   }) {
+    final placementOriginY = isCeiling
+        ? 0
+        : wallBaseClearance(shape.room.unitSystem);
+    final boardCoverageHeight = isCeiling
+        ? height
+        : wallBoardCoverageHeight(height, shape.room.unitSystem);
+    if (boardCoverageHeight <= 0) {
+      return const [];
+    }
     if (!isCeiling && direction == PlasterSheetDirection.vertical) {
       final row = _buildStudAlignedRow(
         surfaceWidth: width,
@@ -1436,9 +1650,9 @@ class PlasterGeometry {
             for (final piece in row.$1)
               PlasterSheetPlacement(
                 x: piece.$1,
-                y: 0,
+                y: placementOriginY,
                 width: piece.$2,
-                height: height,
+                height: boardCoverageHeight,
               ),
           ],
           row.$1.length,
@@ -1448,7 +1662,7 @@ class PlasterGeometry {
     }
 
     final rowHeights = _buildCourseHeights(
-      surfaceHeight: height,
+      surfaceHeight: boardCoverageHeight,
       sheetHeight: sheetHeight,
       minEdge: minEdge,
       horizontalWallStarter:
@@ -1486,7 +1700,7 @@ class PlasterGeometry {
 
     final placements = <PlasterSheetPlacement>[];
     var maxAcross = 0;
-    var y = 0;
+    var y = placementOriginY;
     for (var rowIndex = 0; rowIndex < rowHeights.length; rowIndex++) {
       final row = chosenRows[rowIndex];
       maxAcross = max(maxAcross, row.length);
@@ -2827,6 +3041,7 @@ class PlasterGeometry {
     required int area,
     required PlasterSheetDirection direction,
     required bool isCeiling,
+    required int framingSpacing,
   }) {
     final areaSqM = area / (metricUnitsPerMm * metricUnitsPerMm) / 1000000;
     final perHundredSqM = isCeiling
@@ -2834,7 +3049,11 @@ class PlasterGeometry {
               ? 1150
               : 820
         : 620;
-    return max(1, (areaSqM * perHundredSqM / 100).ceil());
+    final standardSpacing = isCeiling ? 4500 : 6000;
+    final spacingFactor = framingSpacing <= 0
+        ? 1.0
+        : standardSpacing / framingSpacing;
+    return max(1, (areaSqM * perHundredSqM * spacingFactor / 100).ceil());
   }
 
   static double _estimateGlueKg(int area, bool isCeiling) {
@@ -2845,10 +3064,10 @@ class PlasterGeometry {
     return areaSqM * 3.5 / 100;
   }
 
-  static double _estimatePlasterKg(int area, PlasterSheetDirection direction) {
+  static double _estimatePlasterKg(int area) {
     final areaSqM = area / (metricUnitsPerMm * metricUnitsPerMm) / 1000000;
-    final multiplier = direction == PlasterSheetDirection.vertical ? 1.2 : 1.0;
-    return areaSqM * (24 + 8) * multiplier / 100;
+    const kgPerHundredSquareMeters = 22.0;
+    return areaSqM * kgPerHundredSquareMeters / 100;
   }
 
   static PlasterTakeoffSummary calculateTakeoff(

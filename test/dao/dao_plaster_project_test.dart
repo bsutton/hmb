@@ -54,6 +54,7 @@ void main() {
       ceilingHeight: PlasterGeometry.defaultCeilingHeight(
         PreferredUnitSystem.metric,
       ),
+      boardThickness: 130,
     );
     await DaoPlasterRoom().insert(room);
     final savedRoom = (await DaoPlasterRoom().getByProject(
@@ -64,7 +65,10 @@ void main() {
       roomId: savedRoom.id,
       unitSystem: savedRoom.unitSystem,
     );
-    for (final line in lines) {
+    for (var i = 0; i < lines.length; i++) {
+      final line = i == 0
+          ? lines[i].copyWith(boardThicknessOverride: 100)
+          : lines[i];
       await DaoPlasterRoomLine().insert(line);
     }
     final savedLines = await DaoPlasterRoomLine().getByRoom(savedRoom.id);
@@ -85,6 +89,7 @@ void main() {
       unitSystem: PreferredUnitSystem.metric,
       width: 12000,
       height: 24000,
+      thickness: 130,
       excludedFromLayout: true,
     );
     await DaoPlasterMaterialSize().insert(material);
@@ -104,14 +109,17 @@ void main() {
     expect(reloadedProjects.single.supplierId, supplier.id);
     expect(reloadedRooms, hasLength(1));
     expect(reloadedRooms.single.unitSystem, PreferredUnitSystem.metric);
+    expect(reloadedRooms.single.boardThickness, 130);
     expect(reloadedLines, hasLength(4));
     expect(reloadedLines.first.seqNo, 0);
+    expect(reloadedLines.first.boardThicknessOverride, 100);
     expect(reloadedLines.last.seqNo, 3);
     expect(reloadedOpenings, hasLength(1));
     expect(reloadedOpenings.single.type, PlasterOpeningType.door);
     expect(reloadedMaterials, hasLength(1));
     expect(reloadedMaterials.single.name, '1200 x 2400');
     expect(reloadedMaterials.single.supplierId, supplier.id);
+    expect(reloadedMaterials.single.thickness, 130);
     expect(reloadedMaterials.single.excludedFromLayout, isTrue);
   });
 }

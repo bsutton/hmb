@@ -57,7 +57,7 @@ mixed invoice with group-by-date keeps fixed summaries first and date-grouped T&
         await insertLabourEstimates(fixedTask, MoneyEx.dollars(100), Fixed.one);
         await createTimeEntry(tmTask, now, const Duration(hours: 2));
 
-        final invoice = await createTimeAndMaterialsInvoice(
+        final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
           [fixedTask.id, tmTask.id],
@@ -114,7 +114,7 @@ mixed job selecting only fixed tasks invoices only fixed work and leaves T&M unb
           margin: Percentage.zero,
         );
 
-        final invoice = await createTimeAndMaterialsInvoice(
+        final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
           [fixedTask.id],
@@ -173,7 +173,7 @@ mixed job selecting only T&M tasks does not invoice fixed task items''',
           margin: Percentage.zero,
         );
 
-        final invoice = await createTimeAndMaterialsInvoice(
+        final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
           [tmTask.id],
@@ -221,7 +221,7 @@ mixed invoice on T&M job can bill booking fee once and still include mixed task 
         await insertLabourEstimates(fixedTask, MoneyEx.dollars(100), Fixed.one);
         await createTimeEntry(tmTask, now, const Duration(hours: 1));
 
-        final invoice = await createTimeAndMaterialsInvoice(
+        final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
           [fixedTask.id, tmTask.id],
@@ -293,7 +293,7 @@ mixed invoice places fixed-price task summaries first and T&M materials at the b
           margin: Percentage.zero,
         );
 
-        final invoice = await createTimeAndMaterialsInvoice(
+        final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
           [fixedTask.id, tmTask.id],
@@ -361,7 +361,7 @@ time and materials job with a fixed price task bills fixed price labour and igno
           const Duration(hours: 2),
         );
 
-        final invoice = await createTimeAndMaterialsInvoice(
+        final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
           [task.id],
@@ -417,7 +417,7 @@ fixed price job with a time and materials task uses time entries and actual mate
           completed: false,
         );
 
-        final invoice = await createTimeAndMaterialsInvoice(
+        final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
           [task.id],
@@ -456,7 +456,7 @@ fixed price job coerces group-by-date to group-by-task so labour task items are 
 
         // Even if caller passes groupByTask=false, fixed-price tasks
         // are emitted as a single task summary line.
-        final invoice = await createTimeAndMaterialsInvoice(
+        final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
           [task.id],
@@ -502,7 +502,7 @@ time and materials tools owned items bill only when a charge is specified''',
           margin: Percentage.zero,
         );
 
-        final invoice = await createTimeAndMaterialsInvoice(
+        final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
           [task.id],
