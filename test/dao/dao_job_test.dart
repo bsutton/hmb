@@ -87,6 +87,29 @@ void main() {
       expect(retrievedJob, isNull);
     });
 
+    test('deleting a job deletes linked todos', () async {
+      final now = DateTime.now();
+      final job = await createJob(
+        now,
+        BillingType.timeAndMaterial,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+      );
+
+      await DaoToDo().insert(
+        ToDo.forInsert(
+          title: 'Confirm materials',
+          parentType: ToDoParentType.job,
+          parentId: job.id,
+        ),
+      );
+      expect(await DaoToDo().getByJob(job.id), hasLength(1));
+
+      await DaoJob().delete(job.id);
+
+      expect(await DaoToDo().getByJob(job.id), isEmpty);
+    });
+
     test('should get all jobs', () async {
       final now = DateTime.now();
       final job1 = await createJob(

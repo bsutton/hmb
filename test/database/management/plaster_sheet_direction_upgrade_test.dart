@@ -145,4 +145,38 @@ void main() {
       delete(dbPath);
     }
   });
+
+  test('v178 adds square set ceiling flag', () async {
+    final dbPath = join(createTempDir(), 'plaster_square_set_v178.db');
+    final db = await CliDatabaseFactory().openDatabase(
+      dbPath,
+      options: OpenDatabaseOptions(),
+    );
+
+    try {
+      final source = ProjectScriptSource();
+      for (final script in [
+        'assets/sql/upgrade_scripts/v163.sql',
+        'assets/sql/upgrade_scripts/v166.sql',
+        'assets/sql/upgrade_scripts/v178.sql',
+      ]) {
+        final sql = await source.loadSQL(script);
+        final statements = await parseSqlFile(sql);
+        for (final statement in statements) {
+          await db.execute(statement);
+        }
+      }
+
+      final roomColumns = await db.rawQuery('PRAGMA table_info(plaster_room)');
+      final roomNames = {
+        for (final row in roomColumns) row['name'] as String? ?? '': row,
+      };
+
+      expect(roomNames.containsKey('square_set_ceiling'), isTrue);
+      expect(roomNames['square_set_ceiling']!['dflt_value'], '0');
+    } finally {
+      await db.close();
+      delete(dbPath);
+    }
+  });
 }
