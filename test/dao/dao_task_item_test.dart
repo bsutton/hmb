@@ -164,6 +164,39 @@ void main() {
     expect(reloaded.completed, isTrue);
   });
 
+  test(
+    'marking shopping item complete keeps invoice charge calculated',
+    () async {
+      final item = await _insertTaskItemForJob(
+        jobStatus: JobStatus.inProgress,
+        taskStatus: TaskStatus.inProgress,
+        itemType: TaskItemType.materialsBuy,
+        completed: false,
+      );
+      await DaoTaskItem().update(
+        item.copyWith(
+          chargeMode: ChargeMode.userDefined,
+          totalLineCharge: Money.fromInt(99999, isoCode: 'AUD'),
+        ),
+      );
+
+      final reloaded = (await DaoTaskItem().getById(item.id))!;
+      await DaoTaskItem().markAsCompleted(
+        item: reloaded,
+        materialUnitCost: MoneyEx.fromInt(200),
+        materialQuantity: Fixed.parse('3'),
+      );
+
+      final completed = (await DaoTaskItem().getById(item.id))!;
+      expect(completed.chargeMode, ChargeMode.calculated);
+      expect(completed.userDefinedCharge, isNull);
+      expect(
+        completed.getTotalLineCharge(BillingType.timeAndMaterial, MoneyEx.zero),
+        MoneyEx.fromInt(600),
+      );
+    },
+  );
+
   test('completed material update fills missing actual costs', () async {
     final item = await _insertTaskItemForJob(
       jobStatus: JobStatus.inProgress,
