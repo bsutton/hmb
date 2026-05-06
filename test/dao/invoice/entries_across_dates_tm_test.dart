@@ -49,7 +49,7 @@ should create an invoice with work done on two different dates for the same task
         await createTimeEntry(task, tomorrow, const Duration(hours: 2));
 
         // Create invoice grouped by date
-        final invoice = await createTimeAndMaterialsInvoice(
+        final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
           [task.id],
@@ -97,7 +97,7 @@ should create an invoice with work done on two different dates for two different
         await createTimeEntry(task2, tomorrow, const Duration(hours: 2));
 
         // Create invoice grouped by date
-        final invoice = await createTimeAndMaterialsInvoice(
+        final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
           [task1.id, task2.id],

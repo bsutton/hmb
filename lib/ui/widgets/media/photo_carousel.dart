@@ -17,7 +17,6 @@ import 'dart:io';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:pasteboard/pasteboard.dart';
 import 'package:photo_view/photo_view.dart';
 
 import '../../../util/dart/photo_meta.dart';
@@ -26,6 +25,7 @@ import '../icons/hmb_close_icon.dart';
 import '../icons/hmb_copy_icon.dart';
 import '../layout/layout.g.dart';
 import '../text/hmb_text_themes.dart';
+import 'copy_image_to_clipboard.dart';
 
 class PhotoCarousel extends StatefulWidget {
   final List<PhotoMeta> photos;
@@ -217,9 +217,9 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
       HMBCopyIcon(
         onPressed: () async {
           try {
-            await Pasteboard.writeFiles([
+            await copyImageToClipboard(
               widget.photos[_currentIndex].absolutePathTo,
-            ]);
+            );
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
