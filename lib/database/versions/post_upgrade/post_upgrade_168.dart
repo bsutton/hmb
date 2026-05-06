@@ -27,7 +27,13 @@ Future<void> postv168Upgrade(
     return;
   }
 
-  final system = System.fromMap(rows.single);
+  final row = rows.single;
+  final system = System.fromMap(row)
+    ..xeroClientSecret = row['xero_client_secret'] as String?
+    ..chatgptAccessToken = row['chatgpt_access_token'] as String?
+    ..chatgptRefreshToken = row['chatgpt_refresh_token'] as String?
+    ..openaiApiKey = row['openai_api_key'] as String?
+    ..ihserverToken = row['ihserver_token'] as String?;
   final store = secretStore ?? SystemSecretStore();
   final migrated = await store.migrateFromDb(system);
 

@@ -75,10 +75,12 @@ class _SelectQuoteDialogState extends State<SelectQuoteDialog> {
     return quotes.where((cj) {
       final customerName = cj.customer.name.toLowerCase();
       final jobSummary = cj.job.summary.toLowerCase();
+      final quoteSummary = cj.quote.summary.toLowerCase();
       final contactName = (cj.contactName ?? '').toLowerCase();
 
       return customerName.contains(_searchQuery) ||
           jobSummary.contains(_searchQuery) ||
+          quoteSummary.contains(_searchQuery) ||
           contactName.contains(_searchQuery);
     }).toList();
   }
@@ -157,11 +159,15 @@ class _SelectQuoteDialogState extends State<SelectQuoteDialog> {
                   itemCount: filteredQuotes.length,
                   itemBuilder: (context, index) {
                     final current = filteredQuotes[index];
+                    final quoteName = current.quote.summary.trim();
                     return ListTile(
-                      title: Text(current.job.summary),
+                      title: Text(
+                        quoteName.isEmpty ? current.job.summary : quoteName,
+                      ),
                       subtitle: HMBColumn(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Text('Job: ${current.job.summary}'),
                           Text('Customer: ${current.customer.name}'),
                           if (current.contactName != null)
                             Text('Contact: ${current.contactName}'),

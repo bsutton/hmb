@@ -18,6 +18,7 @@ import '../../../dao/dao.g.dart';
 import '../../../dao/notification/dao_june_builder.dart';
 import '../../../entity/job.dart';
 import '../../../entity/quote.dart';
+import '../../../entity/task.dart';
 import '../../invoicing/list_invoice_screen.dart';
 import '../../nav/dashboards/dashlet_card.dart';
 import '../../quoting/list_quote_screen.dart';
@@ -59,6 +60,7 @@ class MiniJobDashboard extends StatelessWidget {
                   hint: 'Add action items to the job',
                   icon: Icons.task,
                   compact: true,
+                  onBeforeOpen: _markJobAccessed,
                   value: () async {
                     final open = await DaoToDo().getOpenByJob(job.id);
                     return DashletValue<int>(open.length);
@@ -72,14 +74,15 @@ class MiniJobDashboard extends StatelessWidget {
               size: dashletSize,
             ),
             _dashlet(
-              child: DashletCard<int>.builder(
+              child: DashletCard<String>.builder(
                 label: 'Tasks',
                 hint: 'Task to be completed for this Job',
                 icon: Icons.task,
                 compact: true,
+                onBeforeOpen: _markJobAccessed,
                 value: () async {
                   final all = await DaoTask().getTasksByJob(job.id);
-                  return DashletValue<int>(all.length);
+                  return taskDashletValue(all);
                 },
                 builder: (_, _) => HMBFullPageChildScreen(
                   title: 'Tasks',
@@ -94,6 +97,7 @@ class MiniJobDashboard extends StatelessWidget {
                 hint: 'Track and View time recorded against Job Tasks',
                 icon: Icons.access_time,
                 compact: true,
+                onBeforeOpen: _markJobAccessed,
                 value: () async {
                   final list = await DaoTimeEntry().getByJob(job.id);
                   return DashletValue<int>(list.length);
@@ -111,25 +115,30 @@ class MiniJobDashboard extends StatelessWidget {
                 hint: "Build an Estimate of a Job's cost",
                 icon: Icons.calculate,
                 compact: true,
+                onBeforeOpen: _markJobAccessed,
                 value: () async => const DashletValue(''),
                 onTap: _openEstimateBuilder,
               ),
               size: dashletSize,
             ),
             _dashlet(
-              child: DashletCard<int>.builder(
-                label: 'Quotes',
-                hint: 'Quote a job based on an Estimate',
-                icon: Icons.format_quote,
-                compact: true,
-                value: () async {
-                  final all = await DaoQuote().getByFilter(null);
-                  final list = all.where((q) => q.jobId == job.id).toList();
-                  return DashletValue<int>(list.length);
-                },
-                builder: (_, _) => HMBFullPageChildScreen(
-                  title: 'Quotes',
-                  child: QuoteListScreen(job: job),
+              child: DaoJuneBuilder.builder(
+                DaoQuote(),
+                builder: (context) => DashletCard<int>.builder(
+                  label: 'Quotes',
+                  hint: 'Quote a job based on an Estimate',
+                  icon: Icons.format_quote,
+                  compact: true,
+                  onBeforeOpen: _markJobAccessed,
+                  value: () async {
+                    final all = await DaoQuote().getByFilter(null);
+                    final list = all.where((q) => q.jobId == job.id).toList();
+                    return DashletValue<int>(list.length);
+                  },
+                  builder: (_, _) => HMBFullPageChildScreen(
+                    title: 'Quotes',
+                    child: QuoteListScreen(job: job),
+                  ),
                 ),
               ),
               size: dashletSize,
@@ -140,6 +149,7 @@ class MiniJobDashboard extends StatelessWidget {
                 hint: 'Send tasks to the customer for approval',
                 icon: Icons.approval,
                 compact: true,
+                onBeforeOpen: _markJobAccessed,
                 value: () async {
                   final all = await DaoTaskApproval().getByJob(job.id);
                   return DashletValue<int>(all.length);
@@ -157,6 +167,7 @@ class MiniJobDashboard extends StatelessWidget {
                 hint: 'Assign tasks to sub-contractors (Suppliers)',
                 icon: Icons.task,
                 compact: true,
+                onBeforeOpen: _markJobAccessed,
                 value: () async {
                   final all = await DaoWorkAssignment().getByJob(job.id);
                   return DashletValue<int>(all.length);
@@ -180,6 +191,7 @@ class MiniJobDashboard extends StatelessWidget {
                     hint: 'Create and manage milestone payments for this Job',
                     icon: Icons.flag,
                     compact: true,
+                    onBeforeOpen: _markJobAccessed,
                     value: _milestoneDashletValue,
                     onTap: _openMilestones,
                   ),
@@ -193,6 +205,7 @@ class MiniJobDashboard extends StatelessWidget {
                 hint: 'Invoice a Job',
                 icon: Icons.attach_money,
                 compact: true,
+                onBeforeOpen: _markJobAccessed,
                 value: () async {
                   final all = await DaoInvoice().getByFilter(null);
                   final list = all.where((i) => i.jobId == job.id).toList();
@@ -214,6 +227,9 @@ class MiniJobDashboard extends StatelessWidget {
   /// Wraps a dashlet in a fixed-size container
   Widget _dashlet({required Widget child, required double size}) =>
       SizedBox(width: size, height: size, child: child);
+
+  Future<void> _markJobAccessed(BuildContext _) =>
+      DaoJob().markLastActive(job.id);
 
   Future<bool> _shouldShowMilestones() async {
     if (job.billingType == BillingType.fixedPrice) {
@@ -340,4 +356,10 @@ class MiniJobDashboard extends StatelessWidget {
       ),
     );
   }
+}
+
+DashletValue<String> taskDashletValue(List<Task> tasks) {
+  final open = tasks.where((task) => !task.status.isInActive()).length;
+  final completed = tasks.where((task) => task.status.isComplete()).length;
+  return DashletValue<String>('$open/$completed');
 }

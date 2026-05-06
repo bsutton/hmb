@@ -9,6 +9,7 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/plaster_geometry.dart';
+import 'plaster_attribute_fields.dart';
 
 class PlasterMaterialSizeEditScreen extends StatefulWidget {
   final PlasterProject project;
@@ -30,9 +31,11 @@ class _PlasterMaterialSizeEditScreenState
   final _nameController = TextEditingController();
   final _widthController = TextEditingController();
   final _heightController = TextEditingController();
+  final _thicknessController = TextEditingController();
 
   late PreferredUnitSystem _unitSystem;
   var _excludedFromLayout = false;
+  var _attributeMask = 0;
   int? _supplierId;
   String? _error;
 
@@ -45,6 +48,7 @@ class _PlasterMaterialSizeEditScreenState
       _supplierId = material.supplierId;
       _unitSystem = material.unitSystem;
       _excludedFromLayout = material.excludedFromLayout;
+      _attributeMask = material.attributeMask;
       _nameController.text = material.name;
       _widthController.text = PlasterGeometry.formatDisplayLength(
         material.width,
@@ -54,11 +58,27 @@ class _PlasterMaterialSizeEditScreenState
         material.height,
         material.unitSystem,
       ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
+      _thicknessController.text = PlasterGeometry.formatDisplayLength(
+        material.thickness,
+        material.unitSystem,
+      ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
       return;
     }
 
     _supplierId = widget.project.supplierId;
-    _unitSystem = (await DaoSystem().get()).preferredUnitSystem;
+    _unitSystem = await _projectUnitSystem();
+    _thicknessController.text = PlasterGeometry.formatDisplayLength(
+      PlasterGeometry.defaultBoardThickness(_unitSystem),
+      _unitSystem,
+    ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
+  }
+
+  Future<PreferredUnitSystem> _projectUnitSystem() async {
+    final rooms = await DaoPlasterRoom().getByProject(widget.project.id);
+    if (rooms.isNotEmpty) {
+      return rooms.first.unitSystem;
+    }
+    return (await DaoSystem().get()).preferredUnitSystem;
   }
 
   @override
@@ -66,6 +86,7 @@ class _PlasterMaterialSizeEditScreenState
     _nameController.dispose();
     _widthController.dispose();
     _heightController.dispose();
+    _thicknessController.dispose();
     super.dispose();
   }
 
@@ -85,7 +106,16 @@ class _PlasterMaterialSizeEditScreenState
       _heightController.text,
       _unitSystem,
     );
-    if (width == null || height == null || width <= 0 || height <= 0) {
+    final thickness = PlasterGeometry.parseDisplayLength(
+      _thicknessController.text,
+      _unitSystem,
+    );
+    if (width == null ||
+        height == null ||
+        thickness == null ||
+        width <= 0 ||
+        height <= 0 ||
+        thickness <= 0) {
       setState(() => _error = 'Enter valid material dimensions.');
       return;
     }
@@ -102,7 +132,9 @@ class _PlasterMaterialSizeEditScreenState
             unitSystem: _unitSystem,
             width: width,
             height: height,
+            thickness: thickness,
             excludedFromLayout: _excludedFromLayout,
+            attributeMask: _attributeMask,
           )
         : widget.material!.copyWith(
             supplierId: supplierId,
@@ -110,7 +142,9 @@ class _PlasterMaterialSizeEditScreenState
             unitSystem: _unitSystem,
             width: width,
             height: height,
+            thickness: thickness,
             excludedFromLayout: _excludedFromLayout,
+            attributeMask: _attributeMask,
           );
 
     if (_isNew) {
@@ -148,27 +182,6 @@ class _PlasterMaterialSizeEditScreenState
             decoration: const InputDecoration(labelText: 'Material Name'),
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<PreferredUnitSystem>(
-            initialValue: _unitSystem,
-            decoration: const InputDecoration(labelText: 'Units'),
-            items: const [
-              DropdownMenuItem(
-                value: PreferredUnitSystem.metric,
-                child: Text('Metric'),
-              ),
-              DropdownMenuItem(
-                value: PreferredUnitSystem.imperial,
-                child: Text('Imperial'),
-              ),
-            ],
-            onChanged: (value) {
-              if (value == null) {
-                return;
-              }
-              setState(() => _unitSystem = value);
-            },
-          ),
-          const SizedBox(height: 12),
           TextField(
             controller: _widthController,
             decoration: InputDecoration(
@@ -183,6 +196,20 @@ class _PlasterMaterialSizeEditScreenState
               labelText: 'Length (${PlasterGeometry.unitLabel(_unitSystem)})',
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _thicknessController,
+            decoration: InputDecoration(
+              labelText:
+                  'Thickness (${PlasterGeometry.unitLabel(_unitSystem)})',
+            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+          const SizedBox(height: 12),
+          PlasterAttributeFields(
+            value: _attributeMask,
+            onChanged: (value) => setState(() => _attributeMask = value),
           ),
           const SizedBox(height: 12),
           SwitchListTile(

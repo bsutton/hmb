@@ -1376,15 +1376,21 @@ This room is rigid. Remove one or more constraints to modify the room.'''
         type: RoomEditorConstraintType.lineLength,
       ),
     );
-    final length = await showRoomEditorLengthDialog(
+    final draft = await showRoomEditorLengthConstraintDialog(
       context: context,
       unitSystem: _bundle.unitSystem,
       initialValue: existing?.targetValue ?? line.length,
+      initialMode: RoomEditorLengthConstraintMode.driving,
     );
-    if (length == null || !mounted) {
+    if (draft == null || !mounted) {
       return;
     }
-    await _setLocalLineLengthConstraint(lineIndex, length);
+    switch (draft.mode) {
+      case RoomEditorLengthConstraintMode.driven:
+        await _removeLocalLineLengthConstraint(lineIndex);
+      case RoomEditorLengthConstraintMode.driving:
+        await _setLocalLineLengthConstraint(lineIndex, draft.length);
+    }
   }
 
   Future<void> _setLocalLineLengthConstraint(int lineIndex, int length) async {
@@ -1407,6 +1413,30 @@ This room is rigid. Remove one or more constraints to modify the room.'''
     );
     if (solved && mounted) {
       _selectConstraint(key);
+    }
+  }
+
+  Future<void> _removeLocalLineLengthConstraint(int lineIndex) async {
+    final line = _bundle.lines[lineIndex];
+    final key = RoomEditorConstraintKey(
+      lineId: line.id,
+      type: RoomEditorConstraintType.lineLength,
+    );
+    final existing = _constraintForKey(key);
+    if (existing == null) {
+      _setSelection(RoomEditorSelection(selectedLineIndex: lineIndex));
+      return;
+    }
+    final constraints = _constraintsWithoutLineType(
+      _document.constraints,
+      line.id,
+      RoomEditorConstraintType.lineLength,
+    );
+    final solved = await _trySolveAndCommit(
+      _document.copyWith(constraints: constraints),
+    );
+    if (solved && mounted) {
+      _setSelection(RoomEditorSelection(selectedLineIndex: lineIndex));
     }
   }
 
