@@ -39,17 +39,22 @@ Future<InvoiceOptions?> selectTaskToQuote({
             BillingType.fixedPrice,
       )
       .toList();
+  final canQuoteBookingFee =
+      job.bookingFee != null &&
+      !job.bookingFee!.isZero &&
+      !job.bookingFeeInvoiced;
 
-  if (quoteEligible.isEmpty) {
+  if (quoteEligible.isEmpty && !canQuoteBookingFee) {
     if (tasks.isEmpty) {
       HMBToast.error(
-        'This job has no tasks. Add at least one task before creating a quote.',
+        'This job has no tasks or booking fee. Add at least one task before '
+        'creating a quote.',
         acknowledgmentRequired: true,
       );
     } else {
       HMBToast.error(
         'No tasks are eligible for a quote. Tasks must be Fixed Price, active, '
-        'and have a non-zero estimate.',
+        'and have a non-zero estimate, or the job must have a booking fee.',
         acknowledgmentRequired: true,
       );
     }
