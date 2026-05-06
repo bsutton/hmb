@@ -111,6 +111,53 @@ void main() {
     },
   );
 
+  test('create uses the supplied quote name', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.fixedPrice,
+      hourlyRate: Money.fromInt(8000, isoCode: 'AUD'),
+    );
+    final task = Task.forInsert(
+      jobId: job.id,
+      name: 'Named quote task',
+      description: '',
+      status: TaskStatus.awaitingApproval,
+    );
+    await DaoTask().insert(task);
+    await DaoTaskItem().insert(
+      TaskItem.forInsert(
+        taskId: task.id,
+        description: 'Labour item',
+        purpose: '',
+        itemType: TaskItemType.labour,
+        estimatedLabourHours: Fixed.one,
+        estimatedLabourCost: Money.fromInt(8000, isoCode: 'AUD'),
+        chargeMode: ChargeMode.calculated,
+        margin: Percentage.zero,
+        measurementType: MeasurementType.length,
+        dimension1: Fixed.zero,
+        dimension2: Fixed.zero,
+        dimension3: Fixed.zero,
+        units: Units.m,
+        url: '',
+        labourEntryMode: LabourEntryMode.hours,
+      ),
+    );
+
+    final contact = (await DaoContact().getById(job.contactId))!;
+    final quote = await DaoQuote().create(
+      job,
+      InvoiceOptions(
+        selectedTaskIds: [task.id],
+        billBookingFee: false,
+        groupByTask: true,
+        contact: contact,
+        quoteName: 'Bathroom extras',
+      ),
+    );
+
+    expect(quote.summary, 'Bathroom extras');
+  });
+
   test('folds task and whole-quote margins into visible quote lines', () async {
     final job = await createJobWithCustomer(
       billingType: BillingType.fixedPrice,

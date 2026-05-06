@@ -124,9 +124,10 @@ class DaoQuote extends Dao<Quote> {
     final insertedLines = <QuoteLine>[];
 
     // Insert the Quote
+    final quoteName = invoiceOptions.quoteName?.trim();
     final quote = Quote.forInsert(
       jobId: job.id,
-      summary: job.summary,
+      summary: quoteName?.isNotEmpty ?? false ? quoteName! : job.summary,
       description: job.description,
       totalAmount: totalAmount,
       assumption: job.assumption,
@@ -260,6 +261,20 @@ class DaoQuote extends Dao<Quote> {
     final updated = quote.copyWith(totalAmount: totalAmount);
     await update(updated);
     return updated;
+  }
+
+  Future<Quote> amendQuote(
+    Quote original,
+    InvoiceOptions invoiceOptions,
+  ) async {
+    final job = await DaoJob().getById(original.jobId);
+    if (job == null) {
+      throw InvoiceException('Job ${original.jobId} not found.');
+    }
+
+    final amended = await create(job, invoiceOptions);
+    await rejectQuote(original.id);
+    return amended;
   }
 
   Future<List<String>> getEmailsByQuote(Quote quote) =>
