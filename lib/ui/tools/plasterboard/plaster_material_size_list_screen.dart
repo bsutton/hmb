@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
+import '../../../util/dart/plaster_board_attribute.dart';
 import '../../../util/dart/plaster_geometry.dart';
 import '../../crud/base_nested/list_nested_screen.dart';
 import 'plaster_material_size_edit_screen.dart';
@@ -52,8 +53,16 @@ class PlasterMaterialSizeListScreen extends StatelessWidget {
             material.height,
             material.unitSystem,
           );
+          final thicknessLabel = PlasterGeometry.formatDisplayLength(
+            material.thickness,
+            material.unitSystem,
+          );
           final widthText = Text('Width: $widthLabel');
           final lengthText = Text('Length: $lengthLabel');
+          final thicknessText = Text('Thickness: $thicknessLabel');
+          final attributesText = Text(
+            formatPlasterBoardAttributes(material.attributeMask),
+          );
           final statusText = Text(
             material.excludedFromLayout
                 ? 'Excluded from layout'
@@ -74,6 +83,10 @@ class PlasterMaterialSizeListScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 lengthText,
                 const SizedBox(height: 4),
+                thicknessText,
+                const SizedBox(height: 4),
+                attributesText,
+                const SizedBox(height: 4),
                 statusText,
               ],
             );
@@ -84,6 +97,11 @@ class PlasterMaterialSizeListScreen extends StatelessWidget {
               Expanded(child: widthText),
               const SizedBox(width: 12),
               Expanded(child: lengthText),
+              const SizedBox(width: 12),
+              Expanded(child: thicknessText),
+              Expanded(child: thicknessText),
+              const SizedBox(width: 12),
+              Expanded(child: attributesText),
               const SizedBox(width: 12),
               Expanded(child: statusText),
             ],
