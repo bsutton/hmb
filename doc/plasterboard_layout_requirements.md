@@ -219,6 +219,17 @@ This means:
 - the tool must not model ordinary trimming as an internal cut-out or
   detached island
 
+### 10. Wall sheets need installation clearances
+
+Wall sheet layouts must leave:
+
+- `10 mm` clearance at the bottom of the wall
+- `3-5 mm` clearance below the ceiling sheet
+
+The current solver models the top clearance as `5 mm`. Wall layout diagrams
+should still show the full wall height, but sheet placements and wall board
+area calculations should use the reduced board coverage height.
+
 Examples:
 
 - cutting a full sheet in half is valid

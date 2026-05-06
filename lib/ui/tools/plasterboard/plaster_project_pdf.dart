@@ -135,7 +135,10 @@ Future<File> generatePlasterProjectPdf({
                 'Outside corners',
                 _pdfLength(takeoff.outsideCornerLength, unitSystem),
               ],
-              ['Tape', _pdfLength(takeoff.tapeLength, unitSystem)],
+              [
+                'Tape',
+                PlasterGeometry.formatJointTapeLength(takeoff.tapeLength),
+              ],
               ['Screws', '${takeoff.screwCount}'],
               ['Stud adhesive', '${takeoff.glueKg.toStringAsFixed(1)} kg'],
               ['Joint compound', '${takeoff.plasterKg.toStringAsFixed(1)} kg'],

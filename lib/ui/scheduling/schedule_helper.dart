@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import '../../dao/dao_job_activity.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
+import '../dialog/send_notice_for_job_dialog.dart';
 import 'job_activity_dialog.dart';
 import 'job_activity_ex.dart';
 
@@ -62,7 +63,51 @@ mixin ScheduleHelper {
           jobActivityAction.jobActivity!.jobActivity,
         );
         jobActivityAction.jobActivity!.jobActivity.id = newId;
+        if (!context.mounted) {
+          return;
+        }
+        await _offerNoticeForNewActivity(
+          context,
+          jobActivityAction.jobActivity!,
+        );
       case AddAction.cancel:
+    }
+  }
+
+  Future<void> _offerNoticeForNewActivity(
+    BuildContext context,
+    JobActivityEx jobActivity,
+  ) async {
+    if (!context.mounted) {
+      return;
+    }
+
+    final sendNotice = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Send Notice?'),
+        content: const Text(
+          'The event has been saved. Send a schedule notice now?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Not Now'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Send Notice'),
+          ),
+        ],
+      ),
+    );
+
+    if ((sendNotice ?? false) && context.mounted) {
+      await SendNoticeForJobDialog.show(
+        context,
+        jobActivity.job,
+        jobActivity.jobActivity,
+      );
     }
   }
 
