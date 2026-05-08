@@ -99,7 +99,11 @@ class _AccountingPeriodSelectorState extends State<AccountingPeriodSelector> {
               ),
               OutlinedButton.icon(
                 icon: const Icon(Icons.event),
-                label: Text(formatDate(_period.endExclusive)),
+                label: Text(
+                  formatDate(
+                    _period.endExclusive.subtract(const Duration(days: 1)),
+                  ),
+                ),
                 onPressed: () => _pickEnd(context),
               ),
             ],

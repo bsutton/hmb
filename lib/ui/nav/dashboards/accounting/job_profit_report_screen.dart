@@ -64,19 +64,34 @@ class _JobProfitReportScreenState extends State<JobProfitReportScreen> {
     child: HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: HMBButton.withIcon(
-            label: 'Export CSV',
-            hint: 'Export job profit as a CSV file',
-            icon: const Icon(Icons.download),
-            onPressed: () async {
-              await exportCsv(
-                fileName: 'job_profit_${report.jobId}.csv',
-                csv: AccountingReportCsvExporter().jobProfit(report),
-              );
-            },
-          ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            HMBButton.withIcon(
+              label: 'Export CSV',
+              hint: 'Export job profit as a CSV file',
+              icon: const Icon(Icons.download),
+              onPressed: () async {
+                await exportCsv(
+                  fileName: 'job_profit_${report.jobId}.csv',
+                  csv: AccountingReportCsvExporter().jobProfit(report),
+                );
+              },
+            ),
+            HMBButton.withIcon(
+              label: 'Export PDF',
+              hint: 'Export job profit as a PDF file',
+              icon: const Icon(Icons.picture_as_pdf),
+              onPressed: () async {
+                await exportReportPdf(
+                  fileName: 'job_profit_${report.jobId}.pdf',
+                  title: 'Job Profit',
+                  rows: _pdfRows(report),
+                );
+              },
+            ),
+          ],
         ),
         const Divider(),
         _row('Invoice income', report.invoiceIncome.toString()),
@@ -108,4 +123,15 @@ class _JobProfitReportScreenState extends State<JobProfitReportScreen> {
       ],
     ),
   );
+
+  List<List<String>> _pdfRows(JobProfitReport report) => [
+    ['Line', 'Amount'],
+    ['Invoice income', report.invoiceIncome.toString()],
+    ['Credits', '-${report.creditNotes}'],
+    ['Adjustments', '-${report.debtorAdjustments}'],
+    ['Net income', report.netIncome.toString()],
+    ['Supplier receipts', '-${report.receiptExpenses}'],
+    ['Unreceipted actual costs', '-${report.unreceiptedActualCosts}'],
+    ['Net profit', report.netProfit.toString()],
+  ];
 }

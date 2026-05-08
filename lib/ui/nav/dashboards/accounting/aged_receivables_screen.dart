@@ -40,21 +40,36 @@ class AgedReceivablesScreen extends StatelessWidget {
             children: [
               _buildSummary(context, report),
               const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: HMBButton.withIcon(
-                  label: 'Export CSV',
-                  hint: 'Export aged receivables as a CSV file',
-                  icon: const Icon(Icons.download),
-                  onPressed: () async {
-                    await exportCsv(
-                      fileName: 'aged_receivables.csv',
-                      csv: AccountingReportCsvExporter().agedReceivables(
-                        report,
-                      ),
-                    );
-                  },
-                ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  HMBButton.withIcon(
+                    label: 'Export CSV',
+                    hint: 'Export aged receivables as a CSV file',
+                    icon: const Icon(Icons.download),
+                    onPressed: () async {
+                      await exportCsv(
+                        fileName: 'aged_receivables.csv',
+                        csv: AccountingReportCsvExporter().agedReceivables(
+                          report,
+                        ),
+                      );
+                    },
+                  ),
+                  HMBButton.withIcon(
+                    label: 'Export PDF',
+                    hint: 'Export aged receivables as a PDF file',
+                    icon: const Icon(Icons.picture_as_pdf),
+                    onPressed: () async {
+                      await exportReportPdf(
+                        fileName: 'aged_receivables.pdf',
+                        title: 'Aged Receivables',
+                        rows: _pdfRows(report),
+                      );
+                    },
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               if (report.rows.isEmpty)
@@ -129,4 +144,16 @@ class AgedReceivablesScreen extends StatelessWidget {
     }
     return '$daysOverdue day${daysOverdue == 1 ? '' : 's'} overdue';
   }
+
+  List<List<String>> _pdfRows(AgedReceivablesReport report) => [
+    ['Invoice', 'Customer', 'Due date', 'Days overdue', 'Balance'],
+    for (final row in report.rows)
+      [
+        row.invoiceId.toString(),
+        row.customerName,
+        formatLocalDate(row.dueDate),
+        row.daysOverdue.toString(),
+        row.balance.toString(),
+      ],
+  ];
 }
