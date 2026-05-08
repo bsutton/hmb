@@ -6,13 +6,13 @@
 //
 // Style prefs observed: <=80 cols, braces on single-line ifs.
 
-import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/helpers/charge_mode.dart';
 import 'package:hmb/entity/helpers/material_calculator.dart';
 import 'package:hmb/entity/job.dart'; // for BillingType
 import 'package:hmb/entity/task_item.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:money2/money2.dart';
+import 'package:test/test.dart';
 
 void main() {
   // Use a known currency to avoid accidental mismatch with MoneyEx.zero.

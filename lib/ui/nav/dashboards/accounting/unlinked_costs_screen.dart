@@ -1,0 +1,123 @@
+/*
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
+   • Permitted for internal use within your own business or organization only.
+   • Any external distribution, resale, or incorporation into products
+      for third parties is strictly prohibited.
+
+ See the full license on GitHub:
+ https://github.com/bsutton/hmb/blob/main/LICENSE
+*/
+
+import 'package:flutter/material.dart';
+import 'package:future_builder_ex/future_builder_ex.dart';
+
+import '../../../../dao/dao.g.dart';
+import '../../../../util/dart/format.dart';
+import '../../../widgets/layout/layout.g.dart';
+import '../../../widgets/widgets.g.dart';
+import 'report_csv_export.dart';
+
+class UnlinkedCostsScreen extends StatelessWidget {
+  const UnlinkedCostsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) => FutureBuilderEx<UnlinkedCostReport>(
+    future: AccountingReportService().unlinkedCosts(),
+    waitingBuilder: (_) => const Center(child: CircularProgressIndicator()),
+    builder: (context, report) {
+      if (report == null) {
+        return const Center(child: Text('No report data.'));
+      }
+      return Scaffold(
+        appBar: AppBar(title: const Text('Unlinked Costs')),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: HMBColumn(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Surface(
+                elevation: SurfaceElevation.e1,
+                child: Text('Total not linked to task items: ${report.total}'),
+              ),
+              const SizedBox(height: 12),
+              _actions(report),
+              const SizedBox(height: 12),
+              if (report.rows.isEmpty)
+                const Surface(child: Text('All receipts are linked.'))
+              else
+                for (final row in report.rows) _row(context, row),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+
+  Widget _actions(UnlinkedCostReport report) => Wrap(
+    spacing: 8,
+    runSpacing: 8,
+    children: [
+      HMBButton.withIcon(
+        label: 'Export CSV',
+        hint: 'Export unlinked costs as a CSV file',
+        icon: const Icon(Icons.download),
+        onPressed: () async {
+          await exportCsv(
+            fileName: 'unlinked_costs.csv',
+            csv: AccountingReportCsvExporter().unlinkedCosts(report),
+          );
+        },
+      ),
+      HMBButton.withIcon(
+        label: 'Export PDF',
+        hint: 'Export unlinked costs as a PDF file',
+        icon: const Icon(Icons.picture_as_pdf),
+        onPressed: () async {
+          await exportReportPdf(
+            fileName: 'unlinked_costs.pdf',
+            title: 'Unlinked Costs',
+            rows: _pdfRows(report),
+          );
+        },
+      ),
+    ],
+  );
+
+  Widget _row(BuildContext context, UnlinkedCostRow row) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Surface(
+      elevation: SurfaceElevation.e1,
+      child: HMBColumn(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(row.supplierName, style: Theme.of(context).textTheme.titleSmall),
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
+            children: [
+              Text('Receipt #${row.receiptId}'),
+              Text(formatDate(row.receiptDate)),
+              Text(row.jobSummary),
+              Text(row.amount.toString()),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+
+  List<List<String>> _pdfRows(UnlinkedCostReport report) => [
+    ['Receipt', 'Date', 'Supplier', 'Job', 'Amount'],
+    for (final row in report.rows)
+      [
+        row.receiptId.toString(),
+        formatDate(row.receiptDate),
+        row.supplierName,
+        row.jobSummary,
+        row.amount.toString(),
+      ],
+  ];
+}

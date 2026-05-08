@@ -1,3 +1,6 @@
+@Tags(['flutter'])
+library;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/util/dart/parse/parse_address.dart';
 

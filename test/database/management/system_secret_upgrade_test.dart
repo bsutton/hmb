@@ -1,3 +1,6 @@
+@Tags(['flutter'])
+library;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/system_secret_backend.dart';
 import 'package:hmb/dao/system_secret_store.dart';

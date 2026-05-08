@@ -18,16 +18,20 @@ class XeroLineItem {
   final Fixed quantity;
   final Money unitAmount;
   final Money lineTotal;
+  final Money taxAmount;
   final String accountCode;
   final String itemCode;
+  final String? taxType;
 
   XeroLineItem({
     required this.description,
     required this.quantity,
     required this.unitAmount,
     required this.lineTotal,
+    required this.taxAmount,
     required this.accountCode,
     required this.itemCode,
+    this.taxType,
   });
 
   Map<String, dynamic> toJson() => {
@@ -35,6 +39,8 @@ class XeroLineItem {
     'Quantity': quantity.toString(),
     'UnitAmount': unitAmount.format('0.##'),
     'LineAmount': lineTotal.format('0.##'),
+    if (taxAmount.isNonZero) 'TaxAmount': taxAmount.format('0.##'),
+    if (taxType != null && taxType!.isNotEmpty) 'TaxType': taxType,
     'AccountCode': accountCode,
     'ItemCode': itemCode,
   };

@@ -53,6 +53,7 @@ class InvoiceCountSummary {
 
 Future<InvoiceCountSummary> loadInvoiceCountSummary() async {
   final invoices = await DaoInvoice().getAll();
+  final ledgerService = DebtorLedgerService();
   var outstanding = 0;
   var paid = 0;
   var overdue = 0;
@@ -63,7 +64,8 @@ Future<InvoiceCountSummary> loadInvoiceCountSummary() async {
     if (invoice.isExternallyDeletedOrVoided) {
       continue;
     }
-    if (invoice.paid) {
+    final ledger = await ledgerService.invoiceSummary(invoice.id);
+    if (!ledger.isOutstanding) {
       paid += 1;
       continue;
     }

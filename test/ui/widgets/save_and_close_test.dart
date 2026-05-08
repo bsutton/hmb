@@ -1,3 +1,6 @@
+@Tags(['flutter'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/ui/widgets/save_and_close.dart';

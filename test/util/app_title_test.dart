@@ -1,6 +1,6 @@
 import 'package:hmb/entity/job.dart';
 import 'package:hmb/entity/job_status.dart';
-import 'package:hmb/util/flutter/app_title.dart';
+import 'package:hmb/util/dart/app_title_formatter.dart';
 import 'package:money2/money2.dart';
 import 'package:test/test.dart';
 

@@ -229,6 +229,57 @@ class XeroApi {
     );
   }
 
+  Future<http.Response> createPayment(Map<String, dynamic> payment) async {
+    await _checkIntegration();
+    final tenantId = await getTenantId();
+    return http.put(
+      Uri.parse('${_baseUrl}Payments'),
+      headers: {
+        'Authorization': 'Bearer ${xeroAuth.accessToken}',
+        'Content-Type': 'application/json',
+        'Xero-tenant-id': tenantId,
+      },
+      body: jsonEncode(payment),
+    );
+  }
+
+  Future<http.Response> createCreditNote(
+    Map<String, dynamic> creditNote,
+  ) async {
+    await _checkIntegration();
+    final tenantId = await getTenantId();
+    return http.put(
+      Uri.parse('${_baseUrl}CreditNotes'),
+      headers: {
+        'Authorization': 'Bearer ${xeroAuth.accessToken}',
+        'Content-Type': 'application/json',
+        'Xero-tenant-id': tenantId,
+      },
+      body: jsonEncode({
+        'CreditNotes': [creditNote],
+      }),
+    );
+  }
+
+  Future<http.Response> allocateCreditNote(
+    String creditNoteId,
+    Map<String, dynamic> allocation,
+  ) async {
+    await _checkIntegration();
+    final tenantId = await getTenantId();
+    return http.put(
+      Uri.parse('${_baseUrl}CreditNotes/$creditNoteId/Allocations'),
+      headers: {
+        'Authorization': 'Bearer ${xeroAuth.accessToken}',
+        'Content-Type': 'application/json',
+        'Xero-tenant-id': tenantId,
+      },
+      body: jsonEncode({
+        'Allocations': [allocation],
+      }),
+    );
+  }
+
   Future<String> getTenantId() async {
     await _checkIntegration();
     if (_tenantId != null) {

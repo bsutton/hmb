@@ -16,7 +16,6 @@ import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/entity.g.dart';
-import '../ui/invoicing/invoice_options.dart';
 import '../util/dart/exceptions.dart';
 import '../util/dart/money_ex.dart';
 import 'dao.g.dart';

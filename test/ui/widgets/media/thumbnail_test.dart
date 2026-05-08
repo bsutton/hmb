@@ -11,8 +11,10 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// ignore_for_file: unused_local_variable
+@Tags(['flutter'])
+library;
 
+// ignore_for_file: unused_local_variable
 import 'package:dcli/dcli.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';

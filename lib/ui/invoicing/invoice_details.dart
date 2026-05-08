@@ -19,12 +19,16 @@ class InvoiceDetails {
   final Invoice invoice;
   final Job job;
   final Customer? customer;
+  final InvoiceLedgerSummary ledger;
+  final List<InvoiceLedgerHistoryEntry> ledgerHistory;
   final List<InvoiceLineGroupDetails> lineGroups;
 
   InvoiceDetails({
     required this.invoice,
     required this.job,
     required this.customer,
+    required this.ledger,
+    required this.ledgerHistory,
     required this.lineGroups,
   });
 
@@ -40,6 +44,9 @@ class InvoiceDetails {
         : null;
 
     final lineGroups = await DaoInvoiceLineGroup().getByInvoiceId(invoice.id);
+    final ledgerService = DebtorLedgerService();
+    final ledger = await ledgerService.invoiceSummary(invoice.id);
+    final ledgerHistory = await ledgerService.invoiceHistory(invoice.id);
     final groupDetails = <InvoiceLineGroupDetails>[];
 
     for (final g in lineGroups) {
@@ -51,6 +58,8 @@ class InvoiceDetails {
       invoice: invoice,
       job: job!,
       customer: customer,
+      ledger: ledger,
+      ledgerHistory: ledgerHistory,
       lineGroups: groupDetails,
     );
   }

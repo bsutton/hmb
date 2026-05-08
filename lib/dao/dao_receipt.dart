@@ -11,14 +11,46 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'package:money2/money2.dart';
+import 'package:sqflite_common/sqlite_api.dart';
+
 import '../entity/photo.dart';
 import '../entity/receipt.dart';
 import '../entity/task_item.dart';
 import '../util/dart/exceptions.dart';
+import '../util/dart/money_ex.dart';
 import 'dao.dart';
 import 'dao_photo.dart';
 import 'dao_task_item.dart';
 import 'dao_tool.dart';
+
+class ReceiptJobAllocation {
+  final int? id;
+  final int receiptId;
+  final int jobId;
+  final Money amount;
+
+  const ReceiptJobAllocation({
+    required this.id,
+    required this.receiptId,
+    required this.jobId,
+    required this.amount,
+  });
+
+  ReceiptJobAllocation.forInsert({
+    required this.receiptId,
+    required this.jobId,
+    required this.amount,
+  }) : id = null;
+
+  factory ReceiptJobAllocation.fromMap(Map<String, Object?> map) =>
+      ReceiptJobAllocation(
+        id: map['id']! as int,
+        receiptId: map['receipt_id']! as int,
+        jobId: map['job_id']! as int,
+        amount: MoneyEx.fromInt(map['amount'] as int?),
+      );
+}
 
 class DaoReceipt extends Dao<Receipt> {
   static const tableName = 'receipt';
@@ -28,7 +60,21 @@ class DaoReceipt extends Dao<Receipt> {
   Receipt fromMap(Map<String, dynamic> map) => Receipt.fromMap(map);
 
   @override
-  Future<int> delete(int id, [transaction]) async {
+  Future<int> insert(Receipt entity, [Transaction? transaction]) async {
+    final id = await super.insert(entity, transaction);
+    await _replaceWithSingleJobAllocation(entity, transaction);
+    return id;
+  }
+
+  @override
+  Future<int> update(Receipt entity, [Transaction? transaction]) async {
+    final id = await super.update(entity, transaction);
+    await _replaceWithSingleJobAllocation(entity, transaction);
+    return id;
+  }
+
+  @override
+  Future<int> delete(int id, [Transaction? transaction]) async {
     final linkedCount = await DaoTool().countByReceiptId(id);
     if (linkedCount > 0) {
       throw HMBException(
@@ -48,7 +94,71 @@ class DaoReceipt extends Dao<Receipt> {
       await DaoPhoto().delete(photo.id, transaction);
     }
 
+    await withinTransaction(transaction).delete(
+      'receipt_job_allocation',
+      where: 'receipt_id = ?',
+      whereArgs: [id],
+    );
+
     return super.delete(id, transaction);
+  }
+
+  Future<void> _replaceWithSingleJobAllocation(
+    Receipt receipt, [
+    Transaction? transaction,
+  ]) async {
+    final executor = withinTransaction(transaction);
+    await executor.delete(
+      'receipt_job_allocation',
+      where: 'receipt_id = ?',
+      whereArgs: [receipt.id],
+    );
+    await executor.insert('receipt_job_allocation', {
+      'receipt_id': receipt.id,
+      'job_id': receipt.jobId,
+      'amount': receipt.totalExcludingTax.minorUnits.toInt(),
+      'created_date': DateTime.now().toIso8601String(),
+      'modified_date': DateTime.now().toIso8601String(),
+    });
+  }
+
+  Future<List<ReceiptJobAllocation>> getJobAllocations(int receiptId) async {
+    final db = withoutTransaction();
+    final rows = await db.query(
+      'receipt_job_allocation',
+      where: 'receipt_id = ?',
+      whereArgs: [receiptId],
+      orderBy: 'id ASC',
+    );
+    return rows.map(ReceiptJobAllocation.fromMap).toList();
+  }
+
+  Future<void> replaceJobAllocations(
+    int receiptId,
+    Iterable<ReceiptJobAllocation> allocations,
+  ) async {
+    final allocationList = allocations.toList();
+    if (allocationList.isEmpty) {
+      throw HMBException('At least one receipt job allocation is required.');
+    }
+
+    await db.transaction((txn) async {
+      await txn.delete(
+        'receipt_job_allocation',
+        where: 'receipt_id = ?',
+        whereArgs: [receiptId],
+      );
+      for (final allocation in allocationList) {
+        final now = DateTime.now().toIso8601String();
+        await txn.insert('receipt_job_allocation', {
+          'receipt_id': receiptId,
+          'job_id': allocation.jobId,
+          'amount': allocation.amount.minorUnits.toInt(),
+          'created_date': now,
+          'modified_date': now,
+        });
+      }
+    });
   }
 
   Future<int> countLinkedTaskItems(int receiptId) async {

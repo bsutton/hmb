@@ -4,6 +4,7 @@
 // barrel_create is sponsored by OnePub the dart private repository
 // https://onepub.dev
 //
+export 'accounting_report_service.dart';
 export 'child_dao.dart';
 export 'dao.dart';
 export 'dao_activity.dart';
@@ -15,7 +16,14 @@ export 'dao_check_list_task.dart';
 export 'dao_contact.dart';
 export 'dao_contact_customer.dart';
 export 'dao_contact_supplier.dart';
+export 'dao_credit_allocation.dart';
+export 'dao_credit_note.dart';
+export 'dao_credit_note_line.dart';
 export 'dao_customer.dart';
+export 'dao_debtor_adjustment.dart';
+export 'dao_debtor_payment.dart';
+export 'dao_debtor_transaction.dart';
+export 'dao_external_accounting_link.dart';
 export 'dao_invoice.dart';
 export 'dao_invoice_create.dart';
 export 'dao_invoice_fixed_price.dart';
@@ -27,6 +35,7 @@ export 'dao_job_attachment.dart';
 export 'dao_manufacturer.dart';
 export 'dao_message_template.dart';
 export 'dao_milestone.dart';
+export 'dao_payment_allocation.dart';
 export 'dao_photo.dart';
 export 'dao_plaster_material_size.dart';
 export 'dao_plaster_project.dart';
@@ -54,3 +63,4 @@ export 'dao_version.dart';
 export 'dao_work_assignment.dart';
 export 'dao_work_assignment_task.dart';
 export 'database_extension.dart';
+export 'debtor_ledger_service.dart';

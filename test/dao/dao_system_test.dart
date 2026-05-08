@@ -1,11 +1,15 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:money2/money2.dart';
+import 'package:test/test.dart';
 
 import '../database/management/db_utility_test_helper.dart';
+import '../util/settings_test_helper.dart';
 
 void main() {
+  setUpAll(prepareSettingsTest);
+
   setUp(() async {
+    await resetSettingsForTest();
     await setupTestDb();
   });
 

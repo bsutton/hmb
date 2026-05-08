@@ -51,6 +51,14 @@ import '../widgets/media/full_screen_photo_view.dart';
 import '../widgets/splash_screen.dart';
 import '../wizard/setup_wizard.dart';
 import 'dashboards/accounting/accounting_dashboard.dart';
+import 'dashboards/accounting/aged_receivables_screen.dart';
+import 'dashboards/accounting/cash_received_screen.dart';
+import 'dashboards/accounting/debtor_statement_screen.dart';
+import 'dashboards/accounting/job_profit_report_screen.dart';
+import 'dashboards/accounting/profit_and_loss_screen.dart';
+import 'dashboards/accounting/supplier_spend_screen.dart';
+import 'dashboards/accounting/tax_summary_screen.dart';
+import 'dashboards/accounting/unlinked_costs_screen.dart';
 import 'dashboards/backup/backup_dashboard.dart';
 import 'dashboards/help/help_dashboard.dart';
 import 'dashboards/integration/integration_dashboard.dart';
@@ -286,6 +294,41 @@ List<GoRoute> accountingRoutes() => [
     path: 'receipts',
     builder: (_, _) => const HomeScaffold(initialScreen: ReceiptListScreen()),
   ),
+  GoRoute(
+    path: 'cash_received',
+    builder: (_, _) => const HomeScaffold(initialScreen: CashReceivedScreen()),
+  ),
+  GoRoute(
+    path: 'tax_summary',
+    builder: (_, _) => const HomeScaffold(initialScreen: TaxSummaryScreen()),
+  ),
+  GoRoute(
+    path: 'supplier_spend',
+    builder: (_, _) => const HomeScaffold(initialScreen: SupplierSpendScreen()),
+  ),
+  GoRoute(
+    path: 'unlinked_costs',
+    builder: (_, _) => const HomeScaffold(initialScreen: UnlinkedCostsScreen()),
+  ),
+  GoRoute(
+    path: 'aged_receivables',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: AgedReceivablesScreen()),
+  ),
+  GoRoute(
+    path: 'statements',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: DebtorStatementScreen()),
+  ),
+  GoRoute(
+    path: 'profit_and_loss',
+    builder: (_, _) => const HomeScaffold(initialScreen: ProfitAndLossScreen()),
+  ),
+  GoRoute(
+    path: 'job_profit',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: JobProfitReportScreen()),
+  ),
 ];
 
 /// Setting Dashboard Route
@@ -337,9 +380,8 @@ List<GoRoute> settingRoutes() => [
   ),
   GoRoute(
     path: 'plasterboard',
-    builder: (_, _) => const HomeScaffold(
-      initialScreen: PlasterboardLayoutSettingsScreen(),
-    ),
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: PlasterboardLayoutSettingsScreen()),
   ),
   GoRoute(
     path: 'wizard',

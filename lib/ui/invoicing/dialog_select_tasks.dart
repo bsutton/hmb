@@ -20,7 +20,6 @@ import '../../entity/entity.g.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_select_contact.dart';
 import '../widgets/widgets.g.dart';
-import 'invoice_options.dart';
 
 enum Showing { showQuote, showInvoice }
 

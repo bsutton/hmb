@@ -33,17 +33,26 @@ Future<void> upgradeDb({
   required bool backup,
   required ScriptSource src,
   required BackupProvider backupProvider,
+  bool verbose = false,
 }) async {
   if (oldVersion == 1) {
-    print('Creating database');
+    if (verbose) {
+      print('Creating database');
+    }
   } else {
     if (backup) {
-      print('Backing up database prior to upgrade');
+      if (verbose) {
+        print('Backing up database prior to upgrade');
+      }
 
       await backupProvider.performBackup(version: oldVersion, src: src);
-      print('Upgrade database from Version $oldVersion');
+      if (verbose) {
+        print('Upgrade database from Version $oldVersion');
+      }
     } else {
-      print('Skipping backup');
+      if (verbose) {
+        print('Skipping backup');
+      }
     }
   }
   final upgradeAssets = await src.upgradeScripts();
@@ -64,11 +73,13 @@ Future<void> upgradeDb({
     final pathToScript = upgradeAssets[index];
     final scriptVersion = extractVerionForSQLUpgradeScript(pathToScript);
     if (scriptVersion >= firstUpgrade) {
-      print('Upgrading to $scriptVersion via $pathToScript');
+      if (verbose) {
+        print('Upgrading to $scriptVersion via $pathToScript');
+      }
       if (preUpgradeActions.containsKey(scriptVersion)) {
         await preUpgradeActions[scriptVersion]!.call(db);
       }
-      await _executeScript(db, src, pathToScript);
+      await _executeScript(db, src, pathToScript, verbose: verbose);
 
       /// As the db singleton hasn't been fully initialised at this point
       /// we need to inject a db for Dao instances to use.
@@ -128,18 +139,23 @@ Future<int> getLatestVersion(ScriptSource src) async {
 Future<void> _executeScript(
   Database db,
   ScriptSource src,
-  String pathToScript,
-) async {
+  String pathToScript, {
+  required bool verbose,
+}) async {
   final sql = await src.loadSQL(pathToScript);
 
-  print('running $src.pathToScript');
+  if (verbose) {
+    print('running $src.pathToScript');
+  }
   final statements = await parseSqlFile(sql);
 
   for (final statement in statements) {
     if (Strings.isEmpty(statement)) {
       continue;
     }
-    print('running: $statement');
+    if (verbose) {
+      print('running: $statement');
+    }
     await db.transaction((txn) => txn.execute(statement));
   }
 }

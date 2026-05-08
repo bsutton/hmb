@@ -14,6 +14,7 @@
 import 'package:flutter/material.dart';
 import 'package:strings/strings.dart';
 
+import '../../dao/debtor_ledger_service.dart';
 import '../../entity/invoice.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
@@ -55,6 +56,7 @@ class ListInvoiceCard extends StatelessWidget {
           navigateTo: () async => FullPageListJobCard(invoiceDetails.job),
         ),
       Text('Total: ${invoiceDetails.invoice.totalAmount}'),
+      if (_showBalance) Text('Balance: ${invoiceDetails.ledger.balance}'),
       if (Strings.isNotBlank(invoiceDetails.invoice.voidDescription))
         Text(
           'Void: ${invoiceDetails.invoice.voidDescription}',
@@ -95,7 +97,8 @@ class ListInvoiceCard extends StatelessWidget {
 
   int? get _overdueDays {
     final invoice = invoiceDetails.invoice;
-    if (invoice.paid || invoice.isExternallyDeletedOrVoided) {
+    if (!invoiceDetails.ledger.isOutstanding ||
+        invoice.isExternallyDeletedOrVoided) {
       return null;
     }
     final today = LocalDate.today();
@@ -114,12 +117,7 @@ class ListInvoiceCard extends StatelessWidget {
         return 'Voided in Xero';
       case InvoiceExternalSyncStatus.none:
       case InvoiceExternalSyncStatus.linked:
-        if (invoice.paid) {
-          return invoice.paidDate == null
-              ? 'Paid'
-              : 'Paid ${formatDate(invoice.paidDate!)}';
-        }
-        return 'Outstanding due ${formatLocalDate(invoice.dueDate)}';
+        return _localStatusLabel;
     }
   }
 
@@ -130,9 +128,7 @@ class ListInvoiceCard extends StatelessWidget {
         return HMBChipTone.danger;
       case InvoiceExternalSyncStatus.none:
       case InvoiceExternalSyncStatus.linked:
-        return invoiceDetails.invoice.paid
-            ? HMBChipTone.accent
-            : _outstandingTone;
+        return _localStatusTone;
     }
   }
 
@@ -152,9 +148,74 @@ class ListInvoiceCard extends StatelessWidget {
         return Icons.cancel;
       case InvoiceExternalSyncStatus.none:
       case InvoiceExternalSyncStatus.linked:
-        return invoiceDetails.invoice.paid
-            ? Icons.check_circle
-            : Icons.pending_actions;
+        return _localStatusIcon;
+    }
+  }
+
+  bool get _showBalance =>
+      invoiceDetails.ledger.paid.isNonZero ||
+      invoiceDetails.ledger.credited.isNonZero ||
+      invoiceDetails.ledger.adjusted.isNonZero ||
+      invoiceDetails.ledger.balance != invoiceDetails.invoice.totalAmount;
+
+  String get _localStatusLabel {
+    final invoice = invoiceDetails.invoice;
+    final ledger = invoiceDetails.ledger;
+    switch (ledger.status) {
+      case DebtorInvoiceStatus.paid:
+        return invoice.paidDate == null
+            ? 'Paid'
+            : 'Paid ${formatDate(invoice.paidDate!)}';
+      case DebtorInvoiceStatus.writtenOff:
+        return 'Written off';
+      case DebtorInvoiceStatus.partPaid:
+        return 'Part paid, balance ${ledger.balance}';
+      case DebtorInvoiceStatus.credited:
+        return 'Credited, balance ${ledger.balance}';
+      case DebtorInvoiceStatus.overpaid:
+        return 'Overpaid';
+      case DebtorInvoiceStatus.voided:
+        return 'Voided';
+      case DebtorInvoiceStatus.draft:
+      case DebtorInvoiceStatus.sent:
+        return 'Outstanding due ${formatLocalDate(invoice.dueDate)}';
+    }
+  }
+
+  HMBChipTone get _localStatusTone {
+    switch (invoiceDetails.ledger.status) {
+      case DebtorInvoiceStatus.paid:
+      case DebtorInvoiceStatus.writtenOff:
+        return HMBChipTone.accent;
+      case DebtorInvoiceStatus.partPaid:
+      case DebtorInvoiceStatus.credited:
+      case DebtorInvoiceStatus.overpaid:
+        return HMBChipTone.warning;
+      case DebtorInvoiceStatus.voided:
+        return HMBChipTone.danger;
+      case DebtorInvoiceStatus.draft:
+      case DebtorInvoiceStatus.sent:
+        return _outstandingTone;
+    }
+  }
+
+  IconData get _localStatusIcon {
+    switch (invoiceDetails.ledger.status) {
+      case DebtorInvoiceStatus.paid:
+        return Icons.check_circle;
+      case DebtorInvoiceStatus.writtenOff:
+        return Icons.rule;
+      case DebtorInvoiceStatus.partPaid:
+        return Icons.payments;
+      case DebtorInvoiceStatus.credited:
+        return Icons.assignment_return;
+      case DebtorInvoiceStatus.overpaid:
+        return Icons.add_card;
+      case DebtorInvoiceStatus.voided:
+        return Icons.cancel;
+      case DebtorInvoiceStatus.draft:
+      case DebtorInvoiceStatus.sent:
+        return Icons.pending_actions;
     }
   }
 

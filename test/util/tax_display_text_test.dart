@@ -5,32 +5,17 @@
  GPL terms per repo license.
 */
 
-import 'dart:io';
-
-import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/util/dart/app_settings.dart';
 import 'package:hmb/util/dart/tax_display_text.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'package:test/test.dart';
+
+import 'settings_test_helper.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-
-  final fakePathProvider = _FakePathProvider();
-  PathProviderPlatform.instance = fakePathProvider;
-
-  final settingsPath = p.join(fakePathProvider.docPath, 'settings');
-
-  Future<void> resetSettings() async {
-    final file = File(settingsPath);
-    if (file.existsSync()) {
-      file.deleteSync();
-    }
-  }
+  setUpAll(prepareSettingsTest);
 
   setUp(() async {
-    await resetSettings();
+    await resetSettingsForTest();
   });
 
   group('AppSettings tax values', () {
@@ -84,21 +69,4 @@ void main() {
       expect(await buildPdfTaxDisplayText(), 'All prices exclude VAT');
     });
   });
-}
-
-class _FakePathProvider extends Fake
-    with MockPlatformInterfaceMixin
-    implements PathProviderPlatform {
-  final String docPath = Directory.systemTemp
-      .createTempSync('hmb_tax_doc_')
-      .path;
-  final String tempPath = Directory.systemTemp
-      .createTempSync('hmb_tax_tmp_')
-      .path;
-
-  @override
-  Future<String?> getApplicationDocumentsPath() async => docPath;
-
-  @override
-  Future<String?> getTemporaryPath() async => tempPath;
 }

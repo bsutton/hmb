@@ -1,3 +1,6 @@
+@Tags(['flutter'])
+library;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/contact.dart';
 import 'package:hmb/ui/dialog/send_notice_for_job_dialog.dart';

@@ -11,6 +11,9 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+@Tags(['flutter'])
+library;
+
 import 'dart:io';
 
 import 'package:dcli/dcli.dart' hide delete;

@@ -35,7 +35,9 @@ class AppSettings {
   static const photoCacheMaxMbDefault = 100;
   static const _photoCacheMaxMbKey = 'photoCacheMaxMb';
   static const defaultProfitMarginTextDefault = '20';
+  static const financialYearStartMonthDefault = 1;
   static const _defaultProfitMarginTextKey = 'defaultProfitMarginText';
+  static const _financialYearStartMonthKey = 'financialYearStartMonth';
   static const _taxDisplayModeKey = 'taxDisplayMode';
   static const _taxLabelKey = 'taxLabel';
   static const _taxRateKey = 'taxRatePercent';
@@ -94,6 +96,30 @@ class AppSettings {
         : value.trim();
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
     settings[_defaultProfitMarginTextKey] = sanitized;
+    await settings.save();
+  }
+
+  static Future<int> getFinancialYearStartMonth() async {
+    final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
+    final value = settings[_financialYearStartMonthKey];
+    if (value is int && value >= 1 && value <= 12) {
+      return value;
+    }
+    if (value is String) {
+      final parsed = int.tryParse(value.trim());
+      if (parsed != null && parsed >= 1 && parsed <= 12) {
+        return parsed;
+      }
+    }
+    return financialYearStartMonthDefault;
+  }
+
+  static Future<void> setFinancialYearStartMonth(int month) async {
+    final safeMonth = month < 1 || month > 12
+        ? financialYearStartMonthDefault
+        : month;
+    final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
+    settings[_financialYearStartMonthKey] = safeMonth;
     await settings.save();
   }
 

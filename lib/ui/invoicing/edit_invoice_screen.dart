@@ -27,6 +27,7 @@ import '../../dao/dao_invoice_line.dart';
 import '../../dao/dao_invoice_line_group.dart';
 import '../../dao/dao_task_item.dart';
 import '../../dao/dao_time_entry.dart';
+import '../../dao/debtor_ledger_service.dart';
 import '../../entity/invoice.dart';
 import '../../entity/invoice_line.dart';
 import '../../util/dart/format.dart';
@@ -42,7 +43,9 @@ import '../widgets/layout/surface.dart';
 import 'edit_invoice_line_dialog.dart';
 import 'invoice_details.dart';
 import 'invoice_send_button.dart';
+import 'record_invoice_payment_dialog.dart';
 import 'void_invoice_dialog.dart';
+import 'write_off_invoice_balance_dialog.dart';
 
 class InvoiceEditScreen extends StatefulWidget {
   final InvoiceDetails invoiceDetails;
@@ -111,6 +114,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                   'Management: '
                   '${_paymentManagementLabel(invoice)}',
                 ),
+                _buildLedgerSummary(details),
                 if (invoice.paymentSource == InvoicePaymentSource.unknown)
                   const Text(
                     'This is a legacy invoice. Convert it to manual '
@@ -142,15 +146,35 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                               await _convertToManualTracking();
                             },
                           ),
-                        if (invoice.canMarkPaidManually)
+                        if (_canRecordPayment(details))
                           HMBButton(
-                            label: 'Mark as Paid',
-                            hint: 'Mark this invoice as paid',
+                            label: 'Record Payment',
+                            hint: 'Record a payment against this invoice',
                             onPressed: () async {
-                              await _markInvoicePaid();
+                              await _recordPayment(details);
                             },
                           ),
-                        if (invoice.canVoid)
+                        if (_canWriteOffSmallBalance(details))
+                          HMBButton(
+                            label: 'Write Off Small Balance',
+                            hint: 'Write off a small unpaid invoice balance',
+                            onPressed: () async {
+                              await _writeOffBalance(
+                                details,
+                                smallBalance: true,
+                              );
+                            },
+                          ),
+                        if (_canWriteOffBalance(details) &&
+                            !_canWriteOffSmallBalance(details))
+                          HMBButton(
+                            label: 'Write Off',
+                            hint: 'Write off this unpaid invoice balance',
+                            onPressed: () async {
+                              await _writeOffBalance(details);
+                            },
+                          ),
+                        if (invoice.canVoid && details.ledger.isOutstanding)
                           HMBButton(
                             label: 'Void Invoice',
                             hint: 'Void this sent invoice',
@@ -240,6 +264,99 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
     };
   }
 
+  Widget _buildLedgerSummary(InvoiceDetails details) {
+    final ledger = details.ledger;
+    return Padding(
+      padding: const EdgeInsets.only(top: 12, bottom: 12),
+      child: Surface(
+        elevation: SurfaceElevation.e1,
+        child: HMBColumn(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Money owed',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
+              children: [
+                Text('Total: ${ledger.total}'),
+                Text('Paid: ${ledger.paid}'),
+                Text('Credited: ${ledger.credited}'),
+                Text('Adjusted: ${ledger.adjusted}'),
+                Text('Balance: ${ledger.balance}'),
+                Text('Status: ${_ledgerStatusLabel(ledger.status)}'),
+              ],
+            ),
+            if (details.ledgerHistory.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'History',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              for (final entry in details.ledgerHistory)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(_ledgerHistoryIcon(entry.type), size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _ledgerHistoryLabel(entry),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _ledgerStatusLabel(DebtorInvoiceStatus status) => switch (status) {
+    DebtorInvoiceStatus.draft => 'Draft',
+    DebtorInvoiceStatus.sent => 'Outstanding',
+    DebtorInvoiceStatus.partPaid => 'Part paid',
+    DebtorInvoiceStatus.paid => 'Paid',
+    DebtorInvoiceStatus.credited => 'Credited',
+    DebtorInvoiceStatus.overpaid => 'Overpaid',
+    DebtorInvoiceStatus.voided => 'Voided',
+    DebtorInvoiceStatus.writtenOff => 'Written off',
+  };
+
+  IconData _ledgerHistoryIcon(InvoiceLedgerHistoryEntryType type) =>
+      switch (type) {
+        InvoiceLedgerHistoryEntryType.payment => Icons.payments,
+        InvoiceLedgerHistoryEntryType.credit => Icons.assignment_return,
+        InvoiceLedgerHistoryEntryType.adjustment => Icons.rule,
+      };
+
+  String _ledgerHistoryLabel(InvoiceLedgerHistoryEntry entry) {
+    final detail = Strings.isBlank(entry.detail) ? '' : ' - ${entry.detail}';
+    return '${formatDate(entry.date)} ${entry.title}: ${entry.amount}$detail';
+  }
+
+  bool _canRecordPayment(InvoiceDetails details) =>
+      details.invoice.isManagedLocally &&
+      !details.invoice.isExternallyDeletedOrVoided &&
+      details.ledger.balance.isPositive;
+
+  bool _canWriteOffSmallBalance(InvoiceDetails details) =>
+      _canWriteOffBalance(details) &&
+      details.ledger.balance <= MoneyEx.fromInt(100);
+
+  bool _canWriteOffBalance(InvoiceDetails details) =>
+      details.invoice.isManagedLocally &&
+      !details.invoice.isExternallyDeletedOrVoided &&
+      details.ledger.balance.isPositive;
+
   Future<void> _convertToManualTracking() async {
     await DaoInvoice().convertToManualTracking(invoiceId);
     await _reloadInvoice();
@@ -250,14 +367,72 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
     setState(() {});
   }
 
-  Future<void> _markInvoicePaid() async {
-    await DaoInvoice().markPaidManually(invoiceId);
-    await _reloadInvoice();
-    if (!mounted) {
+  Future<void> _recordPayment(InvoiceDetails details) async {
+    final request = await showRecordInvoicePaymentDialog(
+      context: context,
+      balance: details.ledger.balance,
+    );
+    if (request == null) {
       return;
     }
-    HMBToast.info('Invoice marked as paid');
-    setState(() {});
+    try {
+      await DebtorLedgerService().recordPayment(
+        invoiceId: details.invoice.id,
+        amount: request.amount,
+        paymentMethod: request.paymentMethod,
+        reference: request.reference,
+        notes: request.notes,
+      );
+      await _reloadInvoice();
+      if (!mounted) {
+        return;
+      }
+      HMBToast.info('Payment recorded');
+      setState(() {});
+    } catch (e) {
+      HMBToast.error(
+        'Failed to record payment: $e',
+        acknowledgmentRequired: true,
+      );
+    }
+  }
+
+  Future<void> _writeOffBalance(
+    InvoiceDetails details, {
+    bool smallBalance = false,
+  }) async {
+    final request = await showWriteOffInvoiceBalanceDialog(
+      context: context,
+      balance: details.ledger.balance,
+      smallBalance: smallBalance,
+    );
+    if (request == null) {
+      return;
+    }
+    try {
+      if (request.smallBalanceOnly) {
+        await DebtorLedgerService().writeOffSmallBalance(
+          invoiceId: details.invoice.id,
+          reason: request.reason,
+        );
+      } else {
+        await DebtorLedgerService().writeOffInvoiceBalance(
+          invoiceId: details.invoice.id,
+          reason: request.reason,
+        );
+      }
+      await _reloadInvoice();
+      if (!mounted) {
+        return;
+      }
+      HMBToast.info('Invoice balance written off');
+      setState(() {});
+    } catch (e) {
+      HMBToast.error(
+        'Failed to write off invoice balance: $e',
+        acknowledgmentRequired: true,
+      );
+    }
   }
 
   Future<void> _uploadInvoiceToXero() async {

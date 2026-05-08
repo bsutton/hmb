@@ -48,12 +48,14 @@ The database isn't open, if this code is running in an isolate $isolate you will
     required BackupProvider backupProvider,
     required bool backup,
     required HMBDatabaseFactory databaseFactory,
+    bool verbose = false,
   }) async {
     await openDb(
       src: src,
       backupProvider: backupProvider,
       databaseFactory: databaseFactory,
       backup: backup,
+      verbose: verbose,
     );
   }
 
@@ -62,10 +64,13 @@ The database isn't open, if this code is running in an isolate $isolate you will
     required BackupProvider backupProvider,
     required HMBDatabaseFactory databaseFactory,
     required bool backup,
+    bool verbose = false,
   }) async {
     final path = await backupProvider.databasePath;
     final targetVersion = await getLatestVersion(src);
-    print('target db version: $targetVersion');
+    if (verbose) {
+      print('target db version: $targetVersion');
+    }
     _database = await databaseFactory.openDatabase(
       path,
       options: OpenDatabaseOptions(
@@ -77,6 +82,7 @@ The database isn't open, if this code is running in an isolate $isolate you will
           newVersion: newVersion,
           src: src,
           backupProvider: backupProvider,
+          verbose: verbose,
         ),
       ),
     );

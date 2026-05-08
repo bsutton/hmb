@@ -279,6 +279,8 @@ You must set the Account Code and Item Code in System | Integration before you c
       quantity: quantity,
       unitAmount: unitAmount,
       lineTotal: line.lineTotal,
+      taxAmount: line.taxAmount,
+      taxType: line.taxType,
       accountCode: accountCode,
       itemCode: itemCode,
     );

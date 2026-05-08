@@ -1,3 +1,6 @@
+@Tags(['flutter'])
+library;
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/ui/widgets/fields/hmb_email_field.dart';

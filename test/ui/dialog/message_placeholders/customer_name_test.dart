@@ -1,3 +1,6 @@
+@Tags(['flutter'])
+library;
+
 import 'package:hmb/entity/contact.dart';
 import 'package:hmb/entity/customer.dart';
 import 'package:hmb/ui/dialog/message_placeholders/contact_source.dart';
@@ -38,14 +41,14 @@ void main() {
 
     test('falls back to customer name when contact is missing', () async {
       final customerSource = CustomerSource()
-      ..customer = Customer.forInsert(
-        name: 'Acme Pty Ltd',
-        description: '',
-        disbarred: false,
-        customerType: CustomerType.residential,
-        hourlyRate: Money.fromInt(10000, isoCode: 'AUD'),
-        billingContactId: null,
-      );
+        ..customer = Customer.forInsert(
+          name: 'Acme Pty Ltd',
+          description: '',
+          disbarred: false,
+          customerType: CustomerType.residential,
+          hourlyRate: Money.fromInt(10000, isoCode: 'AUD'),
+          billingContactId: null,
+        );
 
       final placeholder = CustomerName(customerSource: customerSource);
 

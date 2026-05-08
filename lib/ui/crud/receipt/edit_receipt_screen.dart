@@ -16,6 +16,7 @@ import 'dart:async';
 
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
+import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
 import '../../../dao/dao.g.dart';
@@ -57,6 +58,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   late PhotoController<Receipt> _photoCtrl;
   final _linkedTaskItemIds = <int>{};
   var _linkableTaskItems = <TaskItem>[];
+  final _jobAllocations = <_ReceiptJobAllocationEditor>[];
 
   var _isCalculating = false;
 
@@ -84,6 +86,11 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     _totalExclCtrl.addListener(() {
       if (!_isCalculating) {
         _taxExHasUserValue = !_totalExclCtrl.text.isBlank();
+        if (_jobAllocations.length == 1 && _selectedJob.jobId != null) {
+          _jobAllocations.single
+            ..jobId = _selectedJob.jobId
+            ..amount = _totalExclCtrl.money ?? MoneyEx.zero;
+        }
         _recalculate();
       }
     });
@@ -117,6 +124,25 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     if (currentEntity != null) {
       _linkedTaskItemIds.addAll(
         await DaoReceipt().getLinkedTaskItemIds(currentEntity!.id),
+      );
+      final allocations = await DaoReceipt().getJobAllocations(
+        currentEntity!.id,
+      );
+      _jobAllocations.addAll(
+        allocations.map(
+          (allocation) => _ReceiptJobAllocationEditor(
+            jobId: allocation.jobId,
+            amount: allocation.amount,
+          ),
+        ),
+      );
+    }
+    if (_jobAllocations.isEmpty && currentEntity != null) {
+      _jobAllocations.add(
+        _ReceiptJobAllocationEditor(
+          jobId: currentEntity!.jobId,
+          amount: currentEntity!.totalExcludingTax,
+        ),
       );
     }
     await _reloadLinkableTaskItems();
@@ -152,6 +178,16 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         onSelected: (job) {
           setState(() {
             _selectedJob.jobId = job?.id;
+            if (_jobAllocations.length <= 1) {
+              _jobAllocations
+                ..clear()
+                ..add(
+                  _ReceiptJobAllocationEditor(
+                    jobId: job?.id,
+                    amount: _totalExclCtrl.money ?? MoneyEx.zero,
+                  ),
+                );
+            }
           });
           unawaited(_reloadLinkableTaskItems());
         },
@@ -189,6 +225,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         fieldName: 'Total Excluding Tax',
         focusNode: _taxExFocus,
       ),
+      _buildJobAllocations(),
       _buildTaskItemLinks(),
 
       // Photos
@@ -231,6 +268,16 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       await DaoReceipt().replaceTaskItemLinks(
         currentEntity!.id,
         _linkedTaskItemIds,
+      );
+      await DaoReceipt().replaceJobAllocations(
+        currentEntity!.id,
+        _jobAllocations.map(
+          (allocation) => ReceiptJobAllocation.forInsert(
+            receiptId: currentEntity!.id,
+            jobId: allocation.jobId!,
+            amount: allocation.amount,
+          ),
+        ),
       );
     }
     await _photoCtrl.load();
@@ -283,6 +330,81 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildJobAllocations() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: 8),
+      Text(
+        'Job cost allocation',
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+      Text(
+        'Split this supplier receipt across jobs when one purchase covers '
+        'more than one job.',
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+      const SizedBox(height: 8),
+      for (var i = 0; i < _jobAllocations.length; i++)
+        _buildJobAllocationRow(i),
+      HMBButton.smallWithIcon(
+        label: 'Add Job',
+        hint: 'Allocate part of this receipt to another job.',
+        icon: const Icon(Icons.add),
+        onPressed: () {
+          setState(() {
+            _jobAllocations.add(
+              _ReceiptJobAllocationEditor(amount: MoneyEx.zero),
+            );
+          });
+        },
+      ),
+    ],
+  );
+
+  Widget _buildJobAllocationRow(int index) {
+    final allocation = _jobAllocations[index];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: HMBSelectJob(
+                  title: 'Allocated Job',
+                  selectedJob: allocation.selectedJob,
+                  required: true,
+                  onSelected: (job) {
+                    setState(() {
+                      allocation.jobId = job?.id;
+                    });
+                  },
+                ),
+              ),
+              if (_jobAllocations.length > 1)
+                IconButton(
+                  tooltip: 'Remove job allocation',
+                  onPressed: () {
+                    setState(() {
+                      _jobAllocations.removeAt(index);
+                    });
+                  },
+                  icon: const Icon(Icons.delete_outline),
+                ),
+            ],
+          ),
+          HMBMoneyField(
+            controller: allocation.amountController,
+            labelText: 'Allocated Amount',
+            fieldName: 'Allocated Amount',
+          ),
+        ],
+      ),
     );
   }
 
@@ -371,6 +493,40 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       );
       return false;
     }
+    final allocationTotal = _jobAllocations.fold(
+      MoneyEx.zero,
+      (total, allocation) => total + allocation.amount,
+    );
+    if (_jobAllocations.any((allocation) => allocation.jobId == null)) {
+      HMBToast.error('Each receipt allocation must have a job.');
+      return false;
+    }
+    if (_jobAllocations.any((allocation) => !allocation.amount.isPositive)) {
+      HMBToast.error('Each receipt allocation must be greater than zero.');
+      return false;
+    }
+    if (allocationTotal != totalExcludingTax) {
+      HMBToast.error('Job allocations should add up to $totalExcludingTax.');
+      return false;
+    }
     return true;
   }
+}
+
+class _ReceiptJobAllocationEditor {
+  final selectedJob = SelectedJob();
+  final HMBMoneyEditingController amountController;
+
+  _ReceiptJobAllocationEditor({int? jobId, Money? amount})
+    : amountController = HMBMoneyEditingController(money: amount) {
+    selectedJob.jobId = jobId;
+  }
+
+  int? get jobId => selectedJob.jobId;
+
+  set jobId(int? value) => selectedJob.jobId = value;
+
+  Money get amount => amountController.money ?? MoneyEx.zero;
+
+  set amount(Money value) => amountController.money = value;
 }

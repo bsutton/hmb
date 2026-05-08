@@ -4,15 +4,15 @@
 //You can copy and paste the details manually.',
 // );
 
-import 'dart:ui';
-
 import 'package:dlibphonenumber/dlibphonenumber.dart';
 import 'package:strings/strings.dart';
 
 import '../../../dao/dao_site.dart';
 import '../../../dao/dao_system.dart';
 import '../../../entity/site.dart';
+import 'device_region.dart';
 import 'parse_address.dart';
+import 'phone_fallback.dart';
 
 /// --------------------------
 /// ParsedCustomer
@@ -127,7 +127,7 @@ class ParsedCustomer {
     }
 
     final util = PhoneNumberUtil.instance;
-    final region = _deviceRegion() ?? 'AU';
+    final region = deviceRegion() ?? 'AU';
 
     for (final len in [
       Leniency.exactGrouping,
@@ -137,14 +137,11 @@ class ParsedCustomer {
     ]) {
       final matches = util.findNumbers(input!, region, len, Int64(20));
       if (matches.isNotEmpty) {
-        return _formatPhone(matches.first.number, region);
+        return _normalizePhone(_formatPhone(matches.first.number, region));
       }
     }
-    return '';
+    return parseAustralianMobileFallback(input ?? '');
   }
-
-  static String? _deviceRegion() =>
-      PlatformDispatcher.instance.locale.countryCode;
 
   static String _formatPhone(PhoneNumber phone, String defaultRegion) {
     final util = PhoneNumberUtil.instance;
@@ -155,6 +152,9 @@ class ParsedCustomer {
         : PhoneNumberFormat.international;
     return util.format(phone, fmt);
   }
+
+  static String _normalizePhone(String phone) =>
+      phone.replaceAll(RegExp(r'\D'), '');
 
   static Future<ParsedAddress> _mergeWithKnownSiteAddress(
     String sourceText,

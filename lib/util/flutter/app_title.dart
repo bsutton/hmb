@@ -13,8 +13,9 @@
 
 import 'package:june/june.dart';
 
-import '../../entity/job.dart';
 import '../../src/appname.dart';
+
+export '../dart/app_title_formatter.dart';
 
 class HMBTitle extends JuneState {
   String _title = appName;
@@ -38,11 +39,4 @@ void setAppTitle(String pageTitle) {
       June.getState(HMBTitle.new).title = pageTitle;
     }
   });
-}
-
-String formatAppTitle(String pageTitle, {Job? activeJob}) {
-  if (activeJob == null) {
-    return pageTitle;
-  }
-  return '$pageTitle [#${activeJob.id}]';
 }

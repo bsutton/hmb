@@ -11,6 +11,9 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+@Tags(['flutter'])
+library;
+
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';

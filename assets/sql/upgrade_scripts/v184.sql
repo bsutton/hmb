@@ -1,0 +1,8 @@
+ALTER TABLE invoice_line
+ADD COLUMN tax_amount INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE invoice_line
+ADD COLUMN tax_type TEXT;
+
+ALTER TABLE credit_note_line
+ADD COLUMN tax_amount INTEGER NOT NULL DEFAULT 0;

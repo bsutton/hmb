@@ -22,10 +22,14 @@ import 'package:path/path.dart' as p;
 
 typedef Path = String;
 
+Path? _tempDirectory;
+Path? _settingsPath;
+
 /// Device specific to where all photos are stored for HMB.
 Future<Path> getPhotosRootPath() async => throw UnimplementedError();
 
-Future<Path> getTemporaryDirectory() async => createTempDir();
+Future<Path> getTemporaryDirectory() async =>
+    _tempDirectory ??= createTempDir();
 
 Future<Path> getSettingsPath() async =>
-    p.join(await getTemporaryDirectory(), 'settings');
+    _settingsPath ??= p.join(await getTemporaryDirectory(), 'settings');

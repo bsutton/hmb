@@ -5,6 +5,9 @@
  GPL terms per repo license.
 */
 
+@Tags(['flutter'])
+library;
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -123,9 +126,7 @@ void main() {
         // Eventually the general.webp should exist (written by _
         //fakeCompressor via compute)
         final ok = await _eventually(
-          () => Future.value(
-            File(cache.pathForVariant(general)).existsSync(),
-          ),
+          () => Future.value(File(cache.pathForVariant(general)).existsSync()),
         );
         expect(ok, isTrue, reason: 'general variant was not produced in time');
       },
@@ -192,16 +193,12 @@ void main() {
 
       await cache.getVariantPath(variant: general, fetch: fakeDownloader);
       await _eventually(
-        () => Future.value(
-          File(cache.pathForVariant(general)).existsSync(),
-        ),
+        () => Future.value(File(cache.pathForVariant(general)).existsSync()),
       );
 
       await cache.getVariantPath(variant: thumb, fetch: fakeDownloader);
       await _eventually(
-        () => Future.value(
-          File(cache.pathForVariant(thumb)).existsSync(),
-        ),
+        () => Future.value(File(cache.pathForVariant(thumb)).existsSync()),
       );
 
       await cache.evictVariant(general);
@@ -259,9 +256,7 @@ void main() {
 
       await cache.getVariantPath(variant: general, fetch: fakeDownloader);
       await _eventually(
-        () => Future.value(
-          File(cache.pathForVariant(general)).existsSync(),
-        ),
+        () => Future.value(File(cache.pathForVariant(general)).existsSync()),
       );
 
       await cache.clear();
@@ -281,20 +276,22 @@ void main() {
 
       await cache.getVariantPath(variant: general, fetch: fakeDownloader);
       await _eventually(
-        () => Future.value(
-          File(cache.pathForVariant(general)).existsSync(),
-        ),
+        () => Future.value(File(cache.pathForVariant(general)).existsSync()),
       );
 
       // Read current timestamp
-      final before =
-          (await _getRow(meta.photo.id, ImageVariantType.general))!.lastAccess;
+      final before = (await _getRow(
+        meta.photo.id,
+        ImageVariantType.general,
+      ))!.lastAccess;
 
       final seed = DateTime(2001, 2, 3, 4, 5, 6);
       await cache.setLastAccess(variant: general, when: seed);
 
-      final after =
-          (await _getRow(meta.photo.id, ImageVariantType.general))!.lastAccess;
+      final after = (await _getRow(
+        meta.photo.id,
+        ImageVariantType.general,
+      ))!.lastAccess;
 
       expect(
         after.isAtSameMomentAs(seed),
@@ -373,10 +370,7 @@ Future<PhotoMeta> _metaFrom({
   return meta;
 }
 
-Future<ImageCacheVariant?> _getRow(
-  int photoId,
-  ImageVariantType variant,
-) =>
+Future<ImageCacheVariant?> _getRow(int photoId, ImageVariantType variant) =>
     DaoImageCacheVariant().getByKey(photoId, variant.name);
 
 Future<List<ImageCacheVariant>> _getRowsForPhoto(int photoId) =>

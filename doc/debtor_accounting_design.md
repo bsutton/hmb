@@ -32,7 +32,7 @@ try to become a full accounting package.
   - debtor/customer statements
   - cash received
   - supplier spend
-  - GST summary
+  - configured tax summary
   - unreceipted and unlinked costs
 
 ## Design Principles
@@ -90,8 +90,8 @@ created, sent, credited, paid, adjusted, or voided.
 
 Receipts are purchase-side evidence and cost inputs. They should not be modelled
 as debtor transactions, because they do not affect what customers owe. They do,
-however, feed P&L, job profit, GST summaries, supplier spend, and unbilled cost
-reports.
+however, feed P&L, job profit, configured tax summaries, supplier spend, and
+unbilled cost reports.
 
 The existing `invoice.paid` and `invoice.paid_date` fields may remain initially
 as compatibility/cache fields, but the target behavior is to derive payment
@@ -142,7 +142,7 @@ of accounting, not the debtor side.
 Current receipt behavior:
 
 - receipt date
-- job link
+- single job link
 - supplier link
 - total excluding tax
 - tax
@@ -153,6 +153,12 @@ Current receipt behavior:
 
 Receipts should become the primary source for actual out-of-pocket costs where
 they exist.
+
+The current single-job receipt link is not enough for reporting because one
+supplier purchase can cover multiple jobs, stock, tools, or mixed materials.
+Treat `receipt.job_id` as a legacy/default allocation only. Reporting should use
+receipt allocations where available, seeded from the current job link for
+existing receipts.
 
 ### Allocation
 
@@ -384,9 +390,11 @@ Fields:
 This allows a single supplier receipt to cover multiple jobs, tasks, task items,
 or tools.
 
-If receipt lines are deferred, add a `receipt_allocation` table so a receipt
-header can be split across cost targets. This avoids treating the full receipt
-total as the cost of every linked task item.
+If receipt lines are deferred, add a `receipt_job_allocation` table so a receipt
+header can be split across jobs. This avoids treating the full receipt total as
+the cost of every linked job or task item. A later `receipt_line` model can
+replace or refine those allocations when line-level entry is worth the extra
+workflow.
 
 ## Invoice Status
 
@@ -479,7 +487,7 @@ Responsibilities:
 - detect possible double-counting between task item costs and receipt costs
 - separate capital/tool purchases from job expenses
 - expose supplier spend by period
-- expose GST paid on purchases
+- expose configured tax paid on purchases
 - flag unlinked receipts and unreceipted completed buy items
 
 ### `AccountingSyncService`
@@ -605,16 +613,16 @@ Expenses should come from:
 - labour costs where HMB has enough cost data
 - expense adjustments
 
-Use receipt totals excluding GST for normal expense reporting. Use the receipt
-tax field for GST reporting. GST-inclusive totals are useful for cash and
-supplier-spend views, but should not be treated as expense when preparing a
-standard P&L.
+Use receipt totals excluding configured tax for normal expense reporting. Use
+the receipt tax field for tax reporting. Tax-inclusive totals are useful for
+cash and supplier-spend views, but should not be treated as expense when
+preparing a standard P&L.
 
 Receipt cost source priority:
 
 1. receipt lines or receipt allocations, when available
 2. linked receipt task items, using allocated receipt amounts if available
-3. receipt header total as a job-level cost when no line/allocation detail
+3. legacy receipt job link as a single allocation when no split allocation
    exists
 4. task item actual cost only when no receipt-backed cost exists
 
@@ -754,9 +762,9 @@ Output:
 - supplier
 - receipt date
 - job
-- total excluding GST
-- GST
-- total including GST
+- total excluding configured tax
+- configured tax
+- total including configured tax
 - linked task items
 - linked tools
 - receipt photos
@@ -775,25 +783,32 @@ Show:
 - receipt totals that differ materially from linked task item expected costs
 - tools with cost but no receipt
 
-### GST Summary
+### Configured Tax Summary
 
-GST reporting should use both sales and purchase sources.
+Tax reporting should use the configured tax label, such as GST, VAT, sales tax,
+or another local term. User-facing screens should not hard-code GST because HMB
+is intended for multiple English-speaking countries with different tax regimes.
+
+The first release can estimate sales-side tax from inclusive invoice totals and
+the configured tax rate. That estimate should be labelled as derived until
+invoice lines store explicit tax amounts or tax types. Purchase-side tax can use
+the receipt tax field directly.
 
 Sales side:
 
-- invoice GST collected
-- credit note GST reductions
+- invoice tax collected
+- credit note tax reductions
 
 Purchase side:
 
-- receipt GST paid
+- receipt tax paid
 - purchase adjustments
 
 Output:
 
-- GST collected
-- GST paid
-- net GST
+- tax collected
+- tax paid
+- net tax position
 - source drill-down
 
 ## UI Changes
@@ -918,9 +933,17 @@ Credit actions should be guided:
 - refund or credit customer
 - fix invoice mistake
 - write off balance
+- small balance write-off
 
 The UI can create the correct credit note, allocation, or adjustment behind
 these actions.
+
+For example, if a customer underpays an invoice by 40c and it is not worth
+chasing, HMB should offer a guided `Write off small balance` action. This should
+create a normal write-off adjustment with a reason and a small-value threshold,
+clear the remaining balance, and leave an audit trail visible in invoice history
+and reports. The small-balance distinction is workflow guidance, not a separate
+accounting category.
 
 ### Invoice List
 
@@ -1006,7 +1029,7 @@ Add reports:
 - cash received
 - supplier spend
 - unreceipted and unlinked costs
-- GST summary
+- configured tax summary
 
 Reports should support export to PDF and CSV.
 
@@ -1099,7 +1122,7 @@ Reporting tests:
 - linked receipt task items are not double-counted with task item actual costs
 - unlinked receipts appear as unallocated job costs
 - stock/tool receipts do not automatically reduce customer job profit
-- GST summary includes receipt tax as GST paid
+- configured tax summary includes receipt tax as tax paid
 - aged receivables buckets invoices by due date and balance
 
 ## Phased Implementation
@@ -1115,7 +1138,7 @@ Reporting tests:
    list, To Be Invoiced screen, and invoice filters to use debtor status.
 9. Extend Xero sync for payments, credit notes, and allocations.
 10. Add aged receivables and debtor statement reports.
-11. Add supplier spend, GST summary, and unlinked cost reports.
+11. Add supplier spend, configured tax summary, and unlinked cost reports.
 12. Add P&L, cash received, and job profit reports.
 13. Add receipt lines or receipt allocations if header-level receipts are too
     coarse for accurate reporting.

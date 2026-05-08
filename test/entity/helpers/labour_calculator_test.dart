@@ -1,13 +1,13 @@
 // Covers line-level rounding for labour charge calculation.
 // Style prefs: <=80 cols, braces on single-line ifs.
 
-import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/helpers/charge_mode.dart';
 import 'package:hmb/entity/helpers/labour_calculator.dart';
 import 'package:hmb/entity/job.dart';
 import 'package:hmb/entity/task_item.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:money2/money2.dart';
+import 'package:test/test.dart';
 
 // ignore: avoid_implementing_value_types
 class _MockTaskItem extends Mock implements TaskItem {}

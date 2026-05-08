@@ -55,11 +55,9 @@ class TestBackupProvider extends BackupProvider {
     var count = 0;
     String pathToBackupFile;
     do {
-      pathToBackupFile =
-          count == 0 ? '$basePath$ext' : '$basePath.$count$ext';
+      pathToBackupFile = count == 0 ? '$basePath$ext' : '$basePath.$count$ext';
       count++;
     } while (exists(pathToBackupFile));
-    print('Saving backup to $pathToBackupFile');
     move(pathToZippedBackup, pathToBackupFile);
 
     return BackupResult(

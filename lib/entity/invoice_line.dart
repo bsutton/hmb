@@ -38,6 +38,8 @@ class InvoiceLine extends Entity<InvoiceLine> {
   Fixed quantity;
   Money unitPrice;
   Money lineTotal;
+  Money taxAmount;
+  String? taxType;
   LineChargeableStatus status;
   bool fromBookingFee;
 
@@ -48,9 +50,11 @@ class InvoiceLine extends Entity<InvoiceLine> {
     required this.quantity,
     required this.unitPrice,
     required this.lineTotal,
+    required this.taxAmount,
     required super.createdDate,
     required super.modifiedDate,
     required this.invoiceLineGroupId,
+    this.taxType,
     this.status = LineChargeableStatus.normal,
     this.fromBookingFee = false,
   }) : super();
@@ -62,9 +66,12 @@ class InvoiceLine extends Entity<InvoiceLine> {
     required this.unitPrice,
     required this.lineTotal,
     required this.invoiceLineGroupId,
+    Money? taxAmount,
+    this.taxType,
     this.status = LineChargeableStatus.normal,
     this.fromBookingFee = false,
-  }) : super.forInsert();
+  }) : taxAmount = taxAmount ?? Money.fromInt(0, isoCode: 'AUD'),
+       super.forInsert();
 
   InvoiceLine copyWith({
     int? invoiceId,
@@ -73,6 +80,8 @@ class InvoiceLine extends Entity<InvoiceLine> {
     Fixed? quantity,
     Money? unitPrice,
     Money? lineTotal,
+    Money? taxAmount,
+    String? taxType,
     LineChargeableStatus? status,
     bool? fromBookingFee,
   }) => InvoiceLine(
@@ -83,9 +92,11 @@ class InvoiceLine extends Entity<InvoiceLine> {
     quantity: quantity ?? this.quantity,
     unitPrice: unitPrice ?? this.unitPrice,
     lineTotal: lineTotal ?? this.lineTotal,
+    taxAmount: taxAmount ?? this.taxAmount,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
     status: status ?? this.status,
+    taxType: taxType ?? this.taxType,
     fromBookingFee: fromBookingFee ?? this.fromBookingFee,
   );
 
@@ -97,6 +108,8 @@ class InvoiceLine extends Entity<InvoiceLine> {
     quantity: Fixed.fromInt(map['quantity'] as int),
     unitPrice: Money.fromInt(map['unit_price'] as int, isoCode: 'AUD'),
     lineTotal: Money.fromInt(map['line_total'] as int, isoCode: 'AUD'),
+    taxAmount: Money.fromInt(map['tax_amount'] as int? ?? 0, isoCode: 'AUD'),
+    taxType: map['tax_type'] as String?,
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
     status: LineChargeableStatus
@@ -113,6 +126,8 @@ class InvoiceLine extends Entity<InvoiceLine> {
     'quantity': quantity.copyWith(decimalDigits: 2).minorUnits.toInt(),
     'unit_price': unitPrice.copyWith(decimalDigits: 2).minorUnits.toInt(),
     'line_total': lineTotal.copyWith(decimalDigits: 2).minorUnits.toInt(),
+    'tax_amount': taxAmount.copyWith(decimalDigits: 2).minorUnits.toInt(),
+    'tax_type': taxType,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
     'status': status.index,
@@ -127,6 +142,8 @@ class InvoiceLine extends Entity<InvoiceLine> {
     quantity: quantity,
     unitAmount: unitPrice,
     lineTotal: lineTotal,
+    taxAmount: taxAmount,
+    taxType: taxType,
     accountCode: accountCode, // '240',
     itemCode: itemCode, // 'IHS-Labour',
   );

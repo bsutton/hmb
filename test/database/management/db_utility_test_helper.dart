@@ -14,13 +14,10 @@
 import 'dart:io';
 
 import 'package:dcli/dcli.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/database/factory/cli_database_factory.dart';
 import 'package:hmb/database/management/database_helper.dart';
 import 'package:hmb/database/versions/implementations/project_script_source.dart';
 import 'package:path/path.dart';
-import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:sqflite_common/sqflite.dart';
 
 import 'backup_providers/test_backup_provider.dart';
@@ -41,27 +38,7 @@ String _linuxSafeTempDir() {
   return tempDir;
 }
 
-class _TestPathProvider
-    with Fake, MockPlatformInterfaceMixin
-    implements PathProviderPlatform {
-  final String tempPath = Directory.systemTemp
-      .createTempSync('hmb_test_temp')
-      .path;
-  final String docPath = Directory.systemTemp
-      .createTempSync('hmb_test_docs')
-      .path;
-
-  @override
-  Future<String?> getTemporaryPath() async => tempPath;
-
-  @override
-  Future<String?> getApplicationDocumentsPath() async => docPath;
-}
-
 Future<Database> setupTestDb() async {
-  TestWidgetsFlutterBinding.ensureInitialized();
-  PathProviderPlatform.instance = _TestPathProvider();
-
   final project = DartProject.self;
   // Path to the clean database in the fixtures directory
   final cleanDbPath = join(
@@ -74,8 +51,6 @@ Future<Database> setupTestDb() async {
 
   // Path where the test database will be copied to and used
   testDbPath = join(_linuxSafeTempDir(), 'handyman_test_temp.db');
-
-  print('Running against test db at: $testDbPath');
 
   // Ensure the test db directory exists
   final dbDir = dirname(testDbPath);

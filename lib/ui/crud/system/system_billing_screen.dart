@@ -61,6 +61,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
   late final _defaultHourlyRateController = HMBMoneyEditingController();
   late final _defaultBookingFeeController = HMBMoneyEditingController();
   late final _defaultProfitMarginController = TextEditingController();
+  late final _financialYearStartMonthController = TextEditingController();
   late final _taxLabelController = TextEditingController();
   late final _taxRateController = TextEditingController();
   late final _bsbController = TextEditingController();
@@ -97,6 +98,8 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
     );
     _defaultProfitMarginController.text =
         (await DaoSystem().getDefaultProfitMargin()).toString();
+    _financialYearStartMonthController.text =
+        (await AppSettings.getFinancialYearStartMonth()).toString();
     _taxDisplayMode = await AppSettings.getTaxDisplayMode();
     _taxLabelController.text = await AppSettings.getTaxLabel();
     _taxRateController.text = await AppSettings.getTaxRatePercentText();
@@ -116,6 +119,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
     _defaultHourlyRateController.dispose();
     _defaultBookingFeeController.dispose();
     _defaultProfitMarginController.dispose();
+    _financialYearStartMonthController.dispose();
     _taxLabelController.dispose();
     _taxRateController.dispose();
     _bsbController.dispose();
@@ -167,6 +171,10 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
       await AppSettings.setTaxDisplayMode(_taxDisplayMode);
       await AppSettings.setTaxLabel(_taxLabelController.text);
       await AppSettings.setTaxRatePercentText(_taxRateController.text);
+      await AppSettings.setFinancialYearStartMonth(
+        int.tryParse(_financialYearStartMonthController.text) ??
+            AppSettings.financialYearStartMonthDefault,
+      );
 
       final photoCacheMb = int.tryParse(_photoCacheMaxMbController.text) ?? 100;
       await AppSettings.setPhotoCacheMaxMb(photoCacheMb);
@@ -300,6 +308,19 @@ Sometime this is referred to as a Surcharge, Callout Fee or Admin Fee''',
 Used as the default margin when creating new Task Items and
 as the starting estimate margin for new Jobs.
 You can still override the margin per Task Item and per Job estimate.'''),
+            HMBTextField(
+              controller: _financialYearStartMonthController,
+              labelText: 'Financial Year Start Month',
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                final parsed = int.tryParse(value ?? '');
+                if (parsed == null || parsed < 1 || parsed > 12) {
+                  return 'Enter a month number from 1 to 12';
+                }
+                return null;
+              },
+            ).help('Financial Year Start Month', '''
+Used by accounting reports. Enter 1 for January, 4 for April, 7 for July.'''),
             HMBTextField(
               controller: _bsbController,
               labelText: 'BSB',
