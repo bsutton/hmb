@@ -86,7 +86,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
           InvoiceEditScreen(invoiceDetails: invoiceDetails!),
     ),
     onDelete: _deleteInvoice,
-    cardHeight: 340,
+    cardHeight: 390,
     background: (_) async => Colors.transparent,
     listCard: _buildInvoiceCard,
     filterSheetBuilder: _buildFilterSheet,
