@@ -39,11 +39,13 @@ class PhotoCrud<E extends Entity<E>> extends StatefulWidget {
   final String parentName;
   final ParentType parentType;
   final PhotoController<E> controller;
+  final bool allowPendingPhotos;
 
   const PhotoCrud({
     required this.parentName,
     required this.parentType,
     required this.controller,
+    this.allowPendingPhotos = false,
     super.key,
   });
 
@@ -61,7 +63,7 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
   Widget build(BuildContext context) => DeferredBuilder(
     this,
     builder: (builder) {
-      if (widget.controller.parent == null) {
+      if (widget.controller.parent == null && !widget.allowPendingPhotos) {
         return Center(
           child: Text('To Add a Photo - Save the ${widget.parentName} First'),
         );
@@ -90,13 +92,13 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
       HMBIconButton(
         icon: const Icon(Icons.camera_alt, size: 32),
         size: HMBIconButtonSize.large,
-        hint: 'Take a photo and attach it to the task.',
+        hint: 'Take a photo and attach it to the ${widget.parentName}.',
         onPressed: () async {
           final capturedPhoto = await widget.controller.takePhoto();
           if (capturedPhoto != null) {
             // Insert the photo metadata into the database
             final newPhoto = Photo.forInsert(
-              parentId: parent!.id,
+              parentId: parent?.id ?? -1,
               parentType: widget.parentType,
               filename: capturedPhoto.filename,
               comment: '',

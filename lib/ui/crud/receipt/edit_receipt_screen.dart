@@ -271,6 +271,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         parentName: 'Receipt',
         parentType: ParentType.receipt,
         controller: _photoCtrl,
+        allowPendingPhotos: true,
       ),
       _buildLineItems(),
       _buildJobAllocations(),
@@ -299,12 +300,10 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
 
   @override
   Future<void> postSave(_) async {
-    // update the controller to point at the newly‐saved entity
-    _photoCtrl = PhotoController<Receipt>(
-      parent: currentEntity,
-      parentType: ParentType.receipt,
-    );
+    _photoCtrl.parent = currentEntity;
     if (currentEntity != null) {
+      await _photoCtrl.savePendingPhotos();
+      await _photoCtrl.save();
       await DaoReceipt().replaceTaskItemLinks(
         currentEntity!.id,
         _linkedTaskItemIds,
@@ -354,28 +353,25 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
           'Extract lines from the photo, or enter them manually. Review before '
               'saving.',
         ),
-        if (currentEntity == null)
-          const Text('Save the receipt before extracting lines from a photo.')
-        else
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              HMBButton.smallWithIcon(
-                label: _isExtractingLines ? 'Extracting...' : 'Extract Lines',
-                hint: 'Use the ChatGPT integration to read receipt lines.',
-                icon: const Icon(Icons.document_scanner_outlined),
-                enabled: !_isExtractingLines,
-                onPressed: _extractLineItems,
-              ),
-              HMBButton.smallWithIcon(
-                label: 'Add Line',
-                hint: 'Add a receipt line manually.',
-                icon: const Icon(Icons.add),
-                onPressed: _addManualLine,
-              ),
-            ],
-          ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            HMBButton.smallWithIcon(
+              label: _isExtractingLines ? 'Extracting...' : 'Extract Lines',
+              hint: 'Use the ChatGPT integration to read receipt lines.',
+              icon: const Icon(Icons.document_scanner_outlined),
+              enabled: !_isExtractingLines,
+              onPressed: _extractLineItems,
+            ),
+            HMBButton.smallWithIcon(
+              label: 'Add Line',
+              hint: 'Add a receipt line manually.',
+              icon: const Icon(Icons.add),
+              onPressed: _addManualLine,
+            ),
+          ],
+        ),
         if (_lineItems.isEmpty)
           const Padding(
             padding: EdgeInsets.only(top: 8),

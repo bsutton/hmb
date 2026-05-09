@@ -128,13 +128,35 @@ class PhotoController<E extends Entity<E>> {
   }
 
   Future<void> addPhoto(PhotoMeta newPhotoMeta) async {
-    await DaoPhoto().insert(newPhotoMeta.photo);
+    if (_entity == null) {
+      _addToLocalState(newPhotoMeta);
+      return;
+    }
 
+    newPhotoMeta.photo.parentId = _entity!.id;
+    newPhotoMeta.photo.parentType = parentType;
+    await DaoPhoto().insert(newPhotoMeta.photo);
+    _addToLocalState(newPhotoMeta);
+  }
+
+  void _addToLocalState(PhotoMeta newPhotoMeta) {
     _photos.add(newPhotoMeta);
     final comment = newPhotoMeta.comment ?? '';
     _commentControllers.add(TextEditingController(text: comment));
     _originalComments.add(comment);
     _refresh();
+  }
+
+  Future<void> savePendingPhotos() async {
+    if (_entity == null) {
+      return;
+    }
+
+    for (final photoMeta in _photos.where((meta) => meta.photo.id == -1)) {
+      photoMeta.photo.parentId = _entity!.id;
+      photoMeta.photo.parentType = parentType;
+      await DaoPhoto().insert(photoMeta.photo);
+    }
   }
 
   Future<void> deletePhoto(PhotoMeta photoMeta) async {
