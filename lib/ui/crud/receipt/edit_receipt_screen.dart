@@ -400,7 +400,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     final line = _lineItems[index];
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -424,37 +424,44 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
                 ),
               ],
             ),
+            const SizedBox(height: 10),
             HMBTextField(
               controller: line.quantityController,
               labelText: 'Quantity',
               required: true,
             ),
+            const SizedBox(height: 10),
             HMBMoneyField(
               controller: line.unitPriceController,
               labelText: 'Unit Price',
               fieldName: 'Unit Price',
               nonZero: false,
             ),
+            const SizedBox(height: 10),
             HMBMoneyField(
               controller: line.lineTotalExTaxController,
               labelText: 'Line Total Excl. Tax',
               fieldName: 'Line Total Excluding Tax',
               nonZero: false,
             ),
+            const SizedBox(height: 10),
             HMBMoneyField(
               controller: line.taxAmountController,
               labelText: 'Tax',
               fieldName: 'Tax',
               nonZero: false,
             ),
+            const SizedBox(height: 10),
             HMBMoneyField(
               controller: line.lineTotalIncTaxController,
               labelText: 'Line Total Incl. Tax',
               fieldName: 'Line Total Including Tax',
               nonZero: false,
             ),
+            const SizedBox(height: 10),
             HMBDroplist<TaskItem>(
               title: 'Matched Task Item',
+              required: false,
               selectedItem: () async => line.matchedTaskItemId == null
                   ? null
                   : _firstOrNull(
