@@ -149,7 +149,7 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
         _dateTo != null,
     onEdit: (receipt) => ReceiptEditScreen(receipt: receipt),
     listCardTitle: _getTitle,
-    cardHeight: 560,
+    cardHeight: 640,
     listCard: (r) => HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

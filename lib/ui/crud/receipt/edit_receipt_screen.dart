@@ -22,6 +22,7 @@ import 'package:strings/strings.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/money_ex.dart';
+import '../../test_keys.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/photo_controller.dart';
@@ -165,6 +166,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     children: [
       // Date
       HMBDateTimeField(
+        key: TestKeys.receiptDateField,
         mode: HMBDateTimeFieldMode.dateOnly,
         label: 'Receipt Date',
         initialDateTime: _date,
@@ -173,6 +175,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
 
       // Job dropdown (unchanged)
       HMBSelectJob(
+        key: TestKeys.receiptPrimaryJobSelector,
         selectedJob: _selectedJob,
         required: true,
         onSelected: (job) {
@@ -194,6 +197,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       ),
       // SUPPLIER: now using your SelectSupplier widget
       HMBSelectSupplier(
+        key: TestKeys.receiptSupplierSelector,
         selectedSupplier: selectedSupplier,
         required: true,
 
@@ -208,18 +212,21 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
 
       // MONEY FIELDS: dollars entry
       HMBMoneyField(
+        fieldKey: TestKeys.receiptTotalIncludingTaxField,
         controller: _totalInclCtrl,
         labelText: 'Total Incl. Tax',
         fieldName: 'Total Including Tax',
         focusNode: _taxIncFocus,
       ),
       HMBMoneyField(
+        fieldKey: TestKeys.receiptTaxField,
         controller: _taxCtrl,
         labelText: 'Tax',
         fieldName: 'Tax',
         focusNode: _taxFocus,
       ),
       HMBMoneyField(
+        fieldKey: TestKeys.receiptTotalExcludingTaxField,
         controller: _totalExclCtrl,
         labelText: 'Total Excl. Tax',
         fieldName: 'Total Excluding Tax',
@@ -314,6 +321,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         else
           ..._linkableTaskItems.map(
             (item) => CheckboxListTile(
+              key: TestKeys.receiptTaskItemCheckbox(item.id),
               contentPadding: EdgeInsets.zero,
               title: Text(item.description),
               subtitle: Text(_formatTaskItemCost(item)),
@@ -350,6 +358,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       for (var i = 0; i < _jobAllocations.length; i++)
         _buildJobAllocationRow(i),
       HMBButton.smallWithIcon(
+        key: TestKeys.receiptAddJobAllocationButton,
         label: 'Add Job',
         hint: 'Allocate part of this receipt to another job.',
         icon: const Icon(Icons.add),
@@ -376,6 +385,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
             children: [
               Expanded(
                 child: HMBSelectJob(
+                  key: TestKeys.receiptJobAllocationSelector(index),
                   title: 'Allocated Job',
                   selectedJob: allocation.selectedJob,
                   required: true,
@@ -388,6 +398,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
               ),
               if (_jobAllocations.length > 1)
                 IconButton(
+                  key: TestKeys.receiptJobAllocationRemove(index),
                   tooltip: 'Remove job allocation',
                   onPressed: () {
                     setState(() {
@@ -399,6 +410,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
             ],
           ),
           HMBMoneyField(
+            fieldKey: TestKeys.receiptJobAllocationAmountField(index),
             controller: allocation.amountController,
             labelText: 'Allocated Amount',
             fieldName: 'Allocated Amount',

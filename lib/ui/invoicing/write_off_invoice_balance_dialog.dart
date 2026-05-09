@@ -14,6 +14,7 @@
 import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
+import '../test_keys.dart';
 import '../widgets/fields/fields.g.dart';
 import '../widgets/hmb_button.dart';
 
@@ -51,7 +52,7 @@ Future<InvoiceWriteOffRequest?> showWriteOffInvoiceBalanceDialog({
             HMBTextField(
               controller: reasonController,
               labelText: 'Reason',
-              fieldKey: const ValueKey('write_off_reason_field'),
+              fieldKey: TestKeys.writeOffReasonField,
               required: true,
               autofocus: true,
             ),

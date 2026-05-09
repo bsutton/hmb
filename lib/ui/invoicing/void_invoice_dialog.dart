@@ -17,6 +17,7 @@ import 'package:strings/strings.dart';
 import '../../api/external_accounting.dart';
 import '../../api/xero/xero_api.dart';
 import '../../dao/dao_invoice.dart';
+import '../../dao/debtor_ledger_service.dart';
 import '../../entity/invoice.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
@@ -36,6 +37,16 @@ Future<bool> promptAndVoidInvoice({
   }
   if (invoice.isExternallyDeletedOrVoided) {
     HMBToast.error('This invoice has already been voided.');
+    return false;
+  }
+  final ledger = await DebtorLedgerService().invoiceSummary(invoice.id);
+  if (ledger.paid.isNonZero ||
+      ledger.credited.isNonZero ||
+      ledger.adjusted.isNonZero) {
+    HMBToast.error('An invoice with ledger activity may not be voided.');
+    return false;
+  }
+  if (!context.mounted) {
     return false;
   }
 

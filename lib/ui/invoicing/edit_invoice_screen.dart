@@ -174,7 +174,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                               await _writeOffBalance(details);
                             },
                           ),
-                        if (invoice.canVoid && details.ledger.isOutstanding)
+                        if (_canVoidInvoice(details))
                           HMBButton(
                             label: 'Void Invoice',
                             hint: 'Void this sent invoice',
@@ -356,6 +356,13 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       details.invoice.isManagedLocally &&
       !details.invoice.isExternallyDeletedOrVoided &&
       details.ledger.balance.isPositive;
+
+  bool _canVoidInvoice(InvoiceDetails details) =>
+      details.invoice.canVoid &&
+      details.ledger.isOutstanding &&
+      details.ledger.paid.isZero &&
+      details.ledger.credited.isZero &&
+      details.ledger.adjusted.isZero;
 
   Future<void> _convertToManualTracking() async {
     await DaoInvoice().convertToManualTracking(invoiceId);

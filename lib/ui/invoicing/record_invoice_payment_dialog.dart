@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
 import '../../util/dart/money_ex.dart';
+import '../test_keys.dart';
 import '../widgets/fields/fields.g.dart';
 import '../widgets/hmb_button.dart';
 
@@ -59,7 +60,7 @@ Future<InvoicePaymentRequest?> showRecordInvoicePaymentDialog({
                     controller: amountController,
                     labelText: 'Amount',
                     fieldName: 'payment amount',
-                    fieldKey: const ValueKey('record_payment_amount_field'),
+                    fieldKey: TestKeys.recordPaymentAmountField,
                     autofocus: true,
                     onChanged: (_) => setState(() => amountError = null),
                   ),
@@ -73,17 +74,17 @@ Future<InvoicePaymentRequest?> showRecordInvoicePaymentDialog({
                   HMBTextField(
                     controller: methodController,
                     labelText: 'Method',
-                    fieldKey: const ValueKey('record_payment_method_field'),
+                    fieldKey: TestKeys.recordPaymentMethodField,
                   ),
                   HMBTextField(
                     controller: referenceController,
                     labelText: 'Reference',
-                    fieldKey: const ValueKey('record_payment_reference_field'),
+                    fieldKey: TestKeys.recordPaymentReferenceField,
                   ),
                   HMBTextField(
                     controller: notesController,
                     labelText: 'Notes',
-                    fieldKey: const ValueKey('record_payment_notes_field'),
+                    fieldKey: TestKeys.recordPaymentNotesField,
                   ),
                 ],
               ),
