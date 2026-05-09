@@ -53,6 +53,8 @@ export 'dao_site_customer.dart';
 export 'dao_site_supplier.dart';
 export 'dao_supplier.dart';
 export 'dao_system.dart';
+export 'dao_tax_code.dart';
+export 'dao_tax_scheme.dart';
 export 'dao_task.dart';
 export 'dao_task_approval.dart';
 export 'dao_task_approval_task.dart';

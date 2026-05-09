@@ -24,6 +24,7 @@ class ReceiptLineItem extends Entity<ReceiptLineItem> {
   final Money unitPrice;
   final Money lineTotalExTax;
   final Money taxAmount;
+  final int? taxCodeId;
   final Money lineTotalIncTax;
   final int? matchedTaskItemId;
   final int confidence;
@@ -37,6 +38,7 @@ class ReceiptLineItem extends Entity<ReceiptLineItem> {
     required this.unitPrice,
     required this.lineTotalExTax,
     required this.taxAmount,
+    required this.taxCodeId,
     required this.lineTotalIncTax,
     required this.matchedTaskItemId,
     required this.confidence,
@@ -56,6 +58,7 @@ class ReceiptLineItem extends Entity<ReceiptLineItem> {
     required this.matchedTaskItemId,
     required this.confidence,
     required this.source,
+    this.taxCodeId,
   }) : super.forInsert();
 
   factory ReceiptLineItem.fromMap(Map<String, dynamic> map) => ReceiptLineItem(
@@ -66,6 +69,7 @@ class ReceiptLineItem extends Entity<ReceiptLineItem> {
     unitPrice: MoneyEx.fromInt(map['unit_price'] as int?),
     lineTotalExTax: MoneyEx.fromInt(map['line_total_ex_tax'] as int?),
     taxAmount: MoneyEx.fromInt(map['tax_amount'] as int?),
+    taxCodeId: map['tax_code_id'] as int?,
     lineTotalIncTax: MoneyEx.fromInt(map['line_total_inc_tax'] as int?),
     matchedTaskItemId: map['matched_task_item_id'] as int?,
     confidence: map['confidence'] as int? ?? 0,
@@ -83,6 +87,7 @@ class ReceiptLineItem extends Entity<ReceiptLineItem> {
     'unit_price': unitPrice.minorUnits.toInt(),
     'line_total_ex_tax': lineTotalExTax.minorUnits.toInt(),
     'tax_amount': taxAmount.minorUnits.toInt(),
+    'tax_code_id': taxCodeId,
     'line_total_inc_tax': lineTotalIncTax.minorUnits.toInt(),
     'matched_task_item_id': matchedTaskItemId,
     'confidence': confidence,

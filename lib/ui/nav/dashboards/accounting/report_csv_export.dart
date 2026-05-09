@@ -16,8 +16,10 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import '../../../../dao/dao_system.dart';
 import '../../../widgets/hmb_toast.dart';
 
 String accountingReportExportFileName({
@@ -79,13 +81,117 @@ Future<Uint8List> buildReportPdfBytes({
   required String title,
   required List<List<String>> rows,
 }) async {
+  final system = await DaoSystem().get();
+  final systemColor = PdfColor.fromInt(system.billingColour);
+  final businessName = system.businessName?.trim() ?? '';
+  final generatedAt = _formatTimestamp(DateTime.now());
+
   final pdf = pw.Document()
     ..addPage(
       pw.MultiPage(
+        pageTheme: pw.PageTheme(
+          margin: pw.EdgeInsets.zero,
+          buildBackground: (context) => pw.Stack(
+            children: [
+              pw.Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: pw.Container(
+                  height: 28,
+                  color: systemColor,
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 8),
+                  alignment: pw.Alignment.centerLeft,
+                  child: pw.Text(
+                    businessName,
+                    style: pw.TextStyle(
+                      fontSize: 18,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white,
+                    ),
+                  ),
+                ),
+              ),
+              pw.Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: pw.Container(
+                  height: 28,
+                  color: systemColor,
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 10),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        'Generated $generatedAt',
+                        style: const pw.TextStyle(
+                          fontSize: 10,
+                          color: PdfColors.white,
+                        ),
+                      ),
+                      pw.Text(
+                        '${context.pageNumber} of ${context.pagesCount}',
+                        style: const pw.TextStyle(
+                          fontSize: 12,
+                          color: PdfColors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         build: (_) => [
-          pw.Text(title, style: const pw.TextStyle(fontSize: 18)),
-          pw.SizedBox(height: 16),
-          pw.TableHelper.fromTextArray(data: rows),
+          pw.Padding(
+            padding: const pw.EdgeInsets.fromLTRB(20, 44, 20, 44),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  title,
+                  style: pw.TextStyle(
+                    fontSize: 18,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  businessName,
+                  style: const pw.TextStyle(
+                    fontSize: 11,
+                    color: PdfColors.grey700,
+                  ),
+                ),
+                pw.SizedBox(height: 12),
+                if (rows.isEmpty)
+                  pw.Text('No report data.')
+                else
+                  pw.TableHelper.fromTextArray(
+                    data: rows,
+                    headerStyle: pw.TextStyle(
+                      color: PdfColors.white,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                    headerDecoration: pw.BoxDecoration(color: systemColor),
+                    cellStyle: const pw.TextStyle(fontSize: 9),
+                    cellPadding: const pw.EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 4,
+                    ),
+                    oddRowDecoration: const pw.BoxDecoration(
+                      color: PdfColors.grey100,
+                    ),
+                    border: pw.TableBorder.all(
+                      color: PdfColors.grey400,
+                      width: 0.4,
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -117,4 +223,13 @@ String _dateStamp(DateTime date) {
   final month = date.month.toString().padLeft(2, '0');
   final day = date.day.toString().padLeft(2, '0');
   return '$year-$month-$day';
+}
+
+String _formatTimestamp(DateTime date) {
+  final year = date.year.toString().padLeft(4, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+  final hour = date.hour.toString().padLeft(2, '0');
+  final minute = date.minute.toString().padLeft(2, '0');
+  return '$year-$month-$day $hour:$minute';
 }

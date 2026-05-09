@@ -51,6 +51,8 @@ export 'receipt_line_item.dart';
 export 'site.dart';
 export 'supplier.dart';
 export 'system.dart';
+export 'tax_code.dart';
+export 'tax_scheme.dart';
 export 'task.dart';
 export 'task_approval.dart';
 export 'task_approval_task.dart';

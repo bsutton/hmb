@@ -40,6 +40,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
   Money lineTotal;
   Money taxAmount;
   String? taxType;
+  int? taxCodeId;
   LineChargeableStatus status;
   bool fromBookingFee;
 
@@ -55,6 +56,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     required super.modifiedDate,
     required this.invoiceLineGroupId,
     this.taxType,
+    this.taxCodeId,
     this.status = LineChargeableStatus.normal,
     this.fromBookingFee = false,
   }) : super();
@@ -68,6 +70,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     required this.invoiceLineGroupId,
     Money? taxAmount,
     this.taxType,
+    this.taxCodeId,
     this.status = LineChargeableStatus.normal,
     this.fromBookingFee = false,
   }) : taxAmount = taxAmount ?? Money.fromInt(0, isoCode: 'AUD'),
@@ -82,6 +85,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     Money? lineTotal,
     Money? taxAmount,
     String? taxType,
+    int? taxCodeId,
     LineChargeableStatus? status,
     bool? fromBookingFee,
   }) => InvoiceLine(
@@ -97,6 +101,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     modifiedDate: DateTime.now(),
     status: status ?? this.status,
     taxType: taxType ?? this.taxType,
+    taxCodeId: taxCodeId ?? this.taxCodeId,
     fromBookingFee: fromBookingFee ?? this.fromBookingFee,
   );
 
@@ -110,6 +115,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     lineTotal: Money.fromInt(map['line_total'] as int, isoCode: 'AUD'),
     taxAmount: Money.fromInt(map['tax_amount'] as int? ?? 0, isoCode: 'AUD'),
     taxType: map['tax_type'] as String?,
+    taxCodeId: map['tax_code_id'] as int?,
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
     status: LineChargeableStatus
@@ -128,6 +134,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     'line_total': lineTotal.copyWith(decimalDigits: 2).minorUnits.toInt(),
     'tax_amount': taxAmount.copyWith(decimalDigits: 2).minorUnits.toInt(),
     'tax_type': taxType,
+    'tax_code_id': taxCodeId,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
     'status': status.index,

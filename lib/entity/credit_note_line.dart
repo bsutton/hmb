@@ -25,6 +25,7 @@ class CreditNoteLine extends Entity<CreditNoteLine> {
   Money taxAmount;
   String? incomeAccountCode;
   String? taxType;
+  int? taxCodeId;
 
   CreditNoteLine({
     required super.id,
@@ -38,6 +39,7 @@ class CreditNoteLine extends Entity<CreditNoteLine> {
     required super.modifiedDate,
     this.incomeAccountCode,
     this.taxType,
+    this.taxCodeId,
   }) : super();
 
   CreditNoteLine.forInsert({
@@ -49,6 +51,7 @@ class CreditNoteLine extends Entity<CreditNoteLine> {
     Money? taxAmount,
     this.incomeAccountCode,
     this.taxType,
+    this.taxCodeId,
   }) : taxAmount = taxAmount ?? Money.fromInt(0, isoCode: 'AUD'),
        super.forInsert();
 
@@ -62,6 +65,7 @@ class CreditNoteLine extends Entity<CreditNoteLine> {
     taxAmount: Money.fromInt(map['tax_amount'] as int? ?? 0, isoCode: 'AUD'),
     incomeAccountCode: map['income_account_code'] as String?,
     taxType: map['tax_type'] as String?,
+    taxCodeId: map['tax_code_id'] as int?,
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
@@ -77,6 +81,7 @@ class CreditNoteLine extends Entity<CreditNoteLine> {
     'tax_amount': taxAmount.minorUnits.toInt(),
     'income_account_code': incomeAccountCode,
     'tax_type': taxType,
+    'tax_code_id': taxCodeId,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };

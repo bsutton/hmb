@@ -51,6 +51,7 @@ class DaoReceiptLineItem extends Dao<ReceiptLineItem> {
           unitPrice: item.unitPrice,
           lineTotalExTax: item.lineTotalExTax,
           taxAmount: item.taxAmount,
+          taxCodeId: item.taxCodeId,
           lineTotalIncTax: item.lineTotalIncTax,
           matchedTaskItemId: item.matchedTaskItemId,
           confidence: item.confidence,
