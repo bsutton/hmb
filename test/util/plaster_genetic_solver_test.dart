@@ -1,12 +1,12 @@
 import 'dart:math';
 
-import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/measurement_type.dart';
 import 'package:hmb/util/dart/plaster_geometry.dart';
+import 'package:hmb/util/dart/plaster_solver/benchmark_support.dart';
+import 'package:test/test.dart';
 
 import '../../tool/plasterboard_genetic_solver.dart';
-import 'plaster_solver_benchmark_support.dart';
 
 void main() {
   group('GeneticPlasterSolver', () {

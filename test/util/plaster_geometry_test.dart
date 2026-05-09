@@ -1,11 +1,11 @@
 import 'dart:math';
 
-import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/measurement_type.dart';
 import 'package:hmb/util/dart/plaster_board_attribute.dart';
 import 'package:hmb/util/dart/plaster_geometry.dart';
 import 'package:hmb/util/dart/plaster_sheet_direction.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('PlasterGeometry', () {

@@ -5,9 +5,9 @@ import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/measurement_type.dart';
 import 'package:hmb/util/dart/plaster_geometry.dart';
 import 'package:hmb/util/dart/plaster_layout_scoring.dart';
+import 'package:hmb/util/dart/plaster_solver/benchmark_support.dart';
 import 'package:plasterboard_explorer/plasterboard_explorer.dart';
 
-import '../test/util/plaster_solver_benchmark_support.dart';
 import 'plasterboard_genetic_solver.dart';
 
 Future<void> main() async {

@@ -375,13 +375,13 @@ rewriting history when solver inputs evolve.
 The current benchmark artifacts are:
 
 - fixture corpus:
-  `test/fixtures/plaster_solver/v1/benchmark_fixture_v1.dart`
+  `lib/util/dart/plaster_solver_fixtures/v1/benchmark_fixture_v1.dart`
 - baseline thresholds:
-  `test/fixtures/plaster_solver/v1/baseline_results_v1.dart`
+  `lib/util/dart/plaster_solver_fixtures/v1/baseline_results_v1.dart`
 - recorded current results:
-  `test/fixtures/plaster_solver/v1/current_results_v1.dart`
+  `lib/util/dart/plaster_solver_fixtures/v1/current_results_v1.dart`
 - adapter/loader support:
-  `test/util/plaster_solver_benchmark_support.dart`
+  `lib/util/dart/plaster_solver/benchmark_support.dart`
 - executable benchmark test:
   `test/util/plaster_geometry_benchmark_test.dart`
 

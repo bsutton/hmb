@@ -1,10 +1,9 @@
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/measurement_type.dart';
 import 'package:hmb/util/dart/plaster_geometry.dart';
-
-import '../test/fixtures/plaster_solver/v1/current_results_v1.dart';
-import '../test/fixtures/plaster_solver/v1/legacy_results_v1.dart';
-import '../test/util/plaster_solver_benchmark_support.dart';
+import 'package:hmb/util/dart/plaster_solver/benchmark_support.dart';
+import 'package:hmb/util/dart/plaster_solver_fixtures/v1/current_results_v1.dart';
+import 'package:hmb/util/dart/plaster_solver_fixtures/v1/legacy_results_v1.dart';
 
 void main() {
   final previousLogging = PlasterGeometry.debugSurfaceCandidateLogging;

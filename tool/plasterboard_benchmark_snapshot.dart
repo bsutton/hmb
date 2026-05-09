@@ -1,8 +1,7 @@
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/measurement_type.dart';
 import 'package:hmb/util/dart/plaster_geometry.dart';
-
-import '../test/util/plaster_solver_benchmark_support.dart';
+import 'package:hmb/util/dart/plaster_solver/benchmark_support.dart';
 
 void main() {
   final previousLogging = PlasterGeometry.debugSurfaceCandidateLogging;

@@ -1,14 +1,14 @@
 import 'dart:math';
 
-import 'package:hmb/entity/entity.g.dart';
-import 'package:hmb/util/dart/measurement_type.dart';
-import 'package:hmb/util/dart/plaster_geometry.dart';
-import 'package:hmb/util/dart/plaster_sheet_direction.dart';
 import 'package:plasterboard_explorer/plasterboard_explorer_models.dart';
 
-import '../fixtures/plaster_solver/v1/baseline_results_v1.dart';
-import '../fixtures/plaster_solver/v1/benchmark_fixture_v1.dart';
-import '../fixtures/plaster_solver/v1/current_results_v1.dart';
+import '../../../entity/entity.g.dart';
+import '../measurement_type.dart';
+import '../plaster_geometry.dart';
+import '../plaster_sheet_direction.dart';
+import '../plaster_solver_fixtures/v1/baseline_results_v1.dart';
+import '../plaster_solver_fixtures/v1/benchmark_fixture_v1.dart';
+import '../plaster_solver_fixtures/v1/current_results_v1.dart';
 
 class SolverBenchmarkScenario {
   final String id;

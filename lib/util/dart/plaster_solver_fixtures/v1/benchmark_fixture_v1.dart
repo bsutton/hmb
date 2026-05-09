@@ -1,4 +1,4 @@
-import 'package:hmb/util/dart/plaster_geometry.dart';
+import '../../plaster_geometry.dart';
 
 class SolverBenchmarkFixtureSetV1 {
   final int schemaVersion;
