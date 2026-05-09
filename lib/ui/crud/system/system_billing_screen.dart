@@ -27,8 +27,9 @@ import 'package:strings/strings.dart';
 
 import '../../../cache/hmb_image_cache.dart';
 import '../../../cache/image_cache_config.dart';
-import '../../../dao/dao_system.dart';
+import '../../../dao/dao.g.dart';
 import '../../../entity/system.dart';
+import '../../../entity/tax_scheme.dart';
 import '../../../util/dart/app_settings.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../../util/dart/uri_ex.dart';
@@ -76,6 +77,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
   var _showPaymentLinkOnInvoice = false;
   LogoAspectRatio _logoAspectRatio = LogoAspectRatio.square;
   TaxDisplayMode _taxDisplayMode = TaxDisplayMode.none;
+  TaxScheme? _taxScheme;
   String? _logoFile;
   Color _billingColour = Colors.deepPurpleAccent; // Default billing color
 
@@ -101,8 +103,15 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
     _financialYearStartMonthController.text =
         (await AppSettings.getFinancialYearStartMonth()).toString();
     _taxDisplayMode = await AppSettings.getTaxDisplayMode();
+    _taxScheme = await _loadSelectedTaxScheme(system);
     _taxLabelController.text = await AppSettings.getTaxLabel();
+    if (Strings.isBlank(_taxLabelController.text)) {
+      _taxLabelController.text = _taxScheme?.taxLabel ?? '';
+    }
     _taxRateController.text = await AppSettings.getTaxRatePercentText();
+    if (Strings.isBlank(_taxRateController.text) && _taxScheme != null) {
+      _taxRateController.text = await _defaultTaxRateText(_taxScheme!);
+    }
     _photoCacheMaxMbController = TextEditingController(
       text: (await AppSettings.getPhotoCacheMaxMb()).toString(),
     );
@@ -168,6 +177,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
         ..billingColour = _billingColour.toColorValue(); // Save billing color
 
       await DaoSystem().update(system);
+      await AppSettings.setTaxSchemeCode(_taxScheme?.code ?? '');
       await AppSettings.setTaxDisplayMode(_taxDisplayMode);
       await AppSettings.setTaxLabel(_taxLabelController.text);
       await AppSettings.setTaxRatePercentText(_taxRateController.text);
@@ -243,6 +253,46 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
         ],
       ),
     );
+  }
+
+  Future<TaxScheme?> _loadSelectedTaxScheme(System system) async {
+    final configuredCode = await AppSettings.getTaxSchemeCode();
+    if (configuredCode.isNotEmpty) {
+      final configured = await DaoTaxScheme().getByCode(configuredCode);
+      if (configured != null) {
+        return configured;
+      }
+    }
+
+    final countryCode = system.countryCode?.trim();
+    if (Strings.isNotBlank(countryCode)) {
+      final countryScheme = await DaoTaxScheme().getByCountryCode(countryCode!);
+      if (countryScheme != null) {
+        return countryScheme;
+      }
+    }
+
+    return DaoTaxScheme().getByCode('custom');
+  }
+
+  Future<String> _defaultTaxRateText(TaxScheme scheme) async {
+    final code = await DaoTaxCode().getDefaultSalesCode(scheme.id);
+    if (code == null || code.rateBasisPoints == 0) {
+      return '';
+    }
+    final rate = code.rateBasisPoints / 100;
+    return rate == rate.roundToDouble()
+        ? rate.toInt().toString()
+        : rate.toString();
+  }
+
+  Future<void> _setTaxScheme(TaxScheme? scheme) async {
+    _taxScheme = scheme;
+    if (scheme == null) {
+      return;
+    }
+    _taxLabelController.text = scheme.taxLabel;
+    _taxRateController.text = await _defaultTaxRateText(scheme);
   }
 
   @override
@@ -407,6 +457,38 @@ and what forms of payment you accept.'''),
               },
             ).help('PDF Tax Display', '''
 Controls if quote/invoice PDFs show an inclusive/exclusive tax notice.'''),
+            HMBDroplist<TaxScheme>(
+              title: 'Tax Jurisdiction',
+              selectedItem: () async => _taxScheme,
+              items: (filter) async {
+                final schemes = await DaoTaxScheme().getAll(
+                  orderByClause: 'display_name ASC',
+                );
+                final query = filter?.trim().toLowerCase() ?? '';
+                if (query.isEmpty) {
+                  return schemes;
+                }
+                return schemes
+                    .where(
+                      (scheme) =>
+                          scheme.displayName.toLowerCase().contains(query) ||
+                          scheme.taxLabel.toLowerCase().contains(query) ||
+                          scheme.countryCode.toLowerCase().contains(query),
+                    )
+                    .toList();
+              },
+              format: _formatTaxScheme,
+              onChanged: (value) {
+                unawaited(
+                  _setTaxScheme(value).then((_) {
+                    if (mounted) {
+                      setState(() {});
+                    }
+                  }),
+                );
+              },
+            ).help('Tax Jurisdiction', '''
+Controls tax labels, default tax codes, and tax summary reporting.'''),
             if (_taxDisplayMode != TaxDisplayMode.none) ...[
               HMBTextField(
                 controller: _taxLabelController,
@@ -490,4 +572,7 @@ The colour theme that will be used on you Invoices and Quotes.'''),
     TaxDisplayMode.inclusive => 'Inclusive',
     TaxDisplayMode.exclusive => 'Exclusive',
   };
+
+  String _formatTaxScheme(TaxScheme scheme) =>
+      '${scheme.displayName} (${scheme.taxLabel})';
 }

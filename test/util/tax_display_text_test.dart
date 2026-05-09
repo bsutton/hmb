@@ -23,14 +23,17 @@ void main() {
       expect(await AppSettings.getTaxDisplayMode(), TaxDisplayMode.none);
       expect(await AppSettings.getTaxLabel(), isEmpty);
       expect(await AppSettings.getTaxRatePercentText(), isEmpty);
+      expect(await AppSettings.getTaxSchemeCode(), isEmpty);
     });
 
     test('round trips and trims persisted values', () async {
       await AppSettings.setTaxDisplayMode(TaxDisplayMode.inclusive);
+      await AppSettings.setTaxSchemeCode('au_gst');
       await AppSettings.setTaxLabel('  GST  ');
       await AppSettings.setTaxRatePercentText(' 10 ');
 
       expect(await AppSettings.getTaxDisplayMode(), TaxDisplayMode.inclusive);
+      expect(await AppSettings.getTaxSchemeCode(), 'au_gst');
       expect(await AppSettings.getTaxLabel(), 'GST');
       expect(await AppSettings.getTaxRatePercentText(), '10');
     });

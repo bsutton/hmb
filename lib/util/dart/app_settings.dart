@@ -41,6 +41,7 @@ class AppSettings {
   static const _taxDisplayModeKey = 'taxDisplayMode';
   static const _taxLabelKey = 'taxLabel';
   static const _taxRateKey = 'taxRatePercent';
+  static const _taxSchemeCodeKey = 'taxSchemeCode';
   static const _plasterExtraSheetWeightKey = 'plasterExtraSheetWeight';
   static const _plasterJointLengthWeightKey = 'plasterJointLengthWeight';
   static const _plasterCutPieceWeightKey = 'plasterCutPieceWeight';
@@ -160,6 +161,17 @@ class AppSettings {
   static Future<void> setTaxRatePercentText(String value) async {
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
     settings[_taxRateKey] = value.trim();
+    await settings.save();
+  }
+
+  static Future<String> getTaxSchemeCode() async {
+    final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
+    return settings.asString(_taxSchemeCodeKey).trim();
+  }
+
+  static Future<void> setTaxSchemeCode(String value) async {
+    final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
+    settings[_taxSchemeCodeKey] = value.trim();
     await settings.save();
   }
 

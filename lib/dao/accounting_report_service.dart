@@ -15,12 +15,17 @@ import 'package:money2/money2.dart';
 
 import '../entity/credit_note.dart';
 import '../entity/invoice.dart';
+import '../entity/tax_code.dart';
+import '../entity/tax_scheme.dart';
 import '../util/dart/app_settings.dart';
 import '../util/dart/local_date.dart';
 import '../util/dart/money_ex.dart';
 import 'dao_customer.dart';
 import 'dao_invoice.dart';
 import 'dao_job.dart';
+import 'dao_system.dart';
+import 'dao_tax_code.dart';
+import 'dao_tax_scheme.dart';
 import 'debtor_ledger_service.dart';
 
 class AccountingPeriod {
@@ -819,16 +824,45 @@ AND NOT EXISTS (
   }
 
   Future<_TaxConfig> _taxConfig() async {
-    final label = (await AppSettings.getTaxLabel()).trim();
-    final rate = double.tryParse(
+    final scheme = await _selectedTaxScheme();
+    final defaultSalesCode = scheme == null
+        ? null
+        : await DaoTaxCode().getDefaultSalesCode(scheme.id);
+    final configuredLabel = (await AppSettings.getTaxLabel()).trim();
+    final configuredRate = double.tryParse(
       (await AppSettings.getTaxRatePercentText()).trim(),
     );
     return _TaxConfig(
-      label: label.isEmpty ? 'Tax' : label,
-      ratePercent: rate ?? 0,
+      label: configuredLabel.isEmpty
+          ? scheme?.taxLabel ?? 'Tax'
+          : configuredLabel,
+      ratePercent: configuredRate ?? _ratePercent(defaultSalesCode) ?? 0,
       mode: await AppSettings.getTaxDisplayMode(),
     );
   }
+
+  Future<TaxScheme?> _selectedTaxScheme() async {
+    final schemeCode = await AppSettings.getTaxSchemeCode();
+    if (schemeCode.isNotEmpty) {
+      final scheme = await DaoTaxScheme().getByCode(schemeCode);
+      if (scheme != null) {
+        return scheme;
+      }
+    }
+
+    final countryCode = (await DaoSystem().get()).countryCode?.trim();
+    if (countryCode != null && countryCode.isNotEmpty) {
+      final scheme = await DaoTaxScheme().getByCountryCode(countryCode);
+      if (scheme != null) {
+        return scheme;
+      }
+    }
+
+    return DaoTaxScheme().getByCode('custom');
+  }
+
+  double? _ratePercent(TaxCode? code) =>
+      code == null ? null : code.rateBasisPoints / 100;
 
   String _periodClause(AccountingPeriod? period, String column) =>
       period == null ? '' : 'AND $column >= ? AND $column < ?';

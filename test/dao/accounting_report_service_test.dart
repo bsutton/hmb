@@ -273,10 +273,9 @@ void main() {
     expect(report.rows.single.reference, 'PAY-45');
   });
 
-  test('tax summary uses configured generic tax label', () async {
+  test('tax summary uses selected tax jurisdiction defaults', () async {
     await AppSettings.setTaxDisplayMode(TaxDisplayMode.inclusive);
-    await AppSettings.setTaxLabel('VAT');
-    await AppSettings.setTaxRatePercentText('20');
+    await AppSettings.setTaxSchemeCode('uk_vat');
     final job = await createJobWithCustomer(
       billingType: BillingType.timeAndMaterial,
       hourlyRate: MoneyEx.zero,
@@ -307,8 +306,7 @@ void main() {
 
   test('tax summary prefers explicit invoice line tax when present', () async {
     await AppSettings.setTaxDisplayMode(TaxDisplayMode.inclusive);
-    await AppSettings.setTaxLabel('Sales Tax');
-    await AppSettings.setTaxRatePercentText('20');
+    await AppSettings.setTaxSchemeCode('us_sales_tax');
     final job = await createJobWithCustomer(
       billingType: BillingType.timeAndMaterial,
       hourlyRate: MoneyEx.zero,
@@ -341,7 +339,7 @@ void main() {
       AccountingPeriod.month(2026, 4),
     );
 
-    expect(report.taxLabel, 'Sales Tax');
+    expect(report.taxLabel, 'Sales tax');
     expect(report.taxCollected, MoneyEx.dollars(7));
     expect(report.taxCollectedIsEstimated, isFalse);
   });
