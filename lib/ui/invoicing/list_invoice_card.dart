@@ -167,8 +167,9 @@ class ListInvoiceCard extends StatelessWidget {
         return 'Overpaid';
       case DebtorInvoiceStatus.voided:
         return 'Voided';
-      case DebtorInvoiceStatus.draft:
       case DebtorInvoiceStatus.sent:
+        return 'Sent';
+      case DebtorInvoiceStatus.draft:
         return 'Outstanding due ${formatLocalDate(invoice.dueDate)}';
     }
   }
@@ -184,8 +185,9 @@ class ListInvoiceCard extends StatelessWidget {
         return HMBChipTone.warning;
       case DebtorInvoiceStatus.voided:
         return HMBChipTone.danger;
-      case DebtorInvoiceStatus.draft:
       case DebtorInvoiceStatus.sent:
+        return HMBChipTone.accent;
+      case DebtorInvoiceStatus.draft:
         return _outstandingTone;
     }
   }
@@ -204,8 +206,9 @@ class ListInvoiceCard extends StatelessWidget {
         return Icons.add_card;
       case DebtorInvoiceStatus.voided:
         return Icons.cancel;
-      case DebtorInvoiceStatus.draft:
       case DebtorInvoiceStatus.sent:
+        return Icons.send;
+      case DebtorInvoiceStatus.draft:
         return Icons.pending_actions;
     }
   }
