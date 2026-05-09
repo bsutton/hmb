@@ -231,7 +231,7 @@ Google Drive backup failed${failureMessage == null ? '' : ': $failureMessage'}''
 
   /// Launches the photo sync process in its own isolate.
   @override
-  Future<void> syncPhotos() => PhotoSyncService().start();
+  Future<void> syncPhotos() => PhotoSyncService().start(retryOnFailure: false);
 
   @override
   Future<String> get photosRootPath => getPhotosRootPath();

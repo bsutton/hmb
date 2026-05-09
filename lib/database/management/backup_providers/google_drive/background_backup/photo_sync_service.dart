@@ -58,6 +58,15 @@ class PhotoDeleted {
   PhotoDeleted(this.id);
 }
 
+class PhotoSyncException implements Exception {
+  final String message;
+
+  const PhotoSyncException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 class PhotoSyncService {
   static final _instance = PhotoSyncService._();
   static const _maxAutoRetries = 3;
@@ -84,9 +93,10 @@ class PhotoSyncService {
   Stream<String> get errorStream => _errorController.stream;
 
   bool get isRunning => _isolate != null;
+  String? get lastErrorSummary => _lastErrorSummary;
 
   /// Kick off the sync and listen for both progress and payload messages.
-  Future<void> start() async {
+  Future<void> start({bool retryOnFailure = true}) async {
     final photos = await DaoPhoto().getUnsyncedPhotos();
     final deletes = (await DaoPhotoDeleteQueue().getPendingDeleteIds())
         .map(
@@ -98,6 +108,7 @@ class PhotoSyncService {
         .toList();
     if (photos.isEmpty && deletes.isEmpty) {
       _autoRetryAttempts = 0;
+      _lastErrorSummary = null;
       return;
     }
 
@@ -110,16 +121,18 @@ class PhotoSyncService {
         );
         return;
       }
-      await _startSync(photos: photos, deletes: deletes, authHeaders: headers);
-    } catch (_) {
-      _controller.add(
-        ProgressUpdate(
-          'Photo sync paused while the app was backgrounded. '
-          'It will retry when resumed.',
-          0,
-          0,
-        ),
+      await _startSync(
+        photos: photos,
+        deletes: deletes,
+        authHeaders: headers,
+        retryOnFailure: retryOnFailure,
       );
+    } catch (error, stackTrace) {
+      if (error is PhotoSyncException) {
+        rethrow;
+      }
+      _cleanup();
+      _handleStartupFailure(error, stackTrace, retryOnFailure: retryOnFailure);
     }
   }
 
@@ -127,10 +140,12 @@ class PhotoSyncService {
     required List<PhotoPayload> photos,
     required List<PhotoDeletePayload> deletes,
     required Map<String, String> authHeaders,
+    required bool retryOnFailure,
   }) async {
     if (isRunning) {
       return;
     }
+    _retryTimer?.cancel();
     _syncHadError = false;
     _lastErrorSummary = null;
 
@@ -173,11 +188,21 @@ class PhotoSyncService {
     );
 
     await _exitPort!.first;
+    // Error and exit notifications arrive on separate ports. Yield once so a
+    // terminal isolate error cannot be misclassified as a successful exit.
+    await Future<void>.delayed(Duration.zero);
     _cleanup();
     if (_syncHadError) {
-      _scheduleRetry();
+      if (retryOnFailure) {
+        _scheduleRetry();
+      } else {
+        throw PhotoSyncException(
+          _lastErrorSummary ?? 'Photo sync failed without an error message.',
+        );
+      }
     } else {
       _autoRetryAttempts = 0;
+      _lastErrorSummary = null;
     }
   }
 
@@ -206,24 +231,35 @@ class PhotoSyncService {
       ),
     );
     _errorController.add(_lastErrorSummary!);
-    _controller.add(
-      ProgressUpdate(
-        'Photo sync failed.',
-        0,
-        0,
-      ),
-    );
+    _controller.add(ProgressUpdate('Photo sync failed.', 0, 0));
+  }
+
+  void _handleStartupFailure(
+    Object error,
+    StackTrace stackTrace, {
+    required bool retryOnFailure,
+  }) {
+    _syncHadError = true;
+    _lastErrorSummary = _formatSyncError(error);
+    unawaited(Sentry.captureException(error, stackTrace: stackTrace));
+    _errorController.add(_lastErrorSummary!);
+    _controller.add(ProgressUpdate('Photo sync failed.', 0, 0));
+    if (retryOnFailure) {
+      _scheduleRetry();
+      return;
+    }
+    throw PhotoSyncException(_lastErrorSummary!);
   }
 
   void _scheduleRetry() {
     if (_autoRetryAttempts >= _maxAutoRetries) {
-      _controller.add(
-        ProgressUpdate(
-          'Photo sync paused. It will resume when the app is reopened.',
-          0,
-          0,
-        ),
-      );
+      final message = _lastErrorSummary == null
+          ? 'Photo sync failed after $_maxAutoRetries retries.'
+          : 'Photo sync failed after $_maxAutoRetries retries: '
+                '$_lastErrorSummary';
+      _controller.add(ProgressUpdate(message, 0, 0));
+      _errorController.add(message);
+      unawaited(Sentry.captureMessage(message, level: SentryLevel.error));
       return;
     }
 
@@ -242,6 +278,12 @@ class PhotoSyncService {
   }
 
   String _formatSyncError(dynamic error) {
+    if (error is Exception) {
+      return error.toString();
+    }
+    if (error is Error) {
+      return error.toString();
+    }
     if (error is List && error.length >= 2) {
       final message = '${error[0]}'.trim();
       final stack = '${error[1]}'.trim();
@@ -267,9 +309,14 @@ class PhotoSyncService {
     try {
       await start();
     } catch (_) {
+      if (_lastErrorSummary != null) {
+        _errorController.add(_lastErrorSummary!);
+      }
       _controller.add(
         ProgressUpdate(
-          'Photo sync could not resume yet. It will retry shortly.',
+          _lastErrorSummary == null
+              ? 'Photo sync could not resume yet. It will retry shortly.'
+              : 'Photo sync could not resume: $_lastErrorSummary',
           0,
           0,
         ),
@@ -299,8 +346,9 @@ class PhotoSyncService {
       createDir(outDir, recursive: true);
     }
 
-    final headers = await (await GoogleDriveAuth.instance())
-        .authHeadersOrNull(allowAutomaticSignIn: false);
+    final headers = await (await GoogleDriveAuth.instance()).authHeadersOrNull(
+      allowAutomaticSignIn: false,
+    );
     if (headers == null) {
       throw StateError('Google Drive auth is not available for download.');
     }
