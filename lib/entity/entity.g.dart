@@ -47,6 +47,7 @@ export 'quote.dart';
 export 'quote_line.dart';
 export 'quote_line_group.dart';
 export 'receipt.dart';
+export 'receipt_line_item.dart';
 export 'site.dart';
 export 'supplier.dart';
 export 'system.dart';

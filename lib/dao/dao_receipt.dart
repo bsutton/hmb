@@ -94,6 +94,10 @@ class DaoReceipt extends Dao<Receipt> {
       await DaoPhoto().delete(photo.id, transaction);
     }
 
+    await withinTransaction(
+      transaction,
+    ).delete('receipt_line_item', where: 'receipt_id = ?', whereArgs: [id]);
+
     await withinTransaction(transaction).delete(
       'receipt_job_allocation',
       where: 'receipt_id = ?',

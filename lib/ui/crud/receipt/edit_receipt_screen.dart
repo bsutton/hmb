@@ -19,13 +19,16 @@ import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
+import '../../../api/chat_gpt/receipt_api_client.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/money_ex.dart';
+import '../../../util/dart/photo_meta.dart';
 import '../../test_keys.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/photo_controller.dart';
+import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/select/hmb_select_job.dart';
 import '../../widgets/select/hmb_select_supplier.dart';
 import '../../widgets/widgets.g.dart';
@@ -60,8 +63,10 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   final _linkedTaskItemIds = <int>{};
   var _linkableTaskItems = <TaskItem>[];
   final _jobAllocations = <_ReceiptJobAllocationEditor>[];
+  final _lineItems = <_ReceiptLineItemEditor>[];
 
   var _isCalculating = false;
+  var _isExtractingLines = false;
 
   var _taxExHasUserValue = true;
   var _taxHasUserValue = true;
@@ -126,6 +131,11 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       _linkedTaskItemIds.addAll(
         await DaoReceipt().getLinkedTaskItemIds(currentEntity!.id),
       );
+      _lineItems.addAll(
+        (await DaoReceiptLineItem().getByReceiptId(
+          currentEntity!.id,
+        )).map(_ReceiptLineItemEditor.fromEntity),
+      );
       final allocations = await DaoReceipt().getJobAllocations(
         currentEntity!.id,
       );
@@ -150,6 +160,24 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   }
 
   @override
+  void dispose() {
+    _totalExclCtrl.dispose();
+    _taxCtrl.dispose();
+    _totalInclCtrl.dispose();
+    _taxExFocus.dispose();
+    _taxFocus.dispose();
+    _taxIncFocus.dispose();
+    _photoCtrl.dispose();
+    for (final allocation in _jobAllocations) {
+      allocation.dispose();
+    }
+    for (final line in _lineItems) {
+      line.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
     builder: (_) => EntityEditScreen<Receipt>(
@@ -164,6 +192,10 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   Widget _buildEditor() => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
+      _buildStepHeading(
+        '1. Receipt details',
+        'Enter the supplier, date, totals and receipt photo.',
+      ),
       // Date
       HMBDateTimeField(
         key: TestKeys.receiptDateField,
@@ -232,8 +264,6 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         fieldName: 'Total Excluding Tax',
         focusNode: _taxExFocus,
       ),
-      _buildJobAllocations(),
-      _buildTaskItemLinks(),
 
       // Photos
       PhotoCrud<Receipt>(
@@ -242,6 +272,9 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         parentType: ParentType.receipt,
         controller: _photoCtrl,
       ),
+      _buildLineItems(),
+      _buildJobAllocations(),
+      _buildTaskItemLinks(),
     ],
   );
 
@@ -276,6 +309,10 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         currentEntity!.id,
         _linkedTaskItemIds,
       );
+      await DaoReceiptLineItem().replaceForReceipt(
+        currentEntity!.id,
+        _lineItems.map((line) => line.toEntity(receiptId: currentEntity!.id)),
+      );
       await DaoReceipt().replaceJobAllocations(
         currentEntity!.id,
         _jobAllocations.map(
@@ -292,19 +329,242 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     setState(() {});
   }
 
+  Widget _buildStepHeading(String title, String subtitle) => Padding(
+    padding: const EdgeInsets.only(top: 12, bottom: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.titleMedium),
+        Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    ),
+  );
+
+  Widget _buildLineItems() {
+    final lineTotal = _lineItems.fold(
+      MoneyEx.zero,
+      (total, line) => total + line.lineTotalExTax,
+    );
+    final receiptTotal = _totalExclCtrl.money ?? MoneyEx.zero;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildStepHeading(
+          '2. Receipt lines',
+          'Extract lines from the photo, or enter them manually. Review before '
+              'saving.',
+        ),
+        if (currentEntity == null)
+          const Text('Save the receipt before extracting lines from a photo.')
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              HMBButton.smallWithIcon(
+                label: _isExtractingLines ? 'Extracting...' : 'Extract Lines',
+                hint: 'Use the ChatGPT integration to read receipt lines.',
+                icon: const Icon(Icons.document_scanner_outlined),
+                enabled: !_isExtractingLines,
+                onPressed: _extractLineItems,
+              ),
+              HMBButton.smallWithIcon(
+                label: 'Add Line',
+                hint: 'Add a receipt line manually.',
+                icon: const Icon(Icons.add),
+                onPressed: _addManualLine,
+              ),
+            ],
+          ),
+        if (_lineItems.isEmpty)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text('No receipt lines have been entered.'),
+          )
+        else ...[
+          const SizedBox(height: 8),
+          for (var i = 0; i < _lineItems.length; i++) _buildLineItemRow(i),
+          Text(
+            lineTotal == receiptTotal
+                ? 'Line total matches receipt total: $lineTotal'
+                : 'Line total $lineTotal does not match receipt total '
+                      '$receiptTotal.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildLineItemRow(int index) {
+    final line = _lineItems[index];
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: HMBTextField(
+                    controller: line.descriptionController,
+                    labelText: 'Description',
+                    required: true,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Remove receipt line',
+                  onPressed: () {
+                    setState(() {
+                      _lineItems.removeAt(index).dispose();
+                    });
+                  },
+                  icon: const Icon(Icons.delete_outline),
+                ),
+              ],
+            ),
+            HMBTextField(
+              controller: line.quantityController,
+              labelText: 'Quantity',
+              required: true,
+            ),
+            HMBMoneyField(
+              controller: line.unitPriceController,
+              labelText: 'Unit Price',
+              fieldName: 'Unit Price',
+              nonZero: false,
+            ),
+            HMBMoneyField(
+              controller: line.lineTotalExTaxController,
+              labelText: 'Line Total Excl. Tax',
+              fieldName: 'Line Total Excluding Tax',
+              nonZero: false,
+            ),
+            HMBMoneyField(
+              controller: line.taxAmountController,
+              labelText: 'Tax',
+              fieldName: 'Tax',
+              nonZero: false,
+            ),
+            HMBMoneyField(
+              controller: line.lineTotalIncTaxController,
+              labelText: 'Line Total Incl. Tax',
+              fieldName: 'Line Total Including Tax',
+              nonZero: false,
+            ),
+            HMBDroplist<TaskItem>(
+              title: 'Matched Task Item',
+              selectedItem: () async => line.matchedTaskItemId == null
+                  ? null
+                  : _firstOrNull(
+                      await DaoTaskItem().getByIds([line.matchedTaskItemId!]),
+                    ),
+              items: (_) async => _linkableTaskItems,
+              onChanged: (item) => setState(() {
+                line.matchedTaskItemId = item?.id;
+                if (item != null) {
+                  _linkedTaskItemIds.add(item.id);
+                }
+              }),
+              format: (item) => item.description,
+            ),
+            if (line.source != 'manual' || line.confidence > 0)
+              Text(
+                '${line.source} confidence ${line.confidence}%',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _extractLineItems() async {
+    final photos = await _photoCtrl.photos;
+    if (photos.isEmpty) {
+      HMBToast.error('Add a receipt photo before extracting lines.');
+      return;
+    }
+
+    setState(() => _isExtractingLines = true);
+    try {
+      final photo = photos.last;
+      final path = await PhotoMeta.getAbsolutePath(photo.photo);
+      final result = await ReceiptApiClient().extractData(path);
+      if (result == null) {
+        HMBToast.error(
+          'Add your OpenAI API key in Settings | Integrations | ChatGPT.',
+        );
+        return;
+      }
+      _applyExtraction(result);
+      HMBToast.info('Extracted ${result.lines.length} receipt lines.');
+    } catch (e) {
+      HMBToast.error('Receipt extraction failed: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isExtractingLines = false);
+      }
+    }
+  }
+
+  void _applyExtraction(ReceiptExtractionResult result) {
+    for (final line in _lineItems) {
+      line.dispose();
+    }
+    setState(() {
+      if (result.receiptDate != null) {
+        _date = result.receiptDate!;
+      }
+      if (result.totalExcludingTax > 0) {
+        _totalExclCtrl.money = MoneyEx.fromInt(result.totalExcludingTax);
+      }
+      if (result.tax > 0) {
+        _taxCtrl.money = MoneyEx.fromInt(result.tax);
+      }
+      if (result.totalIncludingTax > 0) {
+        _totalInclCtrl.money = MoneyEx.fromInt(result.totalIncludingTax);
+      }
+      _lineItems
+        ..clear()
+        ..addAll(result.lines.map(_ReceiptLineItemEditor.fromExtraction));
+      if (_jobAllocations.length == 1 && _selectedJob.jobId != null) {
+        _jobAllocations.single.amount = _totalExclCtrl.money ?? MoneyEx.zero;
+      }
+    });
+    if (result.warnings.isNotEmpty) {
+      HMBToast.info(result.warnings.first);
+    }
+  }
+
+  void _addManualLine() {
+    setState(() {
+      _lineItems.add(
+        _ReceiptLineItemEditor(
+          description: '',
+          quantity: 1,
+          unitPrice: MoneyEx.zero,
+          lineTotalExTax: MoneyEx.zero,
+          taxAmount: MoneyEx.zero,
+          lineTotalIncTax: MoneyEx.zero,
+          matchedTaskItemId: null,
+          confidence: 100,
+          source: 'manual',
+        ),
+      );
+    });
+  }
+
   Widget _buildTaskItemLinks() {
     final jobId = _selectedJob.jobId;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        Text(
-          'Linked task items',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        Text(
+        _buildStepHeading(
+          '4. Task item links',
           'Optional. Select the purchased items this receipt covers.',
-          style: Theme.of(context).textTheme.bodySmall,
         ),
         if (jobId == null)
           const Padding(
@@ -344,15 +604,10 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   Widget _buildJobAllocations() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const SizedBox(height: 8),
-      Text(
-        'Job cost allocation',
-        style: Theme.of(context).textTheme.titleMedium,
-      ),
-      Text(
+      _buildStepHeading(
+        '3. Job cost allocation',
         'Split this supplier receipt across jobs when one purchase covers '
-        'more than one job.',
-        style: Theme.of(context).textTheme.bodySmall,
+            'more than one job.',
       ),
       const SizedBox(height: 8),
       for (var i = 0; i < _jobAllocations.length; i++)
@@ -541,4 +796,94 @@ class _ReceiptJobAllocationEditor {
   Money get amount => amountController.money ?? MoneyEx.zero;
 
   set amount(Money value) => amountController.money = value;
+
+  void dispose() {
+    amountController.dispose();
+  }
 }
+
+class _ReceiptLineItemEditor {
+  final TextEditingController descriptionController;
+  final TextEditingController quantityController;
+  final HMBMoneyEditingController unitPriceController;
+  final HMBMoneyEditingController lineTotalExTaxController;
+  final HMBMoneyEditingController taxAmountController;
+  final HMBMoneyEditingController lineTotalIncTaxController;
+  int? matchedTaskItemId;
+  final int confidence;
+  final String source;
+
+  _ReceiptLineItemEditor({
+    required String description,
+    required double quantity,
+    required Money unitPrice,
+    required Money lineTotalExTax,
+    required Money taxAmount,
+    required Money lineTotalIncTax,
+    required this.matchedTaskItemId,
+    required this.confidence,
+    required this.source,
+  }) : descriptionController = TextEditingController(text: description),
+       quantityController = TextEditingController(text: quantity.toString()),
+       unitPriceController = HMBMoneyEditingController(money: unitPrice),
+       lineTotalExTaxController = HMBMoneyEditingController(
+         money: lineTotalExTax,
+       ),
+       taxAmountController = HMBMoneyEditingController(money: taxAmount),
+       lineTotalIncTaxController = HMBMoneyEditingController(
+         money: lineTotalIncTax,
+       );
+
+  factory _ReceiptLineItemEditor.fromEntity(ReceiptLineItem item) =>
+      _ReceiptLineItemEditor(
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        lineTotalExTax: item.lineTotalExTax,
+        taxAmount: item.taxAmount,
+        lineTotalIncTax: item.lineTotalIncTax,
+        matchedTaskItemId: item.matchedTaskItemId,
+        confidence: item.confidence,
+        source: item.source,
+      );
+
+  factory _ReceiptLineItemEditor.fromExtraction(ReceiptLineExtraction line) =>
+      _ReceiptLineItemEditor(
+        description: line.description,
+        quantity: line.quantity,
+        unitPrice: MoneyEx.fromInt(line.unitPrice),
+        lineTotalExTax: MoneyEx.fromInt(line.lineTotalExTax),
+        taxAmount: MoneyEx.fromInt(line.taxAmount),
+        lineTotalIncTax: MoneyEx.fromInt(line.lineTotalIncTax),
+        matchedTaskItemId: null,
+        confidence: line.confidence,
+        source: 'photo_ocr',
+      );
+
+  Money get lineTotalExTax => lineTotalExTaxController.money ?? MoneyEx.zero;
+
+  ReceiptLineItem toEntity({required int receiptId}) =>
+      ReceiptLineItem.forInsert(
+        receiptId: receiptId,
+        description: descriptionController.text.trim(),
+        quantity: double.tryParse(quantityController.text.trim()) ?? 1,
+        unitPrice: unitPriceController.money ?? MoneyEx.zero,
+        lineTotalExTax: lineTotalExTaxController.money ?? MoneyEx.zero,
+        taxAmount: taxAmountController.money ?? MoneyEx.zero,
+        lineTotalIncTax: lineTotalIncTaxController.money ?? MoneyEx.zero,
+        matchedTaskItemId: matchedTaskItemId,
+        confidence: confidence,
+        source: source,
+      );
+
+  void dispose() {
+    descriptionController.dispose();
+    quantityController.dispose();
+    unitPriceController.dispose();
+    lineTotalExTaxController.dispose();
+    taxAmountController.dispose();
+    lineTotalIncTaxController.dispose();
+  }
+}
+
+T? _firstOrNull<T>(List<T> values) => values.isEmpty ? null : values.first;

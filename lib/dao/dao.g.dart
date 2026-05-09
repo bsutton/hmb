@@ -47,6 +47,7 @@ export 'dao_quote.dart';
 export 'dao_quote_line.dart';
 export 'dao_quote_line_group.dart';
 export 'dao_receipt.dart';
+export 'dao_receipt_line_item.dart';
 export 'dao_site.dart';
 export 'dao_site_customer.dart';
 export 'dao_site_supplier.dart';

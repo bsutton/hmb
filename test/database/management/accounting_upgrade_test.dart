@@ -193,4 +193,55 @@ CREATE TABLE receipt_job_allocation (
       }
     },
   );
+
+  test('v187 adds receipt line items', () async {
+    final dbPath = join(createTempDir(), 'accounting_v187.db');
+    final db = await CliDatabaseFactory().openDatabase(
+      dbPath,
+      options: OpenDatabaseOptions(),
+    );
+
+    try {
+      await db.execute('''
+CREATE TABLE receipt (
+  id INTEGER PRIMARY KEY AUTOINCREMENT
+)
+''');
+      await db.execute('''
+CREATE TABLE task_item (
+  id INTEGER PRIMARY KEY AUTOINCREMENT
+)
+''');
+
+      final source = ProjectScriptSource();
+      final sql = await source.loadSQL('assets/sql/upgrade_scripts/v187.sql');
+      final statements = await parseSqlFile(sql);
+      for (final statement in statements) {
+        await db.execute(statement);
+      }
+
+      await db.insert('receipt', {'id': 1});
+      await db.insert('task_item', {'id': 10});
+      await db.insert('receipt_line_item', {
+        'receipt_id': 1,
+        'description': 'Timber',
+        'quantity': 2.0,
+        'unit_price': 1250,
+        'line_total_ex_tax': 2500,
+        'tax_amount': 250,
+        'line_total_inc_tax': 2750,
+        'matched_task_item_id': 10,
+        'confidence': 92,
+        'source': 'photo_ocr',
+      });
+
+      final rows = await db.query('receipt_line_item');
+
+      expect(rows.single['description'], 'Timber');
+      expect(rows.single['matched_task_item_id'], 10);
+    } finally {
+      await db.close();
+      delete(dbPath);
+    }
+  });
 }

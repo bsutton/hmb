@@ -104,7 +104,8 @@ class ChatGptIntegrationScreenState extends State<ChatGptIntegrationScreen> {
       children: [
         const Text(
           'Store your OpenAI API key to enable job summaries and task '
-          'extraction during booking import.',
+          'extraction during booking import, and receipt line extraction '
+          'from receipt photos.',
         ),
         const HMBSpacer(height: true),
         TextFormField(
