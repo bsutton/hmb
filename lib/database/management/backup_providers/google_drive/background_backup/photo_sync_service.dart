@@ -224,6 +224,9 @@ class PhotoSyncService {
   void _onSyncError(dynamic error) {
     _syncHadError = true;
     _lastErrorSummary = _formatSyncError(error);
+    final exception = PhotoSyncException(_lastErrorSummary!);
+    final stackTrace = _stackTraceFromIsolateError(error);
+    unawaited(Sentry.captureException(exception, stackTrace: stackTrace));
     unawaited(
       Sentry.captureMessage(
         'Photo sync isolate failed: $_lastErrorSummary',
@@ -294,6 +297,16 @@ class PhotoSyncService {
       return '$message [$firstStackLine]';
     }
     return '$error';
+  }
+
+  StackTrace? _stackTraceFromIsolateError(dynamic error) {
+    if (error is List && error.length >= 2) {
+      final stack = '${error[1]}'.trim();
+      if (stack.isNotEmpty) {
+        return StackTrace.fromString(stack);
+      }
+    }
+    return null;
   }
 
   Future<void> resumeIfNeeded() async {
@@ -449,16 +462,10 @@ properties has { key='photoId' and value='$idStr' } and trashed=false''';
 
 /// In the isolate, after each successful upload, send the payload itself:
 Future<void> _photoSyncEntry(PhotoSyncParams params) async {
-  try {
-    await uploadPhotosInBackup(
-      sendPort: params.sendPort,
-      authHeaders: params.authHeaders,
-      photoPayloads: params.photos,
-      deletePayloads: params.deletes,
-    );
-  } catch (e, st) {
-    Error.throwWithStackTrace(e, st);
-  } finally {
-    Isolate.exit();
-  }
+  await uploadPhotosInBackup(
+    sendPort: params.sendPort,
+    authHeaders: params.authHeaders,
+    photoPayloads: params.photos,
+    deletePayloads: params.deletes,
+  );
 }

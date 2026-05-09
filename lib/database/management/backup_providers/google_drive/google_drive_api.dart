@@ -85,10 +85,12 @@ class GoogleDriveApi {
       _authClient!.send(request);
 
   Future<String> getOrCreateFolderId(String name, {String? parentId}) async {
+    final escapedName = escapeDriveQueryLiteral(name);
     var q =
-        "mimeType='application/vnd.google-apps.folder' and name='$name' and trashed=false";
+        "mimeType='application/vnd.google-apps.folder' and "
+        "name='$escapedName' and trashed=false";
     if (parentId != null) {
-      q += " and '$parentId' in parents";
+      q += " and '${escapeDriveQueryLiteral(parentId)}' in parents";
     }
 
     final res = await _driveApi.files.list(q: q);
@@ -172,3 +174,7 @@ class GoogleDriveApi {
     }
   }
 }
+
+@visibleForTesting
+String escapeDriveQueryLiteral(String value) =>
+    value.replaceAll(String.fromCharCode(92), r'\\').replaceAll("'", r"\'");
