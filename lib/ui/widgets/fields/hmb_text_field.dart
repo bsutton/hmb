@@ -34,6 +34,7 @@ class HMBTextField extends StatelessWidget {
   final bool obscureText;
   final Widget? suffixIcon;
   final List<TextInputFormatter> inputFormatters;
+  final Key? fieldKey;
 
   /// A customizable text field that supports disabling/enabling input.
   const HMBTextField({
@@ -52,6 +53,7 @@ class HMBTextField extends StatelessWidget {
     this.textCapitalization = TextCapitalization.none,
     this.suffixIcon,
     this.inputFormatters = const [],
+    this.fieldKey,
   });
 
   @override
@@ -72,6 +74,7 @@ class HMBTextField extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextFormField(
+            key: fieldKey,
             style: const TextStyle(color: HMBColors.textPrimary),
             enabled: enabled,
             readOnly: !enabled,

@@ -59,6 +59,7 @@ Future<InvoicePaymentRequest?> showRecordInvoicePaymentDialog({
                     controller: amountController,
                     labelText: 'Amount',
                     fieldName: 'payment amount',
+                    fieldKey: const ValueKey('record_payment_amount_field'),
                     autofocus: true,
                     onChanged: (_) => setState(() => amountError = null),
                   ),
@@ -72,12 +73,18 @@ Future<InvoicePaymentRequest?> showRecordInvoicePaymentDialog({
                   HMBTextField(
                     controller: methodController,
                     labelText: 'Method',
+                    fieldKey: const ValueKey('record_payment_method_field'),
                   ),
                   HMBTextField(
                     controller: referenceController,
                     labelText: 'Reference',
+                    fieldKey: const ValueKey('record_payment_reference_field'),
                   ),
-                  HMBTextField(controller: notesController, labelText: 'Notes'),
+                  HMBTextField(
+                    controller: notesController,
+                    labelText: 'Notes',
+                    fieldKey: const ValueKey('record_payment_notes_field'),
+                  ),
                 ],
               ),
             ),

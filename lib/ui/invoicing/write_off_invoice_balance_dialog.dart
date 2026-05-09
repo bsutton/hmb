@@ -51,6 +51,7 @@ Future<InvoiceWriteOffRequest?> showWriteOffInvoiceBalanceDialog({
             HMBTextField(
               controller: reasonController,
               labelText: 'Reason',
+              fieldKey: const ValueKey('write_off_reason_field'),
               required: true,
               autofocus: true,
             ),

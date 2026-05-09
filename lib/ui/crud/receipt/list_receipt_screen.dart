@@ -154,8 +154,8 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         FutureBuilderEx(
-          future: DaoJob().getById(r.jobId),
-          builder: (c, job) => HMBTextBody('Job: ${job?.summary ?? ''}'),
+          future: _jobAllocationSummary(r),
+          builder: (c, summary) => HMBTextBody(summary ?? 'Jobs: Loading...'),
         ),
         FutureBuilderEx(
           future: DaoSupplier().getById(r.supplierId),
@@ -181,5 +181,27 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
         HMBTextHeadline3(supplier!.name),
       ],
     );
+  }
+
+  Future<String> _jobAllocationSummary(Receipt receipt) async {
+    final allocations = await DaoReceipt().getJobAllocations(receipt.id);
+    if (allocations.isEmpty) {
+      final job = await DaoJob().getById(receipt.jobId);
+      return 'Job: ${job?.summary ?? ''}';
+    }
+
+    final parts = <String>[];
+    for (final allocation in allocations) {
+      final job = await DaoJob().getById(allocation.jobId);
+      parts.add(
+        '${job?.summary ?? '#${allocation.jobId}'} '
+        '${allocation.amount}',
+      );
+    }
+
+    if (parts.length == 1) {
+      return 'Job: ${parts.single}';
+    }
+    return 'Jobs: ${parts.join(', ')}';
   }
 }

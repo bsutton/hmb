@@ -30,6 +30,7 @@ class HMBMoneyField extends HMBTextField {
     FocusNode? focusNode,
     ValueChanged<String?>? onChanged,
     Key? key,
+    Key? fieldKey,
     bool autofocus = false,
   }) => HMBMoneyField._(
     controller: controller,
@@ -40,6 +41,7 @@ class HMBMoneyField extends HMBTextField {
     focusNode: focusNode,
     onChanged: onChanged,
     key: key,
+    fieldKey: fieldKey,
     autofocus: autofocus,
     validator: (value) => validation(value, nonZero, fieldName),
   );
@@ -53,6 +55,7 @@ class HMBMoneyField extends HMBTextField {
     super.focusNode,
     super.onChanged,
     super.key,
+    super.fieldKey,
     super.autofocus = false,
     super.validator,
   }) : super(keyboardType: TextInputType.number);
