@@ -56,7 +56,8 @@ class ListInvoiceCard extends StatelessWidget {
           navigateTo: () async => FullPageListJobCard(invoiceDetails.job),
         ),
       Text('Total: ${invoiceDetails.invoice.totalAmount}'),
-      if (_showBalance) Text('Balance: ${invoiceDetails.ledger.balance}'),
+      if (_showOutstanding)
+        Text('Outstanding: ${invoiceDetails.ledger.balance}'),
       if (Strings.isNotBlank(invoiceDetails.invoice.voidDescription))
         Text(
           'Void: ${invoiceDetails.invoice.voidDescription}',
@@ -68,13 +69,7 @@ class ListInvoiceCard extends StatelessWidget {
         spacing: 6,
         runSpacing: 6,
         children: [
-          _buildXeroChip(),
-          if (invoiceDetails.invoice.sent)
-            const HMBChip(
-              label: 'Sent',
-              tone: HMBChipTone.accent,
-              icon: Icons.send,
-            ),
+          if (_showAccountingSyncChip) _buildXeroChip(),
           if (invoiceDetails.invoice.paymentSource ==
               InvoicePaymentSource.unknown)
             const HMBChip(
@@ -152,11 +147,7 @@ class ListInvoiceCard extends StatelessWidget {
     }
   }
 
-  bool get _showBalance =>
-      invoiceDetails.ledger.paid.isNonZero ||
-      invoiceDetails.ledger.credited.isNonZero ||
-      invoiceDetails.ledger.adjusted.isNonZero ||
-      invoiceDetails.ledger.balance != invoiceDetails.invoice.totalAmount;
+  bool get _showOutstanding => invoiceDetails.ledger.balance.isPositive;
 
   String get _localStatusLabel {
     final invoice = invoiceDetails.invoice;
@@ -169,9 +160,9 @@ class ListInvoiceCard extends StatelessWidget {
       case DebtorInvoiceStatus.writtenOff:
         return 'Written off';
       case DebtorInvoiceStatus.partPaid:
-        return 'Part paid, balance ${ledger.balance}';
+        return 'Part paid';
       case DebtorInvoiceStatus.credited:
-        return 'Credited, balance ${ledger.balance}';
+        return 'Credited';
       case DebtorInvoiceStatus.overpaid:
         return 'Overpaid';
       case DebtorInvoiceStatus.voided:
@@ -240,4 +231,6 @@ class ListInvoiceCard extends StatelessWidget {
 
     return HMBChip(label: 'Xero #$invoiceNum', icon: Icons.cloud_done);
   }
+
+  bool get _showAccountingSyncChip => !invoiceDetails.invoice.isManagedLocally;
 }
