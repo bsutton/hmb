@@ -109,7 +109,7 @@ class _CashReceivedScreenState extends State<CashReceivedScreen> {
         icon: const Icon(Icons.download),
         onPressed: () async {
           await exportCsv(
-            fileName: 'cash_received.csv',
+            fileName: _exportFileName(report, 'csv'),
             csv: AccountingReportCsvExporter().cashReceived(report),
           );
         },
@@ -120,7 +120,7 @@ class _CashReceivedScreenState extends State<CashReceivedScreen> {
         icon: const Icon(Icons.picture_as_pdf),
         onPressed: () async {
           await exportReportPdf(
-            fileName: 'cash_received.pdf',
+            fileName: _exportFileName(report, 'pdf'),
             title: 'Cash Received',
             rows: _pdfRows(report),
           );
@@ -165,4 +165,14 @@ class _CashReceivedScreenState extends State<CashReceivedScreen> {
         row.amount.toString(),
       ],
   ];
+
+  String _exportFileName(CashReceivedReport report, String extension) =>
+      accountingReportExportFileName(
+        reportName: 'cash_received',
+        extension: extension,
+        startInclusive: report.period.startInclusive,
+        endInclusive: report.period.endExclusive.subtract(
+          const Duration(days: 1),
+        ),
+      );
 }

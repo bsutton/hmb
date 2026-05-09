@@ -73,8 +73,13 @@ class _JobProfitReportScreenState extends State<JobProfitReportScreen> {
               hint: 'Export job profit as a CSV file',
               icon: const Icon(Icons.download),
               onPressed: () async {
+                final job = await DaoJob().getById(report.jobId);
                 await exportCsv(
-                  fileName: 'job_profit_${report.jobId}.csv',
+                  fileName: _exportFileName(
+                    report,
+                    'csv',
+                    jobName: job?.summary,
+                  ),
                   csv: AccountingReportCsvExporter().jobProfit(report),
                 );
               },
@@ -84,8 +89,13 @@ class _JobProfitReportScreenState extends State<JobProfitReportScreen> {
               hint: 'Export job profit as a PDF file',
               icon: const Icon(Icons.picture_as_pdf),
               onPressed: () async {
+                final job = await DaoJob().getById(report.jobId);
                 await exportReportPdf(
-                  fileName: 'job_profit_${report.jobId}.pdf',
+                  fileName: _exportFileName(
+                    report,
+                    'pdf',
+                    jobName: job?.summary,
+                  ),
                   title: 'Job Profit',
                   rows: _pdfRows(report),
                 );
@@ -134,4 +144,15 @@ class _JobProfitReportScreenState extends State<JobProfitReportScreen> {
     ['Unreceipted actual costs', '-${report.unreceiptedActualCosts}'],
     ['Net profit', report.netProfit.toString()],
   ];
+
+  String _exportFileName(
+    JobProfitReport report,
+    String extension, {
+    String? jobName,
+  }) => accountingReportExportFileName(
+    reportName: 'job_profit',
+    extension: extension,
+    entityName: jobName,
+    entityId: report.jobId,
+  );
 }

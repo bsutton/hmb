@@ -20,6 +20,31 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../../../widgets/hmb_toast.dart';
 
+String accountingReportExportFileName({
+  required String reportName,
+  required String extension,
+  DateTime? startInclusive,
+  DateTime? endInclusive,
+  DateTime? asAt,
+  String? entityName,
+  int? entityId,
+}) {
+  final parts = <String>[
+    _slug(reportName),
+    if (entityName != null && entityName.trim().isNotEmpty) _slug(entityName),
+    if (entityId != null) entityId.toString(),
+    if (startInclusive != null && endInclusive != null)
+      '${_dateStamp(startInclusive)}_to_${_dateStamp(endInclusive)}'
+    else if (asAt != null)
+      'as_at_${_dateStamp(asAt)}',
+  ].where((part) => part.isNotEmpty).toList();
+
+  final safeExtension = extension.startsWith('.')
+      ? extension.substring(1)
+      : extension;
+  return '${parts.join('_')}.$safeExtension';
+}
+
 Future<void> exportCsv({required String fileName, required String csv}) async {
   final path = await FilePicker.platform.saveFile(
     dialogTitle: 'Export CSV',
@@ -79,4 +104,17 @@ Future<File> buildReportPdfFile({
     flush: true,
   );
   return file;
+}
+
+String _slug(String value) {
+  final lower = value.trim().toLowerCase();
+  final normalised = lower.replaceAll(RegExp('[^a-z0-9]+'), '_');
+  return normalised.replaceAll(RegExp(r'^_+|_+$'), '');
+}
+
+String _dateStamp(DateTime date) {
+  final year = date.year.toString().padLeft(4, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+  return '$year-$month-$day';
 }

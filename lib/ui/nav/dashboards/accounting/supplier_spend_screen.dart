@@ -116,7 +116,7 @@ class _SupplierSpendScreenState extends State<SupplierSpendScreen> {
         icon: const Icon(Icons.download),
         onPressed: () async {
           await exportCsv(
-            fileName: 'supplier_spend.csv',
+            fileName: _exportFileName(report, 'csv'),
             csv: AccountingReportCsvExporter().supplierSpend(report),
           );
         },
@@ -127,7 +127,7 @@ class _SupplierSpendScreenState extends State<SupplierSpendScreen> {
         icon: const Icon(Icons.picture_as_pdf),
         onPressed: () async {
           await exportReportPdf(
-            fileName: 'supplier_spend.pdf',
+            fileName: _exportFileName(report, 'pdf'),
             title: 'Supplier Spend',
             rows: _pdfRows(report),
           );
@@ -170,4 +170,14 @@ class _SupplierSpendScreenState extends State<SupplierSpendScreen> {
         row.includingTax.toString(),
       ],
   ];
+
+  String _exportFileName(SupplierSpendReport report, String extension) =>
+      accountingReportExportFileName(
+        reportName: 'supplier_spend',
+        extension: extension,
+        startInclusive: report.period.startInclusive,
+        endInclusive: report.period.endExclusive.subtract(
+          const Duration(days: 1),
+        ),
+      );
 }

@@ -135,7 +135,7 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
                   icon: const Icon(Icons.download),
                   onPressed: () async {
                     await exportCsv(
-                      fileName: 'customer_statement.csv',
+                      fileName: _exportFileName(report, 'csv'),
                       csv: AccountingReportCsvExporter().debtorStatement(
                         report,
                       ),
@@ -148,7 +148,7 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
                   icon: const Icon(Icons.picture_as_pdf),
                   onPressed: () async {
                     await exportReportPdf(
-                      fileName: 'customer_statement.pdf',
+                      fileName: _exportFileName(report, 'pdf'),
                       title: 'Customer Statement',
                       rows: _pdfRows(report),
                     );
@@ -176,9 +176,19 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
   DateTime _lastDay(DebtorStatementReport report) =>
       report.endExclusive.subtract(const Duration(days: 1));
 
+  String _exportFileName(DebtorStatementReport report, String extension) =>
+      accountingReportExportFileName(
+        reportName: 'customer_statement',
+        extension: extension,
+        entityName: report.customerName,
+        entityId: report.customerId,
+        startInclusive: report.startInclusive,
+        endInclusive: _lastDay(report),
+      );
+
   Future<void> _viewSendStatement(DebtorStatementReport report) async {
     final file = await buildReportPdfFile(
-      fileName: 'customer_statement.pdf',
+      fileName: _exportFileName(report, 'pdf'),
       title: 'Customer Statement',
       rows: _pdfRows(report),
     );

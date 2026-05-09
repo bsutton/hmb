@@ -81,7 +81,7 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
                           icon: const Icon(Icons.download),
                           onPressed: () async {
                             await exportCsv(
-                              fileName: 'profit_and_loss.csv',
+                              fileName: _exportFileName('csv'),
                               csv: AccountingReportCsvExporter().profitAndLoss(
                                 report,
                               ),
@@ -94,7 +94,7 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
                           icon: const Icon(Icons.picture_as_pdf),
                           onPressed: () async {
                             await exportReportPdf(
-                              fileName: 'profit_and_loss.pdf',
+                              fileName: _exportFileName('pdf'),
                               title: 'Profit and Loss',
                               rows: [
                                 ['Line', 'Amount'],
@@ -150,5 +150,12 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
         ),
       ],
     ),
+  );
+
+  String _exportFileName(String extension) => accountingReportExportFileName(
+    reportName: 'profit_and_loss',
+    extension: extension,
+    startInclusive: _period.startInclusive,
+    endInclusive: _period.endExclusive.subtract(const Duration(days: 1)),
   );
 }

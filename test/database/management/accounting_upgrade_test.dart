@@ -11,9 +11,9 @@ import 'package:sqflite_common/sqlite_api.dart';
 
 void main() {
   test(
-    'v184 normalises single receipt job allocations to tax-exclusive total',
+    'v185 normalises single receipt job allocations to tax-exclusive total',
     () async {
-      final dbPath = join(createTempDir(), 'accounting_v184.db');
+      final dbPath = join(createTempDir(), 'accounting_v185.db');
       final db = await CliDatabaseFactory().openDatabase(
         dbPath,
         options: OpenDatabaseOptions(),
@@ -71,7 +71,7 @@ CREATE TABLE receipt_job_allocation (
         });
 
         final source = ProjectScriptSource();
-        final sql = await source.loadSQL('assets/sql/upgrade_scripts/v184.sql');
+        final sql = await source.loadSQL('assets/sql/upgrade_scripts/v185.sql');
         final statements = await parseSqlFile(sql);
         for (final statement in statements) {
           await db.execute(statement);

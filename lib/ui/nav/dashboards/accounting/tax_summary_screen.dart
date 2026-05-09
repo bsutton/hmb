@@ -81,7 +81,7 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
                           icon: const Icon(Icons.download),
                           onPressed: () async {
                             await exportCsv(
-                              fileName: 'tax_summary.csv',
+                              fileName: _exportFileName(report, 'csv'),
                               csv: AccountingReportCsvExporter().taxSummary(
                                 report,
                               ),
@@ -94,7 +94,7 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
                           icon: const Icon(Icons.picture_as_pdf),
                           onPressed: () async {
                             await exportReportPdf(
-                              fileName: 'tax_summary.pdf',
+                              fileName: _exportFileName(report, 'pdf'),
                               title: '${report.taxLabel} Summary',
                               rows: _pdfRows(report),
                             );
@@ -172,4 +172,14 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
     ['${report.taxLabel} paid on receipts', '-${report.supplierTaxPaid}'],
     ['Net ${report.taxLabel} position', report.netTaxPosition.toString()],
   ];
+
+  String _exportFileName(TaxSummaryReport report, String extension) =>
+      accountingReportExportFileName(
+        reportName: '${report.taxLabel}_summary',
+        extension: extension,
+        startInclusive: report.period.startInclusive,
+        endInclusive: report.period.endExclusive.subtract(
+          const Duration(days: 1),
+        ),
+      );
 }

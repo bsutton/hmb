@@ -50,7 +50,7 @@ class AgedReceivablesScreen extends StatelessWidget {
                     icon: const Icon(Icons.download),
                     onPressed: () async {
                       await exportCsv(
-                        fileName: 'aged_receivables.csv',
+                        fileName: _exportFileName(report, 'csv'),
                         csv: AccountingReportCsvExporter().agedReceivables(
                           report,
                         ),
@@ -63,7 +63,7 @@ class AgedReceivablesScreen extends StatelessWidget {
                     icon: const Icon(Icons.picture_as_pdf),
                     onPressed: () async {
                       await exportReportPdf(
-                        fileName: 'aged_receivables.pdf',
+                        fileName: _exportFileName(report, 'pdf'),
                         title: 'Aged Receivables',
                         rows: _pdfRows(report),
                       );
@@ -156,4 +156,11 @@ class AgedReceivablesScreen extends StatelessWidget {
         row.balance.toString(),
       ],
   ];
+
+  String _exportFileName(AgedReceivablesReport report, String extension) =>
+      accountingReportExportFileName(
+        reportName: 'aged_receivables',
+        extension: extension,
+        asAt: report.asOfDate.toDateTime(),
+      );
 }

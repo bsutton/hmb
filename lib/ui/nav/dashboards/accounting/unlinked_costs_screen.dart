@@ -66,7 +66,7 @@ class UnlinkedCostsScreen extends StatelessWidget {
         icon: const Icon(Icons.download),
         onPressed: () async {
           await exportCsv(
-            fileName: 'unlinked_costs.csv',
+            fileName: _exportFileName(report, 'csv'),
             csv: AccountingReportCsvExporter().unlinkedCosts(report),
           );
         },
@@ -77,7 +77,7 @@ class UnlinkedCostsScreen extends StatelessWidget {
         icon: const Icon(Icons.picture_as_pdf),
         onPressed: () async {
           await exportReportPdf(
-            fileName: 'unlinked_costs.pdf',
+            fileName: _exportFileName(report, 'pdf'),
             title: 'Unlinked Costs',
             rows: _pdfRows(report),
           );
@@ -120,4 +120,11 @@ class UnlinkedCostsScreen extends StatelessWidget {
         row.amount.toString(),
       ],
   ];
+
+  String _exportFileName(UnlinkedCostReport report, String extension) =>
+      accountingReportExportFileName(
+        reportName: 'unlinked_costs',
+        extension: extension,
+        asAt: DateTime.now(),
+      );
 }
