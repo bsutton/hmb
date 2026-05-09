@@ -1,6 +1,7 @@
 @Tags(['flutter'])
 library;
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
@@ -82,6 +83,35 @@ void main() {
 
     expect(summary.outstanding, 0);
     expect(summary.paid, 1);
+  });
+
+  testWidgets('invoice dashlet summary keeps the tile compact', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox.square(
+            dimension: 150,
+            child: Builder(
+              builder: (context) => buildInvoiceCountSummary(
+                context,
+                const InvoiceCountSummary(
+                  outstanding: 12,
+                  paid: 34,
+                  overdue: 5,
+                  overdueSevenDays: 2,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('12'), findsOneWidget);
+    expect(find.text('Outstanding'), findsOneWidget);
+    expect(find.text('5 overdue, 2 7+ days'), findsOneWidget);
+    expect(find.textContaining('paid'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 }
 

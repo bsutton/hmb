@@ -26,7 +26,7 @@ class InvoiceDashlet extends StatelessWidget {
   @override
   Widget build(BuildContext context) => DashletCard<InvoiceCountSummary>.route(
     label: 'Invoices',
-    hint: 'Create, View, Upload and Send Invocies',
+    hint: 'Create, view, upload and send invoices',
     icon: Icons.receipt_long,
     value: getInvoiceCounts,
     route: '/home/accounting/invoices',
@@ -92,40 +92,45 @@ Widget buildInvoiceCountSummary(
   mainAxisSize: MainAxisSize.min,
   children: [
     Text(
-      summary.outstanding.toString(),
+      '${summary.outstanding}',
       style: Theme.of(
         context,
       ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
     ),
-    const SizedBox(height: 4),
-    Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          'overdue: ${summary.overdue}',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: Colors.orange.shade700),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '7+: ${summary.overdueSevenDays}',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: Colors.red.shade400),
-        ),
-      ],
-    ),
-    const SizedBox(height: 4),
+    const SizedBox(height: 2),
     Text(
-      'paid: ${summary.paid}',
+      summary.outstanding == 1 ? 'Outstanding invoice' : 'Outstanding',
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: Theme.of(context).textTheme.bodySmall,
     ),
+    const SizedBox(height: 4),
+    _buildOverdueLine(context, summary),
   ],
 );
+
+Widget _buildOverdueLine(BuildContext context, InvoiceCountSummary summary) {
+  final theme = Theme.of(context);
+  if (summary.overdueSevenDays > 0) {
+    return Text(
+      '${summary.overdue} overdue, ${summary.overdueSevenDays} 7+ days',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: theme.textTheme.bodySmall?.copyWith(color: Colors.red.shade400),
+    );
+  }
+  if (summary.overdue > 0) {
+    return Text(
+      '${summary.overdue} overdue',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: theme.textTheme.bodySmall?.copyWith(color: Colors.orange.shade700),
+    );
+  }
+  return Text(
+    'None overdue',
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
+    style: theme.textTheme.bodySmall,
+  );
+}
