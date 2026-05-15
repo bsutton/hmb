@@ -51,6 +51,8 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
   List<T>? _items;
   var _loading = true;
   var _filter = '';
+  String? _error;
+  var _loadGeneration = 0;
 
   final _searchController = TextEditingController();
 
@@ -61,10 +63,29 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
   }
 
   Future<void> _loadItems() async {
-    _items = await widget.getItems(_filter);
-    setState(() {
-      _loading = false;
-    });
+    final generation = ++_loadGeneration;
+    final filter = _filter;
+    try {
+      final items = await widget.getItems(filter);
+      if (!mounted || generation != _loadGeneration) {
+        return;
+      }
+      setState(() {
+        _items = items;
+        _error = null;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted || generation != _loadGeneration) {
+        return;
+      }
+      setState(() {
+        _items = const [];
+        _error = 'Unable to load ${widget.title}: $e';
+        _loading = false;
+      });
+      HMBToast.error(_error!);
+    }
   }
 
   void _onFilterChanged(String filter) {
@@ -80,6 +101,12 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
       await widget.onAdd!();
       unawaited(_loadItems());
     }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -120,53 +147,74 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
             child: CircularProgressIndicator(),
           )
         else if (_items != null)
-          Expanded(
-            child: Surface(
-              child: Container(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.6,
-                ),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _items!.length + (widget.allowClear ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (widget.allowClear && index == 0) {
-                      return ListTile(
-                        leading: const Icon(Icons.clear, color: Colors.red),
-                        title: const Text(
-                          'Clear selection',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
-                          ),
-                        ),
-                        onTap: () => Navigator.of(context).pop(),
-                      );
-                    }
-                    final item = _items![index - (widget.allowClear ? 1 : 0)];
-                    final isSelected = item == widget.selectedItem;
-                    return ListTile(
-                      selected: isSelected,
-                      selectedTileColor: Theme.of(
-                        context,
-                      ).primaryColor.withSafeOpacity(0.1),
-                      title: Text(
-                        widget.formatItem(item),
-                        style: const TextStyle(color: HMBColors.textPrimary),
-                      ),
-                      onTap: () {
-                        Navigator.of(context).pop(item);
-                      },
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
+          _buildItems(context),
         if (widget.showSearch) _buildSearch(),
       ],
     ),
   );
+
+  Widget _buildItems(BuildContext context) {
+    if (_error != null) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          _error!,
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
+        ),
+      );
+    }
+
+    if (_items!.isEmpty && !widget.allowClear) {
+      return const Padding(
+        padding: EdgeInsets.all(16),
+        child: Text('No items found'),
+      );
+    }
+
+    return Flexible(
+      child: Surface(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.6,
+          ),
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: _items!.length + (widget.allowClear ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (widget.allowClear && index == 0) {
+                return ListTile(
+                  leading: const Icon(Icons.clear, color: Colors.red),
+                  title: const Text(
+                    'Clear selection',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                  onTap: () => Navigator.of(context).pop(),
+                );
+              }
+              final item = _items![index - (widget.allowClear ? 1 : 0)];
+              final isSelected = item == widget.selectedItem;
+              return ListTile(
+                selected: isSelected,
+                selectedTileColor: Theme.of(
+                  context,
+                ).primaryColor.withSafeOpacity(0.1),
+                title: Text(
+                  widget.formatItem(item),
+                  style: const TextStyle(color: HMBColors.textPrimary),
+                ),
+                onTap: () {
+                  Navigator.of(context).pop(item);
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
 
   Surface _buildSearch() => Surface(
     elevation: SurfaceElevation.e6,

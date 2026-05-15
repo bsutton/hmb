@@ -35,6 +35,7 @@ class HMBDroplist<T> extends StatefulWidget {
   final T? initialValue;
   final bool required;
   final bool showSearch;
+  final Key? fieldKey;
 
   const HMBDroplist({
     required this.selectedItem,
@@ -48,6 +49,7 @@ class HMBDroplist<T> extends StatefulWidget {
     this.initialValue,
     this.required = true,
     this.showSearch = true,
+    this.fieldKey,
     super.key,
   });
 
@@ -111,6 +113,7 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           GestureDetector(
+            key: widget.fieldKey,
             onTap: () async {
               final selected = await showDialog<T>(
                 context: context,

@@ -5,13 +5,12 @@ import '../../../entity/job.dart';
 import '../../../entity/todo.dart';
 import '../../widgets/widgets.g.dart';
 
-enum _PostJobTodoAction { none, touchBase, schedule }
+enum PostJobTodoAction { cancel, none, touchBase, schedule }
 
-Future<void> promptForPostJobTodo({
+Future<PostJobTodoAction> promptForPostJobTodo({
   required BuildContext context,
-  required Job job,
 }) async {
-  final action = await showDialog<_PostJobTodoAction>(
+  final action = await showDialog<PostJobTodoAction>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       title: const Text('Create follow-up todo?'),
@@ -19,43 +18,56 @@ Future<void> promptForPostJobTodo({
       actions: [
         TextButton(
           onPressed: () =>
-              Navigator.of(dialogContext).pop(_PostJobTodoAction.none),
+              Navigator.of(dialogContext).pop(PostJobTodoAction.cancel),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () =>
+              Navigator.of(dialogContext).pop(PostJobTodoAction.none),
           child: const Text('Skip'),
         ),
         TextButton(
           onPressed: () =>
-              Navigator.of(dialogContext).pop(_PostJobTodoAction.touchBase),
+              Navigator.of(dialogContext).pop(PostJobTodoAction.touchBase),
           child: const Text('Touch base'),
         ),
         TextButton(
           onPressed: () =>
-              Navigator.of(dialogContext).pop(_PostJobTodoAction.schedule),
+              Navigator.of(dialogContext).pop(PostJobTodoAction.schedule),
           child: const Text('Schedule'),
         ),
       ],
     ),
   );
 
-  if (action == null || action == _PostJobTodoAction.none) {
+  return action ?? PostJobTodoAction.cancel;
+}
+
+Future<void> createPostJobTodo({
+  required BuildContext context,
+  required Job job,
+  required PostJobTodoAction action,
+}) async {
+  if (action == PostJobTodoAction.cancel || action == PostJobTodoAction.none) {
     return;
   }
 
   final title = switch (action) {
-    _PostJobTodoAction.touchBase => 'Touch base with customer',
-    _PostJobTodoAction.schedule => 'Schedule job',
-    _PostJobTodoAction.none => '',
+    PostJobTodoAction.touchBase => 'Touch base with customer',
+    PostJobTodoAction.schedule => 'Schedule job',
+    PostJobTodoAction.cancel || PostJobTodoAction.none => '',
   };
 
   final dueDate = switch (action) {
-    _PostJobTodoAction.touchBase => null,
-    _PostJobTodoAction.schedule => DateTime.now(),
-    _PostJobTodoAction.none => null,
+    PostJobTodoAction.touchBase => null,
+    PostJobTodoAction.schedule => DateTime.now(),
+    PostJobTodoAction.cancel || PostJobTodoAction.none => null,
   };
 
   final priority = switch (action) {
-    _PostJobTodoAction.touchBase => ToDoPriority.medium,
-    _PostJobTodoAction.schedule => ToDoPriority.high,
-    _PostJobTodoAction.none => ToDoPriority.none,
+    PostJobTodoAction.touchBase => ToDoPriority.medium,
+    PostJobTodoAction.schedule => ToDoPriority.high,
+    PostJobTodoAction.cancel || PostJobTodoAction.none => ToDoPriority.none,
   };
 
   try {

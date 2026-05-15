@@ -13,6 +13,7 @@ import '../../../util/dart/money_ex.dart';
 import '../../../util/dart/parse/parse_customer.dart';
 import '../../crud/customer/customer_paste_panel.dart';
 import '../../dialog/source_context.dart';
+import '../../test_keys.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
 import '../../widgets/fields/hmb_text_field.dart';
@@ -59,6 +60,7 @@ class _JobCreatorState extends State<JobCreator> {
 
   var _creating = false;
   var _extracting = false;
+  var _aiConfigured = false;
   Customer? _selectedCustomer;
   Customer? _selectedReferrerCustomer;
   List<_CustomerMatch> _matches = [];
@@ -76,6 +78,7 @@ class _JobCreatorState extends State<JobCreator> {
   @override
   void initState() {
     super.initState();
+    unawaited(_loadAiConfigured());
     _customerStep = _CustomerStep(this);
     _steps = [
       _ExtractAndMatchStep(this),
@@ -84,6 +87,16 @@ class _JobCreatorState extends State<JobCreator> {
       _AddressStep(this),
       _JobStep(this),
     ];
+  }
+
+  Future<void> _loadAiConfigured() async {
+    final system = await DaoSystem().get();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _aiConfigured = (system.openaiApiKey?.trim() ?? '').isNotEmpty;
+    });
   }
 
   @override
@@ -466,25 +479,25 @@ class _JobCreatorState extends State<JobCreator> {
       return false;
     }
     if (Strings.isBlank(text)) {
-      return true;
+      HMBToast.info('Paste a message to extract, or skip extraction.');
+      return false;
     }
 
-    var extracted = false;
+    final system = await DaoSystem().get();
+    final apiKey = system.openaiApiKey?.trim() ?? '';
+    if (apiKey.isEmpty) {
+      _showAiRequiredMessage();
+      return false;
+    }
+
+    var extractedSuccessfully = false;
     setState(() => _extracting = true);
     try {
       await BlockingUI().runAndWait(() async {
-        ParsedCustomer parsedCustomer;
-        final system = await DaoSystem().get();
-        final apiKey = system.openaiApiKey?.trim() ?? '';
-        if (apiKey.isNotEmpty) {
-          final extracted = await CustomerExtractApiClient().extract(text);
-          if (extracted == null) {
-            HMBToast.error('AI extraction failed. Check ChatGPT settings.');
-            return;
-          }
-          parsedCustomer = extracted;
-        } else {
-          parsedCustomer = await ParsedCustomer.parse(text);
+        final parsedCustomer = await CustomerExtractApiClient().extract(text);
+        if (parsedCustomer == null) {
+          HMBToast.error('AI extraction failed. Check ChatGPT settings.');
+          return;
         }
 
         _email.text = parsedCustomer.email;
@@ -502,15 +515,11 @@ class _JobCreatorState extends State<JobCreator> {
             ? '${_firstName.text} ${_surname.text}'.trim()
             : parsedCustomer.customerName;
 
-        if (apiKey.isNotEmpty) {
-          await _generateSummaryAndTasks(text);
-        } else if (Strings.isBlank(_jobDescription.text)) {
-          _jobDescription.text = text;
-        }
+        await _generateSummaryAndTasks(text);
 
         await _loadMatches(parsedCustomer);
         await _applyPartyHintsFromText(text);
-        extracted = true;
+        extractedSuccessfully = true;
       }, label: 'Extracting job details');
 
       if (mounted) {
@@ -523,7 +532,14 @@ class _JobCreatorState extends State<JobCreator> {
         setState(() => _extracting = false);
       }
     }
-    return extracted;
+    return extractedSuccessfully;
+  }
+
+  void _showAiRequiredMessage() {
+    HMBToast.info(
+      'AI extraction requires an OpenAI API key in Settings | Integrations | '
+      'ChatGPT. You can skip extraction and enter the job details manually.',
+    );
   }
 
   Future<void> _generateSummaryAndTasks(String text) async {
@@ -558,9 +574,17 @@ class _JobCreatorState extends State<JobCreator> {
     }
     switch (reason) {
       case WizardCompletionReason.completed:
+        final todoAction = await promptForPostJobTodo(context: context);
+        if (todoAction == PostJobTodoAction.cancel) {
+          return;
+        }
         final job = await _createEntities();
         if (job != null && mounted) {
-          await promptForPostJobTodo(context: context, job: job);
+          await createPostJobTodo(
+            context: context,
+            job: job,
+            action: todoAction,
+          );
         }
         if (job != null && mounted) {
           Navigator.of(context).pop(job);
@@ -710,6 +734,7 @@ class _JobCreatorState extends State<JobCreator> {
       final daoTask = DaoTask();
       final daoSystem = DaoSystem();
       final system = await daoSystem.get();
+      final defaultProfitMargin = await daoSystem.getDefaultProfitMargin();
 
       late Customer customer;
       Contact? contact;
@@ -786,14 +811,11 @@ class _JobCreatorState extends State<JobCreator> {
           await daoCustomer.update(customer2, transaction);
         }
 
-        final summary = Strings.isBlank(_jobSummary.text)
-            ? 'New Job'
-            : _jobSummary.text;
         final primaryContact = _resolvedPrimaryContact() ?? contact;
         job = Job.forInsert(
           customerId: customer.id,
           referrerCustomerId: _selectedReferrerCustomer?.id,
-          summary: summary,
+          summary: _jobSummary.text,
           description: _jobDescription.text,
           siteId: site?.id,
           contactId: primaryContact?.id,
@@ -803,8 +825,8 @@ class _JobCreatorState extends State<JobCreator> {
               system.defaultHourlyRate ?? Money.fromInt(0, isoCode: 'AUD'),
           bookingFee:
               system.defaultBookingFee ?? Money.fromInt(0, isoCode: 'AUD'),
-          estimateMargin: await DaoSystem().getDefaultProfitMargin(),
-          billingContactId: contact?.id,
+          estimateMargin: defaultProfitMargin,
+          billingContactId: primaryContact?.id,
           referrerContactId: _selectedReferrerContact?.id,
         );
         await daoJob.insert(job, transaction);
@@ -866,6 +888,18 @@ class _ExtractAndMatchStep extends WizardStep {
           CustomerPastePanel(
             initialMessage: state._pasteMessage,
             onChanged: (value) => state._pasteMessage = value,
+            helperText:
+                'Paste a customer message to fill the wizard using AI, or skip '
+                'extraction and enter the details manually.',
+            extractLabel: 'Extract using AI',
+            extractAvailable: state._aiConfigured,
+            onExtractUnavailable: state._showAiRequiredMessage,
+            onSkip: () async {
+              await wizardState?.jumpToStep(
+                state._customerStep,
+                userOriginated: false,
+              );
+            },
             onExtract: (text) async {
               final ok = await state._onExtract(text);
               if (ok) {
@@ -1147,6 +1181,7 @@ class _JobStep extends WizardStep {
           HMBDroplist<Customer>(
             title: 'Referred By',
             required: false,
+            fieldKey: TestKeys.jobCreatorReferredBySelector,
             selectedItem: () => Future.value(state._selectedReferrerCustomer),
             items: (filter) => DaoCustomer().getByFilter(filter),
             format: (customer) => customer.name,
@@ -1185,6 +1220,7 @@ class _JobStep extends WizardStep {
           HMBDroplist<Contact>(
             title: 'Primary Contact',
             required: false,
+            fieldKey: TestKeys.jobCreatorPrimaryContactSelector,
             selectedItem: () => Future.value(state._resolvedPrimaryContact()),
             items: (filter) async {
               final contacts = state._partyContacts();
@@ -1208,6 +1244,7 @@ class _JobStep extends WizardStep {
           ),
           HMBDroplist<BillingType>(
             title: 'Billing Type',
+            fieldKey: TestKeys.jobCreatorBillingTypeSelector,
             selectedItem: () => Future.value(state._selectedBillingType),
             items: (_) => Future.value(BillingType.values),
             format: (type) => type.display,
@@ -1221,8 +1258,10 @@ class _JobStep extends WizardStep {
             controller: state._jobSummary,
             labelText: 'Job Summary',
             required: true,
+            fieldKey: TestKeys.jobCreatorSummaryField,
           ),
           TextFormField(
+            key: TestKeys.jobCreatorDescriptionField,
             controller: state._jobDescription,
             decoration: const InputDecoration(
               labelText: 'Job Description',

@@ -452,6 +452,11 @@ class _BookingRequestReviewDialogState
       return;
     }
 
+    final todoAction = await promptForPostJobTodo(context: context);
+    if (todoAction == PostJobTodoAction.cancel) {
+      return;
+    }
+
     setState(() => _loading = true);
     try {
       final daoCustomer = DaoCustomer();
@@ -600,7 +605,11 @@ class _BookingRequestReviewDialogState
 
       await DaoBookingRequest().markImported(widget.request);
       if (mounted && createdJob != null) {
-        await promptForPostJobTodo(context: context, job: createdJob!);
+        await createPostJobTodo(
+          context: context,
+          job: createdJob!,
+          action: todoAction,
+        );
       }
       if (mounted) {
         Navigator.of(context).pop();

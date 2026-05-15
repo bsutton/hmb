@@ -74,12 +74,11 @@ Future<void> main(List<String> args) async {
       final packageInfo = await PackageInfo.fromPlatform();
       Log.i('Package Name: ${packageInfo.packageName}');
       runApp(
-        const HmbApp(),
-        // DevicePreview(
-        //   // ignore: avoid_redundant_argument_values
-        //   enabled: !kReleaseMode,
-        //   builder: (_) => const HmbApp(),
-        // ),
+        DevicePreview(
+          // ignore: avoid_redundant_argument_values
+          enabled: !kReleaseMode,
+          builder: (_) => const HmbApp(),
+        ),
       );
     },
   );

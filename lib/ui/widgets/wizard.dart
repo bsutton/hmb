@@ -108,9 +108,9 @@ class WizardState extends State<Wizard> {
 
   @override
   Widget build(BuildContext context) => PopScope(
-    canPop: isFirstVisible(_currentStepIndex),
+    canPop: false,
     onPopInvokedWithResult: (didPop, result) async {
-      if (didPop) {
+      if (!didPop) {
         await _popInvoked(context);
       }
     },
@@ -326,19 +326,27 @@ class WizardState extends State<Wizard> {
         // check each intermediary step to ensure that it can be skipped.
         if (checkCanSkip) {
           var idx = _currentStepIndex;
-          WizardStep? s;
+          WizardStep? stepToShow;
           do {
-            if (s != null) {
-              Log.d('skipping ${s.title}');
+            if (stepToShow != null) {
+              Log.d('skipping ${stepToShow.title}');
             }
-            s = _nextStep(idx);
-            if (s == null) {
+            stepToShow = _nextStep(idx);
+            if (stepToShow == null) {
               return;
             }
-            idx = _indexOf(s);
-          } while (s.canSkip(context) &&
+            idx = _indexOf(stepToShow);
+          } while (stepToShow.canSkip(context) &&
               !isLastVisible(idx) &&
-              s != jumpToStep);
+              stepToShow != jumpToStep);
+
+          if (stepToShow != jumpToStep) {
+            await _transitionForward(
+              stepToShow,
+              userOriginated: userOriginated,
+            );
+            return;
+          }
         }
         await _transitionForward(jumpToStep, userOriginated: userOriginated);
       } else {
@@ -423,11 +431,10 @@ class WizardState extends State<Wizard> {
 
   /// Show the step's build if it's the current step; otherwise
   /// show a placeholder.
-  Widget buildStepBody(WizardStep step, int index) {
+  Widget buildStepBody(WizardStep step, int index, double width) {
     final isCurrentStep = _isCurrent(index);
 
     if (isCurrentStep) {
-      final width = MediaQuery.of(context).size.width - lineInset - lineWidth;
       return SizedBox(width: width, child: step.build(context));
     } else {
       // If not current, collapse or show nothing
@@ -435,10 +442,13 @@ class WizardState extends State<Wizard> {
     }
   }
 
-  void dipose() {
-    for (final step in widget.initialSteps) {
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    for (final step in steps) {
       step.dispose();
     }
+    super.dispose();
   }
 
   List<Widget> _buildSteps() {
@@ -469,49 +479,53 @@ class WizardState extends State<Wizard> {
     return children;
   }
 
-  Widget _buildVerticalBody(WizardStep step, int index) => Align(
-    alignment: Alignment.centerLeft,
-    child: Stack(
-      children: [
-        // vertical line on the left side
-        PositionedDirectional(
-          start: lineInset,
-          top: 0,
-          bottom: 0,
-          child: SizedBox(
-            width: lineWidth,
-            child: Center(
+  Widget _buildVerticalBody(WizardStep step, int index) => LayoutBuilder(
+    builder: (context, constraints) {
+      const bodyStart = 30.0;
+      final bodyWidth = (constraints.maxWidth - bodyStart).clamp(
+        0.0,
+        double.infinity,
+      );
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: Stack(
+          children: [
+            // vertical line on the left side
+            PositionedDirectional(
+              start: lineInset,
+              top: 0,
+              bottom: 0,
               child: SizedBox(
-                width: isLastVisible(index) ? 0.0 : 2.0,
-                child: Container(color: Colors.grey.shade400),
+                width: lineWidth,
+                child: Center(
+                  child: SizedBox(
+                    width: isLastVisible(index) ? 0.0 : 2.0,
+                    child: Container(color: Colors.grey.shade400),
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-        // The body of the step.
-        // first child is a zero sized container so we expand/collapse
-        // the step [secondChild] to/from the zero container.
-        AnimatedCrossFade(
-          firstChild: Container(height: 0),
-          secondChild: Container(
-            margin: const EdgeInsetsDirectional.only(start: 30),
-            child: FittedBox(
-              fit: BoxFit.cover,
-              alignment: Alignment.centerLeft,
-              // Build the step's real widget if this step is current
-              child: buildStepBody(step, index),
+            // The body of the step.
+            // first child is a zero sized container so we expand/collapse
+            // the step [secondChild] to/from the zero container.
+            AnimatedCrossFade(
+              firstChild: Container(height: 0),
+              secondChild: Container(
+                margin: const EdgeInsetsDirectional.only(start: bodyStart),
+                child: buildStepBody(step, index, bodyWidth),
+              ),
+              firstCurve: const Interval(0, 0.1, curve: Curves.fastOutSlowIn),
+              secondCurve: const Interval(0, 1, curve: Curves.fastOutSlowIn),
+              sizeCurve: Curves.fastOutSlowIn,
+              crossFadeState: _isCurrent(index)
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              duration: crossFadeDuration,
             ),
-          ),
-          firstCurve: const Interval(0, 0.1, curve: Curves.fastOutSlowIn),
-          secondCurve: const Interval(0, 1, curve: Curves.fastOutSlowIn),
-          sizeCurve: Curves.fastOutSlowIn,
-          crossFadeState: _isCurrent(index)
-              ? CrossFadeState.showSecond
-              : CrossFadeState.showFirst,
-          duration: crossFadeDuration,
+          ],
         ),
-      ],
-    ),
+      );
+    },
   );
 
   ///
@@ -519,8 +533,11 @@ class WizardState extends State<Wizard> {
   ///
   Widget _buildControls() => Padding(
     padding: const EdgeInsets.all(8),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
+    child: OverflowBar(
+      alignment: MainAxisAlignment.spaceAround,
+      overflowAlignment: OverflowBarAlignment.center,
+      spacing: 12,
+      overflowSpacing: 8,
       children: [
         HMBButtonSecondary(
           label: widget.cancelLabel,
@@ -717,8 +734,16 @@ class WizardState extends State<Wizard> {
       return;
     }
     _onFinishCalled = true;
-    await widget.onFinished?.call(reason);
-    _onFinishCalled = false;
+    try {
+      await widget.onFinished?.call(reason);
+    } catch (e, st) {
+      if (mounted) {
+        HMBToast.error(e.toString());
+      }
+      Log.e(e.toString(), stackTrace: st);
+    } finally {
+      _onFinishCalled = false;
+    }
   }
 }
 

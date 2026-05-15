@@ -44,4 +44,18 @@ class TestKeys {
 
   static ValueKey<String> receiptJobAllocationAmountField(int index) =>
       ValueKey('receipt_job_allocation_${index}_amount_field');
+
+  static const jobCreatorReferredBySelector = ValueKey(
+    'job_creator_referred_by_selector',
+  );
+  static const jobCreatorPrimaryContactSelector = ValueKey(
+    'job_creator_primary_contact_selector',
+  );
+  static const jobCreatorBillingTypeSelector = ValueKey(
+    'job_creator_billing_type_selector',
+  );
+  static const jobCreatorSummaryField = ValueKey('job_creator_summary_field');
+  static const jobCreatorDescriptionField = ValueKey(
+    'job_creator_description_field',
+  );
 }
