@@ -345,12 +345,34 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     },
   );
 
-  /// If the user taps “Delete,” we pop null
-  /// to indicate a delete request.
-  void _handleDelete() {
-    Navigator.of(
-      context,
-    ).pop(JobActivityUpdateAction(EditAction.delete, widget.event!.event));
+  Future<void> _handleDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete event?'),
+        content: const Text(
+          'Are you sure you want to delete this schedule event?',
+        ),
+        actions: [
+          HMBButtonSecondary(
+            label: 'Cancel',
+            hint: "Don't delete this event",
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          HMBButtonPrimary(
+            label: 'Delete',
+            hint: 'Delete this event',
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if ((confirmed ?? false) && mounted) {
+      Navigator.of(
+        context,
+      ).pop(JobActivityUpdateAction(EditAction.delete, widget.event!.event));
+    }
   }
 
   /// Save Event
