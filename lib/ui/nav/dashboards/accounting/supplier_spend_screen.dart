@@ -71,7 +71,7 @@ class _SupplierSpendScreenState extends State<SupplierSpendScreen> {
                 children: [
                   _summary(context, report),
                   const SizedBox(height: 12),
-                  _actions(report),
+                  _actions(context, report),
                   const SizedBox(height: 12),
                   if (report.rows.isEmpty)
                     const Surface(child: Text('No supplier receipts.'))
@@ -106,27 +106,30 @@ class _SupplierSpendScreenState extends State<SupplierSpendScreen> {
     ),
   );
 
-  Widget _actions(SupplierSpendReport report) => Wrap(
+  Widget _actions(BuildContext context, SupplierSpendReport report) => Wrap(
     spacing: 8,
     runSpacing: 8,
     children: [
       HMBButton.withIcon(
-        label: 'Export CSV',
-        hint: 'Export supplier spend as a CSV file',
-        icon: const Icon(Icons.download),
+        label: 'Send CSV',
+        hint: 'Email supplier spend as a CSV file',
+        icon: const Icon(Icons.email),
         onPressed: () async {
-          await exportCsv(
+          await sendReportCsv(
+            context: context,
             fileName: _exportFileName(report, 'csv'),
+            title: 'Supplier Spend',
             csv: AccountingReportCsvExporter().supplierSpend(report),
           );
         },
       ),
       HMBButton.withIcon(
-        label: 'Export PDF',
-        hint: 'Export supplier spend as a PDF file',
+        label: 'View/Send PDF',
+        hint: 'View and optionally email supplier spend as a PDF',
         icon: const Icon(Icons.picture_as_pdf),
         onPressed: () async {
-          await exportReportPdf(
+          await viewSendReportPdf(
+            context: context,
             fileName: _exportFileName(report, 'pdf'),
             title: 'Supplier Spend',
             rows: _pdfRows(report),

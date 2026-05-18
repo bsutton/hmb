@@ -130,34 +130,17 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
               runSpacing: 8,
               children: [
                 HMBButton.withIcon(
-                  label: 'Export CSV',
-                  hint: 'Export this customer statement as a CSV file',
-                  icon: const Icon(Icons.download),
-                  onPressed: () async {
-                    await exportCsv(
-                      fileName: _exportFileName(report, 'csv'),
-                      csv: AccountingReportCsvExporter().debtorStatement(
-                        report,
-                      ),
-                    );
-                  },
-                ),
-                HMBButton.withIcon(
-                  label: 'Export PDF',
-                  hint: 'Export this customer statement as a PDF file',
-                  icon: const Icon(Icons.picture_as_pdf),
-                  onPressed: () async {
-                    await exportReportPdf(
-                      fileName: _exportFileName(report, 'pdf'),
-                      title: 'Customer Statement',
-                      rows: _pdfRows(report),
-                    );
-                  },
-                ),
-                HMBButton.withIcon(
-                  label: 'View/Send',
-                  hint: 'View and optionally email this customer statement',
+                  label: 'Send CSV',
+                  hint: 'Email this customer statement as a CSV file',
                   icon: const Icon(Icons.email),
+                  onPressed: () async {
+                    await _sendStatementCsv(report);
+                  },
+                ),
+                HMBButton.withIcon(
+                  label: 'View/Send PDF',
+                  hint: 'View and optionally email this customer statement',
+                  icon: const Icon(Icons.picture_as_pdf),
                   onPressed: () => _viewSendStatement(report),
                 ),
               ],
@@ -172,6 +155,28 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
         for (final entry in report.entries) _buildEntry(entry),
     ],
   );
+
+  Future<void> _sendStatementCsv(DebtorStatementReport report) async {
+    final emails = await _statementEmails(report);
+    if (!mounted) {
+      return;
+    }
+    await sendReportCsv(
+      context: context,
+      fileName: _exportFileName(report, 'csv'),
+      csv: AccountingReportCsvExporter().debtorStatement(report),
+      title: 'Customer Statement',
+      preferredRecipient: emails.firstOrNull ?? '',
+      emailRecipients: emails,
+      emailBody:
+          '''
+Please find attached your customer statement CSV.
+
+Period: ${formatDate(report.startInclusive)} to ${formatDate(_lastDay(report))}
+Closing balance: ${report.closingBalance}
+''',
+    );
+  }
 
   DateTime _lastDay(DebtorStatementReport report) =>
       report.endExclusive.subtract(const Duration(days: 1));

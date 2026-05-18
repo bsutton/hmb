@@ -52,14 +52,14 @@ class _JobProfitReportScreenState extends State<JobProfitReportScreen> {
                   const Center(child: CircularProgressIndicator()),
               builder: (context, report) => report == null
                   ? const SizedBox.shrink()
-                  : _buildReport(report),
+                  : _buildReport(context, report),
             ),
         ],
       ),
     ),
   );
 
-  Widget _buildReport(JobProfitReport report) => Surface(
+  Widget _buildReport(BuildContext context, JobProfitReport report) => Surface(
     elevation: SurfaceElevation.e1,
     child: HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -69,28 +69,37 @@ class _JobProfitReportScreenState extends State<JobProfitReportScreen> {
           runSpacing: 8,
           children: [
             HMBButton.withIcon(
-              label: 'Export CSV',
-              hint: 'Export job profit as a CSV file',
-              icon: const Icon(Icons.download),
+              label: 'Send CSV',
+              hint: 'Email job profit as a CSV file',
+              icon: const Icon(Icons.email),
               onPressed: () async {
                 final job = await DaoJob().getById(report.jobId);
-                await exportCsv(
+                if (!context.mounted) {
+                  return;
+                }
+                await sendReportCsv(
+                  context: context,
                   fileName: _exportFileName(
                     report,
                     'csv',
                     jobName: job?.summary,
                   ),
+                  title: 'Job Profit',
                   csv: AccountingReportCsvExporter().jobProfit(report),
                 );
               },
             ),
             HMBButton.withIcon(
-              label: 'Export PDF',
-              hint: 'Export job profit as a PDF file',
+              label: 'View/Send PDF',
+              hint: 'View and optionally email job profit as a PDF',
               icon: const Icon(Icons.picture_as_pdf),
               onPressed: () async {
                 final job = await DaoJob().getById(report.jobId);
-                await exportReportPdf(
+                if (!context.mounted) {
+                  return;
+                }
+                await viewSendReportPdf(
+                  context: context,
                   fileName: _exportFileName(
                     report,
                     'pdf',

@@ -76,12 +76,14 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
                       runSpacing: 8,
                       children: [
                         HMBButton.withIcon(
-                          label: 'Export CSV',
-                          hint: 'Export profit and loss as a CSV file',
-                          icon: const Icon(Icons.download),
+                          label: 'Send CSV',
+                          hint: 'Email profit and loss as a CSV file',
+                          icon: const Icon(Icons.email),
                           onPressed: () async {
-                            await exportCsv(
+                            await sendReportCsv(
+                              context: context,
                               fileName: _exportFileName('csv'),
+                              title: 'Profit and Loss',
                               csv: AccountingReportCsvExporter().profitAndLoss(
                                 report,
                               ),
@@ -89,28 +91,17 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
                           },
                         ),
                         HMBButton.withIcon(
-                          label: 'Export PDF',
-                          hint: 'Export profit and loss as a PDF file',
+                          label: 'View/Send PDF',
+                          hint:
+                              'View and optionally email profit and loss '
+                              'as a PDF',
                           icon: const Icon(Icons.picture_as_pdf),
                           onPressed: () async {
-                            await exportReportPdf(
+                            await viewSendReportPdf(
+                              context: context,
                               fileName: _exportFileName('pdf'),
                               title: 'Profit and Loss',
-                              rows: [
-                                ['Line', 'Amount'],
-                                [
-                                  'Invoice income',
-                                  report.invoiceIncome.toString(),
-                                ],
-                                ['Credits', '-${report.creditNotes}'],
-                                ['Adjustments', '-${report.debtorAdjustments}'],
-                                ['Net income', report.netIncome.toString()],
-                                [
-                                  'Supplier receipts',
-                                  '-${report.receiptExpenses}',
-                                ],
-                                ['Net profit', report.netProfit.toString()],
-                              ],
+                              rows: _pdfRows(report),
                             );
                           },
                         ),
@@ -151,6 +142,16 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
       ],
     ),
   );
+
+  List<List<String>> _pdfRows(ProfitAndLossReport report) => [
+    ['Line', 'Amount'],
+    ['Invoice income', report.invoiceIncome.toString()],
+    ['Credits', '-${report.creditNotes}'],
+    ['Adjustments', '-${report.debtorAdjustments}'],
+    ['Net income', report.netIncome.toString()],
+    ['Supplier receipts', '-${report.receiptExpenses}'],
+    ['Net profit', report.netProfit.toString()],
+  ];
 
   String _exportFileName(String extension) => accountingReportExportFileName(
     reportName: 'profit_and_loss',

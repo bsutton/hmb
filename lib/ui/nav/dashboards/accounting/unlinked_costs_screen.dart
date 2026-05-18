@@ -43,7 +43,7 @@ class UnlinkedCostsScreen extends StatelessWidget {
                 child: Text('Total not linked to task items: ${report.total}'),
               ),
               const SizedBox(height: 12),
-              _actions(report),
+              _actions(context, report),
               const SizedBox(height: 12),
               if (report.rows.isEmpty)
                 const Surface(child: Text('All receipts are linked.'))
@@ -56,27 +56,30 @@ class UnlinkedCostsScreen extends StatelessWidget {
     },
   );
 
-  Widget _actions(UnlinkedCostReport report) => Wrap(
+  Widget _actions(BuildContext context, UnlinkedCostReport report) => Wrap(
     spacing: 8,
     runSpacing: 8,
     children: [
       HMBButton.withIcon(
-        label: 'Export CSV',
-        hint: 'Export unlinked costs as a CSV file',
-        icon: const Icon(Icons.download),
+        label: 'Send CSV',
+        hint: 'Email unlinked costs as a CSV file',
+        icon: const Icon(Icons.email),
         onPressed: () async {
-          await exportCsv(
+          await sendReportCsv(
+            context: context,
             fileName: _exportFileName(report, 'csv'),
+            title: 'Unlinked Costs',
             csv: AccountingReportCsvExporter().unlinkedCosts(report),
           );
         },
       ),
       HMBButton.withIcon(
-        label: 'Export PDF',
-        hint: 'Export unlinked costs as a PDF file',
+        label: 'View/Send PDF',
+        hint: 'View and optionally email unlinked costs as a PDF',
         icon: const Icon(Icons.picture_as_pdf),
         onPressed: () async {
-          await exportReportPdf(
+          await viewSendReportPdf(
+            context: context,
             fileName: _exportFileName(report, 'pdf'),
             title: 'Unlinked Costs',
             rows: _pdfRows(report),

@@ -72,7 +72,7 @@ class _CashReceivedScreenState extends State<CashReceivedScreen> {
                 children: [
                   _summary(context, report),
                   const SizedBox(height: 12),
-                  _actions(report),
+                  _actions(context, report),
                   const SizedBox(height: 12),
                   if (report.rows.isEmpty)
                     const Surface(child: Text('No customer payments.'))
@@ -99,27 +99,30 @@ class _CashReceivedScreenState extends State<CashReceivedScreen> {
     ),
   );
 
-  Widget _actions(CashReceivedReport report) => Wrap(
+  Widget _actions(BuildContext context, CashReceivedReport report) => Wrap(
     spacing: 8,
     runSpacing: 8,
     children: [
       HMBButton.withIcon(
-        label: 'Export CSV',
-        hint: 'Export cash received as a CSV file',
-        icon: const Icon(Icons.download),
+        label: 'Send CSV',
+        hint: 'Email cash received as a CSV file',
+        icon: const Icon(Icons.email),
         onPressed: () async {
-          await exportCsv(
+          await sendReportCsv(
+            context: context,
             fileName: _exportFileName(report, 'csv'),
+            title: 'Cash Received',
             csv: AccountingReportCsvExporter().cashReceived(report),
           );
         },
       ),
       HMBButton.withIcon(
-        label: 'Export PDF',
-        hint: 'Export cash received as a PDF file',
+        label: 'View/Send PDF',
+        hint: 'View and optionally email cash received as a PDF',
         icon: const Icon(Icons.picture_as_pdf),
         onPressed: () async {
-          await exportReportPdf(
+          await viewSendReportPdf(
+            context: context,
             fileName: _exportFileName(report, 'pdf'),
             title: 'Cash Received',
             rows: _pdfRows(report),

@@ -76,12 +76,14 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
                       runSpacing: 8,
                       children: [
                         HMBButton.withIcon(
-                          label: 'Export CSV',
-                          hint: 'Export tax summary as a CSV file',
-                          icon: const Icon(Icons.download),
+                          label: 'Send CSV',
+                          hint: 'Email tax summary as a CSV file',
+                          icon: const Icon(Icons.email),
                           onPressed: () async {
-                            await exportCsv(
+                            await sendReportCsv(
+                              context: context,
                               fileName: _exportFileName(report, 'csv'),
+                              title: '${report.taxLabel} Summary',
                               csv: AccountingReportCsvExporter().taxSummary(
                                 report,
                               ),
@@ -89,11 +91,13 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
                           },
                         ),
                         HMBButton.withIcon(
-                          label: 'Export PDF',
-                          hint: 'Export tax summary as a PDF file',
+                          label: 'View/Send PDF',
+                          hint:
+                              'View and optionally email tax summary as a PDF',
                           icon: const Icon(Icons.picture_as_pdf),
                           onPressed: () async {
-                            await exportReportPdf(
+                            await viewSendReportPdf(
+                              context: context,
                               fileName: _exportFileName(report, 'pdf'),
                               title: '${report.taxLabel} Summary',
                               rows: _pdfRows(report),

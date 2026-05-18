@@ -45,12 +45,14 @@ class AgedReceivablesScreen extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   HMBButton.withIcon(
-                    label: 'Export CSV',
-                    hint: 'Export aged receivables as a CSV file',
-                    icon: const Icon(Icons.download),
+                    label: 'Send CSV',
+                    hint: 'Email aged receivables as a CSV file',
+                    icon: const Icon(Icons.email),
                     onPressed: () async {
-                      await exportCsv(
+                      await sendReportCsv(
+                        context: context,
                         fileName: _exportFileName(report, 'csv'),
+                        title: 'Aged Receivables',
                         csv: AccountingReportCsvExporter().agedReceivables(
                           report,
                         ),
@@ -58,11 +60,12 @@ class AgedReceivablesScreen extends StatelessWidget {
                     },
                   ),
                   HMBButton.withIcon(
-                    label: 'Export PDF',
-                    hint: 'Export aged receivables as a PDF file',
+                    label: 'View/Send PDF',
+                    hint: 'View and optionally email aged receivables as a PDF',
                     icon: const Icon(Icons.picture_as_pdf),
                     onPressed: () async {
-                      await exportReportPdf(
+                      await viewSendReportPdf(
+                        context: context,
                         fileName: _exportFileName(report, 'pdf'),
                         title: 'Aged Receivables',
                         rows: _pdfRows(report),
@@ -113,7 +116,6 @@ class AgedReceivablesScreen extends StatelessWidget {
   Widget _buildRow(BuildContext context, AgedReceivablesRow row) => Padding(
     padding: const EdgeInsets.only(bottom: 8),
     child: Surface(
-      elevation: SurfaceElevation.e1,
       child: HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

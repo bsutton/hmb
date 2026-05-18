@@ -56,7 +56,7 @@ class _EmailDialogState extends DeferredState<EmailDialog> {
   void initState() {
     super.initState();
 
-    emailRecipients = widget.emailRecipients;
+    emailRecipients = [...widget.emailRecipients];
     _subjectController = TextEditingController(text: widget.subject);
   }
 

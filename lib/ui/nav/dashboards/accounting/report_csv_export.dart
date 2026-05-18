@@ -16,11 +16,14 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../../../../dao/dao_system.dart';
+import '../../../dialog/email_dialog.dart';
 import '../../../widgets/hmb_toast.dart';
+import '../../../widgets/media/pdf_preview.dart';
 
 String accountingReportExportFileName({
   required String reportName,
@@ -75,6 +78,73 @@ Future<void> exportReportPdf({
     return;
   }
   HMBToast.info('PDF exported to $path');
+}
+
+Future<void> sendReportCsv({
+  required BuildContext context,
+  required String fileName,
+  required String title,
+  required String csv,
+  String preferredRecipient = '',
+  List<String> emailRecipients = const [],
+  String? emailBody,
+}) async {
+  final file = await buildReportCsvFile(fileName: fileName, csv: csv);
+  if (!context.mounted) {
+    return;
+  }
+  await showDialog<bool>(
+    context: context,
+    builder: (context) => EmailDialog(
+      preferredRecipient: preferredRecipient,
+      subject: title,
+      body: emailBody ?? 'Please find attached the $title CSV report.',
+      attachmentPaths: [file.path],
+      emailRecipients: [...emailRecipients],
+    ),
+  );
+}
+
+Future<void> viewSendReportPdf({
+  required BuildContext context,
+  required String fileName,
+  required String title,
+  required List<List<String>> rows,
+}) async {
+  final file = await buildReportPdfFile(
+    fileName: fileName,
+    title: title,
+    rows: rows,
+  );
+  if (!context.mounted) {
+    return;
+  }
+  await Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (context) => PdfPreviewScreen(
+        title: title,
+        filePath: file.path,
+        preferredRecipient: '',
+        emailSubject: title,
+        emailBody: 'Please find attached the $title PDF report.',
+        sendEmailDialog:
+            ({
+              required preferredRecipient,
+              required subject,
+              required body,
+              required attachmentPaths,
+            }) => EmailDialog(
+              preferredRecipient: preferredRecipient,
+              subject: subject,
+              body: body,
+              attachmentPaths: attachmentPaths,
+              emailRecipients: const <String>[],
+            ),
+        canEmail: () async => EmailBlocked(blocked: false, reason: ''),
+        onSent: () async {},
+      ),
+    ),
+  );
 }
 
 Future<Uint8List> buildReportPdfBytes({
@@ -196,6 +266,16 @@ Future<Uint8List> buildReportPdfBytes({
       ),
     );
   return Uint8List.fromList(await pdf.save());
+}
+
+Future<File> buildReportCsvFile({
+  required String fileName,
+  required String csv,
+}) async {
+  final dir = await Directory.systemTemp.createTemp('hmb_report_csv_');
+  final file = File('${dir.path}/$fileName');
+  await file.writeAsString(csv, flush: true);
+  return file;
 }
 
 Future<File> buildReportPdfFile({
