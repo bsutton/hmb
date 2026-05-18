@@ -13,6 +13,8 @@
 
 // lib/ui/screens/shopping_item_card.dart
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -121,7 +123,10 @@ Future<void> showShoppingItemDialog(
                     format: (sup) => sup.name,
                     selectedItem: () async => selectedSupplier,
                     required: false,
-                    onChanged: (sup) => setState(() => selectedSupplier = sup),
+                    onChanged: (sup) {
+                      unawaited(DaoSupplier().recordAccess(sup?.id));
+                      setState(() => selectedSupplier = sup);
+                    },
                   ),
                   HMBTextField(
                     controller: costController,

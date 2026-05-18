@@ -289,6 +289,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
         items: (filter) => DaoSupplier().getByFilter(filter),
         format: (supplier) => supplier.name,
         onChanged: (supplier) {
+          unawaited(DaoSupplier().recordAccess(supplier?.id));
           setState(() {
             June.getState(SelectedSupplier.new).selected = supplier?.id;
           });

@@ -23,7 +23,9 @@ class DaoSupplier extends Dao<Supplier> {
   Future<List<Supplier>> getByFilter(String? filter) async {
     final db = withoutTransaction();
     const orderByRecentReceipt = '''
-ORDER BY MAX(r.receipt_date) IS NULL,
+ORDER BY s.lastAccessed IS NULL,
+         s.lastAccessed DESC,
+         MAX(r.receipt_date) IS NULL,
          MAX(r.receipt_date) DESC,
          MAX(r.modified_date) DESC,
          s.name COLLATE NOCASE
@@ -58,6 +60,20 @@ $orderByRecentReceipt
         [like, like, like],
       ),
     );
+  }
+
+  Future<void> recordAccess(int? supplierId) async {
+    if (supplierId == null) {
+      return;
+    }
+
+    await withoutTransaction().update(
+      tableName,
+      {'lastAccessed': DateTime.now().toIso8601String()},
+      where: 'id = ?',
+      whereArgs: [supplierId],
+    );
+    Dao.notifier(this, supplierId);
   }
 
   @override

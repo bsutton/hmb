@@ -11,6 +11,8 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'dart:async';
+
 import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart' hide StatefulBuilder;
 import 'package:strings/strings.dart';
@@ -112,6 +114,7 @@ Future<void> markAsCompleted(
                 selectedItem: () async => selectedSupplier,
                 required: false,
                 onChanged: (sup) {
+                  unawaited(DaoSupplier().recordAccess(sup?.id));
                   setStateDialog(() {
                     selectedSupplier = sup;
                   });

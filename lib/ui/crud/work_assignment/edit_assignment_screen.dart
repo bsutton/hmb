@@ -11,6 +11,8 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'dart:async';
+
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
@@ -117,27 +119,19 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Supplier selector
-        FutureBuilderEx<List<Supplier>>(
-          future: DaoSupplier().getAll(orderByClause: 'name COLLATE NOCASE'),
-          builder: (c, suppliers) => HMBDroplist<Supplier>(
-            selectedItem: () => DaoSupplier().getById(_selectedSupplier),
-            title: 'Supplier',
-            format: (supplier) => supplier.name,
-            items: (filter) async => suppliers!
-                .where(
-                  (supplier) => supplier.name.toLowerCase().contains(
-                    filter!.toLowerCase(),
-                  ),
-                )
-                .toList(),
-            onChanged: (supplier) {
-              _selectedSupplier = supplier?.id;
-              _selectedContact = null;
-              // force the contact drop list to show, now
-              // that we have a supplier.
-              setState(() {});
-            },
-          ),
+        HMBDroplist<Supplier>(
+          selectedItem: () => DaoSupplier().getById(_selectedSupplier),
+          title: 'Supplier',
+          format: (supplier) => supplier.name,
+          items: (filter) => DaoSupplier().getByFilter(filter),
+          onChanged: (supplier) {
+            _selectedSupplier = supplier?.id;
+            unawaited(DaoSupplier().recordAccess(supplier?.id));
+            _selectedContact = null;
+            // force the contact drop list to show, now
+            // that we have a supplier.
+            setState(() {});
+          },
         ),
 
         // Supplier-Contact selector

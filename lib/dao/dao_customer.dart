@@ -101,15 +101,25 @@ where j.id =?
     if (Strings.isBlank(filter)) {
       return getAll(orderByClause: 'modifiedDate desc');
     }
+    final text = filter!.trim();
+    final mobileText = text.replaceAll(' ', '');
     return toList(
       await db.rawQuery(
         '''
 select c.* 
 from customer c
 where c.name like ?
+or exists (
+  select 1
+  from customer_contact cc
+  join contact co
+    on co.id = cc.contact_id
+  where cc.customer_id = c.id
+  and replace(co.mobileNumber, ' ', '') like ?
+)
 order by c.modifiedDate desc
 ''',
-        ['''%$filter%'''],
+        ['''%$text%''', '''%$mobileText%'''],
       ),
     );
   }

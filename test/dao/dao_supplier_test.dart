@@ -41,6 +41,19 @@ void main() {
     expect(ids.indexOf(zeta.id), lessThan(ids.indexOf(alpha.id)));
     expect(ids.indexOf(alpha.id), lessThan(ids.indexOf(beta.id)));
   });
+
+  test('supplier filter orders recently accessed suppliers first', () async {
+    final alpha = await _insertSupplier('Alpha Hardware');
+    final beta = await _insertSupplier('Beta Plumbing');
+    final zeta = await _insertSupplier('Zeta Electrical');
+
+    await DaoSupplier().recordAccess(beta.id);
+
+    final suppliers = await DaoSupplier().getByFilter(null);
+    final ids = suppliers.map((supplier) => supplier.id).toList();
+
+    expect(ids.take(3), [beta.id, alpha.id, zeta.id]);
+  });
 }
 
 Future<Supplier> _insertSupplier(String name) async {

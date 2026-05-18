@@ -11,6 +11,8 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 
@@ -46,6 +48,7 @@ class HMBSelectSupplierState extends State<HMBSelectSupplier> {
     setState(() {
       widget.selectedSupplier.selected = newValue?.id;
     });
+    unawaited(DaoSupplier().recordAccess(newValue?.id));
     widget.onSelected?.call(newValue);
   }
 
@@ -60,6 +63,7 @@ class HMBSelectSupplierState extends State<HMBSelectSupplier> {
       setState(() {
         widget.selectedSupplier.selected = supplier.id;
       });
+      unawaited(DaoSupplier().recordAccess(supplier.id));
       widget.onSelected?.call(supplier);
     }
   }

@@ -23,6 +23,7 @@ class Supplier extends Entity<Supplier> {
   String? bsb;
   String? accountNumber;
   String? service;
+  DateTime? lastAccessed;
 
   Supplier({
     required super.id,
@@ -34,6 +35,7 @@ class Supplier extends Entity<Supplier> {
     required this.service,
     required super.createdDate,
     required super.modifiedDate,
+    this.lastAccessed,
   }) : super();
 
   Supplier.forInsert({
@@ -43,6 +45,7 @@ class Supplier extends Entity<Supplier> {
     required this.bsb,
     required this.accountNumber,
     required this.service,
+    this.lastAccessed,
   }) : super.forInsert();
 
   Supplier copyWith({
@@ -52,6 +55,7 @@ class Supplier extends Entity<Supplier> {
     String? bsb,
     String? accountNumber,
     String? service,
+    DateTime? lastAccessed,
   }) => Supplier(
     id: id,
     name: name ?? this.name,
@@ -62,6 +66,7 @@ class Supplier extends Entity<Supplier> {
     service: service ?? this.service,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
+    lastAccessed: lastAccessed ?? this.lastAccessed,
   );
 
   factory Supplier.fromMap(Map<String, dynamic> map) => Supplier(
@@ -74,6 +79,9 @@ class Supplier extends Entity<Supplier> {
     service: map['service'] as String?,
     createdDate: DateTime.parse(map['createdDate'] as String),
     modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+    lastAccessed: map['lastAccessed'] == null
+        ? null
+        : DateTime.parse(map['lastAccessed'] as String),
   );
 
   @override
@@ -87,5 +95,6 @@ class Supplier extends Entity<Supplier> {
     'service': service,
     'createdDate': createdDate.toIso8601String(),
     'modifiedDate': modifiedDate.toIso8601String(),
+    'lastAccessed': lastAccessed?.toIso8601String(),
   };
 }
