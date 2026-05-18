@@ -50,7 +50,7 @@ class HMBStartTimeEntry extends StatefulWidget {
 
 class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
   Timer? _timer;
-  late TimeEntry? timeEntry;
+  TimeEntry? timeEntry;
 
   late Disposer disposer;
 
