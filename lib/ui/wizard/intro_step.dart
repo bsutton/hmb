@@ -33,25 +33,18 @@ class IntroWizardStep extends WizardStep {
             style: theme.textTheme.headlineMedium,
           ),
           Text('''
-We’re almost ready to get started.
+We are almost ready to get started.
 
-HMB is designed to help run your single person Trades person business
-by managing your jobs, customers and basic accounting in one place.
+HMB helps a sole trader manage jobs, customers, quoting, invoicing,
+receipts, photos, scheduling, and basic accounting in one place.
 
-We’ll ask you for some basic business information such as your name, business name, and contact details.
+The setup wizard asks for the details needed to prepare invoices,
+quotes, customer messages, storage, and optional integrations.
 
-This information is used to:
-• Generate invoices and quotes  
-* Add a signature to your emails
-• Set your hourly rates and booking fees  
-• Configure your business hours and scheduling  
-• Integrate with accounting software like Xero  
+You can leave most fields blank and come back later from Settings.
+Your data stays on your device unless you enable a backup or integration.
 
-🔒 Your data is never uploaded or shared — it stays on your device.
-
-You can hit 'Cancel' and come back to this screen later.
-
-Tap "Next" to begin.
+Tap Next to begin.
             ''', style: theme.textTheme.bodyLarge),
         ],
       ),

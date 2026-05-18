@@ -12,6 +12,7 @@
 */
 
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:country_code2/country_code2.dart';
 import 'package:deferred_state/deferred_state.dart';
@@ -48,14 +49,14 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
   late System system;
 
   late String _selectedCountryCode;
-  late List<CountryCode> _countryCodes;
+  final List<CountryCode> _countryCodes = CountryCode.values;
 
   // Existing TextEditingControllers
-  late TextEditingController? _businessNameController;
-  late TextEditingController? _businessNumberController;
-  late TextEditingController? _businessNumberLabelController;
-  late TextEditingController? _webUrlController;
-  late TextEditingController? _termsUrlController;
+  late final _businessNameController = TextEditingController();
+  late final _businessNumberController = TextEditingController();
+  late final _businessNumberLabelController = TextEditingController();
+  late final _webUrlController = TextEditingController();
+  late final _termsUrlController = TextEditingController();
   late OperatingHoursController? _operatingHoursController;
 
   // -------------------------------------------
@@ -69,18 +70,13 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
     system = await DaoSystem().get();
 
     // 1. Populate existing fields
-    _countryCodes = CountryCode.values;
-    _selectedCountryCode = system.countryCode ?? 'AU';
+    _selectedCountryCode = system.countryCode ?? _defaultCountryCode();
 
-    _businessNameController = TextEditingController(text: system.businessName);
-    _businessNumberController = TextEditingController(
-      text: system.businessNumber,
-    );
-    _businessNumberLabelController = TextEditingController(
-      text: system.businessNumberLabel,
-    );
-    _webUrlController = TextEditingController(text: system.webUrl);
-    _termsUrlController = TextEditingController(text: system.termsUrl);
+    _businessNameController.text = system.businessName ?? '';
+    _businessNumberController.text = system.businessNumber ?? '';
+    _businessNumberLabelController.text = system.businessNumberLabel ?? '';
+    _webUrlController.text = system.webUrl ?? '';
+    _termsUrlController.text = system.termsUrl ?? '';
 
     // 2. Load existing OperatingHours from System, if any
     _operatingHoursController = OperatingHoursController(
@@ -91,13 +87,23 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
   @override
   void dispose() {
     // Dispose of controllers
-    _businessNameController?.dispose();
-    _businessNumberController?.dispose();
-    _businessNumberLabelController?.dispose();
-    _webUrlController?.dispose();
-    _termsUrlController?.dispose();
+    _businessNameController.dispose();
+    _businessNumberController.dispose();
+    _businessNumberLabelController.dispose();
+    _webUrlController.dispose();
+    _termsUrlController.dispose();
 
     super.dispose();
+  }
+
+  String _defaultCountryCode() {
+    final countryCode = ui.PlatformDispatcher.instance.locale.countryCode;
+    final normalized = countryCode?.toUpperCase();
+    if (normalized != null &&
+        _countryCodes.any((country) => country.alpha2 == normalized)) {
+      return normalized;
+    }
+    return 'AU';
   }
 
   // --------------------------------
@@ -118,7 +124,7 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
         children: [
           // Existing fields...
           HMBTextField(
-            controller: _businessNameController!,
+            controller: _businessNameController,
             labelText: 'Business Name',
           ),
           HelpWrapper(
@@ -137,7 +143,7 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
               ],
             ),
             child: HMBTextField(
-              controller: _businessNumberController!,
+              controller: _businessNumberController,
               labelText: 'Business Number',
             ),
           ),
@@ -155,7 +161,7 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
               ],
             ),
             child: HMBTextField(
-              controller: _businessNumberLabelController!,
+              controller: _businessNumberLabelController,
               labelText: 'Business Number Label',
             ),
           ),
@@ -196,7 +202,7 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
             },
           ),
           HMBTextField(
-            controller: _webUrlController!,
+            controller: _webUrlController,
             labelText: 'Web URL',
             validator: (value) {
               if (Strings.isBlank(value)) {
@@ -213,7 +219,7 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
             'A link to your business web site. Appears in your email footer.',
           ),
           HMBTextField(
-            controller: _termsUrlController!,
+            controller: _termsUrlController,
             labelText: 'Terms URL',
             validator: (value) {
               if (Strings.isBlank(value)) {
@@ -250,11 +256,11 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
     final localSystem = await DaoSystem().get();
 
     localSystem
-      ..businessName = _businessNameController!.text
-      ..businessNumber = _businessNumberController!.text
-      ..businessNumberLabel = _businessNumberLabelController!.text
-      ..webUrl = _webUrlController!.text
-      ..termsUrl = _termsUrlController!.text
+      ..businessName = _businessNameController.text
+      ..businessNumber = _businessNumberController.text
+      ..businessNumberLabel = _businessNumberLabelController.text
+      ..webUrl = _webUrlController.text
+      ..termsUrl = _termsUrlController.text
       ..countryCode = _selectedCountryCode
       ..setOperatingHours(_operatingHoursController!.operatingHours);
 

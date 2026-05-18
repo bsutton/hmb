@@ -66,7 +66,7 @@ class SystemStorageScreen extends StatefulWidget {
 
 class SystemStorageScreenState extends DeferredState<SystemStorageScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _photoCacheMaxMbController;
+  late final _photoCacheMaxMbController = TextEditingController();
   var _stats = const StorageStats(
     photoCount: 0,
     unsyncedPhotoCount: 0,
@@ -77,9 +77,7 @@ class SystemStorageScreenState extends DeferredState<SystemStorageScreen> {
   Future<void> asyncInitState() async {
     setAppTitle('Storage');
     final system = await DaoSystem().get();
-    _photoCacheMaxMbController = TextEditingController(
-      text: system.photoCacheMaxMb.toString(),
-    );
+    _photoCacheMaxMbController.text = system.photoCacheMaxMb.toString();
     _stats = await StorageStats.load();
   }
 

@@ -25,8 +25,6 @@ import 'package:path/path.dart' hide context;
 import 'package:path_provider/path_provider.dart';
 import 'package:strings/strings.dart';
 
-import '../../../cache/hmb_image_cache.dart';
-import '../../../cache/image_cache_config.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/system.dart';
 import '../../../entity/tax_scheme.dart';
@@ -68,15 +66,15 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
   late final _bsbController = TextEditingController();
   late final _accountNoController = TextEditingController();
   late final _paymentLinkUrlController = TextEditingController();
-  late TextEditingController _paymentTermsInDaysController;
-  late TextEditingController _paymentOptionsController;
-  late TextEditingController _photoCacheMaxMbController;
+  late final _paymentTermsInDaysController = TextEditingController();
+  late final _paymentOptionsController = TextEditingController();
 
   late final _logoPathController = TextEditingController();
   var _showBsbAccountOnInvoice = false;
   var _showPaymentLinkOnInvoice = false;
   LogoAspectRatio _logoAspectRatio = LogoAspectRatio.square;
   TaxDisplayMode _taxDisplayMode = TaxDisplayMode.none;
+  var _taxRegistered = false;
   TaxScheme? _taxScheme;
   String? _logoFile;
   Color _billingColour = Colors.deepPurpleAccent; // Default billing color
@@ -92,17 +90,14 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
     _bsbController.text = system.bsb ?? '';
     _accountNoController.text = system.accountNo ?? '';
     _paymentLinkUrlController.text = system.paymentLinkUrl ?? '';
-    _paymentTermsInDaysController = TextEditingController(
-      text: system.paymentTermsInDays.toString(),
-    );
-    _paymentOptionsController = TextEditingController(
-      text: system.paymentOptions,
-    );
+    _paymentTermsInDaysController.text = system.paymentTermsInDays.toString();
+    _paymentOptionsController.text = system.paymentOptions;
     _defaultProfitMarginController.text =
         (await DaoSystem().getDefaultProfitMargin()).toString();
     _financialYearStartMonthController.text =
         (await AppSettings.getFinancialYearStartMonth()).toString();
     _taxDisplayMode = await AppSettings.getTaxDisplayMode();
+    _taxRegistered = _taxDisplayMode != TaxDisplayMode.none;
     _taxScheme = await _loadSelectedTaxScheme(system);
     _taxLabelController.text = await AppSettings.getTaxLabel();
     if (Strings.isBlank(_taxLabelController.text)) {
@@ -112,15 +107,13 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
     if (Strings.isBlank(_taxRateController.text) && _taxScheme != null) {
       _taxRateController.text = await _defaultTaxRateText(_taxScheme!);
     }
-    _photoCacheMaxMbController = TextEditingController(
-      text: (await AppSettings.getPhotoCacheMaxMb()).toString(),
-    );
-
     _logoPathController.text = system.logoPath;
     _logoAspectRatio = system.logoAspectRatio;
     _billingColour = Color(system.billingColour);
     _showBsbAccountOnInvoice = system.showBsbAccountOnInvoice ?? true;
-    _showPaymentLinkOnInvoice = system.showPaymentLinkOnInvoice ?? true;
+    _showPaymentLinkOnInvoice =
+        system.showPaymentLinkOnInvoice ??
+        Strings.isNotBlank(system.paymentLinkUrl);
   }
 
   @override
@@ -137,8 +130,6 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
     _paymentLinkUrlController.dispose();
     _paymentTermsInDaysController.dispose();
     _paymentOptionsController.dispose();
-    _photoCacheMaxMbController.dispose();
-
     _logoPathController.dispose();
     super.dispose();
   }
@@ -178,17 +169,15 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
 
       await DaoSystem().update(system);
       await AppSettings.setTaxSchemeCode(_taxScheme?.code ?? '');
-      await AppSettings.setTaxDisplayMode(_taxDisplayMode);
+      await AppSettings.setTaxDisplayMode(
+        _taxRegistered ? _taxDisplayMode : TaxDisplayMode.none,
+      );
       await AppSettings.setTaxLabel(_taxLabelController.text);
       await AppSettings.setTaxRatePercentText(_taxRateController.text);
       await AppSettings.setFinancialYearStartMonth(
         int.tryParse(_financialYearStartMonthController.text) ??
             AppSettings.financialYearStartMonthDefault,
       );
-
-      final photoCacheMb = int.tryParse(_photoCacheMaxMbController.text) ?? 100;
-      await AppSettings.setPhotoCacheMaxMb(photoCacheMb);
-      await HMBImageCache().updateMaxBytes(photoCacheMb * 1024 * 1024);
 
       if (mounted) {
         if (widget.showButtons) {
@@ -330,10 +319,12 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
         child: HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const HMBTextHeadline2('Rates'),
             HMBMoneyField(
               controller: _defaultHourlyRateController,
               labelText: 'Default Hourly Rate',
               fieldName: 'default hourly rate',
+              nonZero: false,
             ),
             HelpWrapper(
               title: 'What is the Booking Fee',
@@ -345,6 +336,7 @@ Sometime this is referred to as a Surcharge, Callout Fee or Admin Fee''',
                 controller: _defaultBookingFeeController,
                 labelText: 'Default Booking Fee',
                 fieldName: 'default Booking Fee',
+                nonZero: false,
               ),
             ),
             HMBTextField(
@@ -371,6 +363,7 @@ You can still override the margin per Task Item and per Job estimate.'''),
               },
             ).help('Financial Year Start Month', '''
 Used by accounting reports. Enter 1 for January, 4 for April, 7 for July.'''),
+            const HMBTextHeadline2('Payment'),
             HMBTextField(
               controller: _bsbController,
               labelText: 'BSB',
@@ -393,20 +386,6 @@ The account no. will appear on invoices'''),
             ).help('Payment Terms', '''
 Used to calculate the due date on invoices.
 The due date will be calculated as Today plus the enter Payment Terms'''),
-            HMBTextField(
-              controller: _photoCacheMaxMbController,
-              labelText: 'Photo Cache Size (MB)',
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                final parsed = int.tryParse(value ?? '');
-                if (parsed == null || parsed <= 0) {
-                  return 'Enter a size in MB greater than 0';
-                }
-                return null;
-              },
-            ).help('Photo Cache Size', '''
-Maximum local photo-cache size in megabytes.
-Default is ${ImageCacheConfig.defaultMaxMegabytes}MB.'''),
             HMBTextArea(
               controller: _paymentOptionsController,
               labelText: 'Payment Options',
@@ -445,18 +424,20 @@ and what forms of payment you accept.'''),
                 'Payment Link',
                 'A link to details on how the user can pay. Appears on Invoices and Quotes. e.g. https://mysite/payment.html',
               ),
-            HMBDroplist<TaxDisplayMode>(
-              title: 'PDF Tax Display',
-              selectedItem: () async => _taxDisplayMode,
-              items: (filter) async => TaxDisplayMode.values,
-              format: _formatTaxDisplayMode,
+            const HMBTextHeadline2('Tax'),
+            SwitchListTile(
+              title: const Text('Tax Registered'),
+              value: _taxRegistered,
               onChanged: (value) {
                 setState(() {
-                  _taxDisplayMode = value ?? TaxDisplayMode.none;
+                  _taxRegistered = value;
+                  if (_taxRegistered &&
+                      _taxDisplayMode == TaxDisplayMode.none) {
+                    _taxDisplayMode = TaxDisplayMode.exclusive;
+                  }
                 });
               },
-            ).help('PDF Tax Display', '''
-Controls if quote/invoice PDFs show an inclusive/exclusive tax notice.'''),
+            ),
             HMBDroplist<TaxScheme>(
               title: 'Tax Jurisdiction',
               selectedItem: () async => _taxScheme,
@@ -489,13 +470,26 @@ Controls if quote/invoice PDFs show an inclusive/exclusive tax notice.'''),
               },
             ).help('Tax Jurisdiction', '''
 Controls tax labels, default tax codes, and tax summary reporting.'''),
-            if (_taxDisplayMode != TaxDisplayMode.none) ...[
+            if (_taxRegistered) ...[
+              HMBDroplist<TaxDisplayMode>(
+                title: 'PDF Tax Display',
+                selectedItem: () async => _taxDisplayMode,
+                items: (filter) async => TaxDisplayMode.values
+                    .where((mode) => mode != TaxDisplayMode.none)
+                    .toList(),
+                format: _formatTaxDisplayMode,
+                onChanged: (value) {
+                  setState(() {
+                    _taxDisplayMode = value ?? TaxDisplayMode.exclusive;
+                  });
+                },
+              ).help('PDF Tax Display', '''
+Controls if quote/invoice PDFs show an inclusive/exclusive tax notice.'''),
               HMBTextField(
                 controller: _taxLabelController,
                 labelText: 'Tax Label',
                 validator: (value) {
-                  if (_taxDisplayMode != TaxDisplayMode.none &&
-                      Strings.isBlank(value)) {
+                  if (_taxRegistered && Strings.isBlank(value)) {
                     return 'Enter a tax label, e.g. GST or VAT';
                   }
                   return null;

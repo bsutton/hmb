@@ -11,6 +11,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'package:flutter/widgets.dart';
 import 'package:june/june.dart';
 
 import '../../src/appname.dart';
@@ -33,7 +34,7 @@ void setAppTitle(String pageTitle) {
   /// cruds title.
   /// We use a future as we are called during a build
   /// so can't call setState.
-  Future.delayed(Duration.zero, () {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
     final currentTitle = June.getState(HMBTitle.new);
     if (currentTitle.title != pageTitle) {
       June.getState(HMBTitle.new).title = pageTitle;
