@@ -103,6 +103,14 @@ class AccountingDashboardPage extends StatelessWidget {
       ),
       const InvoiceDashlet(),
       DashletCard<void>.route(
+        label: 'Payments',
+        hint: 'View customer payments and record pre-payments',
+        icon: Icons.payments,
+        value: () async => const DashletValue(null),
+        route: '/home/accounting/payments',
+        valueBuilder: (_, _) => const SizedBox.shrink(),
+      ),
+      DashletCard<void>.route(
         label: 'Milestones',
         hint: 'Create and Invoice Milestone Payments for Fixed price Jobs',
         icon: Icons.flag,

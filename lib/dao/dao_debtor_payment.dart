@@ -11,7 +11,10 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'package:money2/money2.dart';
+
 import '../entity/entity.g.dart';
+import '../util/dart/money_ex.dart';
 import 'dao.dart';
 
 class DaoDebtorPayment extends Dao<DebtorPayment> {
@@ -20,6 +23,64 @@ class DaoDebtorPayment extends Dao<DebtorPayment> {
 
   @override
   DebtorPayment fromMap(Map<String, dynamic> map) => DebtorPayment.fromMap(map);
+
+  Future<List<DebtorPayment>> getRecent({
+    bool includeFullyAllocated = true,
+  }) async {
+    final db = withoutTransaction();
+    final includeAllocatedFlag = includeFullyAllocated ? 1 : 0;
+    final rows = await db.rawQuery(
+      '''
+SELECT p.*
+FROM $tableName p
+LEFT JOIN (
+  SELECT payment_id, SUM(amount) AS allocated
+  FROM debtor_payment_allocation
+  GROUP BY payment_id
+) a ON a.payment_id = p.id
+WHERE ? = 1 OR IFNULL(a.allocated, 0) < p.amount
+ORDER BY p.payment_date DESC, p.id DESC
+''',
+      [includeAllocatedFlag],
+    );
+    return toList(rows);
+  }
+
+  Future<List<DebtorPayment>> getUnallocatedForCustomer(int customerId) async {
+    final db = withoutTransaction();
+    final rows = await db.rawQuery(
+      '''
+SELECT p.*
+FROM $tableName p
+LEFT JOIN (
+  SELECT payment_id, SUM(amount) AS allocated
+  FROM debtor_payment_allocation
+  GROUP BY payment_id
+) a ON a.payment_id = p.id
+WHERE p.customer_id = ?
+AND IFNULL(a.allocated, 0) < p.amount
+ORDER BY p.payment_date ASC, p.id ASC
+''',
+      [customerId],
+    );
+    return toList(rows);
+  }
+
+  Future<Money> allocatedAmount(int paymentId) async {
+    final db = withoutTransaction();
+    final rows = await db.rawQuery(
+      '''
+SELECT IFNULL(SUM(amount), 0) AS total
+FROM debtor_payment_allocation
+WHERE payment_id = ?
+''',
+      [paymentId],
+    );
+    return MoneyEx.fromInt(rows.first['total'] as int? ?? 0);
+  }
+
+  Future<Money> unallocatedAmount(DebtorPayment payment) async =>
+      payment.amount - await allocatedAmount(payment.id);
 
   Future<DebtorPayment?> getByExternalPaymentId({
     required String provider,

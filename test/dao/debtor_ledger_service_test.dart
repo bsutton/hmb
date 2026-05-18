@@ -74,7 +74,11 @@ void main() {
 
   test('one payment can be split across multiple invoices', () async {
     final first = await _insertInvoice(total: MoneyEx.dollars(100));
-    final second = await _insertInvoice(total: MoneyEx.dollars(100));
+    final second = await _insertInvoiceForJob(
+      jobId: first.jobId,
+      billingContactId: first.billingContactId,
+      total: MoneyEx.dollars(100),
+    );
     final job = await DaoJob().getById(first.jobId);
     final payment = DebtorPayment.forInsert(
       customerId: job!.customerId,
@@ -107,8 +111,9 @@ void main() {
 
   test('payment allocation cannot exceed payment amount', () async {
     final invoice = await _insertInvoice(total: MoneyEx.dollars(100));
+    final job = await DaoJob().getById(invoice.jobId);
     final payment = DebtorPayment.forInsert(
-      customerId: null,
+      customerId: job!.customerId,
       contactId: null,
       paymentDate: DateTime.now(),
       amount: MoneyEx.dollars(50),
@@ -129,6 +134,70 @@ void main() {
         amount: MoneyEx.dollars(11),
       ),
       throwsA(isA<HMBException>()),
+    );
+  });
+
+  test('payment cannot be applied to a different customer invoice', () async {
+    final invoice = await _insertInvoice(total: MoneyEx.dollars(100));
+    final otherInvoice = await _insertInvoice(total: MoneyEx.dollars(100));
+    final otherJob = await DaoJob().getById(otherInvoice.jobId);
+    final service = DebtorLedgerService();
+
+    final payment = await service.recordUnallocatedPayment(
+      customerId: otherJob!.customerId!,
+      contactId: otherInvoice.billingContactId,
+      amount: MoneyEx.dollars(100),
+    );
+
+    expect(
+      () => service.applyPaymentToInvoice(
+        paymentId: payment.id,
+        invoiceId: invoice.id,
+        amount: MoneyEx.dollars(100),
+      ),
+      throwsA(isA<HMBException>()),
+    );
+    expect(await service.invoicePaidAmount(invoice.id), MoneyEx.zero);
+    expect(
+      await service.paymentUnallocatedAmount(payment),
+      MoneyEx.dollars(100),
+    );
+  });
+
+  test('unallocated payment can be stored and later applied', () async {
+    final invoice = await _insertInvoice(total: MoneyEx.dollars(100));
+    final job = await DaoJob().getById(invoice.jobId);
+    final service = DebtorLedgerService();
+
+    final payment = await service.recordUnallocatedPayment(
+      customerId: job!.customerId!,
+      contactId: invoice.billingContactId,
+      amount: MoneyEx.dollars(120),
+      paymentDate: DateTime(2026, 5),
+      reference: 'Deposit',
+    );
+
+    expect(
+      await service.paymentUnallocatedAmount(payment),
+      MoneyEx.dollars(120),
+    );
+    expect(
+      await service.unallocatedPaymentsForCustomer(job.customerId!),
+      hasLength(1),
+    );
+
+    await service.applyPaymentToInvoice(
+      paymentId: payment.id,
+      invoiceId: invoice.id,
+      amount: MoneyEx.dollars(100),
+      allocatedDate: DateTime(2026, 5, 2),
+    );
+
+    expect(await service.invoicePaidAmount(invoice.id), MoneyEx.dollars(100));
+    expect(await service.invoiceBalance(invoice.id), MoneyEx.zero);
+    expect(
+      await service.paymentUnallocatedAmount(payment),
+      MoneyEx.dollars(20),
     );
   });
 
@@ -155,6 +224,24 @@ void main() {
 
     final reloadedCredit = await DaoCreditNote().getById(creditNote.id);
     expect(reloadedCredit!.status, CreditNoteStatus.allocated);
+  });
+
+  test('journal adjustment applies to invoice balance', () async {
+    final invoice = await _insertInvoice(total: MoneyEx.dollars(100));
+    final service = DebtorLedgerService();
+
+    final adjustment = await service.addJournalAdjustment(
+      invoiceId: invoice.id,
+      amount: MoneyEx.dollars(15),
+      reason: 'Manual correction',
+    );
+
+    expect(adjustment.reason, 'Manual correction');
+    expect(
+      await service.invoiceAdjustedAmount(invoice.id),
+      MoneyEx.dollars(15),
+    );
+    expect(await service.invoiceBalance(invoice.id), MoneyEx.dollars(85));
   });
 
   test('write off clears remaining invoice balance', () async {
@@ -256,6 +343,25 @@ Future<Invoice> _insertInvoice({
     dueDate: LocalDate.today(),
     totalAmount: total,
     billingContactId: job.billingContactId,
+    sent: true,
+    paid: paid,
+    paidDate: paid ? DateTime.now() : null,
+  );
+  await DaoInvoice().insert(invoice);
+  return invoice;
+}
+
+Future<Invoice> _insertInvoiceForJob({
+  required int jobId,
+  required int? billingContactId,
+  required Money total,
+  bool paid = false,
+}) async {
+  final invoice = Invoice.forInsert(
+    jobId: jobId,
+    dueDate: LocalDate.today(),
+    totalAmount: total,
+    billingContactId: billingContactId,
     sent: true,
     paid: paid,
     paidDate: paid ? DateTime.now() : null,

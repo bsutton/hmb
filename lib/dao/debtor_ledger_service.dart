@@ -166,6 +166,54 @@ class DebtorLedgerService {
     return payment;
   }
 
+  Future<DebtorPayment> recordUnallocatedPayment({
+    required int customerId,
+    required Money amount,
+    int? contactId,
+    DateTime? paymentDate,
+    String? paymentMethod,
+    String? reference,
+    String? notes,
+  }) async {
+    _requirePositive(amount, 'Payment amount');
+    final payment = DebtorPayment.forInsert(
+      customerId: customerId,
+      contactId: contactId,
+      paymentDate: paymentDate ?? DateTime.now(),
+      amount: amount,
+      paymentMethod: paymentMethod,
+      reference: reference,
+      notes: notes,
+    );
+    await _daoPayment.insert(payment);
+    return payment;
+  }
+
+  Future<List<DebtorPayment>> unallocatedPaymentsForCustomer(int customerId) =>
+      _daoPayment.getUnallocatedForCustomer(customerId);
+
+  Future<Money> paymentAllocatedAmount(int paymentId) =>
+      _daoPayment.allocatedAmount(paymentId);
+
+  Future<Money> paymentUnallocatedAmount(DebtorPayment payment) =>
+      _daoPayment.unallocatedAmount(payment);
+
+  Future<PaymentAllocation> applyPaymentToInvoice({
+    required int paymentId,
+    required int invoiceId,
+    required Money amount,
+    DateTime? allocatedDate,
+  }) async {
+    final allocation = await allocatePayment(
+      paymentId: paymentId,
+      invoiceId: invoiceId,
+      amount: amount,
+      allocatedDate: allocatedDate,
+    );
+    await recordInvoice(await _requireInvoice(invoiceId));
+    return allocation;
+  }
+
   Future<PaymentAllocation> allocatePayment({
     required int paymentId,
     required int invoiceId,
@@ -177,7 +225,8 @@ class DebtorLedgerService {
     if (payment == null) {
       throw HMBException('Payment $paymentId does not exist.');
     }
-    await _requireInvoice(invoiceId);
+    final invoice = await _requireInvoice(invoiceId);
+    await _requirePaymentForInvoiceCustomer(payment: payment, invoice: invoice);
     final allocated = await _daoPaymentAllocation.totalForPayment(paymentId);
     if (allocated + amount > payment.amount) {
       throw HMBException('Payment allocations exceed the payment amount.');
@@ -492,6 +541,21 @@ class DebtorLedgerService {
       throw HMBException('Invoice $invoiceId does not exist.');
     }
     return invoice;
+  }
+
+  Future<void> _requirePaymentForInvoiceCustomer({
+    required DebtorPayment payment,
+    required Invoice invoice,
+  }) async {
+    if (payment.customerId == null) {
+      return;
+    }
+    final job = await _daoJob.getById(invoice.jobId);
+    if (job?.customerId != payment.customerId) {
+      throw HMBException(
+        'Payment ${payment.id} does not belong to the invoice customer.',
+      );
+    }
   }
 
   void _requirePositive(Money amount, String label) {

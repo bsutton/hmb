@@ -40,9 +40,11 @@ import '../widgets/icons/hmb_delete_icon.dart';
 import '../widgets/icons/hmb_edit_icon.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/layout/surface.dart';
+import 'apply_payment_to_invoice_dialog.dart';
 import 'edit_invoice_line_dialog.dart';
 import 'invoice_details.dart';
 import 'invoice_send_button.dart';
+import 'record_invoice_adjustment_dialog.dart';
 import 'record_invoice_payment_dialog.dart';
 import 'void_invoice_dialog.dart';
 import 'write_off_invoice_balance_dialog.dart';
@@ -152,6 +154,24 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                             hint: 'Record a payment against this invoice',
                             onPressed: () async {
                               await _recordPayment(details);
+                            },
+                          ),
+                        if (_canApplyPayment(details))
+                          HMBButton(
+                            label: 'Apply Payment',
+                            hint:
+                                'Apply an existing customer payment to '
+                                'this invoice',
+                            onPressed: () async {
+                              await _applyPayment(details);
+                            },
+                          ),
+                        if (_canRecordAdjustment(details))
+                          HMBButton(
+                            label: 'Add Adjustment',
+                            hint: 'Record an adjustment against this invoice',
+                            onPressed: () async {
+                              await _recordAdjustment(details);
                             },
                           ),
                         if (_canWriteOffSmallBalance(details))
@@ -348,6 +368,12 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       !details.invoice.isExternallyDeletedOrVoided &&
       details.ledger.balance.isPositive;
 
+  bool _canApplyPayment(InvoiceDetails details) => _canRecordPayment(details);
+
+  bool _canRecordAdjustment(InvoiceDetails details) =>
+      details.invoice.isManagedLocally &&
+      !details.invoice.isExternallyDeletedOrVoided;
+
   bool _canWriteOffSmallBalance(InvoiceDetails details) =>
       _canWriteOffBalance(details) &&
       details.ledger.balance <= MoneyEx.fromInt(100);
@@ -399,6 +425,78 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
     } catch (e) {
       HMBToast.error(
         'Failed to record payment: $e',
+        acknowledgmentRequired: true,
+      );
+    }
+  }
+
+  Future<void> _applyPayment(InvoiceDetails details) async {
+    final customerId = details.job.customerId;
+    if (customerId == null) {
+      HMBToast.error('The invoice job does not have a customer.');
+      return;
+    }
+    final ledgerService = DebtorLedgerService();
+    final payments = await ledgerService.unallocatedPaymentsForCustomer(
+      customerId,
+    );
+    if (!mounted) {
+      return;
+    }
+    final request = await showApplyPaymentToInvoiceDialog(
+      context: context,
+      payments: payments,
+      balance: details.ledger.balance,
+    );
+    if (request == null) {
+      return;
+    }
+    try {
+      await ledgerService.applyPaymentToInvoice(
+        paymentId: request.paymentId,
+        invoiceId: details.invoice.id,
+        amount: request.amount,
+        allocatedDate: request.allocatedDate,
+      );
+      await _reloadInvoice();
+      if (!mounted) {
+        return;
+      }
+      HMBToast.info('Payment applied');
+      setState(() {});
+    } catch (e) {
+      HMBToast.error(
+        'Failed to apply payment: $e',
+        acknowledgmentRequired: true,
+      );
+    }
+  }
+
+  Future<void> _recordAdjustment(InvoiceDetails details) async {
+    final request = await showRecordInvoiceAdjustmentDialog(
+      context: context,
+      balance: details.ledger.balance,
+    );
+    if (request == null) {
+      return;
+    }
+    try {
+      await DebtorLedgerService().addJournalAdjustment(
+        invoiceId: details.invoice.id,
+        amount: request.amount,
+        reason: request.reason,
+        adjustmentType: request.adjustmentType,
+        notes: request.notes,
+      );
+      await _reloadInvoice();
+      if (!mounted) {
+        return;
+      }
+      HMBToast.info('Adjustment recorded');
+      setState(() {});
+    } catch (e) {
+      HMBToast.error(
+        'Failed to record adjustment: $e',
         acknowledgmentRequired: true,
       );
     }

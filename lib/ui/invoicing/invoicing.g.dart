@@ -10,5 +10,6 @@ export 'edit_invoice_screen.dart';
 export 'invoice_details.dart';
 export 'invoice_send_button.dart';
 export 'list_invoice_screen.dart';
+export 'list_payment_screen.dart';
 export 'select_job_dialog.dart';
 export 'yet_to_be_invoice.dart';

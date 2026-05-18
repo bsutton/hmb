@@ -39,6 +39,7 @@ import '../crud/tool/list_tool_screen.dart';
 import '../error.dart';
 import '../integrations/booking_request_list_screen.dart';
 import '../invoicing/list_invoice_screen.dart';
+import '../invoicing/list_payment_screen.dart';
 import '../invoicing/yet_to_be_invoice.dart';
 import '../quoting/list_quote_screen.dart';
 import '../scheduling/schedule_page.dart';
@@ -275,6 +276,10 @@ List<GoRoute> accountingRoutes() => [
   GoRoute(
     path: 'invoices',
     builder: (_, _) => const HomeScaffold(initialScreen: InvoiceListScreen()),
+  ),
+  GoRoute(
+    path: 'payments',
+    builder: (_, _) => const HomeScaffold(initialScreen: PaymentListScreen()),
   ),
 
   GoRoute(
