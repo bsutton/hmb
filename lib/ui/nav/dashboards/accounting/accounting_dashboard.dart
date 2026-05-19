@@ -189,7 +189,7 @@ class AccountingDashboardPage extends StatelessWidget {
     final quotes = await DaoQuote().getAll();
     var total = MoneyEx.zero;
     for (final q in quotes) {
-      if (q.state == QuoteState.sent || q.state == QuoteState.approved) {
+      if (q.state == QuoteState.reviewing || q.state == QuoteState.sent) {
         total += q.totalAmount;
       }
     }
