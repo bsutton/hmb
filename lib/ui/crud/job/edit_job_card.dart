@@ -22,8 +22,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as p;
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
@@ -870,9 +870,11 @@ You can set a default booking fee from System | Billing screen''');
   }
 
   Future<void> _openAttachment(JobAttachment attachment) async {
-    final uri = Uri.file(attachment.filePath);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      HMBToast.error('Unable to open attachment.');
+    final result = await OpenFilex.open(attachment.filePath);
+    if (result.type != ResultType.done) {
+      HMBToast.error(
+        result.message.isEmpty ? 'Unable to open attachment.' : result.message,
+      );
     }
   }
 
