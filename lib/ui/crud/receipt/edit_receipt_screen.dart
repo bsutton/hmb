@@ -516,18 +516,19 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     for (final line in _lineItems) {
       line.dispose();
     }
+    final totals = _balancedExtractionTotals(result);
     setState(() {
       if (result.receiptDate != null) {
         _date = result.receiptDate!;
       }
-      if (result.totalExcludingTax > 0) {
-        _totalExclCtrl.money = MoneyEx.fromInt(result.totalExcludingTax);
+      if (totals.excluding.isPositive) {
+        _totalExclCtrl.money = totals.excluding;
       }
-      if (result.tax > 0) {
-        _taxCtrl.money = MoneyEx.fromInt(result.tax);
+      if (totals.tax.isPositive) {
+        _taxCtrl.money = totals.tax;
       }
-      if (result.totalIncludingTax > 0) {
-        _totalInclCtrl.money = MoneyEx.fromInt(result.totalIncludingTax);
+      if (totals.including.isPositive) {
+        _totalInclCtrl.money = totals.including;
       }
       _lineItems
         ..clear()
@@ -539,6 +540,20 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     if (result.warnings.isNotEmpty) {
       HMBToast.info(result.warnings.first);
     }
+  }
+
+  _ReceiptTotals _balancedExtractionTotals(ReceiptExtractionResult result) {
+    var excluding = MoneyEx.fromInt(result.totalExcludingTax);
+    final tax = MoneyEx.fromInt(result.tax);
+    var including = MoneyEx.fromInt(result.totalIncludingTax);
+
+    if (including.isPositive && tax.isPositive) {
+      excluding = including - tax;
+    } else if (excluding.isPositive && tax.isPositive) {
+      including = excluding + tax;
+    }
+
+    return _ReceiptTotals(excluding: excluding, tax: tax, including: including);
   }
 
   void _addManualLine() {
@@ -803,6 +818,18 @@ class _ReceiptJobAllocationEditor {
   void dispose() {
     amountController.dispose();
   }
+}
+
+class _ReceiptTotals {
+  final Money excluding;
+  final Money tax;
+  final Money including;
+
+  const _ReceiptTotals({
+    required this.excluding,
+    required this.tax,
+    required this.including,
+  });
 }
 
 class _ReceiptLineItemEditor {
