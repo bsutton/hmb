@@ -427,6 +427,7 @@ where t.id =?
           case TaskItemType.materialsStock:
           case TaskItemType.consumablesStock:
           case TaskItemType.consumablesBuy:
+          case TaskItemType.toolsHire:
             materialCost = item.estimatedMaterialUnitCost!.multiplyByFixed(
               item.estimatedMaterialQuantity!,
             );

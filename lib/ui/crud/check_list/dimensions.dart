@@ -206,7 +206,7 @@ class SelectedUnits extends JuneState {
 
 class MeasuremenTotal extends JuneState {}
 
-MeasurementType getDefaultMeasurementType() => MeasurementType.length;
+MeasurementType getDefaultMeasurementType() => MeasurementType.quantity;
 
 Future<Units> getDefaultUnitForMeasurementType(
   MeasurementType measurementType,

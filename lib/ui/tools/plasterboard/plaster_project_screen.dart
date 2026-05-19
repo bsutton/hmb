@@ -2418,8 +2418,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                       const SizedBox(height: 4),
                       Text(
                         '${layout.material.name}  '
-                        '${layout.sheetsAcross} across x '
-                        '${layout.sheetsDown} high',
+                        'w: ${layout.sheetsAcross} sheets x '
+                        'h: ${layout.sheetsDown} sheets',
                       ),
                       Text(layout.direction.layoutLabel),
                       const SizedBox(height: 8),
@@ -2654,7 +2654,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         ListTile(
           title: const Text('Tape'),
           trailing: Text(
-            PlasterGeometry.formatJointTapeLength(takeoff.tapeLength),
+            PlasterGeometry.formatJointTapeLength(
+              takeoff.tapeLength,
+              unitSystem,
+            ),
           ),
         ),
         ListTile(
@@ -3502,7 +3505,8 @@ class _SurfaceSheetExplorerSection extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   '${layout.material.name}  '
-                  '${layout.sheetsAcross} across x ${layout.sheetsDown} high',
+                  'w: ${layout.sheetsAcross} sheets x '
+                  'h: ${layout.sheetsDown} sheets',
                   style: const TextStyle(fontSize: 12),
                 ),
                 Text(layout.direction.layoutLabel),

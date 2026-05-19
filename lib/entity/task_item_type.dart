@@ -36,6 +36,13 @@ enum TaskItemType {
     color: '#90EE90',
     toPurchase: true,
   ),
+  toolsHire(
+    8,
+    label: 'Tools - hire',
+    description: 'Tool that needs to be hired',
+    color: '#90EE90',
+    toPurchase: true,
+  ),
   toolsOwn(
     4,
     label: 'Tools - own',
@@ -79,7 +86,8 @@ enum TaskItemType {
   final String color;
   final bool toPurchase;
 
-  static TaskItemType fromId(int id) => values[id - 1];
+  static TaskItemType fromId(int id) =>
+      values.firstWhere((type) => type.id == id);
 
   static List<TaskItemType> getByFilter(String? filter) =>
       Strings.isBlank(filter)

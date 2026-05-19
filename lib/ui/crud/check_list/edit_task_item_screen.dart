@@ -303,6 +303,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     switch (June.getState(SelectedCheckListItemType.new).selected) {
       case TaskItemType.materialsBuy:
       case TaskItemType.toolsBuy:
+      case TaskItemType.toolsHire:
       case TaskItemType.consumablesBuy:
         widgets.addAll(_buildBuyFields());
       case TaskItemType.materialsStock:

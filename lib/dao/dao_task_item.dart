@@ -197,6 +197,7 @@ SELECT ti.*
    AND ti.item_type_id IN (
      ${TaskItemType.materialsBuy.id},
      ${TaskItemType.toolsBuy.id},
+     ${TaskItemType.toolsHire.id},
      ${TaskItemType.consumablesBuy.id}
    )
    AND ti.completed = 1
@@ -312,6 +313,7 @@ SELECT ti.*
  WHERE (ti.item_type_id = ${TaskItemType.materialsBuy.id}
  OR ti.item_type_id = ${TaskItemType.consumablesBuy.id}
   OR ti.item_type_id = ${TaskItemType.toolsBuy.id}
+  OR ti.item_type_id = ${TaskItemType.toolsHire.id}
    )
    AND ti.completed = 0
    AND ti.is_return = 0
@@ -350,6 +352,7 @@ SELECT ti.*
       case TaskItemType.materialsBuy:
       case TaskItemType.materialsStock:
       case TaskItemType.toolsBuy:
+      case TaskItemType.toolsHire:
       case TaskItemType.toolsOwn:
       case TaskItemType.consumablesStock:
       case TaskItemType.consumablesBuy:
@@ -387,6 +390,7 @@ SELECT ti.*
   JOIN job j                ON t.job_id         = j.id
  WHERE (ti.item_type_id = 1 -- 'Materials - buy' 
  OR ti.item_type_id = 3 -- 'Tools - buy'
+ OR ti.item_type_id = ${TaskItemType.toolsHire.id} -- 'Tools - hire'
  )
    AND ti.completed = 1
    AND ti.is_return = 0

@@ -89,6 +89,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
                         TaskItemType.materialsBuy,
                         TaskItemType.consumablesBuy,
                         TaskItemType.toolsBuy,
+                        TaskItemType.toolsHire,
                       ],
                       AddType.packing => [
                         TaskItemType.materialsStock,

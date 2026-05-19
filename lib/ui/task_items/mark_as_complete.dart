@@ -45,6 +45,7 @@ Future<void> markAsCompleted(
     case TaskItemType.materialsStock:
     case TaskItemType.toolsOwn:
     case TaskItemType.toolsBuy:
+    case TaskItemType.toolsHire:
     case TaskItemType.consumablesStock:
     case TaskItemType.consumablesBuy:
       costController.text =

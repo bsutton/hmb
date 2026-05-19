@@ -70,6 +70,7 @@ abstract class Units {
   static const Units ton = Units1D('ton', labels: ['Weight']);
   static const Units lb = Units1D('lb', labels: ['Weight']);
   static const Units oz = Units1D('oz', labels: ['Weight']);
+  static const Units each = Units1D('ea', labels: ['Quantity']);
   static Units defaultUnits = mm;
 
   final String name;
@@ -188,4 +189,5 @@ Map<String, Units> _unitsMap = {
   'ton': Units.ton,
   'lb': Units.lb,
   'oz': Units.oz,
+  'ea': Units.each,
 };

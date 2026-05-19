@@ -19,6 +19,7 @@ Map<String, MeasurementType> _measurementTypes = {
   MeasurementType.area.name: MeasurementType.area,
   MeasurementType.volume.name: MeasurementType.volume,
   MeasurementType.weight.name: MeasurementType.weight,
+  MeasurementType.quantity.name: MeasurementType.quantity,
 };
 
 class MeasurementType {
@@ -55,6 +56,14 @@ class MeasurementType {
     imperial: [Units.ton, Units.lb, Units.oz],
   );
 
+  static const quantity = MeasurementType(
+    name: 'quantity',
+    defaultMetric: Units.each,
+    defaultImperial: Units.each,
+    metric: [Units.each],
+    imperial: [Units.each],
+  );
+
   final String name;
   final Units defaultMetric;
   final Units defaultImperial;
@@ -81,7 +90,7 @@ class MeasurementType {
   });
 
   static MeasurementType? fromName(String name) => _measurementTypes[name];
-  static MeasurementType get defaultMeasurementType => length;
+  static MeasurementType get defaultMeasurementType => quantity;
 
   static List<MeasurementType> get list => _measurementTypes.values.toList();
 

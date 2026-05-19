@@ -62,9 +62,9 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
     try {
       await action();
       quote = (await DaoQuote().getById(quote.id))!;
-      HMBToast.info('Quote #${quote.id} updated.');
       // Notify the parent to remove this quote.
       widget.onStateChanged(quote);
+      HMBToast.info('Quote #${quote.id} updated.');
     } catch (e) {
       HMBToast.error('Failed to update quote: $e');
     }
@@ -357,6 +357,59 @@ To approve it, reply to this email with:
     }
   }
 
+  Future<bool> _offerScheduleTodo() async {
+    final existing = await DaoToDo().getOpenByJob(quote.jobId);
+    if (existing.any(
+      (todo) => todo.title.trim().toLowerCase() == 'schedule job',
+    )) {
+      return false;
+    }
+
+    if (!mounted) {
+      return false;
+    }
+
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Add scheduling todo?'),
+            content: const Text(
+              'Create a high priority todo to schedule this job.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Not Now'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Add Todo'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _ensureScheduleTodo() async {
+    final openTodos = await DaoToDo().getOpenByJob(quote.jobId);
+    final alreadyExists = openTodos.any(
+      (todo) => todo.title.trim().toLowerCase() == 'schedule job',
+    );
+    if (alreadyExists) {
+      return;
+    }
+
+    await DaoToDo().insert(
+      ToDo.forInsert(
+        title: 'Schedule job',
+        parentType: ToDoParentType.job,
+        parentId: quote.jobId,
+        priority: ToDoPriority.high,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isApproved = quote.state == QuoteState.approved;
@@ -445,11 +498,16 @@ To approve it, reply to this email with:
                     : 'Mark the quote as approved by the customer',
                 enabled: showSentRollback || (!isApproved && !isWithdrawn),
                 onPressed: () async {
+                  final addScheduleTodo =
+                      !showSentRollback && await _offerScheduleTodo();
                   await _updateQuote(() async {
                     if (showSentRollback) {
                       await DaoQuote().markQuoteSent(quote.id);
                     } else {
                       await DaoQuote().approveQuote(quote.id);
+                      if (addScheduleTodo) {
+                        await _ensureScheduleTodo();
+                      }
                     }
                   });
                 },

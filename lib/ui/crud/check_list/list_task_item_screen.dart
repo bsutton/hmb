@@ -187,6 +187,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
         return _buildLabourFields(taskItem, billingType, hourlyRate);
       case TaskItemType.materialsBuy: // Materials - buy
       case TaskItemType.toolsBuy: // Tools - buy
+      case TaskItemType.toolsHire: // Tools - hire
       case TaskItemType.consumablesBuy:
         return _buildBuyFields(taskItem, billingType, hourlyRate);
       case TaskItemType.materialsStock: // Materials - stock

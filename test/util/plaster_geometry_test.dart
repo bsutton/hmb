@@ -152,6 +152,31 @@ void main() {
       expect(PlasterGeometry.formatJointTapeLength(10001), '2 m');
     });
 
+    test('formats imperial joint tape as whole feet rounded up', () {
+      expect(
+        PlasterGeometry.formatJointTapeLength(0, PreferredUnitSystem.imperial),
+        '0 ft',
+      );
+      expect(
+        PlasterGeometry.formatJointTapeLength(1, PreferredUnitSystem.imperial),
+        '1 ft',
+      );
+      expect(
+        PlasterGeometry.formatJointTapeLength(
+          12000,
+          PreferredUnitSystem.imperial,
+        ),
+        '1 ft',
+      );
+      expect(
+        PlasterGeometry.formatJointTapeLength(
+          12001,
+          PreferredUnitSystem.imperial,
+        ),
+        '2 ft',
+      );
+    });
+
     test('convert room bundle converts room, lines and openings', () {
       final room = PlasterRoom.forInsert(
         projectId: 1,

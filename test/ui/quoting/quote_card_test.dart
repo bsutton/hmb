@@ -7,6 +7,7 @@ import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/quoting/quote_card.dart';
 import 'package:money2/money2.dart';
+import 'package:toastification/toastification.dart';
 
 import '../../database/management/db_utility_test_helper.dart';
 import '../ui_test_helpers.dart';
@@ -46,6 +47,9 @@ void main() {
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
         bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
       );
+      for (final todo in await DaoToDo().getOpenByJob(job.id)) {
+        await DaoToDo().delete(todo.id);
+      }
 
       final quoteId = await DaoQuote().insert(
         Quote.forInsert(
@@ -61,9 +65,11 @@ void main() {
     });
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: QuoteCard(quote: quote!, onStateChanged: (_) {}),
+      ToastificationWrapper(
+        child: MaterialApp(
+          home: Scaffold(
+            body: QuoteCard(quote: quote!, onStateChanged: (_) {}),
+          ),
         ),
       ),
     );
@@ -112,9 +118,11 @@ void main() {
     });
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: QuoteCard(quote: quote!, onStateChanged: (_) {}),
+      ToastificationWrapper(
+        child: MaterialApp(
+          home: Scaffold(
+            body: QuoteCard(quote: quote!, onStateChanged: (_) {}),
+          ),
         ),
       ),
     );

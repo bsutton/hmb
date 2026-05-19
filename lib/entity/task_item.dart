@@ -378,6 +378,7 @@ class TaskItem extends Entity<TaskItem> {
       case TaskItemType.materialsBuy:
       case TaskItemType.toolsOwn:
       case TaskItemType.toolsBuy:
+      case TaskItemType.toolsHire:
       case TaskItemType.consumablesStock:
       case TaskItemType.consumablesBuy:
         {

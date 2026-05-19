@@ -194,6 +194,7 @@ Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
             final type = item.itemType;
             return type == TaskItemType.materialsBuy ||
                 type == TaskItemType.materialsStock ||
+                type == TaskItemType.toolsHire ||
                 type == TaskItemType.consumablesStock ||
                 type == TaskItemType.consumablesBuy;
           }).toList();

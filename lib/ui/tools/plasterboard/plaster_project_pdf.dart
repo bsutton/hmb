@@ -85,8 +85,8 @@ Future<File> generatePlasterProjectPdf({
                         pw.Text(layout.label),
                         pw.Text(layout.material.name),
                         pw.Text(
-                          '${layout.sheetsAcross} across x '
-                          '${layout.sheetsDown} high',
+                          'w: ${layout.sheetsAcross} sheets x '
+                          'h: ${layout.sheetsDown} sheets',
                         ),
                         pw.Text(layout.direction.layoutLabel),
                       ],
@@ -137,7 +137,10 @@ Future<File> generatePlasterProjectPdf({
               ],
               [
                 'Tape',
-                PlasterGeometry.formatJointTapeLength(takeoff.tapeLength),
+                PlasterGeometry.formatJointTapeLength(
+                  takeoff.tapeLength,
+                  unitSystem,
+                ),
               ],
               ['Screws', '${takeoff.screwCount}'],
               ['Stud adhesive', '${takeoff.glueKg.toStringAsFixed(1)} kg'],

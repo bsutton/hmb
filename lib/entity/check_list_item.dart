@@ -249,6 +249,7 @@ class CheckListItem extends Entity<CheckListItem> {
       case TaskItemType.materialsBuy:
       case TaskItemType.toolsOwn:
       case TaskItemType.toolsBuy:
+      case TaskItemType.toolsHire:
       case TaskItemType.consumablesStock:
       case TaskItemType.consumablesBuy:
         return calcMaterialCost(billingType).plusPercentage(margin);

@@ -179,7 +179,8 @@ WHERE ti.id = ?
         if (item.itemType == TaskItemType.materialsBuy ||
             item.itemType == TaskItemType.materialsStock ||
             item.itemType == TaskItemType.consumablesBuy ||
-            item.itemType == TaskItemType.consumablesStock) {
+            item.itemType == TaskItemType.consumablesStock ||
+            item.itemType == TaskItemType.toolsHire) {
           if ((includeBilled && item.billed) || !item.billed) {
             // Materials and tools to be purchased
             totalMaterialCharges +=
@@ -246,8 +247,9 @@ WHERE ti.id = ?
           hourlyRate,
         );
         estimatedLabourHours += item.estimatedLabourHours ?? Fixed.zero;
-      } else if (item.itemType == TaskItemType.materialsBuy) {
-        // Materials and tools to be purchased
+      } else if (item.itemType == TaskItemType.materialsBuy ||
+          item.itemType == TaskItemType.toolsHire) {
+        // Materials and hire items to be billed.
         estimatedMaterialsCharge += item.calcMaterialCharges(billingType);
       }
     }
