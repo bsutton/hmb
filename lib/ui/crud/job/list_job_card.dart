@@ -20,6 +20,7 @@ import '../../../entity/entity.g.dart';
 import '../../../util/dart/date_time_ex.dart';
 import '../../../util/dart/format.dart';
 import '../../../util/dart/local_date.dart';
+import '../../dialog/source_context.dart';
 import '../../widgets/icons/hmb_edit_icon.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/hmb_email_text.dart';
@@ -122,6 +123,11 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
   Widget _buildCustomerHeading() => HMBRow(
     children: [
       Expanded(child: HMBCardHeading(customer?.name ?? 'Not Set')),
+      IconButton(
+        icon: const Icon(Icons.contact_phone),
+        tooltip: 'Contact job parties',
+        onPressed: _showJobContacts,
+      ),
       if (customer != null)
         HMBEditIcon(
           onPressed: _editCustomer,
@@ -129,6 +135,100 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
         ),
     ],
   );
+
+  Future<void> _showJobContacts() async {
+    final contacts = await _loadJobPartyContacts();
+    if (!mounted) {
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Job Contacts'),
+        content: SizedBox(
+          width: 520,
+          child: contacts.isEmpty
+              ? const Text('No contacts are linked to this job.')
+              : ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: contacts.length,
+                  separatorBuilder: (_, _) => const Divider(height: 16),
+                  itemBuilder: (context, index) =>
+                      _JobPartyContactTile(contact: contacts[index]),
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<List<_JobPartyContact>> _loadJobPartyContacts() async {
+    final site = await DaoSite().getById(job.siteId);
+    final customer = await DaoCustomer().getById(job.customerId);
+    final referrer = await DaoCustomer().getById(job.referrerCustomerId);
+    final rows = <_JobPartyContact>[];
+    final seen = <String>{};
+
+    Future<void> add({
+      required String role,
+      required int? contactId,
+      Customer? partyCustomer,
+    }) async {
+      if (contactId == null) {
+        return;
+      }
+      final contact = await DaoContact().getById(contactId);
+      if (contact == null) {
+        return;
+      }
+      final key = '$role:${contact.id}';
+      if (!seen.add(key)) {
+        return;
+      }
+      rows.add(
+        _JobPartyContact(
+          role: role,
+          contact: contact,
+          sourceContext: SourceContext(
+            job: job,
+            contact: contact,
+            customer: partyCustomer ?? customer,
+            site: site,
+          ),
+        ),
+      );
+    }
+
+    await add(
+      role: 'Primary',
+      contactId: job.contactId,
+      partyCustomer: customer,
+    );
+    await add(
+      role: 'Tenant',
+      contactId: job.tenantContactId,
+      partyCustomer: customer,
+    );
+    await add(
+      role: 'Billing',
+      contactId: job.billingContactId,
+      partyCustomer: job.billingParty == BillingParty.referrer
+          ? referrer
+          : customer,
+    );
+    await add(
+      role: 'Referrer',
+      contactId: job.referrerContactId,
+      partyCustomer: referrer,
+    );
+
+    return rows;
+  }
 
   Future<void> _editCustomer() async {
     final selectedCustomer = customer;
@@ -183,5 +283,41 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
               ],
             );
     },
+  );
+}
+
+class _JobPartyContact {
+  final String role;
+  final Contact contact;
+  final SourceContext sourceContext;
+
+  const _JobPartyContact({
+    required this.role,
+    required this.contact,
+    required this.sourceContext,
+  });
+}
+
+class _JobPartyContactTile extends StatelessWidget {
+  final _JobPartyContact contact;
+
+  const _JobPartyContactTile({required this.contact});
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(
+        '${contact.role}: ${contact.contact.fullname}',
+        style: Theme.of(context).textTheme.titleSmall,
+      ),
+      const SizedBox(height: 4),
+      HMBPhoneText(
+        phoneNo: contact.contact.bestPhone,
+        sourceContext: contact.sourceContext,
+      ),
+      HMBEmailText(email: contact.contact.emailAddress),
+    ],
   );
 }
