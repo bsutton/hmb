@@ -58,4 +58,14 @@ class TestKeys {
   static const jobCreatorDescriptionField = ValueKey(
     'job_creator_description_field',
   );
+
+  static const fixedPriceInvoiceMilestonesButton = ValueKey(
+    'fixed_price_invoice_milestones_button',
+  );
+  static const fixedPriceInvoiceTimeAndMaterialsButton = ValueKey(
+    'fixed_price_invoice_time_and_materials_button',
+  );
+
+  static ValueKey<String> plasterboardProjectEditButton(int projectId) =>
+      ValueKey('plasterboard_project_${projectId}_edit_button');
 }

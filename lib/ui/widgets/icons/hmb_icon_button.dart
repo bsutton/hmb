@@ -27,6 +27,7 @@ class HMBIconButton extends StatefulWidget {
   final String? hint;
   final HMBIconButtonSize size;
   final bool showBackground;
+  final Key? buttonKey;
 
   const HMBIconButton({
     required this.onPressed,
@@ -35,6 +36,7 @@ class HMBIconButton extends StatefulWidget {
     this.enabled = true,
     this.showBackground = true,
     this.size = HMBIconButtonSize.standard,
+    this.buttonKey,
     super.key,
   });
 
@@ -73,12 +75,14 @@ class _HMBIconButtonState extends State<HMBIconButton> {
               backgroundColor: Colors.lightBlue,
               radius: _buttonSize / 2,
               child: IconButton(
+                key: widget.buttonKey,
                 icon: widget.icon,
                 onPressed: widget.enabled ? widget.onPressed : null,
                 iconSize: _buttonSize * 0.5,
               ),
             )
           : IconButton(
+              key: widget.buttonKey,
               icon: widget.icon,
               onPressed: widget.enabled ? widget.onPressed : null,
               iconSize: _buttonSize * 0.5,

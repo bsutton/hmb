@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../crud/milestone/edit_milestone_payment.dart';
+import '../test_keys.dart';
 import '../widgets/widgets.g.dart';
 import 'dialog_select_tasks.dart';
 
@@ -78,11 +79,13 @@ Future<_FixedPriceInvoicePath?> _selectFixedPriceInvoicePath(
       ),
       actions: [
         TextButton(
+          key: TestKeys.fixedPriceInvoiceMilestonesButton,
           onPressed: () =>
               Navigator.pop(dialogContext, _FixedPriceInvoicePath.milestones),
           child: const Text('Milestones'),
         ),
         ElevatedButton(
+          key: TestKeys.fixedPriceInvoiceTimeAndMaterialsButton,
           onPressed: () => Navigator.pop(
             dialogContext,
             _FixedPriceInvoicePath.timeAndMaterials,

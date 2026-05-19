@@ -17,6 +17,7 @@ class HMBEditIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => HMBIconButton(
+    buttonKey: key,
     icon: const Icon(Icons.edit, size: 20, color: Colors.blue),
     showBackground: false,
     hint: hint,

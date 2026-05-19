@@ -12,6 +12,7 @@ import '../../../entity/entity.g.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/plaster_geometry.dart';
 import '../../crud/base_full_screen/list_entity_screen.dart';
+import '../../test_keys.dart';
 import '../../widgets/select/hmb_select_job.dart';
 import '../../widgets/select/hmb_select_supplier.dart';
 import '../../widgets/select/hmb_select_task.dart';
@@ -35,6 +36,8 @@ class _PlasterProjectListScreenState extends State<PlasterProjectListScreen> {
     listCardTitle: (project) => Text(project.name),
     onAdd: _addProject,
     onEdit: (project) => PlasterProjectScreen(project: project),
+    editButtonKey: (project) =>
+        TestKeys.plasterboardProjectEditButton(project.id),
     emptyBody: const _EmptyPlasterProjectBody(),
     cardHeight: 220,
     listCard: (project) => FutureBuilderEx(

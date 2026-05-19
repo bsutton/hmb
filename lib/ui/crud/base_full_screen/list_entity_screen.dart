@@ -31,6 +31,7 @@ import '../../widgets/select/hmb_filter_line.dart';
 import '../../widgets/widgets.g.dart';
 
 typedef BuildActionItems<T> = List<Widget> Function(T entity);
+typedef BuildEntityKey<T> = Key? Function(T entity);
 
 /// A generic list screen with optional search/add and advanced filters.
 class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
@@ -48,6 +49,7 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   /// Widgets to place in the cards action menu
   /// which also contains the delete button.
   final BuildActionItems<T>? buildActionItems;
+  final BuildEntityKey<T>? editButtonKey;
 
   final bool canAdd;
   final bool Function(T entity)? canEdit;
@@ -104,6 +106,7 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     this.isFilterActive,
     this.showBackButton = false,
     this.buildActionItems,
+    this.editButtonKey,
     this.emptyBody,
   }) {
     _fetchList = fetchList ?? (_) => dao.getAll();
@@ -139,8 +142,9 @@ class EntityListScreenState<T extends Entity<T>>
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
     if (route != null) {
-      routeObserver..unsubscribe(this)
-      ..subscribe(this, route);
+      routeObserver
+        ..unsubscribe(this)
+        ..subscribe(this, route);
     }
   }
 
@@ -299,6 +303,7 @@ class EntityListScreenState<T extends Entity<T>>
   }
 
   Widget _buildEditButton(T entity, BuildContext context) => HMBEditIcon(
+    key: widget.editButtonKey?.call(entity),
     onPressed: () => _edit(entity, context),
     hint: 'Edit this ${widget.entityNameSingular}',
   );
