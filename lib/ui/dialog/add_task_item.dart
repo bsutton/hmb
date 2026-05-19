@@ -11,6 +11,8 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
@@ -36,6 +38,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
   final purposeController = TextEditingController();
   final quantityController = TextEditingController();
   final unitCostController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
 
   await showDialog<void>(
     context: context,
@@ -44,81 +47,90 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
         title: addType == AddType.shopping
             ? const HMBTextHeadline('Add Shopping Item')
             : const HMBTextHeadline('Add Packing Item'),
-        content: SingleChildScrollView(
-          child: HMBColumn(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Job Selection Dropdown
-              HMBSelectJob(
-                title: 'Select Job',
-                selectedJob: selectedJob,
-                items: (filter) => DaoJob().getActiveJobs(filter),
-                onSelected: (job) {
-                  setState(() {
-                    selectedJob.jobId = job?.id;
-                    selectedTask = null; // Reset task selection
-                  });
-                },
-              ),
-              // Task Selection Dropdown (dependent on selected job)
-              if (selectedJob.jobId != null)
-                HMBDroplist<Task>(
-                  title: 'Select Task',
-                  selectedItem: () async => selectedTask,
-                  items: (filter) =>
-                      DaoTask().getTasksByJob(selectedJob.jobId!),
-                  format: (task) => task.name,
-                  onChanged: (task) {
+        content: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: HMBColumn(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Job Selection Dropdown
+                HMBSelectJob(
+                  title: 'Select Job',
+                  selectedJob: selectedJob,
+                  items: (filter) => DaoJob().getActiveJobs(filter),
+                  onSelected: (job) {
                     setState(() {
-                      selectedTask = task;
+                      selectedJob.jobId = job?.id;
+                      selectedTask = null; // Reset task selection
                     });
                   },
                 ),
-              // Item Type Selection Dropdown
-              HMBDroplist<TaskItemType>(
-                title: 'Item Type',
-                selectedItem: () async => selectedItemType,
-                items: (filter) async => [
-                  ...switch (addType) {
-                    AddType.shopping => [
-                      TaskItemType.materialsBuy,
-                      TaskItemType.consumablesBuy,
-                      TaskItemType.toolsBuy,
-                    ],
-                    AddType.packing => [
-                      TaskItemType.materialsStock,
-                      TaskItemType.consumablesStock,
-                      TaskItemType.toolsOwn,
-                    ],
+                // Task Selection Dropdown (dependent on selected job)
+                if (selectedJob.jobId != null)
+                  HMBDroplist<Task>(
+                    title: 'Select Task',
+                    selectedItem: () async => selectedTask,
+                    items: (filter) =>
+                        DaoTask().getTasksByJob(selectedJob.jobId!),
+                    format: (task) => task.name,
+                    onChanged: (task) {
+                      setState(() {
+                        selectedTask = task;
+                      });
+                    },
+                  ),
+                // Item Type Selection Dropdown
+                HMBDroplist<TaskItemType>(
+                  title: 'Item Type',
+                  selectedItem: () async => selectedItemType,
+                  items: (filter) async => [
+                    ...switch (addType) {
+                      AddType.shopping => [
+                        TaskItemType.materialsBuy,
+                        TaskItemType.consumablesBuy,
+                        TaskItemType.toolsBuy,
+                      ],
+                      AddType.packing => [
+                        TaskItemType.materialsStock,
+                        TaskItemType.consumablesStock,
+                        TaskItemType.toolsOwn,
+                      ],
+                    },
+                  ],
+                  format: (type) => type.label,
+                  onChanged: (type) {
+                    setState(() {
+                      selectedItemType = type;
+                    });
                   },
-                ],
-                format: (type) => type.label,
-                onChanged: (type) {
-                  setState(() {
-                    selectedItemType = type;
-                  });
-                },
-              ),
-              // Description Input
-              HMBTextField(
-                controller: descriptionController,
-                labelText: 'Description',
-              ),
-              // Purpose Input
-              HMBTextField(controller: purposeController, labelText: 'Purpose'),
-              // Quantity Input
-              HMBTextField(
-                controller: quantityController,
-                labelText: 'Quantity',
-                keyboardType: TextInputType.number,
-              ),
-              // Unit Cost Input
-              HMBTextField(
-                controller: unitCostController,
-                labelText: 'Unit Cost',
-                keyboardType: TextInputType.number,
-              ),
-            ],
+                ),
+                // Description Input
+                HMBTextField(
+                  controller: descriptionController,
+                  labelText: addType == AddType.packing
+                      ? 'Summary'
+                      : 'Description',
+                  required: true,
+                ),
+                // Purpose Input
+                HMBTextField(
+                  controller: purposeController,
+                  labelText: 'Purpose',
+                ),
+                // Quantity Input
+                HMBTextField(
+                  controller: quantityController,
+                  labelText: 'Quantity',
+                  keyboardType: TextInputType.number,
+                ),
+                // Unit Cost Input
+                HMBTextField(
+                  controller: unitCostController,
+                  labelText: 'Unit Cost',
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
@@ -130,16 +142,23 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
           HMBButton(
             label: 'Add',
             hint: 'Add this item',
-            onPressed: () => _addTaskItem(
-              selectedJobId: selectedJob.jobId,
-              selectedTask: selectedTask,
-              selectedItemType: selectedItemType,
-              quantityController: quantityController,
-              unitCostController: unitCostController,
-              descriptionController: descriptionController,
-              purposeController: purposeController,
-              context: context,
-            ),
+            onPressed: () {
+              if (!(formKey.currentState?.validate() ?? false)) {
+                return;
+              }
+              unawaited(
+                _addTaskItem(
+                  selectedJobId: selectedJob.jobId,
+                  selectedTask: selectedTask,
+                  selectedItemType: selectedItemType,
+                  quantityController: quantityController,
+                  unitCostController: unitCostController,
+                  descriptionController: descriptionController,
+                  purposeController: purposeController,
+                  context: context,
+                ),
+              );
+            },
           ),
         ],
       ),

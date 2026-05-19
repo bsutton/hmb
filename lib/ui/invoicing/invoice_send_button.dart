@@ -63,6 +63,7 @@ class BuildSendButton extends StatelessWidget {
       }
 
       final billingContact = await DaoContact().getBillingContactByJob(job);
+      final greetingContact = billingContact ?? primaryContact;
 
       if (!context.mounted) {
         return;
@@ -107,7 +108,7 @@ class BuildSendButton extends StatelessWidget {
                     '''${system.businessName ?? 'Your'} Invoice #${invoice.bestNumber}''',
                 emailBody:
                     '''
-${primaryContact.firstName.trim()},
+${greetingContact.firstName.trim()},
 Please find the attached invoice for your job.
 ${site != null && site.address.isNotEmpty ? '\nSite Address: ${site.address}' : ''}
 

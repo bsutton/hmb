@@ -17,7 +17,6 @@ import 'dart:io';
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../dao/dao.g.dart';
@@ -156,8 +155,8 @@ class _GoogleDriveBackupScreenState
               hint: 'Signout of Google Drive',
               icon: const Icon(Icons.logout),
               onPressed: () async {
-                final googleSignIn = GoogleSignIn.instance;
-                await googleSignIn.signOut();
+                final auth = await GoogleDriveAuth.instance();
+                await auth.signOut();
                 setState(() {
                   _isGoogleSignedIn = false;
                 });

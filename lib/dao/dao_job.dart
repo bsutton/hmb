@@ -652,6 +652,9 @@ where q.id=?
     final activeJobs = await DaoJob().getActiveJobs(filter);
     final ready = <Job>[];
     for (final job in activeJobs) {
+      if (job.status.stage == JobStatusStage.preStart) {
+        continue;
+      }
       if (job.billingType == BillingType.nonBillable) {
         continue;
       }

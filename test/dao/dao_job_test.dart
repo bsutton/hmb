@@ -332,5 +332,21 @@ void main() {
       final ready = await DaoJob().readyToBeInvoiced(null);
       expect(ready.any((j) => j.id == job.id), isFalse);
     });
+
+    test('readyToBeInvoiced excludes pre-start jobs', () async {
+      final now = DateTime.now();
+      final job = await createJob(
+        now,
+        BillingType.timeAndMaterial,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+      );
+      job.status = JobStatus.awaitingApproval;
+      await DaoJob().update(job);
+      await createTask(job, 'Awaiting approval task');
+
+      final ready = await DaoJob().readyToBeInvoiced(null);
+      expect(ready.any((j) => j.id == job.id), isFalse);
+    });
   });
 }

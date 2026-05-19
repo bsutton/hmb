@@ -130,6 +130,9 @@ $businessDetails
               '''Send the email using your devices email app. You will have another opportunity to cancel the send.''',
           onPressed: () async {
             if (_selectedRecipients.isNotEmpty) {
+              if (!await _confirmSendingToSelf()) {
+                return;
+              }
               final email = Email(
                 body: _bodyController.text,
                 subject: _subjectController.text,
@@ -154,4 +157,40 @@ $businessDetails
       ],
     ),
   );
+
+  Future<bool> _confirmSendingToSelf() async {
+    final systemEmail = system.emailAddress?.trim().toLowerCase();
+    if (Strings.isBlank(systemEmail)) {
+      return true;
+    }
+    final sendingToSelf = _selectedRecipients
+        .map((email) => email.trim().toLowerCase())
+        .contains(systemEmail);
+    if (!sendingToSelf) {
+      return true;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sending to yourself'),
+        content: Text(
+          'The selected recipients include your own email address '
+          '(${system.emailAddress}). Continue?',
+        ),
+        actions: [
+          HMBButton(
+            label: 'Cancel',
+            hint: "Don't send this email",
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          HMBButton(
+            label: 'Continue',
+            hint: 'Continue sending this email',
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
+  }
 }

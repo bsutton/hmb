@@ -147,6 +147,9 @@ $businessDetails
               return;
             }
             if (_selectedRecipient != null) {
+              if (!await _confirmSendingToSelf([_selectedRecipient!])) {
+                return;
+              }
               final email = Email(
                 body: _bodyController.text,
                 subject: _subjectController.text,
@@ -167,4 +170,40 @@ $businessDetails
       ],
     ),
   );
+
+  Future<bool> _confirmSendingToSelf(List<String> recipients) async {
+    final systemEmail = system.emailAddress?.trim().toLowerCase();
+    if (Strings.isBlank(systemEmail)) {
+      return true;
+    }
+    final sendingToSelf = recipients
+        .map((email) => email.trim().toLowerCase())
+        .contains(systemEmail);
+    if (!sendingToSelf) {
+      return true;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sending to yourself'),
+        content: Text(
+          'The selected recipient is your own email address '
+          '(${system.emailAddress}). Continue?',
+        ),
+        actions: [
+          HMBButton(
+            label: 'Cancel',
+            hint: "Don't send this email",
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          HMBButton(
+            label: 'Continue',
+            hint: 'Continue sending this email',
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
+  }
 }
