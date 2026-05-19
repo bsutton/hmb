@@ -98,6 +98,7 @@ Future<InvoiceOptions?> selectTasksToInvoice({
   required BuildContext context,
   required Job job,
   required String title,
+  BillingType? billingTypeFilter,
 }) async {
   final values = await DaoTask().getAccruedValueForJob(
     job: job,
@@ -106,6 +107,10 @@ Future<InvoiceOptions?> selectTasksToInvoice({
 
   final selectors = <TaskSelector>[];
   for (final value in values) {
+    if (billingTypeFilter != null &&
+        value.task.effectiveBillingType(job.billingType) != billingTypeFilter) {
+      continue;
+    }
     selectors.add(
       TaskSelector(value.task, value.task.name, await value.earned),
     );

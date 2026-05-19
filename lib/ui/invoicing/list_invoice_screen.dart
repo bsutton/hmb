@@ -163,7 +163,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     }
 
     if (job.billingType == BillingType.fixedPrice) {
-      await openMilestonesForFixedPriceJob(job: job, context: context);
+      await createInvoiceFor(job, context);
       return null;
     }
 

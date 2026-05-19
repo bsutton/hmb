@@ -7,16 +7,27 @@ import '../crud/milestone/edit_milestone_payment.dart';
 import '../widgets/widgets.g.dart';
 import 'dialog_select_tasks.dart';
 
+enum _FixedPriceInvoicePath { milestones, timeAndMaterials }
+
 Future<void> createInvoiceFor(Job job, BuildContext context) async {
   if (job.billingType == BillingType.fixedPrice) {
-    await openMilestonesForFixedPriceJob(job: job, context: context);
-    return;
+    final path = await _selectFixedPriceInvoicePath(job, context);
+    if (!context.mounted || path == null) {
+      return;
+    }
+    if (path == _FixedPriceInvoicePath.milestones) {
+      await openMilestonesForFixedPriceJob(job: job, context: context);
+      return;
+    }
   }
 
   final options = await selectTasksToInvoice(
     context: context,
     job: job,
     title: 'Tasks to Invoice',
+    billingTypeFilter: job.billingType == BillingType.fixedPrice
+        ? BillingType.timeAndMaterial
+        : null,
   );
   if (options != null) {
     try {
@@ -43,6 +54,61 @@ Future<void> createInvoiceFor(Job job, BuildContext context) async {
       );
     }
   }
+}
+
+Future<_FixedPriceInvoicePath?> _selectFixedPriceInvoicePath(
+  Job job,
+  BuildContext context,
+) async {
+  if (!await _hasAccruedTimeAndMaterialsTasks(job)) {
+    return _FixedPriceInvoicePath.milestones;
+  }
+
+  if (!context.mounted) {
+    return null;
+  }
+
+  return showDialog<_FixedPriceInvoicePath>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text('Invoice "${job.summary}"'),
+      content: const Text(
+        'This fixed price job also has time and materials work ready to '
+        'invoice.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () =>
+              Navigator.pop(dialogContext, _FixedPriceInvoicePath.milestones),
+          child: const Text('Milestones'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(
+            dialogContext,
+            _FixedPriceInvoicePath.timeAndMaterials,
+          ),
+          child: const Text('Time & Materials'),
+        ),
+      ],
+    ),
+  );
+}
+
+Future<bool> _hasAccruedTimeAndMaterialsTasks(Job job) async {
+  final values = await DaoTask().getAccruedValueForJob(
+    job: job,
+    includedBilled: false,
+  );
+  for (final value in values) {
+    if (value.task.effectiveBillingType(job.billingType) ==
+        BillingType.timeAndMaterial) {
+      final earned = await value.earned;
+      if (!earned.isZero) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 Future<bool> openMilestonesForFixedPriceJob({
