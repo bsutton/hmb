@@ -99,7 +99,6 @@ class PlasterMaterialSizeListScreen extends StatelessWidget {
               Expanded(child: lengthText),
               const SizedBox(width: 12),
               Expanded(child: thicknessText),
-              Expanded(child: thicknessText),
               const SizedBox(width: 12),
               Expanded(child: attributesText),
               const SizedBox(width: 12),
