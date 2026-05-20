@@ -6,9 +6,18 @@ import 'package:http/http.dart' as http;
 import '../../dao/dao_system.dart';
 
 class IhServerApiClient {
-  Future<_Config> _config() async {
+  final http.Client _httpClient;
+  final Future<IhServerApiConfig> Function() _configProvider;
+
+  IhServerApiClient({
+    http.Client? httpClient,
+    Future<IhServerApiConfig> Function()? configProvider,
+  }) : _httpClient = httpClient ?? http.Client(),
+       _configProvider = configProvider ?? _loadConfig;
+
+  static Future<IhServerApiConfig> _loadConfig() async {
     final system = await DaoSystem().get();
-    return _Config(
+    return IhServerApiConfig(
       enabled: system.enableIhserverIntegration,
       baseUrl: system.ihserverUrl,
       token: system.ihserverToken,
@@ -16,13 +25,13 @@ class IhServerApiClient {
   }
 
   Future<List<br.BookingRequest>> fetchBookingRequests() async {
-    final cfg = await _config();
+    final cfg = await _configProvider();
     if (!cfg.isValid) {
       return <br.BookingRequest>[];
     }
 
     final uri = Uri.parse('${cfg.normalizedBaseUrl}/api/hmb/booking/requests');
-    final response = await http.get(uri, headers: cfg.authHeaders);
+    final response = await _httpClient.get(uri, headers: cfg.authHeaders);
     if (response.statusCode != 200) {
       throw Exception(
         'ihserver error ${response.statusCode}: ${response.body}',
@@ -43,13 +52,13 @@ class IhServerApiClient {
     if (ids.isEmpty) {
       return;
     }
-    final cfg = await _config();
+    final cfg = await _configProvider();
     if (!cfg.isValid) {
       return;
     }
 
     final uri = Uri.parse('${cfg.normalizedBaseUrl}/api/hmb/booking/ack');
-    final response = await http.post(
+    final response = await _httpClient.post(
       uri,
       headers: {...cfg.authHeaders, 'Content-Type': 'application/json'},
       body: jsonEncode({'ids': ids}),
@@ -61,17 +70,27 @@ class IhServerApiClient {
     }
   }
 
-  Future<void> rejectBookingRequest(String id, String reason) async {
-    final cfg = await _config();
+  Future<void> rejectBookingRequest({
+    required String id,
+    required String reason,
+    required BookingRequestRejectDelivery delivery,
+    required String destination,
+  }) async {
+    final cfg = await _configProvider();
     if (!cfg.isValid) {
       throw Exception('ihserver is not configured');
     }
 
     final uri = Uri.parse('${cfg.normalizedBaseUrl}/api/hmb/booking/reject');
-    final response = await http.post(
+    final response = await _httpClient.post(
       uri,
       headers: {...cfg.authHeaders, 'Content-Type': 'application/json'},
-      body: jsonEncode({'id': id, 'reason': reason}),
+      body: jsonEncode({
+        'id': id,
+        'reason': reason,
+        'delivery_method': delivery.name,
+        'destination': destination,
+      }),
     );
     if (response.statusCode != 200) {
       throw Exception(
@@ -81,12 +100,18 @@ class IhServerApiClient {
   }
 }
 
-class _Config {
+enum BookingRequestRejectDelivery { email, sms }
+
+class IhServerApiConfig {
   final bool enabled;
   final String? baseUrl;
   final String? token;
 
-  _Config({required this.enabled, required this.baseUrl, required this.token});
+  IhServerApiConfig({
+    required this.enabled,
+    required this.baseUrl,
+    required this.token,
+  });
 
   bool get isValid =>
       enabled &&

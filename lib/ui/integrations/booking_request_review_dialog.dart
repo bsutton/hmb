@@ -41,7 +41,7 @@ import '../../util/dart/money_ex.dart';
 import '../crud/job/post_job_todo_prompt.dart';
 import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/layout/layout.g.dart';
-import '../widgets/widgets.g.dart';
+import '../widgets/widgets.g.dart' hide StatefulBuilder;
 
 class BookingRequestReviewDialog extends StatefulWidget {
   final BookingRequest request;
@@ -666,25 +666,30 @@ class _BookingRequestReviewDialogState
   }
 
   Future<void> _rejectRequest() async {
-    if (_payload.email.isEmpty) {
-      HMBToast.error('No email address on this enquiry to send a rejection.');
+    if (_email.text.trim().isEmpty && _mobileNo.text.trim().isEmpty) {
+      HMBToast.error(
+        'Add an email address or mobile number before rejecting this enquiry.',
+      );
       return;
     }
 
-    final reason = await _askRejectReason();
-    if (reason == null) {
+    final rejection = await _askRejectDetails();
+    if (rejection == null) {
       return;
     }
 
     setState(() => _loading = true);
     try {
       await IhServerApiClient().rejectBookingRequest(
-        widget.request.remoteId,
-        reason,
+        id: widget.request.remoteId,
+        reason: rejection.reason,
+        delivery: rejection.delivery,
+        destination: rejection.destination,
       );
       await DaoBookingRequest().update(
         widget.request.copyWith(status: BookingRequestStatus.rejected),
       );
+      HMBToast.info('Rejection sent by ${rejection.delivery.displayName}.');
       if (mounted) {
         Navigator.of(context).pop();
       }
@@ -697,37 +702,87 @@ class _BookingRequestReviewDialogState
     }
   }
 
-  Future<String?> _askRejectReason() async {
+  Future<_BookingRejection?> _askRejectDetails() async {
     final controller = TextEditingController();
-    final result = await showDialog<String>(
+    final email = _email.text.trim();
+    final mobile = _mobileNo.text.trim();
+    var delivery = email.isNotEmpty
+        ? BookingRequestRejectDelivery.email
+        : BookingRequestRejectDelivery.sms;
+
+    final result = await showDialog<_BookingRejection>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reject enquiry'),
-        content: TextField(
-          controller: controller,
-          maxLines: 4,
-          decoration: const InputDecoration(
-            labelText: 'Reason (required)',
-            border: OutlineInputBorder(),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Reject enquiry'),
+          content: HMBColumn(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioGroup<BookingRequestRejectDelivery>(
+                groupValue: delivery,
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+                  setDialogState(() => delivery = value);
+                },
+                child: Column(
+                  children: [
+                    RadioListTile<BookingRequestRejectDelivery>(
+                      title: const Text('Email'),
+                      subtitle: Text(
+                        email.isEmpty ? 'No email address' : email,
+                      ),
+                      value: BookingRequestRejectDelivery.email,
+                      enabled: email.isNotEmpty,
+                    ),
+                    RadioListTile<BookingRequestRejectDelivery>(
+                      title: const Text('SMS'),
+                      subtitle: Text(
+                        mobile.isEmpty ? 'No mobile number' : mobile,
+                      ),
+                      value: BookingRequestRejectDelivery.sms,
+                      enabled: mobile.isNotEmpty,
+                    ),
+                  ],
+                ),
+              ),
+              TextField(
+                controller: controller,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  labelText: 'Reason (required)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final text = controller.text.trim();
+                if (text.isEmpty) {
+                  HMBToast.error('Please enter a rejection reason.');
+                  return;
+                }
+                Navigator.of(context).pop(
+                  _BookingRejection(
+                    reason: text,
+                    delivery: delivery,
+                    destination: delivery == BookingRequestRejectDelivery.email
+                        ? email
+                        : mobile,
+                  ),
+                );
+              },
+              child: const Text('Send rejection'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final text = controller.text.trim();
-              if (text.isEmpty) {
-                HMBToast.error('Please enter a rejection reason.');
-                return;
-              }
-              Navigator.of(context).pop(text);
-            },
-            child: const Text('Send rejection'),
-          ),
-        ],
       ),
     );
     controller.dispose();
@@ -824,6 +879,25 @@ class _BookingRequestReviewDialogState
     }
     return 'Enquiry';
   }
+}
+
+class _BookingRejection {
+  final String reason;
+  final BookingRequestRejectDelivery delivery;
+  final String destination;
+
+  const _BookingRejection({
+    required this.reason,
+    required this.delivery,
+    required this.destination,
+  });
+}
+
+extension on BookingRequestRejectDelivery {
+  String get displayName => switch (this) {
+    BookingRequestRejectDelivery.email => 'email',
+    BookingRequestRejectDelivery.sms => 'SMS',
+  };
 }
 
 class _CustomerMatch {
