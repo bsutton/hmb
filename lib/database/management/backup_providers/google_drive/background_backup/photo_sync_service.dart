@@ -20,10 +20,12 @@ import 'package:dcli_core/dcli_core.dart';
 import 'package:googleapis/drive/v3.dart' as gdrive;
 import 'package:path/path.dart' as p;
 import 'package:sentry/sentry.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../../dao/dao_photo.dart';
 import '../../../../../dao/dao_photo_delete_queue.dart';
 import '../../../../../entity/entity.g.dart' show Photo;
+import '../../../../../util/dart/log.dart';
 import '../../../../../util/dart/paths.dart';
 import '../../progress_update.dart';
 import '../google_drive_api.dart';
@@ -79,6 +81,8 @@ class PhotoSyncService {
   Timer? _retryTimer;
   var _autoRetryAttempts = 0;
   var _syncHadError = false;
+  var _retryOnFailure = true;
+  var _wakeLockHeld = false;
   String? _lastErrorSummary;
 
   final StreamController<ProgressUpdate> _controller =
@@ -109,6 +113,7 @@ class PhotoSyncService {
     if (photos.isEmpty && deletes.isEmpty) {
       _autoRetryAttempts = 0;
       _lastErrorSummary = null;
+      await _releaseWakeLock();
       return;
     }
 
@@ -116,11 +121,13 @@ class PhotoSyncService {
       final headers = await (await GoogleDriveAuth.instance())
           .authHeadersOrNull(allowAutomaticSignIn: false);
       if (headers == null) {
+        await _releaseWakeLock();
         _controller.add(
           ProgressUpdate('Photo sync waiting for Google sign-in.', 0, 0),
         );
         return;
       }
+      await _enableWakeLock();
       await _startSync(
         photos: photos,
         deletes: deletes,
@@ -133,6 +140,10 @@ class PhotoSyncService {
       }
       _cleanup();
       _handleStartupFailure(error, stackTrace, retryOnFailure: retryOnFailure);
+    } finally {
+      if (!isRunning && !(_retryTimer?.isActive ?? false)) {
+        await _releaseWakeLock();
+      }
     }
   }
 
@@ -147,6 +158,7 @@ class PhotoSyncService {
     }
     _retryTimer?.cancel();
     _syncHadError = false;
+    _retryOnFailure = retryOnFailure;
     _lastErrorSummary = null;
 
     _receivePort = ReceivePort();
@@ -207,8 +219,10 @@ class PhotoSyncService {
   }
 
   void cancelSync() {
+    _retryTimer?.cancel();
     _isolate?.kill(priority: Isolate.immediate);
     _cleanup();
+    unawaited(_releaseWakeLock());
   }
 
   void _cleanup() {
@@ -224,6 +238,16 @@ class PhotoSyncService {
   void _onSyncError(dynamic error) {
     _syncHadError = true;
     _lastErrorSummary = _formatSyncError(error);
+    if (_shouldDeferRecoverableError(_lastErrorSummary!)) {
+      _controller.add(
+        ProgressUpdate(
+          'Photo sync was interrupted. It will retry shortly.',
+          0,
+          0,
+        ),
+      );
+      return;
+    }
     final exception = PhotoSyncException(_lastErrorSummary!);
     final stackTrace = _stackTraceFromIsolateError(error);
     unawaited(Sentry.captureException(exception, stackTrace: stackTrace));
@@ -244,9 +268,19 @@ class PhotoSyncService {
   }) {
     _syncHadError = true;
     _lastErrorSummary = _formatSyncError(error);
-    unawaited(Sentry.captureException(error, stackTrace: stackTrace));
-    _errorController.add(_lastErrorSummary!);
-    _controller.add(ProgressUpdate('Photo sync failed.', 0, 0));
+    if (_shouldDeferRecoverableError(_lastErrorSummary!)) {
+      _controller.add(
+        ProgressUpdate(
+          'Photo sync was interrupted. It will retry shortly.',
+          0,
+          0,
+        ),
+      );
+    } else {
+      unawaited(Sentry.captureException(error, stackTrace: stackTrace));
+      _errorController.add(_lastErrorSummary!);
+      _controller.add(ProgressUpdate('Photo sync failed.', 0, 0));
+    }
     if (retryOnFailure) {
       _scheduleRetry();
       return;
@@ -280,6 +314,9 @@ class PhotoSyncService {
     });
   }
 
+  bool _shouldDeferRecoverableError(String message) =>
+      _retryOnFailure && isRecoverablePhotoSyncError(message);
+
   String _formatSyncError(dynamic error) {
     if (error is Exception) {
       return error.toString();
@@ -307,6 +344,39 @@ class PhotoSyncService {
       }
     }
     return null;
+  }
+
+  Future<void> _enableWakeLock() async {
+    if (_wakeLockHeld) {
+      return;
+    }
+    try {
+      await WakelockPlus.enable();
+      _wakeLockHeld = true;
+    } catch (error, stackTrace) {
+      Log.w(
+        'Photo sync could not enable wakelock.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  Future<void> _releaseWakeLock() async {
+    if (!_wakeLockHeld) {
+      return;
+    }
+    try {
+      await WakelockPlus.disable();
+    } catch (error, stackTrace) {
+      Log.w(
+        'Photo sync could not release wakelock.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      _wakeLockHeld = false;
+    }
   }
 
   Future<void> resumeIfNeeded() async {
@@ -458,6 +528,22 @@ properties has { key='photoId' and value='$idStr' } and trashed=false''';
     // (You could sort by modifiedTime if you request that field.)
     return files.first;
   }
+}
+
+bool isRecoverablePhotoSyncError(String message) {
+  final lowerMessage = message.toLowerCase();
+  return lowerMessage.contains('timeout') ||
+      lowerMessage.contains('timed out') ||
+      lowerMessage.contains('socketexception') ||
+      lowerMessage.contains('clientexception') ||
+      lowerMessage.contains('connection closed') ||
+      lowerMessage.contains('connection reset') ||
+      lowerMessage.contains('connection refused') ||
+      lowerMessage.contains('connection aborted') ||
+      lowerMessage.contains('broken pipe') ||
+      lowerMessage.contains('failed host lookup') ||
+      lowerMessage.contains('network is unreachable') ||
+      lowerMessage.contains('software caused connection abort');
 }
 
 /// In the isolate, after each successful upload, send the payload itself:

@@ -271,7 +271,6 @@ class _GoogleDriveBackupScreenState
       hint: 'Copy your photos to google drive - including receipts and tools',
       icon: const Icon(Icons.cloud_upload, size: 24),
       onPressed: () async {
-        await WakelockPlus.enable();
         try {
           _syncRunning = true;
           await _provider.syncPhotos();
@@ -292,7 +291,6 @@ class _GoogleDriveBackupScreenState
           }
         } finally {
           _syncRunning = false;
-          await WakelockPlus.disable();
         }
       },
     ),
