@@ -445,7 +445,18 @@ class AccountingReportService {
         );
       }
 
-      for (final history in await ledgerService.invoiceHistory(invoice.id)) {
+      final historyEntries = await ledgerService.invoiceHistory(invoice.id);
+      if (invoice.paid && historyEntries.isEmpty) {
+        _addPaidInvoiceEntry(
+          entries: entries,
+          invoice: invoice,
+          openingBalance: (amount) => openingBalance += amount,
+          startInclusive: startInclusive,
+          endExclusive: endExclusive,
+        );
+      }
+
+      for (final history in historyEntries) {
         final amount = -history.amount;
         if (history.date.isBefore(startInclusive)) {
           openingBalance += amount;
@@ -475,6 +486,33 @@ class AccountingReportService {
       endExclusive: endExclusive,
       openingBalance: openingBalance,
       entries: entries,
+    );
+  }
+
+  void _addPaidInvoiceEntry({
+    required List<DebtorStatementEntry> entries,
+    required Invoice invoice,
+    required void Function(Money amount) openingBalance,
+    required DateTime startInclusive,
+    required DateTime endExclusive,
+  }) {
+    final paymentDate = invoice.paidDate ?? invoice.modifiedDate;
+    final amount = -invoice.totalAmount;
+    if (paymentDate.isBefore(startInclusive)) {
+      openingBalance(amount);
+      return;
+    }
+    if (!paymentDate.isBefore(endExclusive)) {
+      return;
+    }
+    entries.add(
+      DebtorStatementEntry(
+        type: DebtorStatementEntryType.payment,
+        invoiceId: invoice.id,
+        date: paymentDate,
+        description: 'Payment received - Invoice #${invoice.bestNumber}',
+        amount: amount,
+      ),
     );
   }
 
