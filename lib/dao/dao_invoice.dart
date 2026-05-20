@@ -194,7 +194,23 @@ SELECT *
 FROM invoice
 WHERE external_invoice_id IS NOT NULL
   AND external_invoice_id != ''
-  AND IFNULL(paid, 0) = 0
+  AND (
+    IFNULL(paid, 0) = 0
+    OR (
+      NOT EXISTS (
+        SELECT 1 FROM debtor_payment_allocation pa
+        WHERE pa.invoice_id = invoice.id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM credit_allocation ca
+        WHERE ca.invoice_id = invoice.id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM debtor_adjustment da
+        WHERE da.invoice_id = invoice.id
+      )
+    )
+  )
   AND IFNULL(external_sync_status, 0) NOT IN (
     ${InvoiceExternalSyncStatus.deleted.ordinal},
     ${InvoiceExternalSyncStatus.voided.ordinal}

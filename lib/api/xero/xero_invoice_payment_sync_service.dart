@@ -110,18 +110,23 @@ class XeroInvoicePaymentSyncService {
               remoteState.externalSyncStatus,
             );
           }
-          if (remoteState.paidDate != null) {
+          if (remoteState.paidDate != null &&
+              _needsPaidUpdate(invoice, remoteState.paidDate!)) {
             await _daoInvoice.markPaidFromXero(
               invoice.id,
               paidDate: remoteState.paidDate,
             );
+            updated += 1;
           }
           updated += await _importPayments(invoice, remoteState.payments);
           updated += await _importCreditNotes(invoice, remoteState.creditNotes);
           if (remoteState.paidDate != null &&
               remoteState.payments.isEmpty &&
               remoteState.creditNotes.isEmpty) {
-            updated += 1;
+            Log.i(
+              'Xero invoice ${invoice.id} is paid but returned no payment '
+              'rows. Keeping it eligible for a later payment sync.',
+            );
           }
         } catch (e, st) {
           Log.e('Failed to sync payment for invoice ${invoice.id}: $e\n$st');
@@ -304,6 +309,11 @@ class XeroInvoicePaymentSyncService {
       creditNotes: _parseCreditNotes(remote['CreditNotes']),
     );
   }
+
+  bool _needsPaidUpdate(Invoice invoice, DateTime paidDate) =>
+      !invoice.paid ||
+      invoice.paymentSource != InvoicePaymentSource.xero ||
+      invoice.paidDate?.toIso8601String() != paidDate.toIso8601String();
 
   Future<int> _importPayments(
     Invoice invoice,

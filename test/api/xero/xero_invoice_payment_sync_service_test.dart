@@ -124,6 +124,84 @@ void main() {
     expect(secondRun, 0);
   });
 
+  test('retries paid Xero invoices until payment rows are available', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.timeAndMaterial,
+      hourlyRate: MoneyEx.zero,
+      summary: 'Xero paid debtor ledger job',
+    );
+    final invoice = Invoice.forInsert(
+      jobId: job.id,
+      dueDate: LocalDate.today(),
+      totalAmount: MoneyEx.dollars(100),
+      billingContactId: job.billingContactId,
+      sent: true,
+      paid: true,
+      paidDate: DateTime(2026, 5, 3),
+      externalInvoiceId: 'xero-paid-without-payments',
+      externalSyncStatus: InvoiceExternalSyncStatus.linked,
+      paymentSource: InvoicePaymentSource.xero,
+    );
+    await DaoInvoice().insert(invoice);
+    var calls = 0;
+    final service = XeroInvoicePaymentSyncService(
+      login: ({allowInteractive = true}) async => true,
+      getInvoice: (_) async {
+        calls += 1;
+        return http.Response(
+          jsonEncode({
+            'Invoices': [
+              {
+                'Status': 'PAID',
+                'AmountDue': 0,
+                'AmountPaid': 100,
+                'FullyPaidOnDate': '2026-05-03',
+                'Payments': calls == 1
+                    ? <Map<String, dynamic>>[]
+                    : [
+                        {
+                          'PaymentID': 'xero-payment-late',
+                          'Amount': 100,
+                          'Date': '2026-05-03',
+                        },
+                      ],
+                'CreditNotes': <Map<String, dynamic>>[],
+              },
+            ],
+          }),
+          200,
+        );
+      },
+    );
+
+    final firstRun = await service.sync(force: true);
+
+    expect(firstRun, 0);
+    expect(
+      await DebtorLedgerService().invoicePaidAmount(invoice.id),
+      MoneyEx.zero,
+    );
+    expect(await DaoInvoice().getUploadedUnpaid(), hasLength(1));
+
+    final secondRun = await service.sync(force: true);
+    expect(secondRun, 1);
+    expect(
+      await DebtorLedgerService().invoicePaidAmount(invoice.id),
+      MoneyEx.dollars(100),
+    );
+    expect(
+      await DebtorLedgerService().invoiceBalance(invoice.id),
+      MoneyEx.zero,
+    );
+    expect(
+      await DaoDebtorPayment().getByExternalPaymentId(
+        provider: 'xero',
+        externalPaymentId: 'xero-payment-late',
+      ),
+      isNotNull,
+    );
+  });
+
   test('pushes local payments to Xero and stores external ids', () async {
     final job = await createJobWithCustomer(
       billingType: BillingType.timeAndMaterial,

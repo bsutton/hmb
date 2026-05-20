@@ -244,6 +244,39 @@ void main() {
     },
   );
 
+  test(
+    'debtor statement balances paid invoices without local allocations',
+    () async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.zero,
+        summary: 'Paid debtor statement report test job',
+      );
+      final invoice = await _insertInvoice(
+        job,
+        MoneyEx.dollars(100),
+        createdDate: DateTime(2026, 4, 3),
+        paid: true,
+        paidDate: DateTime(2026, 4, 8),
+      );
+
+      final report = await AccountingReportService().debtorStatement(
+        customerId: job.customerId,
+        startInclusive: DateTime(2026, 4),
+        endExclusive: DateTime(2026, 5),
+      );
+
+      expect(report.openingBalance, MoneyEx.zero);
+      expect(report.entries.map((entry) => entry.type), [
+        DebtorStatementEntryType.invoice,
+        DebtorStatementEntryType.payment,
+      ]);
+      expect(report.entries.last.invoiceId, invoice.id);
+      expect(report.entries.last.amount, -MoneyEx.dollars(100));
+      expect(report.closingBalance, MoneyEx.zero);
+    },
+  );
+
   test('cash received reports allocated payment rows', () async {
     final job = await createJobWithCustomer(
       billingType: BillingType.timeAndMaterial,
@@ -425,6 +458,8 @@ Future<Invoice> _insertInvoice(
   Money total, {
   LocalDate? dueDate,
   DateTime? createdDate,
+  bool paid = false,
+  DateTime? paidDate,
 }) async {
   final invoice = Invoice.forInsert(
     jobId: job.id,
@@ -432,6 +467,8 @@ Future<Invoice> _insertInvoice(
     totalAmount: total,
     billingContactId: job.billingContactId,
     sent: true,
+    paid: paid,
+    paidDate: paidDate,
   );
   await DaoInvoice().insert(invoice);
   if (createdDate == null) {
