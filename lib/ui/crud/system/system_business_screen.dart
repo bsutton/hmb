@@ -289,7 +289,12 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
               showSaveOnly: false,
               onCancel: () async => context.pop(),
             ),
-            Expanded(child: ListView(children: [_buildForm()])),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [_buildForm()],
+              ),
+            ),
           ],
         ),
       );
