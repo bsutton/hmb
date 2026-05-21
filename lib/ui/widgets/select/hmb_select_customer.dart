@@ -67,6 +67,7 @@ class HMBSelectCustomerState extends State<HMBSelectCustomer> {
 
   @override
   Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Expanded(
         child: HMBDroplist<Customer>(
@@ -79,7 +80,10 @@ class HMBSelectCustomerState extends State<HMBSelectCustomer> {
           required: widget.required,
         ),
       ),
-      Center(child: HMBButtonAdd(enabled: true, onAdd: _addCustomer)),
+      Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: HMBButtonAdd(enabled: true, onAdd: _addCustomer, small: true),
+      ),
     ],
   );
 }

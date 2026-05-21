@@ -91,6 +91,7 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
 
   @override
   Widget build(BuildContext context) => HMBRow(
+    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Expanded(
         child: HMBDroplist<JobAndCustomer>(
@@ -108,7 +109,10 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
           required: widget.required,
         ),
       ),
-      HMBButtonAdd(enabled: true, onAdd: _addJob),
+      Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: HMBButtonAdd(enabled: true, onAdd: _addJob, small: true),
+      ),
     ],
   );
 }

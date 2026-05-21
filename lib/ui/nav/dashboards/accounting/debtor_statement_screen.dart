@@ -60,42 +60,48 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Customer Statement')),
-    body: SingleChildScrollView(
+    body: ListView(
       padding: const EdgeInsets.all(16),
-      child: HMBColumn(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          HMBSelectCustomer(
-            selectedCustomer: _selectedCustomer,
-            onSelected: (_) => setState(_reload),
+      children: [
+        _buildFilters(),
+        const SizedBox(height: 12),
+        FutureBuilderEx<DebtorStatementReport>(
+          future: _report,
+          waitingBuilder: (_) => _buildLoadingReport(),
+          builder: (context, report) =>
+              report == null ? _buildLoadingReport() : _buildReport(report),
+        ),
+      ],
+    ),
+  );
+
+  Widget _buildFilters() => Surface(
+    elevation: SurfaceElevation.e1,
+    child: HMBColumn(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        HMBSelectCustomer(
+          selectedCustomer: _selectedCustomer,
+          onSelected: (_) => setState(_reload),
+        ),
+        const SizedBox(height: 8),
+        HMBSelectJob(
+          selectedJob: _selectedJob,
+          onSelected: (_) => setState(_reload),
+        ),
+        const SizedBox(height: 8),
+        AccountingPeriodSelector(
+          initialPeriod: AccountingPeriod(
+            startInclusive: _startInclusive,
+            endExclusive: _endExclusive,
           ),
-          const SizedBox(height: 12),
-          HMBSelectJob(
-            selectedJob: _selectedJob,
-            onSelected: (_) => setState(_reload),
-          ),
-          const SizedBox(height: 12),
-          AccountingPeriodSelector(
-            initialPeriod: AccountingPeriod(
-              startInclusive: _startInclusive,
-              endExclusive: _endExclusive,
-            ),
-            onChanged: (period) => setState(() {
-              _startInclusive = period.startInclusive;
-              _endExclusive = period.endExclusive;
-              _reload();
-            }),
-          ),
-          const SizedBox(height: 12),
-          FutureBuilderEx<DebtorStatementReport>(
-            future: _report,
-            waitingBuilder: (_) =>
-                const Center(child: CircularProgressIndicator()),
-            builder: (context, report) =>
-                report == null ? const SizedBox.shrink() : _buildReport(report),
-          ),
-        ],
-      ),
+          onChanged: (period) => setState(() {
+            _startInclusive = period.startInclusive;
+            _endExclusive = period.endExclusive;
+            _reload();
+          }),
+        ),
+      ],
     ),
   );
 
@@ -107,42 +113,31 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
         child: HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              report.customerName,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            Text(
-              '${formatDate(report.startInclusive)} to '
-              '${formatDate(_lastDay(report))}',
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 16,
-              runSpacing: 8,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Opening: ${report.openingBalance}'),
-                Text('Closing: ${report.closingBalance}'),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                HMBButton.withIcon(
-                  label: 'Send CSV',
-                  hint: 'Email this customer statement as a CSV file',
-                  icon: const Icon(Icons.email),
-                  onPressed: () async {
-                    await _sendStatementCsv(report);
-                  },
+                Expanded(
+                  child: HMBColumn(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        report.customerName,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 4,
+                        children: [
+                          _buildBalance('Opening', report.openingBalance),
+                          _buildBalance('Closing', report.closingBalance),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                HMBButton.withIcon(
-                  label: 'View/Send PDF',
-                  hint: 'View and optionally email this customer statement',
-                  icon: const Icon(Icons.picture_as_pdf),
-                  onPressed: () => _viewSendStatement(report),
-                ),
+                const SizedBox(width: 8),
+                _buildReportActions(report),
               ],
             ),
           ],
@@ -153,6 +148,36 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
         const Surface(child: Text('No statement activity for this period.'))
       else
         for (final entry in report.entries) _buildEntry(entry),
+    ],
+  );
+
+  Widget _buildLoadingReport() => const Surface(
+    elevation: SurfaceElevation.e1,
+    child: SizedBox(
+      height: 220,
+      child: Center(child: CircularProgressIndicator()),
+    ),
+  );
+
+  Widget _buildBalance(String label, Object value) => Text('$label: $value');
+
+  Widget _buildReportActions(DebtorStatementReport report) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      HMBIconButton(
+        size: HMBIconButtonSize.small,
+        showBackground: false,
+        hint: 'Email this customer statement as a CSV file',
+        icon: const Icon(Icons.email_outlined),
+        onPressed: () => _sendStatementCsv(report),
+      ),
+      HMBIconButton(
+        size: HMBIconButtonSize.small,
+        showBackground: false,
+        hint: 'View and optionally email this customer statement',
+        icon: const Icon(Icons.picture_as_pdf_outlined),
+        onPressed: () => _viewSendStatement(report),
+      ),
     ],
   );
 
@@ -266,15 +291,26 @@ Closing balance: ${report.closingBalance}
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(entry.description, maxLines: 2, overflow: TextOverflow.ellipsis),
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
+          const SizedBox(height: 6),
+          Row(
             children: [
-              Text(formatDate(entry.date)),
-              Text('Invoice #${entry.invoiceNumber}'),
-              Text(entry.amount.toString()),
+              Expanded(child: Text(formatDate(entry.date))),
+              Expanded(child: Text('Invoice #${entry.invoiceNumber}')),
+              Text(
+                entry.amount.toString(),
+                textAlign: TextAlign.right,
+                softWrap: false,
+              ),
             ],
           ),
+          if (entry.type != DebtorStatementEntryType.invoice)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                entry.type.name,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
         ],
       ),
     ),

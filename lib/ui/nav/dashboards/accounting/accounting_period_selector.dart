@@ -50,36 +50,40 @@ class _AccountingPeriodSelectorState extends State<AccountingPeriodSelector> {
   @override
   Widget build(BuildContext context) => Surface(
     child: HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
+        DropdownButton<AccountingPeriodPreset>(
+          isExpanded: true,
+          value: _preset,
+          items: [
+            for (final preset in AccountingPeriodPreset.values)
+              DropdownMenuItem(
+                value: preset,
+                child: Text(_presetLabel(preset)),
+              ),
+          ],
+          onChanged: (value) async {
+            if (value == null) {
+              return;
+            }
+            _preset = value;
+            await _setPeriodForAnchor();
+          },
+        ),
+        Row(
           children: [
-            DropdownButton<AccountingPeriodPreset>(
-              value: _preset,
-              items: [
-                for (final preset in AccountingPeriodPreset.values)
-                  DropdownMenuItem(
-                    value: preset,
-                    child: Text(_presetLabel(preset)),
-                  ),
-              ],
-              onChanged: (value) async {
-                if (value == null) {
-                  return;
-                }
-                _preset = value;
-                await _setPeriodForAnchor();
-              },
-            ),
             IconButton(
               tooltip: 'Previous period',
               icon: const Icon(Icons.chevron_left),
               onPressed: () => _move(-1),
             ),
-            Text(_periodLabel(_period)),
+            Expanded(
+              child: Text(
+                _periodLabel(_period),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
             IconButton(
               tooltip: 'Next period',
               icon: const Icon(Icons.chevron_right),
