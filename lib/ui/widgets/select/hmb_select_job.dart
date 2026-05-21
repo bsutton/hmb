@@ -97,6 +97,12 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
           title: widget.title,
           selectedItem: _getInitialJob,
           onChanged: _onJobChanged,
+          onAccessed: (jc) async {
+            final jobId = jc.job?.id;
+            if (jobId != null) {
+              await DaoJob().recordAccess(jobId);
+            }
+          },
           items: _getJobs,
           format: (jc) => '${jc.job!.summary}\n${jc.customer?.name ?? ''}',
           required: widget.required,

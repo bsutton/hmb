@@ -11,6 +11,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/supplier.dart';
@@ -62,18 +63,19 @@ $orderByRecentReceipt
     );
   }
 
-  Future<void> recordAccess(int? supplierId) async {
-    if (supplierId == null) {
+  @override
+  Future<void> recordAccess(int? entityId, [Transaction? transaction]) async {
+    if (entityId == null) {
       return;
     }
 
-    await withoutTransaction().update(
+    await withinTransaction(transaction).update(
       tableName,
       {'lastAccessed': DateTime.now().toIso8601String()},
       where: 'id = ?',
-      whereArgs: [supplierId],
+      whereArgs: [entityId],
     );
-    Dao.notifier(this, supplierId);
+    Dao.notifier(this, entityId);
   }
 
   @override

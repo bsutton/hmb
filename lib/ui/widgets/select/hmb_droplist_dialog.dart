@@ -15,6 +15,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../entity/entity.g.dart';
 import '../../../util/dart/types.dart';
 import '../../../util/flutter/hmb_theme.dart';
 import '../icons/hmb_clear_icon.dart';
@@ -66,7 +67,8 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
     final generation = ++_loadGeneration;
     final filter = _filter;
     try {
-      final items = await widget.getItems(filter);
+      final items = [...await widget.getItems(filter)]
+        ..sort(_compareRecentFirst);
       if (!mounted || generation != _loadGeneration) {
         return;
       }
@@ -94,6 +96,31 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
       _loading = true;
     });
     unawaited(_loadItems());
+  }
+
+  int _compareRecentFirst(T left, T right) {
+    final leftAccessed = _recentAccessed(left);
+    final rightAccessed = _recentAccessed(right);
+    if (leftAccessed == null && rightAccessed == null) {
+      return 0;
+    }
+    if (leftAccessed == null) {
+      return 1;
+    }
+    if (rightAccessed == null) {
+      return -1;
+    }
+    return rightAccessed.compareTo(leftAccessed);
+  }
+
+  DateTime? _recentAccessed(T item) {
+    if (item is Supplier) {
+      return item.lastAccessed ?? item.modifiedDate;
+    }
+    if (item is Entity) {
+      return item.modifiedDate;
+    }
+    return null;
   }
 
   Future<void> _handleAdd() async {

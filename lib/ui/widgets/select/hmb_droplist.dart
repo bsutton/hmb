@@ -16,6 +16,8 @@ import 'dart:async';
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 
+import '../../../dao/dao.g.dart';
+import '../../../entity/entity.g.dart';
 import '../../../util/dart/types.dart';
 import '../../../util/flutter/hmb_theme.dart';
 import '../layout/layout.g.dart';
@@ -32,6 +34,7 @@ class HMBDroplist<T> extends StatefulWidget {
   final AsyncVoidCallback? onAdd;
   final Color? backgroundColor;
   final void Function(T?)? onSaved;
+  final Future<void> Function(T item)? onAccessed;
   final T? initialValue;
   final bool required;
   final bool showSearch;
@@ -46,6 +49,7 @@ class HMBDroplist<T> extends StatefulWidget {
     this.onAdd,
     this.backgroundColor,
     this.onSaved,
+    this.onAccessed,
     this.initialValue,
     this.required = true,
     this.showSearch = true,
@@ -131,6 +135,9 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
                 _selectedItem = selected;
                 setState(() {});
                 state.didChange(selected);
+                if (selected != null) {
+                  unawaited(_recordAccess(selected));
+                }
                 widget.onChanged(selected);
               }
             },
@@ -180,4 +187,32 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
       ),
     ),
   );
+
+  Future<void> _recordAccess(T item) async {
+    final onAccessed = widget.onAccessed;
+    if (onAccessed != null) {
+      await onAccessed(item);
+      return;
+    }
+    switch (item) {
+      case final Supplier supplier:
+        await DaoSupplier().recordAccess(supplier.id);
+      case final Customer customer:
+        await DaoCustomer().recordAccess(customer.id);
+      case final Contact contact:
+        await DaoContact().recordAccess(contact.id);
+      case final Site site:
+        await DaoSite().recordAccess(site.id);
+      case final Manufacturer manufacturer:
+        await DaoManufacturer().recordAccess(manufacturer.id);
+      case final Category category:
+        await DaoCategory().recordAccess(category.id);
+      case final Task task:
+        await DaoTask().recordAccess(task.id);
+      case final Tool tool:
+        await DaoTool().recordAccess(tool.id);
+      case final MessageTemplate template:
+        await DaoMessageTemplate().recordAccess(template.id);
+    }
+  }
 }
