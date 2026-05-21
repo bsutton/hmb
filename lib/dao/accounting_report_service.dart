@@ -186,17 +186,19 @@ enum DebtorStatementEntryType { invoice, payment, credit, adjustment }
 class DebtorStatementEntry {
   final DebtorStatementEntryType type;
   final int invoiceId;
+  final String invoiceNumber;
   final DateTime date;
   final String description;
   final Money amount;
 
-  const DebtorStatementEntry({
+  DebtorStatementEntry({
     required this.type,
     required this.invoiceId,
     required this.date,
     required this.description,
     required this.amount,
-  });
+    String? invoiceNumber,
+  }) : invoiceNumber = invoiceNumber ?? invoiceId.toString();
 }
 
 class DebtorStatementReport {
@@ -438,6 +440,7 @@ class AccountingReportService {
           DebtorStatementEntry(
             type: DebtorStatementEntryType.invoice,
             invoiceId: invoice.id,
+            invoiceNumber: invoice.bestNumber,
             date: invoice.createdDate,
             description: 'Invoice #${invoice.bestNumber}',
             amount: invoice.totalAmount,
@@ -465,6 +468,7 @@ class AccountingReportService {
             DebtorStatementEntry(
               type: _statementEntryType(history.type),
               invoiceId: invoice.id,
+              invoiceNumber: invoice.bestNumber,
               date: history.date,
               description: '${history.title} - Invoice #${invoice.bestNumber}',
               amount: amount,
@@ -509,6 +513,7 @@ class AccountingReportService {
       DebtorStatementEntry(
         type: DebtorStatementEntryType.payment,
         invoiceId: invoice.id,
+        invoiceNumber: invoice.bestNumber,
         date: paymentDate,
         description: 'Payment received - Invoice #${invoice.bestNumber}',
         amount: amount,
@@ -973,7 +978,7 @@ class AccountingReportCsvExporter {
     for (final entry in report.entries)
       [
         entry.date.toIso8601String(),
-        entry.invoiceId,
+        entry.invoiceNumber,
         entry.description,
         entry.amount,
       ],

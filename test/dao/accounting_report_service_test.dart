@@ -244,6 +244,34 @@ void main() {
     },
   );
 
+  test('debtor statement exposes customer-facing invoice number', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.timeAndMaterial,
+      hourlyRate: MoneyEx.zero,
+      summary: 'Statement invoice number test job',
+    );
+    final invoice = await _insertInvoice(
+      job,
+      MoneyEx.dollars(200),
+      invoiceNum: 'XERO-506',
+      createdDate: DateTime(2026, 4, 3),
+    );
+
+    final report = await AccountingReportService().debtorStatement(
+      customerId: job.customerId,
+      startInclusive: DateTime(2026, 4),
+      endExclusive: DateTime(2026, 5),
+    );
+
+    expect(report.entries.single.invoiceId, invoice.id);
+    expect(report.entries.single.invoiceNumber, 'XERO-506');
+    expect(report.entries.single.description, 'Invoice #XERO-506');
+
+    final csv = AccountingReportCsvExporter().debtorStatement(report);
+    expect(csv, contains('XERO-506'));
+    expect(csv, isNot(contains(',${invoice.id},Invoice #XERO-506')));
+  });
+
   test(
     'debtor statement balances paid invoices without local allocations',
     () async {
@@ -460,6 +488,7 @@ Future<Invoice> _insertInvoice(
   DateTime? createdDate,
   bool paid = false,
   DateTime? paidDate,
+  String? invoiceNum,
 }) async {
   final invoice = Invoice.forInsert(
     jobId: job.id,
@@ -471,15 +500,21 @@ Future<Invoice> _insertInvoice(
     paidDate: paidDate,
   );
   await DaoInvoice().insert(invoice);
-  if (createdDate == null) {
+  if (createdDate == null && invoiceNum == null) {
     return invoice;
+  }
+  final values = <String, Object?>{};
+  if (createdDate != null) {
+    values
+      ..['created_date'] = createdDate.toIso8601String()
+      ..['modified_date'] = createdDate.toIso8601String();
+  }
+  if (invoiceNum != null) {
+    values['invoice_num'] = invoiceNum;
   }
   await DaoInvoice().withoutTransaction().update(
     'invoice',
-    {
-      'created_date': createdDate.toIso8601String(),
-      'modified_date': createdDate.toIso8601String(),
-    },
+    values,
     where: 'id = ?',
     whereArgs: [invoice.id],
   );

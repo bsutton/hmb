@@ -192,10 +192,16 @@ Closing balance: ${report.closingBalance}
       );
 
   Future<void> _viewSendStatement(DebtorStatementReport report) async {
-    final file = await buildReportPdfFile(
+    final file = await buildDebtorStatementPdfFile(
       fileName: _exportFileName(report, 'pdf'),
       title: 'Customer Statement',
-      rows: _pdfRows(report),
+      customerName: report.customerName,
+      period:
+          '${formatDate(report.startInclusive)} to '
+          '${formatDate(_lastDay(report))}',
+      openingBalance: report.openingBalance.toString(),
+      closingBalance: report.closingBalance.toString(),
+      rows: _statementPdfRows(report),
     );
     final emails = await _statementEmails(report);
     if (!mounted) {
@@ -265,7 +271,7 @@ Closing balance: ${report.closingBalance}
             runSpacing: 8,
             children: [
               Text(formatDate(entry.date)),
-              Text('Invoice #${entry.invoiceId}'),
+              Text('Invoice #${entry.invoiceNumber}'),
               Text(entry.amount.toString()),
             ],
           ),
@@ -274,22 +280,14 @@ Closing balance: ${report.closingBalance}
     ),
   );
 
-  List<List<String>> _pdfRows(DebtorStatementReport report) => [
-    ['Customer', report.customerName],
-    [
-      'Period',
-      '${formatDate(report.startInclusive)} to ${formatDate(_lastDay(report))}',
-    ],
-    ['Opening balance', report.openingBalance.toString()],
-    ['Closing balance', report.closingBalance.toString()],
-    [],
-    ['Date', 'Invoice', 'Description', 'Amount'],
-    for (final entry in report.entries)
+  List<DebtorStatementPdfRow> _statementPdfRows(DebtorStatementReport report) =>
       [
-        formatDate(entry.date),
-        entry.invoiceId.toString(),
-        entry.description,
-        entry.amount.toString(),
-      ],
-  ];
+        for (final entry in report.entries)
+          DebtorStatementPdfRow(
+            date: formatDate(entry.date),
+            invoiceNumber: entry.invoiceNumber,
+            description: entry.description,
+            amount: entry.amount.toString(),
+          ),
+      ];
 }
