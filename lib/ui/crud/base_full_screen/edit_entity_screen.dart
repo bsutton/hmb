@@ -115,6 +115,7 @@ class EntityEditScreenState<E extends Entity<E>>
   Widget _commandButtons(BuildContext context) => SaveAndClose(
     onSave: _save,
     showSaveOnly: isNew,
+    saveLabel: isNew ? 'Create' : 'Save',
     onCancel: () async {
       Navigator.of(context).pop();
     },

@@ -107,6 +107,7 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
   Widget _commandButtons(BuildContext context) => SaveAndClose(
     onSave: _save,
     showSaveOnly: widget.entityState.currentEntity == null,
+    saveLabel: widget.entityState.currentEntity == null ? 'Create' : 'Save',
     onCancel: () async {
       Navigator.of(context).pop();
     },
