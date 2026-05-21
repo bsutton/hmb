@@ -305,6 +305,35 @@ void main() {
     },
   );
 
+  test('debtor statement orders same-day invoice before payment', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.timeAndMaterial,
+      hourlyRate: MoneyEx.zero,
+      summary: 'Same-day statement order test job',
+    );
+    final invoice = await _insertInvoice(
+      job,
+      MoneyEx.dollars(100),
+      createdDate: DateTime(2026, 4, 3),
+    );
+    await DebtorLedgerService().recordPayment(
+      invoiceId: invoice.id,
+      amount: MoneyEx.dollars(100),
+      paymentDate: DateTime(2026, 4, 3),
+    );
+
+    final report = await AccountingReportService().debtorStatement(
+      customerId: job.customerId,
+      startInclusive: DateTime(2026, 4),
+      endExclusive: DateTime(2026, 5),
+    );
+
+    expect(report.entries.map((entry) => entry.type), [
+      DebtorStatementEntryType.invoice,
+      DebtorStatementEntryType.payment,
+    ]);
+  });
+
   test('cash received reports allocated payment rows', () async {
     final job = await createJobWithCustomer(
       billingType: BillingType.timeAndMaterial,

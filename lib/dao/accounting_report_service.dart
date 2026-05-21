@@ -480,7 +480,16 @@ class AccountingReportService {
 
     entries.sort((lhs, rhs) {
       final date = lhs.date.compareTo(rhs.date);
-      return date == 0 ? lhs.invoiceId.compareTo(rhs.invoiceId) : date;
+      if (date != 0) {
+        return date;
+      }
+      final invoice = lhs.invoiceId.compareTo(rhs.invoiceId);
+      if (invoice != 0) {
+        return invoice;
+      }
+      return _statementEntrySortOrder(
+        lhs.type,
+      ).compareTo(_statementEntrySortOrder(rhs.type));
     });
 
     return DebtorStatementReport(
@@ -715,6 +724,13 @@ ${_jobClause(jobId, 'job_id')}
     InvoiceLedgerHistoryEntryType.credit => DebtorStatementEntryType.credit,
     InvoiceLedgerHistoryEntryType.adjustment =>
       DebtorStatementEntryType.adjustment,
+  };
+
+  int _statementEntrySortOrder(DebtorStatementEntryType type) => switch (type) {
+    DebtorStatementEntryType.invoice => 0,
+    DebtorStatementEntryType.payment => 1,
+    DebtorStatementEntryType.credit => 2,
+    DebtorStatementEntryType.adjustment => 3,
   };
 
   Future<Money> _creditNotes({AccountingPeriod? period, int? jobId}) => _sum(
