@@ -206,11 +206,7 @@ class MiniJobDashboard extends StatelessWidget {
                 icon: Icons.attach_money,
                 compact: true,
                 onBeforeOpen: _markJobAccessed,
-                value: () async {
-                  final all = await DaoInvoice().getByFilter(null);
-                  final list = all.where((i) => i.jobId == job.id).toList();
-                  return DashletValue<int>(list.length);
-                },
+                value: () => jobInvoiceDashletValue(job),
                 builder: (_, _) => HMBFullPageChildScreen(
                   title: 'Invoices',
                   child: InvoiceListScreen(jobRestriction: job),
@@ -362,4 +358,10 @@ DashletValue<String> taskDashletValue(List<Task> tasks) {
   final open = tasks.where((task) => !task.status.isInActive()).length;
   final completed = tasks.where((task) => task.status.isComplete()).length;
   return DashletValue<String>('$open/$completed');
+}
+
+Future<DashletValue<int>> jobInvoiceDashletValue(Job job) async {
+  final invoices = await DaoInvoice().getByFilter(null, includePaid: true);
+  final count = invoices.where((invoice) => invoice.jobId == job.id).length;
+  return DashletValue<int>(count);
 }
