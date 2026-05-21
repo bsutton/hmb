@@ -44,8 +44,21 @@ class ReceiptEditScreen extends StatefulWidget {
   State<ReceiptEditScreen> createState() => _ReceiptEditScreenState();
 }
 
+enum _ReceiptWizardStep { photo, lines, details, allocations, taskItems }
+
+extension on _ReceiptWizardStep {
+  String get label => switch (this) {
+    _ReceiptWizardStep.photo => 'Photo',
+    _ReceiptWizardStep.lines => 'AI',
+    _ReceiptWizardStep.details => 'Details',
+    _ReceiptWizardStep.allocations => 'Allocation',
+    _ReceiptWizardStep.taskItems => 'Items',
+  };
+}
+
 class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     implements EntityState<Receipt> {
+  late _ReceiptWizardStep _wizardStep;
   late DateTime _date;
   final _selectedJob = SelectedJob();
   int? _supplierId;
@@ -79,6 +92,9 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   @override
   Future<void> asyncInitState() async {
     currentEntity = widget.receipt;
+    _wizardStep = currentEntity == null
+        ? _ReceiptWizardStep.photo
+        : _ReceiptWizardStep.details;
     _date = currentEntity?.receiptDate ?? DateTime.now();
     _selectedJob.jobId = currentEntity?.jobId;
     _supplierId = currentEntity?.supplierId;
@@ -192,11 +208,91 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   Widget _buildEditor() => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      _buildStepHeading(
-        '1. Receipt details',
-        'Enter the supplier, date, totals and receipt photo.',
+      _buildWizardProgress(),
+      const SizedBox(height: 8),
+      _buildWizardStep(),
+      const SizedBox(height: 12),
+      _buildWizardControls(),
+    ],
+  );
+
+  Widget _buildWizardProgress() => Wrap(
+    spacing: 6,
+    runSpacing: 6,
+    children: _ReceiptWizardStep.values.map((step) {
+      final selected = step == _wizardStep;
+      return ChoiceChip(
+        label: Text(step.label),
+        selected: selected,
+        onSelected: (_) => setState(() => _wizardStep = step),
+      );
+    }).toList(),
+  );
+
+  Widget _buildWizardStep() => switch (_wizardStep) {
+    _ReceiptWizardStep.photo => _buildPhotoStep(),
+    _ReceiptWizardStep.lines => _buildLineItems(),
+    _ReceiptWizardStep.details => _buildReceiptDetails(),
+    _ReceiptWizardStep.allocations => _buildJobAllocations(),
+    _ReceiptWizardStep.taskItems => _buildTaskItemLinks(),
+  };
+
+  Widget _buildWizardControls() => Row(
+    children: [
+      Expanded(
+        child: HMBButton(
+          label: 'Back',
+          hint: 'Go back to the previous receipt entry step.',
+          enabled: _previousStep != null,
+          onPressed: () {
+            final previous = _previousStep;
+            if (previous != null) {
+              setState(() => _wizardStep = previous);
+            }
+          },
+        ),
       ),
-      // Date
+      const HMBSpacer(width: true),
+      Expanded(
+        child: HMBButton(
+          label: _nextLabel,
+          hint: 'Go to the next receipt entry step.',
+          enabled: _nextStep != null,
+          onPressed: () {
+            final next = _nextStep;
+            if (next != null) {
+              setState(() => _wizardStep = next);
+            }
+          },
+        ),
+      ),
+    ],
+  );
+
+  Widget _buildPhotoStep() => HMBColumn(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _buildStepHeading(
+        '1. Receipt photo',
+        'Take a receipt photo now, or skip this step and attach one later.',
+      ),
+      PhotoCrud<Receipt>(
+        key: ValueKey(currentEntity?.id),
+        parentName: 'Receipt',
+        parentType: ParentType.receipt,
+        controller: _photoCtrl,
+        allowPendingPhotos: true,
+      ),
+    ],
+  );
+
+  Widget _buildReceiptDetails() => HMBColumn(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _buildStepHeading(
+        '3. Receipt details',
+        'Enter the supplier, date and receipt totals.',
+      ),
       HMBDateTimeField(
         key: TestKeys.receiptDateField,
         mode: HMBDateTimeFieldMode.dateOnly,
@@ -264,20 +360,27 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         fieldName: 'Total Excluding Tax',
         focusNode: _taxExFocus,
       ),
-
-      // Photos
-      PhotoCrud<Receipt>(
-        key: ValueKey(currentEntity?.id),
-        parentName: 'Receipt',
-        parentType: ParentType.receipt,
-        controller: _photoCtrl,
-        allowPendingPhotos: true,
-      ),
-      _buildLineItems(),
-      _buildJobAllocations(),
-      _buildTaskItemLinks(),
     ],
   );
+
+  _ReceiptWizardStep? get _previousStep {
+    final index = _ReceiptWizardStep.values.indexOf(_wizardStep);
+    return index == 0 ? null : _ReceiptWizardStep.values[index - 1];
+  }
+
+  _ReceiptWizardStep? get _nextStep {
+    final index = _ReceiptWizardStep.values.indexOf(_wizardStep);
+    return index == _ReceiptWizardStep.values.length - 1
+        ? null
+        : _ReceiptWizardStep.values[index + 1];
+  }
+
+  String get _nextLabel => switch (_wizardStep) {
+    _ReceiptWizardStep.photo => 'Skip Photo',
+    _ReceiptWizardStep.lines => _lineItems.isEmpty ? 'Skip AI' : 'Next',
+    _ReceiptWizardStep.taskItems => 'Next',
+    _ => 'Next',
+  };
 
   @override
   Future<Receipt> forUpdate(Receipt receipt) async => receipt.copyWith(
@@ -349,9 +452,9 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildStepHeading(
-          '2. Receipt lines',
-          'Extract lines from the photo, or enter them manually. Review before '
-              'saving.',
+          '2. AI extraction',
+          'Extract lines from the photo, skip extraction, or enter lines '
+              'manually.',
         ),
         Wrap(
           spacing: 8,
@@ -581,7 +684,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       children: [
         const SizedBox(height: 8),
         _buildStepHeading(
-          '4. Task item links',
+          '5. Task item links',
           'Optional. Select the purchased items this receipt covers.',
         ),
         if (jobId == null)
@@ -623,7 +726,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       _buildStepHeading(
-        '3. Job cost allocation',
+        '4. Job cost allocation',
         'Split this supplier receipt across jobs when one purchase covers '
             'more than one job.',
       ),
