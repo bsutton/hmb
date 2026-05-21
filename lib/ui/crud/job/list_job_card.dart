@@ -172,7 +172,7 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
     final customer = await DaoCustomer().getById(job.customerId);
     final referrer = await DaoCustomer().getById(job.referrerCustomerId);
     final rows = <_JobPartyContact>[];
-    final seen = <String>{};
+    final rowsByContactId = <int, _JobPartyContact>{};
 
     Future<void> add({
       required String role,
@@ -186,22 +186,23 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
       if (contact == null) {
         return;
       }
-      final key = '$role:${contact.id}';
-      if (!seen.add(key)) {
+      final existing = rowsByContactId[contact.id];
+      if (existing != null) {
+        existing.addRole(role);
         return;
       }
-      rows.add(
-        _JobPartyContact(
-          role: role,
+      final row = _JobPartyContact(
+        roles: [role],
+        contact: contact,
+        sourceContext: SourceContext(
+          job: job,
           contact: contact,
-          sourceContext: SourceContext(
-            job: job,
-            contact: contact,
-            customer: partyCustomer ?? customer,
-            site: site,
-          ),
+          customer: partyCustomer ?? customer,
+          site: site,
         ),
       );
+      rows.add(row);
+      rowsByContactId[contact.id] = row;
     }
 
     await add(
@@ -287,15 +288,23 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
 }
 
 class _JobPartyContact {
-  final String role;
+  final List<String> roles;
   final Contact contact;
   final SourceContext sourceContext;
 
-  const _JobPartyContact({
-    required this.role,
+  _JobPartyContact({
+    required this.roles,
     required this.contact,
     required this.sourceContext,
   });
+
+  String get roleLabel => roles.join(', ');
+
+  void addRole(String role) {
+    if (!roles.contains(role)) {
+      roles.add(role);
+    }
+  }
 }
 
 class _JobPartyContactTile extends StatelessWidget {
@@ -309,7 +318,7 @@ class _JobPartyContactTile extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     children: [
       Text(
-        '${contact.role}: ${contact.contact.fullname}',
+        '${contact.roleLabel}: ${contact.contact.fullname}',
         style: Theme.of(context).textTheme.titleSmall,
       ),
       const SizedBox(height: 4),
