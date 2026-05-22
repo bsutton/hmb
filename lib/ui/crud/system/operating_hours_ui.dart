@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import '../../../entity/operating_hours.dart';
 import '../../../entity/system.dart';
 import '../../../util/dart/local_time.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../../widgets/widgets.g.dart';
@@ -68,6 +69,11 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
           ),
           ToggleButtons(
             isSelected: widget.controller.operatingHours.openList,
+            color: HMBColors.textPrimary,
+            selectedColor: Colors.black,
+            fillColor: HMBColors.primary,
+            borderColor: HMBColors.surface32dp,
+            selectedBorderColor: HMBColors.primary,
             onPressed: (index) {
               setState(() {
                 final dayName = DayName.fromIndex(index);

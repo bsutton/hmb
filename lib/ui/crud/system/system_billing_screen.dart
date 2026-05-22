@@ -295,12 +295,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
               showSaveOnly: false,
               onCancel: () async => context.pop(),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: ListView(children: [_buildForm()]),
-              ),
-            ),
+            Expanded(child: ListView(children: [_buildForm()])),
           ],
         ),
       );
