@@ -202,9 +202,9 @@ class SystemStorageScreenState extends DeferredState<SystemStorageScreen> {
               onCancel: () async => context.pop(),
             ),
             Expanded(
-              child: Padding(
+              child: ListView(
                 padding: const EdgeInsets.all(16),
-                child: _buildForm(),
+                children: [_buildForm()],
               ),
             ),
           ],
