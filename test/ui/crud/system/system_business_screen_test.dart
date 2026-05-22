@@ -24,4 +24,14 @@ void main() {
 
     expect(listView.padding, const EdgeInsets.all(16));
   });
+
+  testWidgets('business details fits phone width', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(393, 852));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(const MaterialApp(home: SystemBusinessScreen()));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+  });
 }

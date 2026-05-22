@@ -112,10 +112,8 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
                         color: Colors.purpleAccent,
                       ),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          SizedBox(
-                            width: 180,
+                          Expanded(
                             child: HMBDateTimeField(
                               initialDateTime: start.toDateTime(),
                               mode: HMBDateTimeFieldMode.timeOnly,
@@ -124,8 +122,8 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
                               label: 'Start',
                             ),
                           ),
-                          SizedBox(
-                            width: 180,
+                          const SizedBox(width: 16),
+                          Expanded(
                             child: HMBDateTimeField(
                               initialDateTime: end.toDateTime(),
                               mode: HMBDateTimeFieldMode.timeOnly,
