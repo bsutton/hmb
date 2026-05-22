@@ -295,7 +295,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
               showSaveOnly: false,
               onCancel: () async => context.pop(),
             ),
-            Expanded(child: ListView(children: [_buildForm()])),
+            Expanded(child: ListView(children: [_buildForm(topPadding: 0)])),
           ],
         ),
       );
@@ -305,10 +305,10 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
     }
   }
 
-  Widget _buildForm() => DeferredBuilder(
+  Widget _buildForm({double topPadding = 16}) => DeferredBuilder(
     this,
     builder: (context) => Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(16, topPadding, 16, 16),
       child: Form(
         key: _formKey,
         child: HMBColumn(
