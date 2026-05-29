@@ -42,8 +42,11 @@ import '../../widgets/hmb_chip.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/icons/circle.dart';
 import '../../widgets/icons/help_button.dart';
+import '../../widgets/icons/hmb_delete_icon.dart';
 import '../../widgets/icons/hmb_edit_icon.dart';
 import '../../widgets/layout/layout.g.dart';
+import '../../widgets/media/attachment_pdf_viewer.dart';
+import '../../widgets/media/full_screen_photo_view.dart';
 import '../../widgets/media/photo_gallery.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/select/hmb_select_contact.dart';
@@ -795,8 +798,9 @@ You can set a default booking fee from System | Billing screen''');
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const HMBText('Attachments:', bold: true),
-            HMBButton.small(
+            HMBButton.withIcon(
               label: 'Add File',
+              icon: const Icon(Icons.attach_file),
               hint: 'Attach an existing file to this job.',
               onPressed: () async {
                 await _pickAndAttachFile();
@@ -808,32 +812,36 @@ You can set a default booking fee from System | Billing screen''');
           const Text('No attachments')
         else
           ...attachments.map(
-            (attachment) => Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    attachment.displayName,
-                    overflow: TextOverflow.ellipsis,
+            (attachment) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: () => unawaited(_openAttachment(attachment)),
+                        child: Text(
+                          attachment.displayName,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                HMBButton.small(
-                  label: 'Open',
-                  hint: 'Open this attachment in an external app.',
-                  onPressed: () async {
-                    await _openAttachment(attachment);
-                  },
-                ),
-                HMBButton.small(
-                  label: 'Remove',
-                  hint: 'Remove this attachment from the job.',
-                  onPressed: () async {
-                    await DaoJobAttachment().delete(attachment.id);
-                    if (mounted) {
-                      setState(() {});
-                    }
-                  },
-                ),
-              ],
+                  HMBDeleteIcon(
+                    hint: 'Remove this attachment from the job.',
+                    onPressed: () async {
+                      await DaoJobAttachment().delete(attachment.id);
+                      if (mounted) {
+                        setState(() {});
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
       ],
@@ -870,6 +878,30 @@ You can set a default booking fee from System | Billing screen''');
   }
 
   Future<void> _openAttachment(JobAttachment attachment) async {
+    if (!File(attachment.filePath).existsSync()) {
+      HMBToast.error('Attachment file not found.');
+      return;
+    }
+
+    if (_canOpenAsImage(attachment.filePath)) {
+      await FullScreenPhotoViewer.show(
+        context: context,
+        imagePath: attachment.filePath,
+        title: attachment.displayName,
+        comment: null,
+      );
+      return;
+    }
+
+    if (_canOpenAsPdf(attachment.filePath)) {
+      await AttachmentPdfViewer.show(
+        context: context,
+        filePath: attachment.filePath,
+        title: attachment.displayName,
+      );
+      return;
+    }
+
     final result = await OpenFilex.open(attachment.filePath);
     if (result.type != ResultType.done) {
       HMBToast.error(
@@ -877,6 +909,19 @@ You can set a default booking fee from System | Billing screen''');
       );
     }
   }
+
+  bool _canOpenAsImage(String filePath) => const {
+    '.bmp',
+    '.gif',
+    '.jpeg',
+    '.jpg',
+    '.png',
+    '.wbmp',
+    '.webp',
+  }.contains(p.extension(filePath).toLowerCase());
+
+  bool _canOpenAsPdf(String filePath) =>
+      p.extension(filePath).toLowerCase() == '.pdf';
 
   Future<String?> _showTextAreaEditDialog(String text, String title) {
     final localController = TextEditingController(text: text);
