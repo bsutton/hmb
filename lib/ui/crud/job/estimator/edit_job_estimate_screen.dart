@@ -74,6 +74,7 @@ class _JobEstimateBuilderScreenState
   var _showWithdrawn = false;
 
   var _filter = '';
+  final _aiExpandingTaskIds = <int>{};
 
   @override
   Future<void> asyncInitState() async {
@@ -381,11 +382,7 @@ class _JobEstimateBuilderScreenState
                 Wrap(
                   spacing: 4,
                   children: [
-                    IconButton(
-                      tooltip: 'Expand with AI',
-                      onPressed: () => unawaited(_expandTaskWithAi(task)),
-                      icon: const Icon(Icons.auto_awesome),
-                    ),
+                    _buildAiExpandButton(task),
                     HMBEditIcon(
                       onPressed: () => _editTask(task),
                       hint: 'Edit Task',
@@ -440,6 +437,20 @@ class _JobEstimateBuilderScreenState
       const HMBSpacer(height: true),
     ],
   );
+
+  Widget _buildAiExpandButton(Task task) {
+    final isExpanding = _aiExpandingTaskIds.contains(task.id);
+    return IconButton(
+      tooltip: isExpanding ? 'Expanding with AI' : 'Expand with AI',
+      onPressed: isExpanding ? null : () => unawaited(_expandTaskWithAi(task)),
+      icon: isExpanding
+          ? const SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.auto_awesome),
+    );
+  }
 
   Widget _buildTaskItems(Task task) {
     final itemAndRate = _itemsByTaskId[task.id];
@@ -558,6 +569,11 @@ class _JobEstimateBuilderScreenState
   }
 
   Future<void> _expandTaskWithAi(Task task) async {
+    if (_aiExpandingTaskIds.contains(task.id)) {
+      return;
+    }
+    setState(() => _aiExpandingTaskIds.add(task.id));
+
     try {
       final suggestions = await JobAssistApiClient().expandTaskToItems(
         jobSummary: widget.job.summary,
@@ -587,6 +603,10 @@ class _JobEstimateBuilderScreenState
       HMBToast.info('Added $inserted estimate item(s) from AI.');
     } catch (e) {
       HMBToast.error('AI task expansion failed: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _aiExpandingTaskIds.remove(task.id));
+      }
     }
   }
 
