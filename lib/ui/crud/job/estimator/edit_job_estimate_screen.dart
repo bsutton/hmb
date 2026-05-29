@@ -578,8 +578,11 @@ class _JobEstimateBuilderScreenState
       final suggestions = await JobAssistApiClient().expandTaskToItems(
         jobSummary: widget.job.summary,
         jobDescription: widget.job.description,
+        jobAssumptions: widget.job.assumption,
+        jobInternalNotes: widget.job.internalNotes,
         taskName: task.name,
         taskDescription: task.description,
+        existingTasks: _taskItemAssistContext(),
       );
       if (suggestions == null) {
         HMBToast.error('ChatGPT is not configured.');
@@ -609,6 +612,18 @@ class _JobEstimateBuilderScreenState
       }
     }
   }
+
+  List<TaskItemAssistTaskContext> _taskItemAssistContext() => [
+    for (final task in _tasks)
+      TaskItemAssistTaskContext(
+        taskName: task.name,
+        taskDescription: task.description,
+        itemDescriptions: (_itemsByTaskId[task.id]?.items ?? const <TaskItem>[])
+            .map((item) => item.description)
+            .where((description) => description.trim().isNotEmpty)
+            .toList(),
+      ),
+  ];
 
   Future<TaskItem> _buildTaskItemFromSuggestion(
     Task task,
