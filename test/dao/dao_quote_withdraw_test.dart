@@ -41,6 +41,48 @@ void main() {
     expect(quote?.state, QuoteState.withdrawn);
   });
 
+  test('milestone eligible quotes exclude rejected and withdrawn', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.fixedPrice,
+      hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+      bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+    );
+
+    Future<int> insertQuote(String summary, QuoteState state) =>
+        DaoQuote().insert(
+          Quote.forInsert(
+            jobId: job.id,
+            summary: summary,
+            description: '$summary description',
+            totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
+            state: state,
+          ),
+        );
+
+    final reviewingId = await insertQuote(
+      'Reviewing quote',
+      QuoteState.reviewing,
+    );
+    final sentId = await insertQuote('Sent quote', QuoteState.sent);
+    final approvedId = await insertQuote('Approved quote', QuoteState.approved);
+    final invoicedId = await insertQuote('Invoiced quote', QuoteState.invoiced);
+    await insertQuote('Rejected quote', QuoteState.rejected);
+    await insertQuote('Withdrawn quote', QuoteState.withdrawn);
+
+    final quotes = await DaoQuote().getMilestoneEligibleByJobId(job.id);
+    final ids = quotes.map((quote) => quote.id).toSet();
+
+    expect(ids, containsAll([reviewingId, sentId, approvedId, invoicedId]));
+    expect(
+      quotes.map((quote) => quote.state),
+      isNot(contains(QuoteState.rejected)),
+    );
+    expect(
+      quotes.map((quote) => quote.state),
+      isNot(contains(QuoteState.withdrawn)),
+    );
+  });
+
   test('amendQuote creates replacement quote and rejects original', () async {
     final job = await createJobWithCustomer(
       billingType: BillingType.fixedPrice,

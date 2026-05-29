@@ -49,6 +49,21 @@ class DaoQuote extends Dao<Quote> {
     );
   }
 
+  Future<List<Quote>> getMilestoneEligibleByJobId(
+    int jobId, {
+    Transaction? transaction,
+  }) async {
+    final db = withinTransaction(transaction);
+    return toList(
+      await db.query(
+        tableName,
+        where: 'job_id = ? AND state NOT IN (?, ?)',
+        whereArgs: [jobId, QuoteState.rejected.name, QuoteState.withdrawn.name],
+        orderBy: 'id desc',
+      ),
+    );
+  }
+
   Future<List<Quote>> getByFilter(String? filter) async {
     final db = withoutTransaction();
 
