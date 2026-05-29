@@ -183,18 +183,20 @@ SELECT ti.*
   }
 
   Future<List<TaskItem>> getPurchasedItemsForReceiptLink({
-    required int jobId,
+    int? jobId,
     int? supplierId,
+    DateTime? since,
   }) async {
     final db = withoutTransaction();
+    final jobClause = jobId == null ? '' : 'AND t.job_id = ?';
     final supplierClause = supplierId == null ? '' : 'AND ti.supplier_id = ?';
+    final sinceClause = since == null ? '' : 'AND ti.modified_date >= ?';
     final rows = await db.rawQuery(
       '''
 SELECT ti.*
   FROM task_item ti
   JOIN task t ON ti.task_id = t.id
- WHERE t.job_id = ?
-   AND ti.item_type_id IN (
+ WHERE ti.item_type_id IN (
      ${TaskItemType.materialsBuy.id},
      ${TaskItemType.toolsBuy.id},
      ${TaskItemType.toolsHire.id},
@@ -202,10 +204,16 @@ SELECT ti.*
    )
    AND ti.completed = 1
    AND ti.is_return = 0
+   $jobClause
    $supplierClause
+   $sinceClause
  ORDER BY ti.modified_date DESC
 ''',
-      [jobId, if (supplierId != null) supplierId],
+      [
+        if (jobId != null) jobId,
+        if (supplierId != null) supplierId,
+        if (since != null) since.toIso8601String(),
+      ],
     );
     return toList(rows);
   }
@@ -467,6 +475,46 @@ SELECT ti.*
     // Most recent returns first
     sql.write(' ORDER BY ti.modified_date DESC');
 
+    final rows = await db.rawQuery(sql.toString(), params);
+    return toList(rows);
+  }
+
+  Future<List<TaskItem>> getReturnedItemsForReceiptLink({
+    int? jobId,
+    int? supplierId,
+    DateTime? since,
+  }) async {
+    final db = withoutTransaction();
+    final sql = StringBuffer('''
+SELECT ti.*
+ FROM task_item ti
+  JOIN task t               ON ti.task_id       = t.id
+  JOIN job j                ON t.job_id         = j.id
+ WHERE ti.is_return = 1
+   AND j.status_id NOT IN (
+      '${JobStatus.rejected.id}',
+      '${JobStatus.onHold.id}',
+      '${JobStatus.awaitingPayment.id}',
+      '${JobStatus.completed.id}',
+      '${JobStatus.toBeBilled.id}'
+    )
+''');
+
+    final params = <dynamic>[];
+    if (jobId != null) {
+      sql.write(' AND j.id = ?');
+      params.add(jobId);
+    }
+    if (supplierId != null) {
+      sql.write(' AND ti.supplier_id = ?');
+      params.add(supplierId);
+    }
+    if (since != null) {
+      sql.write(' AND ti.modified_date >= ?');
+      params.add(since.toIso8601String());
+    }
+
+    sql.write(' ORDER BY ti.modified_date DESC');
     final rows = await db.rawQuery(sql.toString(), params);
     return toList(rows);
   }

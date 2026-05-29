@@ -136,6 +136,7 @@ class HMBSearchWithAdd extends StatelessWidget {
       ),
       if (showAdd)
         HMBButtonAdd(onAdd: () async => onAdd(), enabled: true, hint: hint),
+      const SizedBox(width: 8),
     ],
   );
 }

@@ -33,6 +33,37 @@ void main() {
     expect(await DaoTaskItem().wasReturned(item.id), isTrue);
   });
 
+  test('receipt return matching uses returned shopping items', () async {
+    final item = await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.inProgress,
+      itemType: TaskItemType.materialsBuy,
+      completed: true,
+    );
+    final task = (await DaoTask().getById(item.taskId))!;
+
+    await DaoTaskItem().markAsReturned(
+      item.id,
+      Fixed.one,
+      MoneyEx.fromInt(500),
+    );
+
+    final returned = await DaoTaskItem().getReturnedItemsForReceiptLink(
+      jobId: task.jobId,
+    );
+    final purchased = await DaoTaskItem().getPurchasedItemsForReceiptLink(
+      jobId: task.jobId,
+    );
+
+    expect(returned, hasLength(1));
+    expect(returned.single.isReturn, isTrue);
+    expect(returned.single.sourceTaskItemId, item.id);
+    expect(
+      purchased.map((candidate) => candidate.id),
+      isNot(contains(returned.single.id)),
+    );
+  });
+
   test('shopping excludes items from completed jobs', () async {
     final active = await _insertTaskItemForJob(
       jobStatus: JobStatus.inProgress,

@@ -47,18 +47,18 @@ class SystemContactInformationScreenState
     extends DeferredState<SystemContactInformationScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  late TextEditingController? _addressLine1Controller;
-  late TextEditingController? _addressLine2Controller;
-  late TextEditingController? _suburbController;
-  late TextEditingController? _stateController;
-  late TextEditingController? _postcodeController;
-  late TextEditingController? _mobileNumberController;
-  late TextEditingController? _landLineController;
-  late TextEditingController? _officeNumberController;
-  late TextEditingController? _fromEmailController;
-  late TextEditingController? _emailAddressController;
-  late TextEditingController? _firstNameController; // New controller
-  late TextEditingController? _surnameController; // New controller
+  TextEditingController? _addressLine1Controller;
+  TextEditingController? _addressLine2Controller;
+  TextEditingController? _suburbController;
+  TextEditingController? _stateController;
+  TextEditingController? _postcodeController;
+  TextEditingController? _mobileNumberController;
+  TextEditingController? _landLineController;
+  TextEditingController? _officeNumberController;
+  TextEditingController? _fromEmailController;
+  TextEditingController? _emailAddressController;
+  TextEditingController? _firstNameController;
+  TextEditingController? _surnameController;
 
   late String _selectedCountryCode;
   late List<CountryCode> _countryCodes;
@@ -152,7 +152,12 @@ class SystemContactInformationScreenState
               showSaveOnly: false,
               onCancel: () async => context.pop(),
             ),
-            Expanded(child: ListView(children: [_buildForm()])),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [_buildForm()],
+              ),
+            ),
           ],
         ),
       );
@@ -253,6 +258,7 @@ The email address used to send you notices such as a successful backup.'''),
           ),
 
           DropdownButtonFormField<String>(
+            isExpanded: true,
             initialValue: _selectedCountryCode,
             decoration: const InputDecoration(labelText: 'Country Code'),
             items: _countryCodes

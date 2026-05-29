@@ -90,7 +90,12 @@ class ChatGptIntegrationScreenState extends State<ChatGptIntegrationScreen> {
               showSaveOnly: false,
               onCancel: () async => context.pop(),
             ),
-            Expanded(child: ListView(children: [form])),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [form],
+              ),
+            ),
           ],
         ),
       );

@@ -33,6 +33,9 @@ class TestKeys {
     'receipt_add_job_allocation_button',
   );
 
+  static ValueKey<String> receiptEditButton(int receiptId) =>
+      ValueKey('receipt_${receiptId}_edit_button');
+
   static ValueKey<String> receiptTaskItemCheckbox(int taskItemId) =>
       ValueKey('receipt_task_item_${taskItemId}_checkbox');
 

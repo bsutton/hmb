@@ -117,6 +117,9 @@ class DaoReceipt extends Dao<Receipt> {
       where: 'receipt_id = ?',
       whereArgs: [receipt.id],
     );
+    if (receipt.jobId == null) {
+      return;
+    }
     await executor.insert('receipt_job_allocation', {
       'receipt_id': receipt.id,
       'job_id': receipt.jobId,
@@ -142,9 +145,6 @@ class DaoReceipt extends Dao<Receipt> {
     Iterable<ReceiptJobAllocation> allocations,
   ) async {
     final allocationList = allocations.toList();
-    if (allocationList.isEmpty) {
-      throw HMBException('At least one receipt job allocation is required.');
-    }
 
     await db.transaction((txn) async {
       await txn.delete(

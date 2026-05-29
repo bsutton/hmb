@@ -654,6 +654,11 @@ WHERE NOT EXISTS (
   FROM receipt_task_item rti
   WHERE rti.receipt_id = r.id
 )
+AND EXISTS (
+  SELECT 1
+  FROM receipt_job_allocation rja
+  WHERE rja.receipt_id = r.id
+)
 ORDER BY r.receipt_date DESC, r.id DESC
 ''');
 

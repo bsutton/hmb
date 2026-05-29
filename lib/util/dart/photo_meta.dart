@@ -110,9 +110,9 @@ class PhotoMeta {
 
     final absolutePathToPhoto = await PhotoMeta.getAbsolutePath(photo);
 
-    final jobName = sanitize(job!.summary);
+    final jobName = job == null ? 'Overhead' : sanitize(job.summary);
     final receiptDate = formatDate(receipt.receiptDate, format: 'y-M-d');
-    final jobFolderName = 'Job ${job.id} - $jobName';
+    final jobFolderName = job == null ? 'Overhead' : 'Job ${job.id} - $jobName';
     final receiptFolderName = 'Receipt ${receipt.id} - $receiptDate';
 
     return p.join(

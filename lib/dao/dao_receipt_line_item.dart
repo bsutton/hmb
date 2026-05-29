@@ -54,6 +54,7 @@ class DaoReceiptLineItem extends Dao<ReceiptLineItem> {
           taxCodeId: item.taxCodeId,
           lineTotalIncTax: item.lineTotalIncTax,
           matchedTaskItemId: item.matchedTaskItemId,
+          expenseCategory: item.expenseCategory,
           confidence: item.confidence,
           source: item.source,
         ).toMap()..remove('id');

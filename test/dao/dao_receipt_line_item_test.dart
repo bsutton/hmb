@@ -1,5 +1,6 @@
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
+import 'package:hmb/entity/receipt_expense_category.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 import 'package:test/test.dart';
 
@@ -53,6 +54,7 @@ void main() {
         taxAmount: MoneyEx.fromInt(50),
         lineTotalIncTax: MoneyEx.fromInt(550),
         matchedTaskItemId: null,
+        expenseCategory: ReceiptExpenseCategory.fuel,
         confidence: 86,
         source: 'photo_ocr',
       ),
@@ -63,8 +65,35 @@ void main() {
     expect(lines.map((line) => line.description), ['Timber', 'Screws']);
     expect(lines.first.lineTotalExTax, MoneyEx.dollars(25));
     expect(lines.last.lineTotalExTax, MoneyEx.fromInt(500));
+    expect(lines.last.expenseCategory, ReceiptExpenseCategory.fuel);
     expect(lines.first.source, 'photo_ocr');
   });
+
+  test(
+    'overhead receipt has no job allocation but is included in P&L',
+    () async {
+      final supplier = await _insertSupplier();
+      final receipt = Receipt.forInsert(
+        receiptDate: DateTime(2026, 5, 3),
+        jobId: null,
+        supplierId: supplier.id,
+        totalExcludingTax: MoneyEx.dollars(80),
+        tax: MoneyEx.dollars(8),
+        totalIncludingTax: MoneyEx.dollars(88),
+      );
+      await DaoReceipt().insert(receipt);
+
+      expect(await DaoReceipt().getJobAllocations(receipt.id), isEmpty);
+
+      final report = await AccountingReportService().profitAndLoss(
+        AccountingPeriod.month(2026, 5),
+      );
+      expect(report.receiptExpenses, MoneyEx.dollars(80));
+
+      final unlinked = await AccountingReportService().unlinkedCosts();
+      expect(unlinked.rows, isEmpty);
+    },
+  );
 }
 
 Future<Supplier> _insertSupplier() async {
