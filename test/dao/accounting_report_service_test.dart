@@ -141,6 +141,36 @@ void main() {
     expect(period.endExclusive, DateTime(2026, 7));
   });
 
+  test('financial year period defaults from business country', () async {
+    final system = await DaoSystem().get();
+    await DaoSystem().update(system.copyWith(countryCode: 'AU'));
+
+    final auPeriod = await AccountingPeriod.forFinancialYear(DateTime(2026, 5));
+
+    expect(auPeriod.startInclusive, DateTime(2025, 7));
+    expect(auPeriod.endExclusive, DateTime(2026, 7));
+
+    await DaoSystem().update(system.copyWith(countryCode: 'NZ'));
+    final nzPeriod = await AccountingPeriod.forFinancialYear(DateTime(2026, 5));
+
+    expect(nzPeriod.startInclusive, DateTime(2026, 4));
+    expect(nzPeriod.endExclusive, DateTime(2027, 4));
+  });
+
+  test(
+    'configured financial year start month overrides country default',
+    () async {
+      final system = await DaoSystem().get();
+      await DaoSystem().update(system.copyWith(countryCode: 'AU'));
+      await AppSettings.setFinancialYearStartMonth(1);
+
+      final period = await AccountingPeriod.forFinancialYear(DateTime(2026, 5));
+
+      expect(period.startInclusive, DateTime(2026));
+      expect(period.endExclusive, DateTime(2027));
+    },
+  );
+
   test('aged receivables buckets outstanding invoice balances', () async {
     final job = await createJobWithCustomer(
       billingType: BillingType.timeAndMaterial,

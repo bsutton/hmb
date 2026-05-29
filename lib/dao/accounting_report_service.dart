@@ -79,11 +79,32 @@ class AccountingPeriod {
   factory AccountingPeriod.forYear(DateTime date) =>
       AccountingPeriod.year(date.year);
 
-  static Future<AccountingPeriod> forFinancialYear(DateTime date) async =>
-      AccountingPeriod.financialYear(
-        date: date,
-        startMonth: await AppSettings.getFinancialYearStartMonth(),
-      );
+  static Future<AccountingPeriod> forFinancialYear(DateTime date) async {
+    final configuredStartMonth =
+        await AppSettings.getConfiguredFinancialYearStartMonth();
+    return AccountingPeriod.financialYear(
+      date: date,
+      startMonth:
+          configuredStartMonth ??
+          _defaultFinancialYearStartMonthForCountry(
+            (await DaoSystem().get()).countryCode,
+          ),
+    );
+  }
+
+  static int _defaultFinancialYearStartMonthForCountry(String? countryCode) {
+    switch (countryCode?.trim().toUpperCase()) {
+      case 'AU':
+        return 7;
+      case 'NZ':
+      case 'GB':
+      case 'UK':
+      case 'IN':
+        return 4;
+      default:
+        return AppSettings.financialYearStartMonthDefault;
+    }
+  }
 }
 
 class ProfitAndLossReport {
