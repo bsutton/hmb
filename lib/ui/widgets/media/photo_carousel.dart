@@ -196,19 +196,32 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
     ],
   );
 
-  Column _buildTitle(BuildContext context) => Column(
-    children: [
-      Row(
-        children: [
-          const HMBSpacer(width: true),
-          Expanded(
-            child: HMBTextLine('Task: ${widget.photos[_currentIndex].title}'),
+  Padding _buildTitle(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: HMBColumn(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                HMBTextLine(
+                  'Task: ${widget.photos[_currentIndex].title}',
+                  colour: Colors.white,
+                ),
+                HMBTextLine(
+                  widget.photos[_currentIndex].comment ?? '',
+                  colour: Colors.white70,
+                ),
+              ],
+            ),
           ),
-          _buildCopyClose(context),
-        ],
-      ),
-      HMBTextLine(widget.photos[_currentIndex].comment ?? ''),
-    ],
+        ),
+        _buildCopyClose(context),
+      ],
+    ),
   );
 
   Row _buildCopyClose(BuildContext context) => Row(
