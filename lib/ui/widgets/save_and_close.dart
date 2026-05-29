@@ -46,6 +46,14 @@ class SaveAndClose extends StatelessWidget {
               : 'Save your changes',
           onPressed: () => unawaited(onSave(close: !showSaveOnly)),
         ),
+        if (showSaveOnly) ...[
+          const HMBSpacer(width: true),
+          HMBButton(
+            label: 'Save & Close',
+            hint: 'Save your changes and close this screen',
+            onPressed: () => unawaited(onSave(close: true)),
+          ),
+        ],
         const HMBSpacer(width: true),
         HMBButton(
           onPressed: onCancel,
