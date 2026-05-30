@@ -68,7 +68,22 @@ Future<TaskAndRate> getTaskAndRate(Task? task) async {
 
 class _TaskItemListScreenState<P extends Entity<P>>
     extends State<TaskItemListScreen> {
+  late final Parent<Task> _parent;
   String? _filterText;
+
+  @override
+  void initState() {
+    super.initState();
+    _parent = Parent(widget.task);
+  }
+
+  @override
+  void didUpdateWidget(covariant TaskItemListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.task != widget.task) {
+      _parent.parent = widget.task;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +95,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
       future: getTaskAndRate(widget.task),
       builder: (context, taskAndRate) => NestedEntityListScreen<TaskItem, Task>(
         key: ValueKey(showCompleted),
-        parent: Parent(widget.task), // widget.parent,
+        parent: _parent,
         parentTitle: 'Task',
         entityNameSingular: 'Task Item',
         entityNamePlural: 'Task Items',
@@ -89,7 +104,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
         fetchList: () => _fetchItems(showCompleted),
         title: (taskItem) => Text(taskItem.description) as Widget,
         onEdit: (taskItem) => TaskItemEditScreen(
-          parent: widget.task,
+          parent: _parent.parent,
           taskItem: taskItem,
           billingType: taskAndRate?.billingType ?? BillingType.timeAndMaterial,
           hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
@@ -113,7 +128,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
                 HMBCompleteIcon(
                   onPressed: () => markAsCompleted(
                     TaskItemContext(
-                      task: widget.task!,
+                      task: _parent.parent!,
                       taskItem: taskItem,
                       billingType: taskAndRate.billingType,
                       wasReturned: false,
@@ -159,7 +174,11 @@ class _TaskItemListScreenState<P extends Entity<P>>
   }
 
   Future<List<TaskItem>> _fetchItems(bool showCompleted) async {
-    final items = await DaoTaskItem().getByTask(widget.task!.id);
+    final task = _parent.parent;
+    if (task == null) {
+      return const [];
+    }
+    final items = await DaoTaskItem().getByTask(task.id);
     final search = _filterText;
 
     return items.where((item) {
