@@ -53,7 +53,6 @@ import '../widgets/splash_screen.dart';
 import '../wizard/setup_wizard.dart';
 import 'dashboards/accounting/accounting_dashboard.dart';
 import 'dashboards/accounting/aged_receivables_screen.dart';
-import 'dashboards/accounting/cash_received_screen.dart';
 import 'dashboards/accounting/debtor_statement_screen.dart';
 import 'dashboards/accounting/job_profit_report_screen.dart';
 import 'dashboards/accounting/profit_and_loss_screen.dart';
@@ -301,7 +300,7 @@ List<GoRoute> accountingRoutes() => [
   ),
   GoRoute(
     path: 'cash_received',
-    builder: (_, _) => const HomeScaffold(initialScreen: CashReceivedScreen()),
+    builder: (_, _) => const HomeScaffold(initialScreen: PaymentListScreen()),
   ),
   GoRoute(
     path: 'tax_summary',
