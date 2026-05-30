@@ -94,8 +94,14 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
     _paymentOptionsController.text = system.paymentOptions;
     _defaultProfitMarginController.text =
         (await DaoSystem().getDefaultProfitMargin()).toString();
+    final configuredFinancialYearStartMonth =
+        await AppSettings.getConfiguredFinancialYearStartMonth();
     _financialYearStartMonthController.text =
-        (await AppSettings.getFinancialYearStartMonth()).toString();
+        (configuredFinancialYearStartMonth ??
+                AccountingPeriod.defaultFinancialYearStartMonthForCountry(
+                  system.countryCode,
+                ))
+            .toString();
     _taxDisplayMode = await AppSettings.getTaxDisplayMode();
     _taxRegistered = _taxDisplayMode != TaxDisplayMode.none;
     _taxScheme = await _loadSelectedTaxScheme(system);

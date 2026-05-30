@@ -84,33 +84,17 @@ class AccountingPeriod {
   static Future<AccountingPeriod> forFinancialYear(DateTime date) async {
     final configuredStartMonth =
         await AppSettings.getConfiguredFinancialYearStartMonth();
-    final countryDefault = _defaultFinancialYearStartMonthForCountry(
-      (await DaoSystem().get()).countryCode,
-    );
     return AccountingPeriod.financialYear(
       date: date,
-      startMonth: _financialYearStartMonth(
-        configuredStartMonth: configuredStartMonth,
-        countryDefault: countryDefault,
-      ),
+      startMonth:
+          configuredStartMonth ??
+          defaultFinancialYearStartMonthForCountry(
+            (await DaoSystem().get()).countryCode,
+          ),
     );
   }
 
-  static int _financialYearStartMonth({
-    required int? configuredStartMonth,
-    required int countryDefault,
-  }) {
-    if (configuredStartMonth == null) {
-      return countryDefault;
-    }
-    if (configuredStartMonth == AppSettings.financialYearStartMonthDefault &&
-        countryDefault != AppSettings.financialYearStartMonthDefault) {
-      return countryDefault;
-    }
-    return configuredStartMonth;
-  }
-
-  static int _defaultFinancialYearStartMonthForCountry(String? countryCode) {
+  static int defaultFinancialYearStartMonthForCountry(String? countryCode) {
     switch (countryCode?.trim().toUpperCase()) {
       case 'AU':
         return 7;
