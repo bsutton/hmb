@@ -31,6 +31,7 @@ Future<File> buildDebtorStatementPdfFile({
   final logo = await _getLogo(system);
   final rows = _statementRows(report);
   final systemColor = PdfColor.fromInt(system.billingColour);
+  final generatedAt = _formatTimestamp(DateTime.now());
 
   final pdf = pw.Document()
     ..addPage(
@@ -38,7 +39,7 @@ Future<File> buildDebtorStatementPdfFile({
         pageTheme: pw.PageTheme(
           margin: pw.EdgeInsets.zero,
           buildBackground: (context) =>
-              _background(context, system, systemColor),
+              _background(context, system, systemColor, generatedAt),
         ),
         build: (context) => [
           pw.Padding(
@@ -70,6 +71,7 @@ pw.Widget _background(
   pw.Context context,
   System system,
   PdfColor systemColor,
+  String generatedAt,
 ) => pw.Stack(
   children: [
     pw.Positioned(
@@ -103,7 +105,7 @@ pw.Widget _background(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
             pw.Text(
-              'Customer statement',
+              'Generated $generatedAt',
               style: const pw.TextStyle(fontSize: 10, color: PdfColors.white),
             ),
             pw.Text(
@@ -195,7 +197,7 @@ pw.Widget _statementTable(List<_StatementPdfRow> rows, PdfColor systemColor) =>
         'Activity',
         'Reference',
         'Invoice Amount',
-        'Payments/Credits',
+        'Payments/\nCredits',
         'Balance',
       ],
       data: [
@@ -261,6 +263,9 @@ pw.Widget _balanceDue(Money balance) => pw.Row(
 
 pw.Widget _howToPay(System system) {
   final rows = <pw.Widget>[];
+  if (system.paymentOptions.trim().isNotEmpty) {
+    rows.add(pw.Text('Payment Options: ${system.paymentOptions}'));
+  }
   if (system.showBsbAccountOnInvoice ?? false) {
     if (system.bsb != null && system.bsb!.trim().isNotEmpty) {
       rows.add(pw.Text('BSB: ${system.bsb}'));
@@ -284,9 +289,6 @@ pw.Widget _howToPay(System system) {
         ),
       ),
     );
-  }
-  if (system.paymentOptions.trim().isNotEmpty) {
-    rows.add(pw.Text('Payment Options: ${system.paymentOptions}'));
   }
   rows.add(pw.Text(paymentTerms(system)));
   if (system.termsUrl != null && system.termsUrl!.trim().isNotEmpty) {
@@ -363,6 +365,15 @@ Future<pw.Widget?> _getLogo(System system) async {
     width: system.logoAspectRatio.width.toDouble(),
     height: system.logoAspectRatio.height.toDouble(),
   );
+}
+
+String _formatTimestamp(DateTime date) {
+  final year = date.year.toString().padLeft(4, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+  final hour = date.hour.toString().padLeft(2, '0');
+  final minute = date.minute.toString().padLeft(2, '0');
+  return '$year-$month-$day $hour:$minute';
 }
 
 class _StatementPdfRow {

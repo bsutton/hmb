@@ -277,24 +277,33 @@ Closing balance: ${report.closingBalance}
   }
 
   Widget _buildStatementRow(DebtorStatementReport report, _StatementRow row) =>
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(row.description, maxLines: 2, overflow: TextOverflow.ellipsis),
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            children: [
-              if (row.date != null) Text(formatDate(row.date!)),
-              if (row.invoiceNumber != null)
-                Text('Invoice #${row.invoiceNumber}'),
-              if (report.customerId == null && row.customerName != null)
-                Text(row.customerName!),
-              if (row.amount != null) Text(row.amount.toString()),
-              Text('Balance: ${row.balance}'),
-            ],
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: Theme.of(context).dividerColor),
           ),
-        ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(row.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
+              children: [
+                if (row.date != null) Text(formatDate(row.date!)),
+                if (row.invoiceNumber != null)
+                  Text('Invoice #${row.invoiceNumber}'),
+                if (report.customerId == null && row.customerName != null)
+                  Text(row.customerName!),
+                if (row.amount != null) Text(row.amount.toString()),
+                Text('Balance: ${row.balance}'),
+              ],
+            ),
+          ],
+        ),
       );
 
   List<_StatementRow> _statementRows(DebtorStatementReport report) {
