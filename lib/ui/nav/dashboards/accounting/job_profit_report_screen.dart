@@ -29,6 +29,7 @@ class JobProfitReportScreen extends StatefulWidget {
 
 class _JobProfitReportScreenState extends State<JobProfitReportScreen> {
   final _selectedJob = SelectedJob();
+  var _showOldJobs = false;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -40,7 +41,19 @@ class _JobProfitReportScreenState extends State<JobProfitReportScreen> {
         children: [
           HMBSelectJob(
             selectedJob: _selectedJob,
+            showAdd: false,
+            items: (filter) => _showOldJobs
+                ? DaoJob().getByFilter(filter)
+                : DaoJob().getActiveJobs(filter),
             onSelected: (_) => setState(() {}),
+          ),
+          CheckboxListTile(
+            title: const Text('Show old jobs'),
+            value: _showOldJobs,
+            onChanged: (value) => setState(() {
+              _showOldJobs = value ?? false;
+            }),
+            controlAffinity: ListTileControlAffinity.leading,
           ),
           const SizedBox(height: 12),
           if (_selectedJob.jobId == null)

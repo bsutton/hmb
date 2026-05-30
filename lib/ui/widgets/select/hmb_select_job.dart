@@ -21,6 +21,7 @@ class HMBSelectJob extends StatefulWidget {
   final Future<List<Job>> Function(String? filter)? items;
   final bool required;
   final String title;
+  final bool showAdd;
 
   const HMBSelectJob({
     required this.selectedJob,
@@ -29,6 +30,7 @@ class HMBSelectJob extends StatefulWidget {
     this.title = 'Job',
     this.items,
     this.required = false,
+    this.showAdd = true,
   });
 
   @override
@@ -102,7 +104,7 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
           required: widget.required,
         ),
       ),
-      HMBButtonAdd(enabled: true, onAdd: _addJob),
+      if (widget.showAdd) HMBButtonAdd(enabled: true, onAdd: _addJob),
     ],
   );
 }
