@@ -18,11 +18,13 @@ import 'package:money2/money2.dart';
 import '../../../../dao/dao.g.dart';
 import '../../../../util/dart/format.dart';
 import '../../../dialog/email_dialog.dart';
+import '../../../widgets/icons/hmb_filter_icon.dart';
 import '../../../widgets/layout/layout.g.dart';
 import '../../../widgets/media/pdf_preview.dart';
+import '../../../widgets/select/hmb_filter_sheet.dart';
 import '../../../widgets/select/hmb_select_customer.dart';
 import '../../../widgets/select/hmb_select_job.dart';
-import '../../../widgets/widgets.g.dart';
+import '../../../widgets/widgets.g.dart' hide StatefulBuilder;
 import 'accounting_period_selector.dart';
 import 'debtor_statement_pdf.dart';
 import 'report_csv_export.dart';
@@ -37,8 +39,10 @@ class DebtorStatementScreen extends StatefulWidget {
 class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
   final _selectedCustomer = SelectedCustomer();
   final _selectedJob = SelectedJob();
+  var _periodPreset = AccountingPeriodPreset.month;
   late DateTime _startInclusive;
   late DateTime _endExclusive;
+  late DateTime _periodAnchor;
   late Future<DebtorStatementReport> _report;
 
   @override
@@ -47,6 +51,7 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
     final now = DateTime.now();
     _startInclusive = DateTime(now.year, now.month);
     _endExclusive = DateTime(now.year, now.month + 1);
+    _periodAnchor = _startInclusive;
     _reload();
   }
 
@@ -67,28 +72,24 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
       child: HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          HMBSelectCustomer(
-            selectedCustomer: _selectedCustomer,
-            onSelected: (_) => setState(_reload),
-            showAdd: false,
+          Row(
+            children: [
+              Expanded(
+                child: HMBSelectCustomer(
+                  selectedCustomer: _selectedCustomer,
+                  onSelected: (_) => setState(_reload),
+                  showAdd: false,
+                ),
+              ),
+              HMBFilterIcon(
+                active: _isFilterActive(),
+                hint: 'Filter customer statement',
+                onPressed: _showFilterSheet,
+              ),
+            ],
           ),
           const SizedBox(height: 12),
-          HMBSelectJob(
-            selectedJob: _selectedJob,
-            onSelected: (_) => setState(_reload),
-          ),
-          const SizedBox(height: 12),
-          AccountingPeriodSelector(
-            initialPeriod: AccountingPeriod(
-              startInclusive: _startInclusive,
-              endExclusive: _endExclusive,
-            ),
-            onChanged: (period) => setState(() {
-              _startInclusive = period.startInclusive;
-              _endExclusive = period.endExclusive;
-              _reload();
-            }),
-          ),
+          _buildDateScroll(),
           const SizedBox(height: 12),
           FutureBuilderEx<DebtorStatementReport>(
             future: _report,
@@ -101,6 +102,212 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
       ),
     ),
   );
+
+  Widget _buildDateScroll() => Surface(
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          tooltip: 'Previous period',
+          icon: const Icon(Icons.chevron_left),
+          onPressed: () => _movePeriod(-1),
+        ),
+        Expanded(
+          child: Text(
+            _periodLabel,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+        ),
+        IconButton(
+          tooltip: 'Next period',
+          icon: const Icon(Icons.chevron_right),
+          onPressed: () => _movePeriod(1),
+        ),
+      ],
+    ),
+  );
+
+  Future<void> _showFilterSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => HMBFilterSheet(
+        contentBuilder: _buildFilterSheet,
+        onReset: _resetFilters,
+      ),
+    );
+  }
+
+  Widget _buildFilterSheet(BuildContext context) => StatefulBuilder(
+    builder: (context, setSheetState) => HMBColumn(
+      children: [
+        HMBSelectJob(
+          selectedJob: _selectedJob,
+          onSelected: (_) {
+            setState(_reload);
+            setSheetState(() {});
+          },
+        ),
+        const SizedBox(height: 12),
+        DropdownButton<AccountingPeriodPreset>(
+          value: _periodPreset,
+          isExpanded: true,
+          items: [
+            for (final preset in AccountingPeriodPreset.values)
+              DropdownMenuItem(
+                value: preset,
+                child: Text(_presetLabel(preset)),
+              ),
+          ],
+          onChanged: (value) async {
+            if (value == null) {
+              return;
+            }
+            _periodPreset = value;
+            await _setPeriodForAnchor();
+            setSheetState(() {});
+          },
+        ),
+        if (_periodPreset == AccountingPeriodPreset.custom)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                icon: const Icon(Icons.calendar_today),
+                label: Text(formatDate(_startInclusive)),
+                onPressed: () async {
+                  await _pickStart(context);
+                  setSheetState(() {});
+                },
+              ),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.event),
+                label: Text(formatDate(_lastDayFromDates())),
+                onPressed: () async {
+                  await _pickEnd(context);
+                  setSheetState(() {});
+                },
+              ),
+            ],
+          ),
+      ],
+    ),
+  );
+
+  bool _isFilterActive() =>
+      _selectedJob.jobId != null ||
+      _periodPreset != AccountingPeriodPreset.month;
+
+  void _resetFilters() {
+    setState(() {
+      _selectedJob.jobId = null;
+      _periodPreset = AccountingPeriodPreset.month;
+      final month = DateTime(_periodAnchor.year, _periodAnchor.month);
+      _periodAnchor = month;
+      _startInclusive = month;
+      _endExclusive = DateTime(month.year, month.month + 1);
+      _reload();
+    });
+  }
+
+  Future<void> _movePeriod(int direction) async {
+    _periodAnchor = switch (_periodPreset) {
+      AccountingPeriodPreset.month => DateTime(
+        _periodAnchor.year,
+        _periodAnchor.month + direction,
+      ),
+      AccountingPeriodPreset.quarter => DateTime(
+        _periodAnchor.year,
+        _periodAnchor.month + (direction * 3),
+      ),
+      AccountingPeriodPreset.year || AccountingPeriodPreset.financialYear =>
+        DateTime(_periodAnchor.year + direction, _periodAnchor.month),
+      AccountingPeriodPreset.custom => _periodAnchor.add(
+        Duration(days: direction),
+      ),
+    };
+    await _setPeriodForAnchor();
+  }
+
+  Future<void> _setPeriodForAnchor() async {
+    final next = switch (_periodPreset) {
+      AccountingPeriodPreset.month => AccountingPeriod.forMonth(_periodAnchor),
+      AccountingPeriodPreset.quarter => AccountingPeriod.forQuarter(
+        _periodAnchor,
+      ),
+      AccountingPeriodPreset.year => AccountingPeriod.forYear(_periodAnchor),
+      AccountingPeriodPreset.financialYear =>
+        await AccountingPeriod.forFinancialYear(_periodAnchor),
+      AccountingPeriodPreset.custom => AccountingPeriod(
+        startInclusive: _startInclusive,
+        endExclusive: _endExclusive,
+      ),
+    };
+    _setPeriod(next);
+  }
+
+  Future<void> _pickStart(BuildContext context) async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _startInclusive,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (selected == null) {
+      return;
+    }
+    _setPeriod(
+      AccountingPeriod(
+        startInclusive: selected,
+        endExclusive: _endExclusive.isAfter(selected)
+            ? _endExclusive
+            : selected.add(const Duration(days: 1)),
+      ),
+    );
+  }
+
+  Future<void> _pickEnd(BuildContext context) async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _lastDayFromDates(),
+      firstDate: _startInclusive,
+      lastDate: DateTime(2100),
+    );
+    if (selected == null) {
+      return;
+    }
+    _setPeriod(
+      AccountingPeriod(
+        startInclusive: _startInclusive,
+        endExclusive: selected.add(const Duration(days: 1)),
+      ),
+    );
+  }
+
+  void _setPeriod(AccountingPeriod period) {
+    setState(() {
+      _startInclusive = period.startInclusive;
+      _endExclusive = period.endExclusive;
+      _periodAnchor = period.startInclusive;
+      _reload();
+    });
+  }
+
+  String get _periodLabel =>
+      '${formatDate(_startInclusive)} to ${formatDate(_lastDayFromDates())}';
+
+  DateTime _lastDayFromDates() =>
+      _endExclusive.subtract(const Duration(days: 1));
+
+  String _presetLabel(AccountingPeriodPreset preset) => switch (preset) {
+    AccountingPeriodPreset.month => 'Month',
+    AccountingPeriodPreset.quarter => 'Quarter',
+    AccountingPeriodPreset.year => 'Calendar year',
+    AccountingPeriodPreset.financialYear => 'Financial year',
+    AccountingPeriodPreset.custom => 'Custom',
+  };
 
   Widget _buildReport(DebtorStatementReport report) => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.stretch,
