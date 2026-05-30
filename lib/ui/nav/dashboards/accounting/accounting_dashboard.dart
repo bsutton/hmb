@@ -70,7 +70,7 @@ class _AccountingDashboardPageState extends State<AccountingDashboardPage> {
       const InvoiceDashlet(),
       DashletCard<void>.route(
         label: 'Customer Payments',
-        hint: 'Record and allocate customer payments',
+        hint: 'Record, allocate and review customer payments',
         icon: Icons.payments,
         value: () async => const DashletValue(null),
         route: '/home/accounting/payments',
@@ -82,14 +82,6 @@ class _AccountingDashboardPageState extends State<AccountingDashboardPage> {
         icon: Icons.flag,
         value: () async => const DashletValue<String>('fixed price'),
         route: '/home/accounting/milestones',
-      ),
-      DashletCard<void>.route(
-        label: 'Payments Received',
-        hint: 'Report customer payments received for a period',
-        icon: Icons.payments,
-        value: () async => const DashletValue(null),
-        route: '/home/accounting/cash_received',
-        valueBuilder: (_, _) => const SizedBox.shrink(),
       ),
       DashletCard<void>.route(
         label: 'Aged Receivables',
@@ -160,7 +152,12 @@ class _AccountingDashboardPageState extends State<AccountingDashboardPage> {
           child: HMBButton.withIcon(
             label: _syncing ? 'Syncing' : 'Sync',
             hint: 'Refresh invoice payment status from Xero',
-            icon: const Icon(Icons.sync),
+            icon: _syncing
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.sync),
             enabled: !_syncing,
             onPressed: _syncAccounting,
           ),

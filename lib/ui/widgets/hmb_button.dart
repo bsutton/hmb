@@ -25,7 +25,7 @@ import 'layout/hmb_empty.dart';
 /// A generic HMB button with optional hint shown on long press.
 class HMBButton extends StatelessWidget {
   final String label;
-  final Icon? icon;
+  final Widget? icon;
   final VoidCallback onPressed;
   final bool enabled;
   final Color color;
