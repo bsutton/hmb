@@ -24,8 +24,8 @@ class SaveAndClose extends StatelessWidget {
   final AsyncVoidCallback onCancel;
   final bool showSaveOnly;
 
-  /// The [showSaveOnly] argument indicates that the first save should keep
-  /// the editor open so child records can be added.
+  /// Retained for older call sites. Save now always closes when validation
+  /// passes; child add flows use the edit screen's ensure-saved hook.
   const SaveAndClose({
     required this.onSave,
     required this.showSaveOnly,
@@ -41,19 +41,9 @@ class SaveAndClose extends StatelessWidget {
       children: [
         HMBButton(
           label: 'Save',
-          hint: showSaveOnly
-              ? 'Save your changes so child records can be added'
-              : 'Save your changes',
-          onPressed: () => unawaited(onSave(close: !showSaveOnly)),
+          hint: 'Save your changes',
+          onPressed: () => unawaited(onSave(close: true)),
         ),
-        if (showSaveOnly) ...[
-          const HMBSpacer(width: true),
-          HMBButton(
-            label: 'Save & Close',
-            hint: 'Save your changes and close this screen',
-            onPressed: () => unawaited(onSave(close: true)),
-          ),
-        ],
         const HMBSpacer(width: true),
         HMBButton(
           onPressed: onCancel,

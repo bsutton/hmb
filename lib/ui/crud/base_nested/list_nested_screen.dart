@@ -30,6 +30,23 @@ class Parent<P extends Entity<P>> {
   Parent(this.parent);
 }
 
+class ParentSaveScope extends InheritedWidget {
+  final Future<Entity?> Function() ensureSaved;
+
+  const ParentSaveScope({
+    required this.ensureSaved,
+    required super.child,
+    super.key,
+  });
+
+  static ParentSaveScope? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ParentSaveScope>();
+
+  @override
+  bool updateShouldNotify(ParentSaveScope oldWidget) =>
+      ensureSaved != oldWidget.ensureSaved;
+}
+
 enum CardDetail { full, summary }
 
 typedef Allowed<C> = bool Function(C entity);
@@ -110,17 +127,42 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
   Widget build(BuildContext context) =>
       Column(children: [_buildTitle(), _buildBody()]);
 
-  Widget _buildAddButton(BuildContext context) => HMBButtonAdd(
-    enabled: widget.parent.parent != null,
-    onAdd: () async {
-      if (context.mounted) {
-        await Navigator.push(
-          context,
-          MaterialPageRoute<void>(builder: (context) => widget.onEdit(null)),
-        ).then((_) => _refreshEntityList());
-      }
-    },
-  );
+  Widget _buildAddButton(BuildContext context) {
+    final saveScope = ParentSaveScope.maybeOf(context);
+    return HMBButtonAdd(
+      enabled: widget.parent.parent != null || saveScope != null,
+      onAdd: () async {
+        if (!await _ensureParentSaved(context)) {
+          return;
+        }
+        if (context.mounted) {
+          await Navigator.push(
+            context,
+            MaterialPageRoute<void>(builder: (context) => widget.onEdit(null)),
+          ).then((_) => _refreshEntityList());
+        }
+      },
+    );
+  }
+
+  Future<bool> _ensureParentSaved(BuildContext context) async {
+    if (widget.parent.parent != null) {
+      return true;
+    }
+    final saveScope = ParentSaveScope.maybeOf(context);
+    if (saveScope == null) {
+      return false;
+    }
+    final savedParent = await saveScope.ensureSaved();
+    if (savedParent == null) {
+      return false;
+    }
+    widget.parent.parent = savedParent as P;
+    if (mounted) {
+      setState(() {});
+    }
+    return true;
+  }
 
   Widget _buildTitle() => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,7 +203,8 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
           if (widget.parent.parent == null) {
             return Center(
               child: Text(
-                'Save the ${widget.parentTitle} first.',
+                'Click + to save the ${widget.parentTitle} and add '
+                'a ${widget.entityNameSingular}.',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,

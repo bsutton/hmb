@@ -18,6 +18,7 @@ import '../../../entity/entity.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/save_and_close.dart';
+import '../base_nested/list_nested_screen.dart';
 
 abstract class EntityState<E extends Entity<E>> {
   Future<E> forInsert();
@@ -99,9 +100,12 @@ class EntityEditScreenState<E extends Entity<E>>
                 // controller: widget.scrollController ??
                 //     ScrollController(), // Attach the controller here
                 padding: const EdgeInsets.all(4),
-                child: widget.editor(
-                  widget.entityState.currentEntity,
-                  isNew: isNew,
+                child: ParentSaveScope(
+                  ensureSaved: _ensureSavedForChildAction,
+                  child: widget.editor(
+                    widget.entityState.currentEntity,
+                    isNew: isNew,
+                  ),
                 ),
               ),
             ),
@@ -120,6 +124,20 @@ class EntityEditScreenState<E extends Entity<E>>
     },
   );
   Future<void> _save({bool close = false}) async {
+    final didSave = await _saveEntity();
+    if (didSave && close && mounted) {
+      Navigator.of(context).pop(widget.entityState.currentEntity);
+    }
+  }
+
+  Future<E?> _ensureSavedForChildAction() async {
+    if (await _saveEntity()) {
+      return widget.entityState.currentEntity;
+    }
+    return null;
+  }
+
+  Future<bool> _saveEntity() async {
     if (_formKey.currentState!.validate() && await widget.crossValidator()) {
       try {
         if (widget.entityState.currentEntity != null) {
@@ -131,6 +149,8 @@ class EntityEditScreenState<E extends Entity<E>>
               (await widget.preSave!(updatedEntity))) {
             await widget.dao.update(updatedEntity);
             widget.entityState.currentEntity = updatedEntity;
+          } else {
+            return false;
           }
         } else {
           // Insert new entity
@@ -138,13 +158,12 @@ class EntityEditScreenState<E extends Entity<E>>
           if (widget.preSave == null || (await widget.preSave!(newEntity))) {
             await widget.dao.insert(newEntity);
             widget.entityState.currentEntity = newEntity;
+          } else {
+            return false;
           }
         }
         await saved();
-
-        if (close && mounted) {
-          Navigator.of(context).pop(widget.entityState.currentEntity);
-        }
+        return true;
       } catch (error) {
         // Check if the error indicates a duplicate name (unique
         //constraint violation)
@@ -157,6 +176,7 @@ class EntityEditScreenState<E extends Entity<E>>
         }
       }
     }
+    return false;
   }
 
   Future<void> saved() async {

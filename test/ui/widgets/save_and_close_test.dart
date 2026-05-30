@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/ui/widgets/save_and_close.dart';
 
 void main() {
-  testWidgets('new entities save without closing', (tester) async {
+  testWidgets('new entities save and close', (tester) async {
     bool? closeValue;
 
     await tester.pumpWidget(
@@ -22,30 +22,9 @@ void main() {
     );
 
     expect(find.text('Save'), findsOneWidget);
-    expect(find.text('Save & Close'), findsOneWidget);
+    expect(find.text('Save & Close'), findsNothing);
 
     await tester.tap(find.text('Save'));
-    await tester.pump();
-
-    expect(closeValue, isFalse);
-  });
-
-  testWidgets('new entities can save and close in one click', (tester) async {
-    bool? closeValue;
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SaveAndClose(
-            showSaveOnly: true,
-            onSave: ({required close}) async => closeValue = close,
-            onCancel: () async {},
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Save & Close'));
     await tester.pump();
 
     expect(closeValue, isTrue);
