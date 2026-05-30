@@ -504,6 +504,8 @@ void main() {
           DebtorStatementEntry(
             type: DebtorStatementEntryType.invoice,
             invoiceId: 42,
+            invoiceNumber: 'INV-42',
+            customerName: 'Smith, Jones',
             date: DateTime(2026, 4),
             description: 'Invoice, materials',
             amount: MoneyEx.dollars(10),

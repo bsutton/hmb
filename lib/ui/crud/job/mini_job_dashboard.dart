@@ -207,8 +207,7 @@ class MiniJobDashboard extends StatelessWidget {
                 compact: true,
                 onBeforeOpen: _markJobAccessed,
                 value: () async {
-                  final all = await DaoInvoice().getByFilter(null);
-                  final list = all.where((i) => i.jobId == job.id).toList();
+                  final list = await DaoInvoice().getByJobId(job.id);
                   return DashletValue<int>(list.length);
                 },
                 builder: (_, _) => HMBFullPageChildScreen(

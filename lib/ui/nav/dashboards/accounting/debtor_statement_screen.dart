@@ -152,7 +152,7 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
       if (report.entries.isEmpty)
         const Surface(child: Text('No statement activity for this period.'))
       else
-        for (final entry in report.entries) _buildEntry(entry),
+        for (final entry in report.entries) _buildEntry(report, entry),
     ],
   );
 
@@ -252,7 +252,10 @@ Closing balance: ${report.closingBalance}
         .toList();
   }
 
-  Widget _buildEntry(DebtorStatementEntry entry) => Padding(
+  Widget _buildEntry(
+    DebtorStatementReport report,
+    DebtorStatementEntry entry,
+  ) => Padding(
     padding: const EdgeInsets.only(bottom: 8),
     child: Surface(
       elevation: SurfaceElevation.e1,
@@ -265,7 +268,8 @@ Closing balance: ${report.closingBalance}
             runSpacing: 8,
             children: [
               Text(formatDate(entry.date)),
-              Text('Invoice #${entry.invoiceId}'),
+              Text('Invoice #${entry.invoiceNumber}'),
+              if (report.customerId == null) Text(entry.customerName),
               Text(entry.amount.toString()),
             ],
           ),
@@ -283,13 +287,25 @@ Closing balance: ${report.closingBalance}
     ['Opening balance', report.openingBalance.toString()],
     ['Closing balance', report.closingBalance.toString()],
     [],
-    ['Date', 'Invoice', 'Description', 'Amount'],
+    if (report.customerId == null)
+      ['Date', 'Invoice', 'Customer', 'Description', 'Amount']
+    else
+      ['Date', 'Invoice', 'Description', 'Amount'],
     for (final entry in report.entries)
-      [
-        formatDate(entry.date),
-        entry.invoiceId.toString(),
-        entry.description,
-        entry.amount.toString(),
-      ],
+      if (report.customerId == null)
+        [
+          formatDate(entry.date),
+          entry.invoiceNumber,
+          entry.customerName,
+          entry.description,
+          entry.amount.toString(),
+        ]
+      else
+        [
+          formatDate(entry.date),
+          entry.invoiceNumber,
+          entry.description,
+          entry.amount.toString(),
+        ],
   ];
 }

@@ -13,6 +13,7 @@
 
 import 'package:money2/money2.dart';
 
+import '../api/external_accounting.dart';
 import '../entity/credit_note.dart';
 import '../entity/invoice.dart';
 import '../entity/tax_code.dart';
@@ -207,6 +208,8 @@ enum DebtorStatementEntryType { invoice, payment, credit, adjustment }
 class DebtorStatementEntry {
   final DebtorStatementEntryType type;
   final int invoiceId;
+  final String invoiceNumber;
+  final String customerName;
   final DateTime date;
   final String description;
   final Money amount;
@@ -214,6 +217,8 @@ class DebtorStatementEntry {
   const DebtorStatementEntry({
     required this.type,
     required this.invoiceId,
+    required this.invoiceNumber,
+    required this.customerName,
     required this.date,
     required this.description,
     required this.amount,
@@ -444,6 +449,7 @@ class AccountingReportService {
   }) async {
     final invoices = await _invoicesForCustomer(customerId, jobId: jobId);
     final ledgerService = DebtorLedgerService();
+    final externalAccountingEnabled = await ExternalAccounting().isEnabled();
     var openingBalance = MoneyEx.zero;
     final entries = <DebtorStatementEntry>[];
 
@@ -451,6 +457,10 @@ class AccountingReportService {
       if (invoice.isExternallyDeletedOrVoided) {
         continue;
       }
+      final invoiceNumber = invoice.displayNumber(
+        externalAccountingEnabled: externalAccountingEnabled,
+      );
+      final customerName = await _invoiceCustomerName(invoice);
 
       if (invoice.createdDate.isBefore(startInclusive)) {
         openingBalance += invoice.totalAmount;
@@ -459,8 +469,10 @@ class AccountingReportService {
           DebtorStatementEntry(
             type: DebtorStatementEntryType.invoice,
             invoiceId: invoice.id,
+            invoiceNumber: invoiceNumber,
+            customerName: customerName,
             date: invoice.createdDate,
-            description: 'Invoice #${invoice.bestNumber}',
+            description: 'Invoice #$invoiceNumber',
             amount: invoice.totalAmount,
           ),
         );
@@ -471,6 +483,8 @@ class AccountingReportService {
         _addPaidInvoiceEntry(
           entries: entries,
           invoice: invoice,
+          invoiceNumber: invoiceNumber,
+          customerName: customerName,
           openingBalance: (amount) => openingBalance += amount,
           startInclusive: startInclusive,
           endExclusive: endExclusive,
@@ -486,8 +500,10 @@ class AccountingReportService {
             DebtorStatementEntry(
               type: _statementEntryType(history.type),
               invoiceId: invoice.id,
+              invoiceNumber: invoiceNumber,
+              customerName: customerName,
               date: history.date,
-              description: '${history.title} - Invoice #${invoice.bestNumber}',
+              description: '${history.title} - Invoice #$invoiceNumber',
               amount: amount,
             ),
           );
@@ -513,6 +529,8 @@ class AccountingReportService {
   void _addPaidInvoiceEntry({
     required List<DebtorStatementEntry> entries,
     required Invoice invoice,
+    required String invoiceNumber,
+    required String customerName,
     required void Function(Money amount) openingBalance,
     required DateTime startInclusive,
     required DateTime endExclusive,
@@ -530,8 +548,10 @@ class AccountingReportService {
       DebtorStatementEntry(
         type: DebtorStatementEntryType.payment,
         invoiceId: invoice.id,
+        invoiceNumber: invoiceNumber,
+        customerName: customerName,
         date: paymentDate,
-        description: 'Payment received - Invoice #${invoice.bestNumber}',
+        description: 'Payment received - Invoice #$invoiceNumber',
         amount: amount,
       ),
     );
@@ -720,6 +740,15 @@ ${_jobClause(jobId, 'job_id')}
     }
     return (await DaoCustomer().getById(customerId))?.name ??
         'Customer #$customerId';
+  }
+
+  Future<String> _invoiceCustomerName(Invoice invoice) async {
+    final job = await DaoJob().getById(invoice.jobId);
+    final customerId = job?.customerId;
+    if (customerId == null) {
+      return 'Unknown customer';
+    }
+    return _customerName(customerId);
   }
 
   Future<String> _statementName({int? customerId, int? jobId}) async {
@@ -995,11 +1024,12 @@ class AccountingReportCsvExporter {
     ['Opening balance', report.openingBalance],
     ['Closing balance', report.closingBalance],
     [],
-    ['Date', 'Invoice', 'Description', 'Amount'],
+    ['Date', 'Invoice', 'Customer', 'Description', 'Amount'],
     for (final entry in report.entries)
       [
         entry.date.toIso8601String(),
-        entry.invoiceId,
+        entry.invoiceNumber,
+        entry.customerName,
         entry.description,
         entry.amount,
       ],

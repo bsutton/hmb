@@ -290,6 +290,16 @@ You must set the Account Code and Item Code in System | Integration before you c
   /// accounting system.
   bool isUploaded() => Strings.isNotBlank(externalInvoiceId);
 
+  String displayNumber({required bool externalAccountingEnabled}) {
+    if (Strings.isNotBlank(invoiceNum)) {
+      return invoiceNum!.trim();
+    }
+    if (!externalAccountingEnabled || isManagedLocally) {
+      return '$id';
+    }
+    return 'Not Uploaded (#$id)';
+  }
+
   bool get isExternallyDeletedOrVoided =>
       externalSyncStatus == InvoiceExternalSyncStatus.deleted ||
       externalSyncStatus == InvoiceExternalSyncStatus.voided;

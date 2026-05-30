@@ -15,68 +15,33 @@
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 
+import '../../../../api/xero/xero_invoice_payment_sync_service.dart';
 import '../../../../dao/dao.g.dart';
 import '../../../../entity/entity.g.dart';
 import '../../../../util/flutter/flutter_util.g.dart';
 import '../../../widgets/layout/layout.g.dart';
-import '../../../widgets/layout/surface.dart';
+import '../../../widgets/widgets.g.dart';
 import '../dashboard.dart';
 import '../dashlet_card.dart';
 import '../sync_warnings.dart';
 import 'invoices.dart';
 import 'receipt.dart';
 
-class AccountingDashboardPage extends StatelessWidget {
+class AccountingDashboardPage extends StatefulWidget {
   const AccountingDashboardPage({super.key});
+
+  @override
+  State<AccountingDashboardPage> createState() =>
+      _AccountingDashboardPageState();
+}
+
+class _AccountingDashboardPageState extends State<AccountingDashboardPage> {
+  var _syncing = false;
 
   @override
   Widget build(BuildContext context) => DashboardPage(
     title: 'Accounting',
-    header: JuneBuilder(
-      AccountingSyncWarningState.new,
-      builder: (_) {
-        final warning = June.getState<AccountingSyncWarningState>(
-          AccountingSyncWarningState.new,
-        ).warning;
-        if (warning == null) {
-          return const HMBEmpty();
-        }
-        return FutureBuilder<void>(
-          future: June.getState<AccountingSyncWarningState>(
-            AccountingSyncWarningState.new,
-          ).clearIfIntegrationDisabled(),
-          builder: (context, snapshot) {
-            final currentWarning = June.getState<AccountingSyncWarningState>(
-              AccountingSyncWarningState.new,
-            ).warning;
-            if (currentWarning == null) {
-              return const HMBEmpty();
-            }
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Surface(
-                rounded: true,
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.warning_amber_rounded,
-                      color: Colors.amber,
-                    ),
-                    const HMBSpacer(width: true),
-                    Expanded(
-                      child: Text(
-                        currentWarning.details,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    ),
+    header: _header(),
     dashlets: [
       DashletCard<void>.route(
         label: 'Estimator',
@@ -94,6 +59,7 @@ class AccountingDashboardPage extends StatelessWidget {
         value: getQuoteValue,
         route: '/home/accounting/quotes',
       ),
+      const ReceiptDashlet(),
       DashletCard<int>.route(
         label: 'To Be Invoiced',
         hint: 'List of Jobs that have unbilled hours',
@@ -103,8 +69,8 @@ class AccountingDashboardPage extends StatelessWidget {
       ),
       const InvoiceDashlet(),
       DashletCard<void>.route(
-        label: 'Payments',
-        hint: 'View customer payments and record pre-payments',
+        label: 'Customer Payments',
+        hint: 'Record and allocate customer payments',
         icon: Icons.payments,
         value: () async => const DashletValue(null),
         route: '/home/accounting/payments',
@@ -117,37 +83,12 @@ class AccountingDashboardPage extends StatelessWidget {
         value: () async => const DashletValue<String>('fixed price'),
         route: '/home/accounting/milestones',
       ),
-      const ReceiptDashlet(),
       DashletCard<void>.route(
-        label: 'Cash Received',
-        hint: 'Show customer payments received this month',
+        label: 'Payments Received',
+        hint: 'Report customer payments received for a period',
         icon: Icons.payments,
         value: () async => const DashletValue(null),
         route: '/home/accounting/cash_received',
-        valueBuilder: (_, _) => const SizedBox.shrink(),
-      ),
-      DashletCard<void>.route(
-        label: 'Tax Summary',
-        hint: 'Show configured tax collected and paid',
-        icon: Icons.receipt_long,
-        value: () async => const DashletValue(null),
-        route: '/home/accounting/tax_summary',
-        valueBuilder: (_, _) => const SizedBox.shrink(),
-      ),
-      DashletCard<void>.route(
-        label: 'Supplier Spend',
-        hint: 'Show receipt spend grouped by supplier',
-        icon: Icons.store,
-        value: () async => const DashletValue(null),
-        route: '/home/accounting/supplier_spend',
-        valueBuilder: (_, _) => const SizedBox.shrink(),
-      ),
-      DashletCard<void>.route(
-        label: 'Unlinked Costs',
-        hint: 'Find receipts not linked to task items',
-        icon: Icons.link_off,
-        value: () async => const DashletValue(null),
-        route: '/home/accounting/unlinked_costs',
         valueBuilder: (_, _) => const SizedBox.shrink(),
       ),
       DashletCard<void>.route(
@@ -156,14 +97,6 @@ class AccountingDashboardPage extends StatelessWidget {
         icon: Icons.request_quote,
         value: () async => const DashletValue(null),
         route: '/home/accounting/aged_receivables',
-        valueBuilder: (_, _) => const SizedBox.shrink(),
-      ),
-      DashletCard<void>.route(
-        label: 'Statements',
-        hint: 'Show customer statement balances and activity',
-        icon: Icons.description,
-        value: () async => const DashletValue(null),
-        route: '/home/accounting/statements',
         valueBuilder: (_, _) => const SizedBox.shrink(),
       ),
       DashletCard<void>.route(
@@ -182,8 +115,139 @@ class AccountingDashboardPage extends StatelessWidget {
         route: '/home/accounting/job_profit',
         valueBuilder: (_, _) => const SizedBox.shrink(),
       ),
+      DashletCard<void>.route(
+        label: 'Statements',
+        hint: 'Show customer statement balances and activity',
+        icon: Icons.description,
+        value: () async => const DashletValue(null),
+        route: '/home/accounting/statements',
+        valueBuilder: (_, _) => const SizedBox.shrink(),
+      ),
+      DashletCard<void>.route(
+        label: 'Unlinked Costs',
+        hint: 'Find receipts not linked to task items',
+        icon: Icons.link_off,
+        value: () async => const DashletValue(null),
+        route: '/home/accounting/unlinked_costs',
+        valueBuilder: (_, _) => const SizedBox.shrink(),
+      ),
+      DashletCard<void>.route(
+        label: 'Supplier Spend',
+        hint: 'Show receipt spend grouped by supplier',
+        icon: Icons.store,
+        value: () async => const DashletValue(null),
+        route: '/home/accounting/supplier_spend',
+        valueBuilder: (_, _) => const SizedBox.shrink(),
+      ),
+      DashletCard<void>.route(
+        label: 'Tax Summary',
+        hint: 'Show configured tax collected and paid',
+        icon: Icons.receipt_long,
+        value: () async => const DashletValue(null),
+        route: '/home/accounting/tax_summary',
+        valueBuilder: (_, _) => const SizedBox.shrink(),
+      ),
     ],
   );
+
+  Widget _header() => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: HMBColumn(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: HMBButton.withIcon(
+            label: _syncing ? 'Syncing' : 'Sync',
+            hint: 'Refresh invoice payment status from Xero',
+            icon: const Icon(Icons.sync),
+            enabled: !_syncing,
+            onPressed: _syncAccounting,
+          ),
+        ),
+        JuneBuilder(
+          AccountingSyncWarningState.new,
+          builder: (_) {
+            final warning = June.getState<AccountingSyncWarningState>(
+              AccountingSyncWarningState.new,
+            ).warning;
+            if (warning == null) {
+              return const HMBEmpty();
+            }
+            return FutureBuilder<void>(
+              future: June.getState<AccountingSyncWarningState>(
+                AccountingSyncWarningState.new,
+              ).clearIfIntegrationDisabled(),
+              builder: (context, snapshot) {
+                final currentWarning =
+                    June.getState<AccountingSyncWarningState>(
+                      AccountingSyncWarningState.new,
+                    ).warning;
+                if (currentWarning == null) {
+                  return const HMBEmpty();
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(top: 12, bottom: 16),
+                  child: Surface(
+                    rounded: true,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: Colors.amber,
+                        ),
+                        const HMBSpacer(width: true),
+                        Expanded(
+                          child: Text(
+                            currentWarning.details,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ],
+    ),
+  );
+
+  Future<void> _syncAccounting() async {
+    setState(() => _syncing = true);
+    var syncFailed = false;
+    try {
+      final updated = await XeroInvoicePaymentSyncService().sync(
+        force: true,
+        onError: (error, _) {
+          syncFailed = true;
+          June.getState<AccountingSyncWarningState>(
+            AccountingSyncWarningState.new,
+          ).showWarning(
+            'Xero invoice payment sync failed',
+            formatAccountingSyncWarning(error),
+          );
+        },
+      );
+      if (!syncFailed) {
+        June.getState<AccountingSyncWarningState>(
+          AccountingSyncWarningState.new,
+        ).clearWarning();
+        June.getState<DashboardReloaded>(DashboardReloaded.new).setState();
+        HMBToast.info(
+          updated == 1
+              ? '1 accounting item synced'
+              : '$updated accounting items synced',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _syncing = false);
+      }
+    }
+  }
 
   Future<DashletValue<String>> getQuoteValue() async {
     final quotes = await DaoQuote().getAll();
