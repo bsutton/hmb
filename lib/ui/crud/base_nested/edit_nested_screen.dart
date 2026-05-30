@@ -16,6 +16,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../../dao/dao.dart';
 import '../../../entity/entity.dart';
+import '../../widgets/form_validation.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/layout.g.dart' show HMBColumn;
 import '../../widgets/save_and_close.dart';
@@ -132,7 +133,13 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
   }
 
   Future<bool> _saveEntity() async {
-    if (_formKey.currentState!.validate() && await widget.crossValidator()) {
+    if (validateFormAndRevealErrors(
+          _formKey,
+          message:
+              'Fix the highlighted ${widget.entityName.toLowerCase()} fields '
+              'before continuing.',
+        ) &&
+        await widget.crossValidator()) {
       final savedEntity = widget.entityState.currentEntity;
       try {
         if (widget.entityState.currentEntity != null) {

@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 
 import '../../../dao/dao.dart';
 import '../../../entity/entity.dart';
+import '../../widgets/form_validation.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/save_and_close.dart';
@@ -138,7 +139,13 @@ class EntityEditScreenState<E extends Entity<E>>
   }
 
   Future<bool> _saveEntity() async {
-    if (_formKey.currentState!.validate() && await widget.crossValidator()) {
+    if (validateFormAndRevealErrors(
+          _formKey,
+          message:
+              'Fix the highlighted ${widget.entityName.toLowerCase()} fields '
+              'before continuing.',
+        ) &&
+        await widget.crossValidator()) {
       try {
         if (widget.entityState.currentEntity != null) {
           // Update existing entity
