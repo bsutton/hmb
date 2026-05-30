@@ -222,6 +222,40 @@ void main() {
   });
 
   test(
+    'aged receivables excludes paid invoices with partial allocations',
+    () async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.zero,
+        summary: 'Aged receivables paid partial test job',
+      );
+      final invoice = await _insertInvoice(
+        job,
+        MoneyEx.dollars(100),
+        dueDate: LocalDate(2026, 4),
+      );
+      await DebtorLedgerService().recordPayment(
+        invoiceId: invoice.id,
+        amount: MoneyEx.dollars(40),
+      );
+      await DaoInvoice().markPaidFromXero(
+        invoice.id,
+        paidDate: DateTime(2026, 4, 10),
+      );
+
+      final report = await AccountingReportService().agedReceivables(
+        asOfDate: LocalDate(2026, 5),
+      );
+
+      expect(
+        report.rows.map((row) => row.invoiceId),
+        isNot(contains(invoice.id)),
+      );
+      expect(report.total, MoneyEx.zero);
+    },
+  );
+
+  test(
     'debtor statement includes opening balance and period activity',
     () async {
       final job = await createJobWithCustomer(

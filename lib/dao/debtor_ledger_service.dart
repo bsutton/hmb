@@ -463,22 +463,15 @@ class DebtorLedgerService {
 
   Future<InvoiceLedgerSummary> invoiceSummary(int invoiceId) async {
     final invoice = await _requireInvoice(invoiceId);
-    final paid = await invoicePaidAmount(invoiceId);
+    var paid = await invoicePaidAmount(invoiceId);
     final credited = await invoiceCreditedAmount(invoiceId);
     final adjusted = await invoiceAdjustedAmount(invoiceId);
     final allocated = paid + credited + adjusted;
+    var balance = invoice.totalAmount - allocated;
 
-    if (allocated.isZero && invoice.paid) {
-      return InvoiceLedgerSummary(
-        total: invoice.totalAmount,
-        paid: invoice.totalAmount,
-        credited: MoneyEx.zero,
-        adjusted: MoneyEx.zero,
-        balance: MoneyEx.zero,
-        status: invoice.isExternallyDeletedOrVoided
-            ? DebtorInvoiceStatus.voided
-            : DebtorInvoiceStatus.paid,
-      );
+    if (invoice.paid && balance.isPositive) {
+      paid += balance;
+      balance = MoneyEx.zero;
     }
 
     final status = await _invoiceStatus(
@@ -492,7 +485,7 @@ class DebtorLedgerService {
       paid: paid,
       credited: credited,
       adjusted: adjusted,
-      balance: invoice.totalAmount - allocated,
+      balance: balance,
       status: status,
     );
   }
