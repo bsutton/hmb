@@ -15,6 +15,7 @@ import 'package:money2/money2.dart';
 
 import '../api/external_accounting.dart';
 import '../entity/credit_note.dart';
+import '../entity/debtor_adjustment.dart';
 import '../entity/invoice.dart';
 import '../entity/tax_code.dart';
 import '../entity/tax_scheme.dart';
@@ -357,6 +358,13 @@ class UnlinkedCostReport {
       rows.fold(MoneyEx.zero, (total, row) => total + row.amount);
 }
 
+class _StatementInvoice {
+  final Invoice invoice;
+  final String customerName;
+
+  const _StatementInvoice({required this.invoice, required this.customerName});
+}
+
 class AccountingReportService {
   Future<ProfitAndLossReport> profitAndLoss(AccountingPeriod period) async {
     final invoiceIncome = await _invoiceIncome(period: period);
@@ -447,20 +455,26 @@ class AccountingReportService {
     required DateTime endExclusive,
     int? jobId,
   }) async {
-    final invoices = await _invoicesForCustomer(customerId, jobId: jobId);
-    final ledgerService = DebtorLedgerService();
+    final invoices = await _statementInvoicesForCustomer(
+      customerId,
+      jobId: jobId,
+    );
+    final histories = await _statementHistoryForInvoices(
+      invoices.map((invoice) => invoice.invoice.id).toList(),
+    );
     final externalAccountingEnabled = await ExternalAccounting().isEnabled();
     var openingBalance = MoneyEx.zero;
     final entries = <DebtorStatementEntry>[];
 
-    for (final invoice in invoices) {
+    for (final statementInvoice in invoices) {
+      final invoice = statementInvoice.invoice;
       if (invoice.isExternallyDeletedOrVoided) {
         continue;
       }
       final invoiceNumber = invoice.displayNumber(
         externalAccountingEnabled: externalAccountingEnabled,
       );
-      final customerName = await _invoiceCustomerName(invoice);
+      final customerName = statementInvoice.customerName;
 
       if (invoice.createdDate.isBefore(startInclusive)) {
         openingBalance += invoice.totalAmount;
@@ -478,7 +492,7 @@ class AccountingReportService {
         );
       }
 
-      final historyEntries = await ledgerService.invoiceHistory(invoice.id);
+      final historyEntries = histories[invoice.id] ?? const [];
       if (invoice.paid && historyEntries.isEmpty) {
         _addPaidInvoiceEntry(
           entries: entries,
@@ -713,25 +727,36 @@ ${_jobClause(jobId, 'job_id')}
     ],
   );
 
-  Future<List<Invoice>> _invoicesForCustomer(
+  Future<List<_StatementInvoice>> _statementInvoicesForCustomer(
     int? customerId, {
     int? jobId,
   }) async {
-    final invoices = await DaoInvoice().getAll();
+    final where = <String>['1 = 1'];
+    final args = <Object?>[];
     if (jobId != null) {
-      return invoices.where((invoice) => invoice.jobId == jobId).toList();
+      where.add('i.job_id = ?');
+      args.add(jobId);
+    } else if (customerId != null) {
+      where.add('j.customer_id = ?');
+      args.add(customerId);
     }
-    if (customerId == null) {
-      return invoices;
-    }
-    final filtered = <Invoice>[];
-    for (final invoice in invoices) {
-      final job = await DaoJob().getById(invoice.jobId);
-      if (job?.customerId == customerId) {
-        filtered.add(invoice);
-      }
-    }
-    return filtered;
+    final db = DaoInvoice().withoutTransaction();
+    final rows = await db.rawQuery('''
+SELECT i.*, IFNULL(c.name, 'Unknown customer') AS statement_customer_name
+FROM invoice i
+LEFT JOIN job j ON j.id = i.job_id
+LEFT JOIN customer c ON c.id = j.customer_id
+WHERE ${where.join(' AND ')}
+ORDER BY i.created_date ASC, i.id ASC
+''', args);
+
+    return [
+      for (final row in rows)
+        _StatementInvoice(
+          invoice: Invoice.fromMap(row),
+          customerName: row['statement_customer_name']! as String,
+        ),
+    ];
   }
 
   Future<String> _customerName(int? customerId) async {
@@ -742,13 +767,99 @@ ${_jobClause(jobId, 'job_id')}
         'Customer #$customerId';
   }
 
-  Future<String> _invoiceCustomerName(Invoice invoice) async {
-    final job = await DaoJob().getById(invoice.jobId);
-    final customerId = job?.customerId;
-    if (customerId == null) {
-      return 'Unknown customer';
+  Future<Map<int, List<InvoiceLedgerHistoryEntry>>>
+  _statementHistoryForInvoices(List<int> invoiceIds) async {
+    if (invoiceIds.isEmpty) {
+      return const {};
     }
-    return _customerName(customerId);
+    final db = DaoInvoice().withoutTransaction();
+    final placeholders = List.filled(invoiceIds.length, '?').join(', ');
+    final histories = <int, List<InvoiceLedgerHistoryEntry>>{};
+    void add(int invoiceId, InvoiceLedgerHistoryEntry entry) {
+      histories.putIfAbsent(invoiceId, () => []).add(entry);
+    }
+
+    final payments = await db.rawQuery('''
+SELECT
+  pa.invoice_id,
+  pa.allocated_date,
+  pa.amount,
+  p.payment_method,
+  p.reference,
+  p.notes
+FROM debtor_payment_allocation pa
+LEFT JOIN debtor_payment p ON p.id = pa.payment_id
+WHERE pa.invoice_id IN ($placeholders)
+ORDER BY pa.allocated_date ASC, pa.id ASC
+''', invoiceIds);
+    for (final row in payments) {
+      add(
+        row['invoice_id']! as int,
+        InvoiceLedgerHistoryEntry(
+          type: InvoiceLedgerHistoryEntryType.payment,
+          date: DateTime.parse(row['allocated_date']! as String),
+          amount: MoneyEx.fromInt(row['amount']! as int),
+          title: 'Payment received',
+          detail: _paymentDetail(row),
+        ),
+      );
+    }
+
+    final credits = await db.rawQuery('''
+SELECT
+  ca.invoice_id,
+  ca.allocated_date,
+  ca.amount,
+  cn.reason
+FROM credit_allocation ca
+LEFT JOIN credit_note cn ON cn.id = ca.credit_note_id
+WHERE ca.invoice_id IN ($placeholders)
+ORDER BY ca.allocated_date ASC, ca.id ASC
+''', invoiceIds);
+    for (final row in credits) {
+      add(
+        row['invoice_id']! as int,
+        InvoiceLedgerHistoryEntry(
+          type: InvoiceLedgerHistoryEntryType.credit,
+          date: DateTime.parse(row['allocated_date']! as String),
+          amount: MoneyEx.fromInt(row['amount']! as int),
+          title: 'Credit applied',
+          detail: row['reason'] as String?,
+        ),
+      );
+    }
+
+    final adjustments = await db.rawQuery('''
+SELECT
+  invoice_id,
+  adjustment_date,
+  amount,
+  adjustment_type,
+  reason
+FROM debtor_adjustment
+WHERE invoice_id IN ($placeholders)
+ORDER BY adjustment_date ASC, id ASC
+''', invoiceIds);
+    for (final row in adjustments) {
+      final type = DebtorAdjustmentType.fromOrdinal(
+        row['adjustment_type'] as int?,
+      );
+      add(
+        row['invoice_id']! as int,
+        InvoiceLedgerHistoryEntry(
+          type: InvoiceLedgerHistoryEntryType.adjustment,
+          date: DateTime.parse(row['adjustment_date']! as String),
+          amount: MoneyEx.fromInt(row['amount']! as int),
+          title: _adjustmentTitle(type),
+          detail: row['reason'] as String?,
+        ),
+      );
+    }
+
+    for (final entries in histories.values) {
+      entries.sort((lhs, rhs) => lhs.date.compareTo(rhs.date));
+    }
+    return histories;
   }
 
   Future<String> _statementName({int? customerId, int? jobId}) async {
@@ -757,6 +868,24 @@ ${_jobClause(jobId, 'job_id')}
     }
     return _customerName(customerId);
   }
+
+  String? _paymentDetail(Map<String, Object?> row) {
+    final parts = [
+      row['payment_method'] as String?,
+      row['reference'] as String?,
+      row['notes'] as String?,
+    ].nonNulls.map((part) => part.trim()).where((part) => part.isNotEmpty);
+    return parts.isEmpty ? null : parts.join(' - ');
+  }
+
+  String _adjustmentTitle(DebtorAdjustmentType type) => switch (type) {
+    DebtorAdjustmentType.rounding => 'Rounding adjustment',
+    DebtorAdjustmentType.writeOff => 'Write-off',
+    DebtorAdjustmentType.badDebt => 'Bad debt write-off',
+    DebtorAdjustmentType.correction => 'Adjustment',
+    DebtorAdjustmentType.openingBalance => 'Opening balance',
+    DebtorAdjustmentType.other => 'Adjustment',
+  };
 
   DebtorStatementEntryType _statementEntryType(
     InvoiceLedgerHistoryEntryType type,

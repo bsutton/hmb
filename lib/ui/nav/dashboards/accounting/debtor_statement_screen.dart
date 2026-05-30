@@ -11,6 +11,8 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
@@ -44,6 +46,7 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
   late DateTime _endExclusive;
   late DateTime _periodAnchor;
   late Future<DebtorStatementReport> _report;
+  var _isLoadingReport = true;
 
   @override
   void initState() {
@@ -56,11 +59,23 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
   }
 
   void _reload() {
-    _report = AccountingReportService().debtorStatement(
+    final report = AccountingReportService().debtorStatement(
       customerId: _selectedCustomer.customerId,
       jobId: _selectedJob.jobId,
       startInclusive: _startInclusive,
       endExclusive: _endExclusive,
+    );
+    _report = report;
+    _isLoadingReport = true;
+    void markLoaded() {
+      if (!mounted || !identical(_report, report)) {
+        return;
+      }
+      setState(() => _isLoadingReport = false);
+    }
+
+    unawaited(
+      report.then((_) => markLoaded(), onError: (_, _) => markLoaded()),
     );
   }
 
@@ -91,13 +106,17 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
           const SizedBox(height: 12),
           _buildDateScroll(),
           const SizedBox(height: 12),
-          FutureBuilderEx<DebtorStatementReport>(
-            future: _report,
-            waitingBuilder: (_) =>
-                const Center(child: CircularProgressIndicator()),
-            builder: (context, report) =>
-                report == null ? const SizedBox.shrink() : _buildReport(report),
-          ),
+          if (_isLoadingReport)
+            const Center(child: CircularProgressIndicator())
+          else
+            FutureBuilderEx<DebtorStatementReport>(
+              future: _report,
+              waitingBuilder: (_) =>
+                  const Center(child: CircularProgressIndicator()),
+              builder: (context, report) => report == null
+                  ? const SizedBox.shrink()
+                  : _buildReport(report),
+            ),
         ],
       ),
     ),
@@ -296,7 +315,16 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
   }
 
   String get _periodLabel =>
-      '${formatDate(_startInclusive)} to ${formatDate(_lastDayFromDates())}';
+      '${_formatPeriodDate(_startInclusive)} to '
+      '${_formatPeriodDate(_lastDayFromDates())}';
+
+  String _formatPeriodDate(DateTime date) {
+    final now = DateTime.now();
+    final includeYear =
+        _startInclusive.year != now.year ||
+        _lastDayFromDates().year != now.year;
+    return formatDate(date, format: includeYear ? 'j M Y' : 'j M');
+  }
 
   DateTime _lastDayFromDates() =>
       _endExclusive.subtract(const Duration(days: 1));
@@ -320,10 +348,6 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
             Text(
               report.customerName,
               style: Theme.of(context).textTheme.titleMedium,
-            ),
-            Text(
-              '${formatDate(report.startInclusive)} to '
-              '${formatDate(_lastDay(report))}',
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -360,21 +384,7 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
       ),
       const SizedBox(height: 12),
       if (report.entries.isEmpty)
-        Surface(
-          child: HMBColumn(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildStatementRow(
-                report,
-                _StatementRow.opening(report.openingBalance),
-              ),
-              _buildStatementRow(
-                report,
-                _StatementRow.closing(report.closingBalance),
-              ),
-            ],
-          ),
-        )
+        const Surface(child: Text('No statement activity for this period.'))
       else
         Surface(
           child: HMBColumn(
@@ -523,12 +533,11 @@ Closing balance: ${report.closingBalance}
 
   List<_StatementRow> _statementRows(DebtorStatementReport report) {
     var balance = report.openingBalance;
-    final rows = <_StatementRow>[_StatementRow.opening(balance)];
+    final rows = <_StatementRow>[];
     for (final entry in report.entries) {
       balance += entry.amount;
       rows.add(_StatementRow.entry(entry, balance));
     }
-    rows.add(_StatementRow.closing(balance));
     return rows;
   }
 
@@ -539,13 +548,12 @@ Closing balance: ${report.closingBalance}
       DebtorStatementEntryType.payment ||
       DebtorStatementEntryType.credit => Colors.green.shade700,
       DebtorStatementEntryType.adjustment => Colors.orange.shade800,
-      null => colorScheme.onSurface,
     };
   }
 }
 
 class _StatementRow {
-  final DebtorStatementEntryType? type;
+  final DebtorStatementEntryType type;
   final DateTime? date;
   final String? invoiceNumber;
   final String? customerName;
@@ -563,16 +571,6 @@ class _StatementRow {
     required this.balance,
   });
 
-  factory _StatementRow.opening(Money balance) => _StatementRow(
-    type: null,
-    date: null,
-    invoiceNumber: null,
-    customerName: null,
-    description: 'Opening balance',
-    amount: null,
-    balance: balance,
-  );
-
   factory _StatementRow.entry(DebtorStatementEntry entry, Money balance) =>
       _StatementRow(
         type: entry.type,
@@ -583,14 +581,4 @@ class _StatementRow {
         amount: entry.amount,
         balance: balance,
       );
-
-  factory _StatementRow.closing(Money balance) => _StatementRow(
-    type: null,
-    date: null,
-    invoiceNumber: null,
-    customerName: null,
-    description: 'Closing balance',
-    amount: null,
-    balance: balance,
-  );
 }
