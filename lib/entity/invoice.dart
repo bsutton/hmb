@@ -294,6 +294,9 @@ You must set the Account Code and Item Code in System | Integration before you c
     if (Strings.isNotBlank(invoiceNum)) {
       return invoiceNum!.trim();
     }
+    if (isUploaded()) {
+      return 'Uploaded (#$id)';
+    }
     if (!externalAccountingEnabled || isManagedLocally) {
       return '$id';
     }

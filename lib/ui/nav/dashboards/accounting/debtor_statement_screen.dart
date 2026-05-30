@@ -70,6 +70,7 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
           HMBSelectCustomer(
             selectedCustomer: _selectedCustomer,
             onSelected: (_) => setState(_reload),
+            showAdd: false,
           ),
           const SizedBox(height: 12),
           HMBSelectJob(

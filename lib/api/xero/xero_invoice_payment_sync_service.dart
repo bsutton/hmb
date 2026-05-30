@@ -74,6 +74,8 @@ class XeroInvoicePaymentSyncService {
       }
 
       final pending = await _daoInvoice.getUploadedUnpaid();
+      final missingInvoiceNumbers = await _daoInvoice
+          .getUploadedMissingInvoiceNumber();
       final unsyncedPayments = await DaoDebtorPayment().getUnsyncedForProvider(
         'xero',
       );
@@ -84,6 +86,7 @@ class XeroInvoicePaymentSyncService {
         Log.i('No unpaid Xero invoices need import syncing.');
       }
       if (pending.isEmpty &&
+          missingInvoiceNumbers.isEmpty &&
           unsyncedPayments.isEmpty &&
           unsyncedCredits.isEmpty) {
         Log.i('Skipping Xero payment sync because nothing needs syncing.');
@@ -98,34 +101,63 @@ class XeroInvoicePaymentSyncService {
         return 0;
       }
       var updated = 0;
-      for (final invoice in pending) {
+      final pendingIds = pending.map((invoice) => invoice.id).toSet();
+      final invoicesById = <int, Invoice>{
+        for (final invoice in pending) invoice.id: invoice,
+        for (final invoice in missingInvoiceNumbers) invoice.id: invoice,
+      };
+      for (final invoice in invoicesById.values) {
         try {
           final remoteState = await _loadRemoteState(invoice);
           if (remoteState == null) {
             continue;
           }
-          if (invoice.externalSyncStatus != remoteState.externalSyncStatus) {
+          var currentInvoice = invoice;
+          if (_needsInvoiceNumberUpdate(
+            currentInvoice,
+            remoteState.invoiceNumber,
+          )) {
+            currentInvoice = currentInvoice.copyWith(
+              invoiceNum: remoteState.invoiceNumber,
+            );
+            await _daoInvoice.update(currentInvoice);
+            updated += 1;
+          }
+          if (currentInvoice.externalSyncStatus !=
+              remoteState.externalSyncStatus) {
             await _daoInvoice.updateExternalSyncStatus(
-              invoice.id,
+              currentInvoice.id,
               remoteState.externalSyncStatus,
             );
+            currentInvoice = currentInvoice.copyWith(
+              externalSyncStatus: remoteState.externalSyncStatus,
+            );
+          }
+          if (!pendingIds.contains(currentInvoice.id)) {
+            continue;
           }
           if (remoteState.paidDate != null &&
-              _needsPaidUpdate(invoice, remoteState.paidDate!)) {
+              _needsPaidUpdate(currentInvoice, remoteState.paidDate!)) {
             await _daoInvoice.markPaidFromXero(
-              invoice.id,
+              currentInvoice.id,
               paidDate: remoteState.paidDate,
             );
             updated += 1;
           }
-          updated += await _importPayments(invoice, remoteState.payments);
-          updated += await _importCreditNotes(invoice, remoteState.creditNotes);
+          updated += await _importPayments(
+            currentInvoice,
+            remoteState.payments,
+          );
+          updated += await _importCreditNotes(
+            currentInvoice,
+            remoteState.creditNotes,
+          );
           if (remoteState.paidDate != null &&
               remoteState.payments.isEmpty &&
               remoteState.creditNotes.isEmpty) {
             Log.i(
-              'Xero invoice ${invoice.id} is paid but returned no payment '
-              'rows. Keeping it eligible for a later payment sync.',
+              'Xero invoice ${currentInvoice.id} is paid but returned no '
+              'payment rows. Keeping it eligible for a later payment sync.',
             );
           }
         } catch (e, st) {
@@ -292,11 +324,15 @@ class XeroInvoicePaymentSyncService {
     }
 
     final status = ((remote['Status'] as String?) ?? '').trim().toUpperCase();
+    final invoiceNumber = (remote['InvoiceNumber'] as String?)?.trim();
     final amountDue = _toDouble(remote['AmountDue']);
     final amountPaid = _toDouble(remote['AmountPaid']);
     final isPaid = status == 'PAID' || (amountDue <= 0 && amountPaid > 0);
 
     return _RemoteInvoiceState(
+      invoiceNumber: invoiceNumber == null || invoiceNumber.isEmpty
+          ? null
+          : invoiceNumber,
       externalSyncStatus: switch (status) {
         'DELETED' => InvoiceExternalSyncStatus.deleted,
         'VOIDED' => InvoiceExternalSyncStatus.voided,
@@ -314,6 +350,14 @@ class XeroInvoicePaymentSyncService {
       !invoice.paid ||
       invoice.paymentSource != InvoicePaymentSource.xero ||
       invoice.paidDate?.toIso8601String() != paidDate.toIso8601String();
+
+  bool _needsInvoiceNumberUpdate(Invoice invoice, String? invoiceNumber) {
+    final remote = invoiceNumber?.trim();
+    if (remote == null || remote.isEmpty) {
+      return false;
+    }
+    return invoice.invoiceNum?.trim() != remote;
+  }
 
   Future<int> _importPayments(
     Invoice invoice,
@@ -506,12 +550,14 @@ class XeroInvoicePaymentSyncService {
 }
 
 class _RemoteInvoiceState {
+  final String? invoiceNumber;
   final InvoiceExternalSyncStatus externalSyncStatus;
   final DateTime? paidDate;
   final List<_RemotePayment> payments;
   final List<_RemoteCreditNote> creditNotes;
 
   const _RemoteInvoiceState({
+    required this.invoiceNumber,
     required this.externalSyncStatus,
     required this.paidDate,
     required this.payments,

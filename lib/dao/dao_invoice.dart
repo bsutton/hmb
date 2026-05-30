@@ -220,6 +220,24 @@ ORDER BY modified_date DESC
     );
   }
 
+  Future<List<Invoice>> getUploadedMissingInvoiceNumber() async {
+    final db = withoutTransaction();
+    return toList(
+      await db.rawQuery('''
+SELECT *
+FROM invoice
+WHERE external_invoice_id IS NOT NULL
+  AND external_invoice_id != ''
+  AND (invoice_num IS NULL OR TRIM(invoice_num) = '')
+  AND IFNULL(external_sync_status, 0) NOT IN (
+    ${InvoiceExternalSyncStatus.deleted.ordinal},
+    ${InvoiceExternalSyncStatus.voided.ordinal}
+  )
+ORDER BY modified_date DESC
+'''),
+    );
+  }
+
   Future<void> markPaidManually(int invoiceId, {DateTime? paidDate}) async {
     final invoice = await getById(invoiceId);
     if (invoice == null) {

@@ -124,6 +124,74 @@ void main() {
     expect(secondRun, 0);
   });
 
+  test('repairs missing invoice numbers on uploaded invoices', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.timeAndMaterial,
+      hourlyRate: MoneyEx.zero,
+      summary: 'Xero invoice number repair job',
+    );
+    final invoice = Invoice.forInsert(
+      jobId: job.id,
+      dueDate: LocalDate.today(),
+      totalAmount: MoneyEx.dollars(100),
+      billingContactId: job.billingContactId,
+      sent: true,
+      paid: true,
+      paidDate: DateTime(2026, 5, 3),
+      externalInvoiceId: 'xero-missing-number',
+      externalSyncStatus: InvoiceExternalSyncStatus.linked,
+      paymentSource: InvoicePaymentSource.xero,
+    );
+    await DaoInvoice().insert(invoice);
+    await DebtorLedgerService().recordPayment(
+      invoiceId: invoice.id,
+      amount: MoneyEx.dollars(100),
+      paymentDate: DateTime(2026, 5, 3),
+      paymentMethod: 'Bank transfer',
+    );
+    final service = XeroInvoicePaymentSyncService(
+      login: ({allowInteractive = true}) async => true,
+      getInvoice: (_) async => http.Response(
+        jsonEncode({
+          'Invoices': [
+            {
+              'InvoiceNumber': 'INV-REPAIRED',
+              'Status': 'PAID',
+              'AmountDue': 0,
+              'AmountPaid': 100,
+              'FullyPaidOnDate': '2026-05-03',
+              'Payments': [
+                {
+                  'PaymentID': 'xero-payment-should-not-import',
+                  'Amount': 100,
+                  'Date': '2026-05-03',
+                },
+              ],
+              'CreditNotes': <Map<String, dynamic>>[],
+            },
+          ],
+        }),
+        200,
+      ),
+      createPayment: (_) async => http.Response('', 400),
+    );
+
+    final updated = await service.sync(force: true);
+
+    expect(updated, 1);
+    expect(
+      (await DaoInvoice().getById(invoice.id))!.invoiceNum,
+      'INV-REPAIRED',
+    );
+    expect(
+      await DaoDebtorPayment().getByExternalPaymentId(
+        provider: 'xero',
+        externalPaymentId: 'xero-payment-should-not-import',
+      ),
+      isNull,
+    );
+  });
+
   test('retries paid Xero invoices until payment rows are available', () async {
     final job = await createJobWithCustomer(
       billingType: BillingType.timeAndMaterial,
