@@ -57,6 +57,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
                 HMBSelectJob(
                   title: 'Select Job',
                   selectedJob: selectedJob,
+                  required: true,
                   items: (filter) => DaoJob().getActiveJobs(filter),
                   onSelected: (job) {
                     setState(() {
@@ -108,9 +109,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
                 // Description Input
                 HMBTextField(
                   controller: descriptionController,
-                  labelText: addType == AddType.packing
-                      ? 'Summary'
-                      : 'Description',
+                  labelText: 'Description',
                   required: true,
                 ),
                 // Purpose Input
@@ -180,6 +179,7 @@ Future<void> _addTaskItem({
   if (selectedJobId != null &&
       selectedTask != null &&
       selectedItemType != null) {
+    final description = descriptionController.text.trim();
     final quantity = Fixed.tryParse(quantityController.text) ?? Fixed.one;
     final unitCost = MoneyEx.tryParse(unitCostController.text);
     final defaultMargin = await DaoSystem().getDefaultProfitMargin();
@@ -187,8 +187,8 @@ Future<void> _addTaskItem({
     // Create and insert the new TaskItem
     final newItem = TaskItem.forInsert(
       taskId: selectedTask.id,
-      description: descriptionController.text,
-      purpose: purposeController.text,
+      description: description,
+      purpose: purposeController.text.trim(),
       itemType: selectedItemType,
       estimatedMaterialQuantity: quantity,
       estimatedMaterialUnitCost: unitCost,
