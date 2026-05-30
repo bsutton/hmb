@@ -12,10 +12,13 @@
 */
 
 import 'package:flutter/material.dart';
+import 'package:strings/strings.dart';
 
 import '../../api/external_accounting.dart';
 import '../../dao/dao.g.dart';
+import '../../entity/contact.dart';
 import '../../entity/invoice.dart';
+import '../../entity/job.dart';
 import '../../util/dart/format.dart';
 import '../dialog/email_dialog_for_job.dart';
 import '../widgets/blocking_ui.dart';
@@ -62,8 +65,11 @@ class BuildSendButton extends StatelessWidget {
         return;
       }
 
-      final billingContact = await DaoContact().getBillingContactByJob(job);
-      final greetingContact = billingContact ?? primaryContact;
+      final greetingContact = await invoiceGreetingContact(
+        invoice: invoice,
+        job: job,
+        primaryContact: primaryContact,
+      );
 
       if (!context.mounted) {
         return;
@@ -96,14 +102,16 @@ class BuildSendButton extends StatelessWidget {
         final system = await DaoSystem().get();
 
         final recipients = await DaoInvoice().getEmailsByInvoice(invoice);
+        final preferredRecipient = Strings.isNotBlank(greetingContact.bestEmail)
+            ? greetingContact.bestEmail
+            : recipients.first;
         if (context.mounted) {
           await Navigator.of(context).push(
             MaterialPageRoute<void>(
               builder: (context) => PdfPreviewScreen(
                 title: '''Invoice #${invoice.bestNumber} ${job.summary}''',
                 filePath: filePath.path,
-                preferredRecipient:
-                    billingContact?.emailAddress ?? recipients.first,
+                preferredRecipient: preferredRecipient,
                 emailSubject:
                     '''${system.businessName ?? 'Your'} Invoice #${invoice.bestNumber}''',
                 emailBody:
@@ -223,3 +231,12 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
     },
   );
 }
+
+Future<Contact> invoiceGreetingContact({
+  required Invoice invoice,
+  required Job job,
+  required Contact primaryContact,
+}) async =>
+    await DaoContact().getById(invoice.billingContactId) ??
+    await DaoContact().getBillingContactByJob(job) ??
+    primaryContact;
