@@ -409,43 +409,79 @@ class AccountingReportService {
 
   Future<AgedReceivablesReport> agedReceivables({LocalDate? asOfDate}) async {
     final asOf = asOfDate ?? LocalDate.today();
-    final invoices = await DaoInvoice().getAll();
-    final ledgerService = DebtorLedgerService();
-    final rows = <AgedReceivablesRow>[];
+    final db = DaoInvoice().withoutTransaction();
+    final data = await db.rawQuery(
+      '''
+WITH invoice_balances AS (
+  SELECT
+    i.id AS invoice_id,
+    i.due_date,
+    c.id AS customer_id,
+    IFNULL(c.name, 'Unknown customer') AS customer_name,
+    (
+      i.total_amount
+      - IFNULL(pa.paid, 0)
+      - IFNULL(ca.credited, 0)
+      - IFNULL(da.adjusted, 0)
+    ) AS balance
+  FROM invoice i
+  LEFT JOIN job j ON j.id = i.job_id
+  LEFT JOIN customer c ON c.id = j.customer_id
+  LEFT JOIN (
+    SELECT invoice_id, SUM(amount) AS paid
+    FROM debtor_payment_allocation
+    GROUP BY invoice_id
+  ) pa ON pa.invoice_id = i.id
+  LEFT JOIN (
+    SELECT invoice_id, SUM(amount) AS credited
+    FROM credit_allocation
+    GROUP BY invoice_id
+  ) ca ON ca.invoice_id = i.id
+  LEFT JOIN (
+    SELECT invoice_id, SUM(amount) AS adjusted
+    FROM debtor_adjustment
+    GROUP BY invoice_id
+  ) da ON da.invoice_id = i.id
+  WHERE IFNULL(i.paid, 0) = 0
+    AND IFNULL(i.external_sync_status, 0) NOT IN (?, ?)
+)
+SELECT *
+FROM invoice_balances
+WHERE balance > 0
+ORDER BY due_date ASC, invoice_id ASC
+''',
+      [
+        InvoiceExternalSyncStatus.deleted.ordinal,
+        InvoiceExternalSyncStatus.voided.ordinal,
+      ],
+    );
 
-    for (final invoice in invoices) {
-      if (invoice.isExternallyDeletedOrVoided) {
-        continue;
-      }
-      final summary = await ledgerService.invoiceSummary(invoice.id);
-      if (!summary.isOutstanding) {
-        continue;
-      }
-      final job = await DaoJob().getById(invoice.jobId);
-      final customer = job?.customerId == null
-          ? null
-          : await DaoCustomer().getById(job!.customerId);
-      rows.add(
-        AgedReceivablesRow(
-          invoiceId: invoice.id,
-          customerId: customer?.id,
-          customerName: customer?.name ?? 'Unknown customer',
-          dueDate: invoice.dueDate,
-          balance: summary.balance,
-          daysOverdue: asOf.difference(invoice.dueDate).inDays,
-        ),
-      );
-    }
-
-    rows.sort((lhs, rhs) {
-      final dueDate = lhs.dueDate.date.compareTo(rhs.dueDate.date);
-      return dueDate == 0 ? lhs.invoiceId.compareTo(rhs.invoiceId) : dueDate;
-    });
+    final rows = [
+      for (final row in data) _agedReceivablesRow(row: row, asOf: asOf),
+    ];
 
     return AgedReceivablesReport(
       asOfDate: asOf,
       rows: rows,
       buckets: _agedReceivablesBuckets(rows),
+    );
+  }
+
+  AgedReceivablesRow _agedReceivablesRow({
+    required Map<String, Object?> row,
+    required LocalDate asOf,
+  }) {
+    final dueDateValue = row['due_date'] as String?;
+    final dueDate = dueDateValue == null
+        ? asOf
+        : const LocalDateConverter().fromJson(dueDateValue);
+    return AgedReceivablesRow(
+      invoiceId: row['invoice_id']! as int,
+      customerId: row['customer_id'] as int?,
+      customerName: (row['customer_name'] as String?) ?? 'Unknown customer',
+      dueDate: dueDate,
+      balance: MoneyEx.fromInt(row['balance'] as int? ?? 0),
+      daysOverdue: asOf.difference(dueDate).inDays,
     );
   }
 

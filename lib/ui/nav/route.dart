@@ -51,8 +51,11 @@ import '../widgets/hmb_toast.dart';
 import '../widgets/media/full_screen_photo_view.dart';
 import '../widgets/splash_screen.dart';
 import '../wizard/setup_wizard.dart';
+import 'dashboards/accounting/accountant_tax_pack_screen.dart';
 import 'dashboards/accounting/accounting_dashboard.dart';
+import 'dashboards/accounting/accounting_reports_dashboard.dart';
 import 'dashboards/accounting/aged_receivables_screen.dart';
+import 'dashboards/accounting/cash_received_screen.dart';
 import 'dashboards/accounting/debtor_statement_screen.dart';
 import 'dashboards/accounting/job_profit_report_screen.dart';
 import 'dashboards/accounting/profit_and_loss_screen.dart';
@@ -280,6 +283,18 @@ List<GoRoute> accountingRoutes() => [
     path: 'payments',
     builder: (_, _) => const HomeScaffold(initialScreen: PaymentListScreen()),
   ),
+  GoRoute(
+    path: 'reports',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: AccountingReportsDashboardPage()),
+    routes: [
+      GoRoute(
+        path: 'tax_pack',
+        builder: (_, _) =>
+            const HomeScaffold(initialScreen: AccountantTaxPackScreen()),
+      ),
+    ],
+  ),
 
   GoRoute(
     path: 'to_be_invoiced',
@@ -300,7 +315,7 @@ List<GoRoute> accountingRoutes() => [
   ),
   GoRoute(
     path: 'cash_received',
-    builder: (_, _) => const HomeScaffold(initialScreen: PaymentListScreen()),
+    builder: (_, _) => const HomeScaffold(initialScreen: CashReceivedScreen()),
   ),
   GoRoute(
     path: 'tax_summary',

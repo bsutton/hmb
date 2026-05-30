@@ -45,7 +45,7 @@ class _CashReceivedScreenState extends State<CashReceivedScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Cash Received')),
+    appBar: AppBar(title: const Text('Customer Payments')),
     body: SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: HMBColumn(
@@ -105,26 +105,26 @@ class _CashReceivedScreenState extends State<CashReceivedScreen> {
     children: [
       HMBButton.withIcon(
         label: 'Send CSV',
-        hint: 'Email cash received as a CSV file',
+        hint: 'Email customer payments as a CSV file',
         icon: const Icon(Icons.email),
         onPressed: () async {
           await sendReportCsv(
             context: context,
             fileName: _exportFileName(report, 'csv'),
-            title: 'Cash Received',
+            title: 'Customer Payments',
             csv: AccountingReportCsvExporter().cashReceived(report),
           );
         },
       ),
       HMBButton.withIcon(
         label: 'View/Send PDF',
-        hint: 'View and optionally email cash received as a PDF',
+        hint: 'View and optionally email customer payments as a PDF',
         icon: const Icon(Icons.picture_as_pdf),
         onPressed: () async {
           await viewSendReportPdf(
             context: context,
             fileName: _exportFileName(report, 'pdf'),
-            title: 'Cash Received',
+            title: 'Customer Payments',
             rows: _pdfRows(report),
           );
         },
@@ -171,7 +171,7 @@ class _CashReceivedScreenState extends State<CashReceivedScreen> {
 
   String _exportFileName(CashReceivedReport report, String extension) =>
       accountingReportExportFileName(
-        reportName: 'cash_received',
+        reportName: 'customer_payments',
         extension: extension,
         startInclusive: report.period.startInclusive,
         endInclusive: report.period.endExclusive.subtract(
