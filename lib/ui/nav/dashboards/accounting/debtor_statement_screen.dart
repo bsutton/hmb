@@ -373,7 +373,9 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
                 ),
                 HMBButton.withIcon(
                   label: 'View/Send PDF',
-                  hint: 'View and optionally email this customer statement',
+                  hint: report.customerId == null
+                      ? 'Select a customer before creating a statement PDF'
+                      : 'View and optionally email this customer statement',
                   icon: const Icon(Icons.picture_as_pdf),
                   onPressed: () => _viewSendStatement(report),
                 ),
@@ -434,6 +436,12 @@ Closing balance: ${report.closingBalance}
       );
 
   Future<void> _viewSendStatement(DebtorStatementReport report) async {
+    if (report.customerId == null) {
+      HMBToast.error(
+        'Select a customer before creating a customer statement PDF.',
+      );
+      return;
+    }
     final file = await buildDebtorStatementPdfFile(
       fileName: _exportFileName(report, 'pdf'),
       report: report,
