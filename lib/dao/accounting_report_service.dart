@@ -472,7 +472,7 @@ class AccountingReportService {
             invoiceNumber: invoiceNumber,
             customerName: customerName,
             date: invoice.createdDate,
-            description: 'Invoice #$invoiceNumber',
+            description: 'Invoice issued',
             amount: invoice.totalAmount,
           ),
         );
@@ -503,7 +503,7 @@ class AccountingReportService {
               invoiceNumber: invoiceNumber,
               customerName: customerName,
               date: history.date,
-              description: '${history.title} - Invoice #$invoiceNumber',
+              description: history.title,
               amount: amount,
             ),
           );
@@ -551,7 +551,7 @@ class AccountingReportService {
         invoiceNumber: invoiceNumber,
         customerName: customerName,
         date: paymentDate,
-        description: 'Payment received - Invoice #$invoiceNumber',
+        description: 'Payment received',
         amount: amount,
       ),
     );
@@ -1021,19 +1021,54 @@ class AccountingReportCsvExporter {
 
   String debtorStatement(DebtorStatementReport report) => _csv([
     ['Customer', report.customerName],
-    ['Opening balance', report.openingBalance],
-    ['Closing balance', report.closingBalance],
+    ['Period', _statementPeriod(report)],
     [],
-    ['Date', 'Invoice', 'Customer', 'Description', 'Amount'],
-    for (final entry in report.entries)
-      [
-        entry.date.toIso8601String(),
-        entry.invoiceNumber,
-        entry.customerName,
-        entry.description,
-        entry.amount,
-      ],
+    if (report.customerId == null)
+      ['Date', 'Invoice', 'Customer', 'Description', 'Amount', 'Balance']
+    else
+      ['Date', 'Invoice', 'Description', 'Amount', 'Balance'],
+    ..._debtorStatementCsvRows(report),
   ]);
+
+  String _statementPeriod(DebtorStatementReport report) {
+    final endInclusive = report.endExclusive.subtract(const Duration(days: 1));
+    return '${report.startInclusive.toIso8601String()} to '
+        '${endInclusive.toIso8601String()}';
+  }
+
+  List<List<Object?>> _debtorStatementCsvRows(DebtorStatementReport report) {
+    var balance = report.openingBalance;
+    final rows = <List<Object?>>[];
+    if (report.customerId == null) {
+      rows.add(['', '', '', 'Opening balance', '', balance]);
+      for (final entry in report.entries) {
+        balance += entry.amount;
+        rows.add([
+          entry.date.toIso8601String(),
+          entry.invoiceNumber,
+          entry.customerName,
+          entry.description,
+          entry.amount,
+          balance,
+        ]);
+      }
+      rows.add(['', '', '', 'Closing balance', '', balance]);
+    } else {
+      rows.add(['', '', 'Opening balance', '', balance]);
+      for (final entry in report.entries) {
+        balance += entry.amount;
+        rows.add([
+          entry.date.toIso8601String(),
+          entry.invoiceNumber,
+          entry.description,
+          entry.amount,
+          balance,
+        ]);
+      }
+      rows.add(['', '', 'Closing balance', '', balance]);
+    }
+    return rows;
+  }
 
   String cashReceived(CashReceivedReport report) => _csv([
     ['Date', 'Payment', 'Invoice', 'Customer', 'Method', 'Reference', 'Amount'],

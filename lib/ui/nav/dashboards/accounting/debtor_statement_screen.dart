@@ -13,6 +13,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:money2/money2.dart';
 
 import '../../../../dao/dao.g.dart';
 import '../../../../util/dart/format.dart';
@@ -23,6 +24,7 @@ import '../../../widgets/select/hmb_select_customer.dart';
 import '../../../widgets/select/hmb_select_job.dart';
 import '../../../widgets/widgets.g.dart';
 import 'accounting_period_selector.dart';
+import 'debtor_statement_pdf.dart';
 import 'report_csv_export.dart';
 
 class DebtorStatementScreen extends StatefulWidget {
@@ -150,9 +152,31 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
       ),
       const SizedBox(height: 12),
       if (report.entries.isEmpty)
-        const Surface(child: Text('No statement activity for this period.'))
+        Surface(
+          child: HMBColumn(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildStatementRow(
+                report,
+                _StatementRow.opening(report.openingBalance),
+              ),
+              _buildStatementRow(
+                report,
+                _StatementRow.closing(report.closingBalance),
+              ),
+            ],
+          ),
+        )
       else
-        for (final entry in report.entries) _buildEntry(report, entry),
+        Surface(
+          child: HMBColumn(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final row in _statementRows(report))
+                _buildStatementRow(report, row),
+            ],
+          ),
+        ),
     ],
   );
 
@@ -192,10 +216,9 @@ Closing balance: ${report.closingBalance}
       );
 
   Future<void> _viewSendStatement(DebtorStatementReport report) async {
-    final file = await buildReportPdfFile(
+    final file = await buildDebtorStatementPdfFile(
       fileName: _exportFileName(report, 'pdf'),
-      title: 'Customer Statement',
-      rows: _pdfRows(report),
+      report: report,
     );
     final emails = await _statementEmails(report);
     if (!mounted) {
@@ -252,60 +275,81 @@ Closing balance: ${report.closingBalance}
         .toList();
   }
 
-  Widget _buildEntry(
-    DebtorStatementReport report,
-    DebtorStatementEntry entry,
-  ) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Surface(
-      elevation: SurfaceElevation.e1,
-      child: HMBColumn(
+  Widget _buildStatementRow(DebtorStatementReport report, _StatementRow row) =>
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(entry.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+          Text(row.description, maxLines: 2, overflow: TextOverflow.ellipsis),
           Wrap(
             spacing: 16,
             runSpacing: 8,
             children: [
-              Text(formatDate(entry.date)),
-              Text('Invoice #${entry.invoiceNumber}'),
-              if (report.customerId == null) Text(entry.customerName),
-              Text(entry.amount.toString()),
+              if (row.date != null) Text(formatDate(row.date!)),
+              if (row.invoiceNumber != null)
+                Text('Invoice #${row.invoiceNumber}'),
+              if (report.customerId == null && row.customerName != null)
+                Text(row.customerName!),
+              if (row.amount != null) Text(row.amount.toString()),
+              Text('Balance: ${row.balance}'),
             ],
           ),
         ],
-      ),
-    ),
+      );
+
+  List<_StatementRow> _statementRows(DebtorStatementReport report) {
+    var balance = report.openingBalance;
+    final rows = <_StatementRow>[_StatementRow.opening(balance)];
+    for (final entry in report.entries) {
+      balance += entry.amount;
+      rows.add(_StatementRow.entry(entry, balance));
+    }
+    rows.add(_StatementRow.closing(balance));
+    return rows;
+  }
+}
+
+class _StatementRow {
+  final DateTime? date;
+  final String? invoiceNumber;
+  final String? customerName;
+  final String description;
+  final Money? amount;
+  final Money balance;
+
+  const _StatementRow({
+    required this.date,
+    required this.invoiceNumber,
+    required this.customerName,
+    required this.description,
+    required this.amount,
+    required this.balance,
+  });
+
+  factory _StatementRow.opening(Money balance) => _StatementRow(
+    date: null,
+    invoiceNumber: null,
+    customerName: null,
+    description: 'Opening balance',
+    amount: null,
+    balance: balance,
   );
 
-  List<List<String>> _pdfRows(DebtorStatementReport report) => [
-    ['Customer', report.customerName],
-    [
-      'Period',
-      '${formatDate(report.startInclusive)} to ${formatDate(_lastDay(report))}',
-    ],
-    ['Opening balance', report.openingBalance.toString()],
-    ['Closing balance', report.closingBalance.toString()],
-    [],
-    if (report.customerId == null)
-      ['Date', 'Invoice', 'Customer', 'Description', 'Amount']
-    else
-      ['Date', 'Invoice', 'Description', 'Amount'],
-    for (final entry in report.entries)
-      if (report.customerId == null)
-        [
-          formatDate(entry.date),
-          entry.invoiceNumber,
-          entry.customerName,
-          entry.description,
-          entry.amount.toString(),
-        ]
-      else
-        [
-          formatDate(entry.date),
-          entry.invoiceNumber,
-          entry.description,
-          entry.amount.toString(),
-        ],
-  ];
+  factory _StatementRow.entry(DebtorStatementEntry entry, Money balance) =>
+      _StatementRow(
+        date: entry.date,
+        invoiceNumber: entry.invoiceNumber,
+        customerName: entry.customerName,
+        description: entry.description,
+        amount: entry.amount,
+        balance: balance,
+      );
+
+  factory _StatementRow.closing(Money balance) => _StatementRow(
+    date: null,
+    invoiceNumber: null,
+    customerName: null,
+    description: 'Closing balance',
+    amount: null,
+    balance: balance,
+  );
 }
