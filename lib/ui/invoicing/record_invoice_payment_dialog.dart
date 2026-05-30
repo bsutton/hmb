@@ -18,6 +18,8 @@ import '../../util/dart/money_ex.dart';
 import '../test_keys.dart';
 import '../widgets/fields/fields.g.dart';
 import '../widgets/hmb_button.dart';
+import '../widgets/layout/layout.g.dart';
+import 'payment_method_options.dart';
 
 class InvoicePaymentRequest {
   final Money amount;
@@ -36,12 +38,17 @@ class InvoicePaymentRequest {
 Future<InvoicePaymentRequest?> showRecordInvoicePaymentDialog({
   required BuildContext context,
   required Money balance,
-}) {
+}) async {
+  final paymentMethods = await loadPaymentMethodOptions();
+  if (!context.mounted) {
+    return null;
+  }
   final amountController = HMBMoneyEditingController(money: balance);
-  final methodController = TextEditingController();
+  final otherMethodController = TextEditingController();
   final referenceController = TextEditingController();
   final notesController = TextEditingController();
   final formKey = GlobalKey<FormState>();
+  var paymentMethod = paymentMethods.first;
 
   return showDialog<InvoicePaymentRequest>(
     context: context,
@@ -53,8 +60,9 @@ Future<InvoicePaymentRequest?> showRecordInvoicePaymentDialog({
           content: Form(
             key: formKey,
             child: SingleChildScrollView(
-              child: Column(
+              child: HMBColumn(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   HMBMoneyField(
                     controller: amountController,
@@ -71,11 +79,35 @@ Future<InvoicePaymentRequest?> showRecordInvoicePaymentDialog({
                         color: Theme.of(context).colorScheme.error,
                       ),
                     ),
-                  HMBTextField(
-                    controller: methodController,
-                    labelText: 'Method',
-                    fieldKey: TestKeys.recordPaymentMethodField,
+                  DropdownButtonFormField<String>(
+                    key: TestKeys.recordPaymentMethodField,
+                    initialValue: paymentMethod,
+                    decoration: const InputDecoration(labelText: 'Method'),
+                    items: [
+                      for (final method in paymentMethods)
+                        DropdownMenuItem<String>(
+                          value: method,
+                          child: Text(method),
+                        ),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) {
+                        return;
+                      }
+                      setState(() => paymentMethod = value);
+                    },
                   ),
+                  if (paymentMethod == otherPaymentMethod)
+                    HMBTextField(
+                      controller: otherMethodController,
+                      labelText: 'Other method',
+                      validator: (value) {
+                        if (_blankToNull(value ?? '') == null) {
+                          return 'Please enter the payment method';
+                        }
+                        return null;
+                      },
+                    ),
                   HMBTextField(
                     controller: referenceController,
                     labelText: 'Reference',
@@ -114,7 +146,10 @@ Future<InvoicePaymentRequest?> showRecordInvoicePaymentDialog({
                 Navigator.of(context).pop(
                   InvoicePaymentRequest(
                     amount: amount,
-                    paymentMethod: _blankToNull(methodController.text),
+                    paymentMethod: selectedPaymentMethod(
+                      paymentMethod,
+                      otherMethodController.text,
+                    ),
                     reference: _blankToNull(referenceController.text),
                     notes: _blankToNull(notesController.text),
                   ),

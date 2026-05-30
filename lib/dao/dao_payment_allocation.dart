@@ -12,6 +12,7 @@
 */
 
 import 'package:money2/money2.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.g.dart';
 import 'dao.dart';
@@ -36,8 +37,11 @@ class DaoPaymentAllocation extends Dao<PaymentAllocation> {
     );
   }
 
-  Future<List<PaymentAllocation>> getByPaymentId(int paymentId) async {
-    final db = withoutTransaction();
+  Future<List<PaymentAllocation>> getByPaymentId(
+    int paymentId, [
+    Transaction? transaction,
+  ]) async {
+    final db = withinTransaction(transaction);
     return toList(
       await db.query(
         tableName,

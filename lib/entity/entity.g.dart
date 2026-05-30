@@ -5,6 +5,7 @@
 // https://onepub.dev
 //
 export 'activity.dart';
+export 'accounting_sync_event.dart';
 export 'booking_request.dart';
 export 'category.dart';
 export 'check_list.dart';

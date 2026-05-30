@@ -334,7 +334,179 @@ void main() {
       ),
       isNotNull,
     );
+    final syncedEvents =
+        (await DaoAccountingSyncEvent().getPending(provider: 'xero')).where((
+          event,
+        ) {
+          final localEntity =
+              event.entityType == DebtorLedgerService.paymentEntity ||
+              event.entityType == DebtorLedgerService.paymentAllocationEntity;
+          return localEntity &&
+              event.operation == AccountingSyncOperation.create;
+        }).toList();
+    expect(syncedEvents, isEmpty);
   });
+
+  test(
+    'leaves outbound payment create pending when Xero is unavailable',
+    () async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.zero,
+        summary: 'Xero offline outbound payment sync job',
+      );
+      final invoice = Invoice.forInsert(
+        jobId: job.id,
+        dueDate: LocalDate.today(),
+        totalAmount: MoneyEx.dollars(100),
+        billingContactId: job.billingContactId,
+        sent: true,
+        externalInvoiceId: 'xero-invoice-offline',
+        paymentSource: InvoicePaymentSource.xero,
+      );
+      await DaoInvoice().insert(invoice);
+      final payment = await DebtorLedgerService().recordPayment(
+        invoiceId: invoice.id,
+        amount: MoneyEx.dollars(25),
+        paymentDate: DateTime(2026, 5, 3),
+      );
+      final service = XeroInvoicePaymentSyncService(
+        login: ({allowInteractive = true}) async => false,
+      );
+
+      final updated = await service.sync(force: true);
+
+      expect(updated, 0);
+      expect(
+        (await DaoDebtorPayment().getById(payment.id))!.externalPaymentId,
+        isNull,
+      );
+      expect(
+        await DaoAccountingSyncEvent().getPending(provider: 'xero'),
+        isNotEmpty,
+      );
+    },
+  );
+
+  test('pushes queued payment delete when Xero becomes available', () async {
+    await DaoAccountingSyncEvent().enqueue(
+      provider: 'xero',
+      entityType: DebtorLedgerService.paymentEntity,
+      operation: AccountingSyncOperation.delete,
+      localId: 99,
+      externalId: 'xero-payment-delete',
+    );
+    final deleted = <String>[];
+    final service = XeroInvoicePaymentSyncService(
+      daoInvoice: _EmptyPendingInvoiceDao(),
+      login: ({allowInteractive = true}) async => true,
+      deletePayment: (paymentId) async {
+        deleted.add(paymentId);
+        return http.Response('', 200);
+      },
+    );
+
+    final updated = await service.sync(force: true);
+
+    expect(updated, 1);
+    expect(deleted, ['xero-payment-delete']);
+    expect(
+      await DaoAccountingSyncEvent().getPending(provider: 'xero'),
+      isEmpty,
+    );
+  });
+
+  test('keeps queued delete pending when Xero login is unavailable', () async {
+    await DaoAccountingSyncEvent().enqueue(
+      provider: 'xero',
+      entityType: DebtorLedgerService.paymentEntity,
+      operation: AccountingSyncOperation.delete,
+      localId: 99,
+      externalId: 'xero-payment-delete',
+    );
+    final service = XeroInvoicePaymentSyncService(
+      daoInvoice: _EmptyPendingInvoiceDao(),
+      login: ({allowInteractive = true}) async => false,
+    );
+
+    final updated = await service.sync(force: true);
+
+    expect(updated, 0);
+    expect(
+      await DaoAccountingSyncEvent().getPending(provider: 'xero'),
+      hasLength(1),
+    );
+  });
+
+  test(
+    'marks conflict when linked local allocation is deleted remotely',
+    () async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.zero,
+        summary: 'Xero remote delete conflict job',
+      );
+      final invoice = Invoice.forInsert(
+        jobId: job.id,
+        dueDate: LocalDate.today(),
+        totalAmount: MoneyEx.dollars(100),
+        billingContactId: job.billingContactId,
+        sent: true,
+        externalInvoiceId: 'xero-invoice-conflict',
+        externalSyncStatus: InvoiceExternalSyncStatus.linked,
+        paymentSource: InvoicePaymentSource.xero,
+      );
+      await DaoInvoice().insert(invoice);
+      final payment = await DebtorLedgerService().recordPayment(
+        invoiceId: invoice.id,
+        amount: MoneyEx.dollars(25),
+        paymentDate: DateTime(2026, 5, 3),
+      );
+      await DaoDebtorPayment().markExternal(
+        payment: payment,
+        provider: 'xero',
+        externalPaymentId: 'xero-payment-missing',
+      );
+      final allocation = (await DaoPaymentAllocation().getByPaymentId(
+        payment.id,
+      )).single;
+      await DaoPaymentAllocation().update(
+        allocation.copyWith(externalAllocationId: 'xero-payment-missing'),
+      );
+      final service = XeroInvoicePaymentSyncService(
+        login: ({allowInteractive = true}) async => true,
+        getInvoice: (_) async => http.Response(
+          jsonEncode({
+            'Invoices': [
+              {
+                'Status': 'AUTHORISED',
+                'AmountDue': 100,
+                'AmountPaid': 0,
+                'Payments': <Map<String, dynamic>>[],
+                'CreditNotes': <Map<String, dynamic>>[],
+              },
+            ],
+          }),
+          200,
+        ),
+      );
+
+      final updated = await service.sync(force: true);
+
+      expect(updated, 1);
+      final events = await DaoAccountingSyncEvent().getByEntity(
+        provider: 'xero',
+        entityType: DebtorLedgerService.paymentAllocationEntity,
+        localId: allocation.id,
+      );
+      expect(
+        events.any(
+          (event) => event.status == AccountingSyncEventStatus.conflict,
+        ),
+        isTrue,
+      );
+    },
+  );
 }
 
 class _EmptyPendingInvoiceDao extends DaoInvoice {

@@ -156,16 +156,6 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                               await _recordPayment(details);
                             },
                           ),
-                        if (_canApplyPayment(details))
-                          HMBButton(
-                            label: 'Apply Payment',
-                            hint:
-                                'Apply an existing customer payment to '
-                                'this invoice',
-                            onPressed: () async {
-                              await _applyPayment(details);
-                            },
-                          ),
                         if (_canRecordAdjustment(details))
                           HMBButton(
                             label: 'Add Adjustment',
@@ -309,6 +299,12 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                 Text('Status: ${_ledgerStatusLabel(ledger.status)}'),
               ],
             ),
+            if (_canApplyPayment(details))
+              HMBButton(
+                label: 'Allocate Payment',
+                hint: 'Allocate an existing customer payment to this invoice',
+                onPressed: () => _applyPayment(details),
+              ),
             if (details.ledgerHistory.isNotEmpty) ...[
               const SizedBox(height: 8),
               const Text(
@@ -360,6 +356,10 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
 
   String _ledgerHistoryLabel(InvoiceLedgerHistoryEntry entry) {
     final detail = Strings.isBlank(entry.detail) ? '' : ' - ${entry.detail}';
+    if (entry.type == InvoiceLedgerHistoryEntryType.payment) {
+      return '${entry.title}: ${entry.amount}$detail - Allocated: '
+          '${formatDate(entry.date, format: 'j M Y')}';
+    }
     return '${formatDate(entry.date)} ${entry.title}: ${entry.amount}$detail';
   }
 
@@ -368,7 +368,9 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       !details.invoice.isExternallyDeletedOrVoided &&
       details.ledger.balance.isPositive;
 
-  bool _canApplyPayment(InvoiceDetails details) => _canRecordPayment(details);
+  bool _canApplyPayment(InvoiceDetails details) =>
+      !details.invoice.isExternallyDeletedOrVoided &&
+      details.ledger.balance.isPositive;
 
   bool _canRecordAdjustment(InvoiceDetails details) =>
       details.invoice.isManagedLocally &&
@@ -452,17 +454,37 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       return;
     }
     try {
-      await ledgerService.applyPaymentToInvoice(
-        paymentId: request.paymentId,
-        invoiceId: details.invoice.id,
-        amount: request.amount,
-        allocatedDate: request.allocatedDate,
-      );
+      if (request.recordsNewPayment) {
+        final payment = await ledgerService.recordUnallocatedPayment(
+          customerId: customerId,
+          contactId: details.invoice.billingContactId,
+          amount: request.newPaymentAmount!,
+          paymentDate: request.allocatedDate,
+          paymentMethod: request.paymentMethod,
+          reference: request.reference,
+          notes: request.notes,
+        );
+        await ledgerService.applyPaymentToInvoice(
+          paymentId: payment.id,
+          invoiceId: details.invoice.id,
+          amount: request.amount,
+          allocatedDate: request.allocatedDate,
+        );
+      } else {
+        await ledgerService.applyPaymentToInvoice(
+          paymentId: request.paymentId!,
+          invoiceId: details.invoice.id,
+          amount: request.amount,
+          allocatedDate: request.allocatedDate,
+        );
+      }
       await _reloadInvoice();
       if (!mounted) {
         return;
       }
-      HMBToast.info('Payment applied');
+      HMBToast.info(
+        request.recordsNewPayment ? 'Payment recorded' : 'Payment applied',
+      );
       setState(() {});
     } catch (e) {
       HMBToast.error(

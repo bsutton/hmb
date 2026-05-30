@@ -14,6 +14,16 @@
 import '../dao/dao_system.dart';
 
 class ExternalAccounting {
+  static const xeroProvider = 'xero';
+  static const xeroDisplayName = 'Xero';
+
   Future<bool> isEnabled() async =>
       (await DaoSystem().get()).isExternalAccountingEnabled();
+
+  Future<String?> displayName() async {
+    if (await isEnabled()) {
+      return xeroDisplayName;
+    }
+    return null;
+  }
 }

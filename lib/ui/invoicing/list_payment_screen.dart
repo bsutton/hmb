@@ -19,14 +19,15 @@ import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/money_ex.dart';
+import '../dialog/hmb_comfirm_delete_dialog.dart';
 import '../nav/dashboards/accounting/accounting_period_selector.dart';
-import '../nav/dashboards/accounting/report_csv_export.dart';
 import '../widgets/fields/fields.g.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_date_time_picker.dart';
 import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/icons/hmb_add_button.dart';
+import '../widgets/icons/hmb_delete_icon.dart';
 import '../widgets/icons/hmb_filter_icon.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/layout/surface.dart';
@@ -34,6 +35,7 @@ import '../widgets/select/hmb_droplist.dart';
 import '../widgets/select/hmb_filter_sheet.dart';
 import '../widgets/select/hmb_select_contact.dart';
 import '../widgets/select/hmb_select_customer.dart';
+import 'payment_method_options.dart';
 
 enum _PaymentSortOrder {
   newest('Newest first'),
@@ -145,7 +147,7 @@ ORDER BY $orderBy
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Payments')),
+    appBar: AppBar(title: const Text('Customer Payments')),
     body: SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: HMBColumn(
@@ -197,7 +199,6 @@ ORDER BY $orderBy
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _summaryCard(rows),
-                  _exportActions(rows),
                   for (final row in rows) _paymentCard(row),
                 ],
               );
@@ -222,56 +223,61 @@ ORDER BY $orderBy
     ),
   );
 
-  Widget _exportActions(List<_PaymentRow> rows) => Wrap(
-    spacing: 8,
-    runSpacing: 8,
-    children: [
-      HMBButton.withIcon(
-        label: 'Send CSV',
-        hint: 'Send the visible customer payments as a CSV report',
-        icon: const Icon(Icons.table_view),
-        onPressed: () => _sendCsv(rows),
-      ),
-      HMBButton.withIcon(
-        label: 'View/Send PDF',
-        hint: 'View and send the visible customer payments as a PDF report',
-        icon: const Icon(Icons.picture_as_pdf),
-        onPressed: () => _viewSendPdf(rows),
-      ),
-    ],
-  );
-
   Widget _paymentCard(_PaymentRow row) => Padding(
     padding: const EdgeInsets.only(bottom: 8),
-    child: Surface(
-      elevation: SurfaceElevation.e1,
-      child: HMBColumn(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(row.customerName, style: Theme.of(context).textTheme.titleSmall),
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            children: [
-              Text(formatDate(row.payment.paymentDate, format: 'j M Y')),
-              if (row.contactName != null) Text(row.contactName!),
-              Text('Amount: ${row.payment.amount}'),
-              Text('Allocated: ${row.allocated}'),
-              Text('Unallocated: ${row.unallocated}'),
-            ],
-          ),
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            children: [
-              if (row.payment.paymentMethod != null)
-                Text(row.payment.paymentMethod!),
-              if (row.payment.reference != null) Text(row.payment.reference!),
-              _sourceWidget(row),
-              if (row.payment.notes != null) Text(row.payment.notes!),
-            ],
-          ),
-        ],
+    child: GestureDetector(
+      onTap: () => _showPaymentDetails(row),
+      child: Surface(
+        elevation: SurfaceElevation.e1,
+        child: HMBColumn(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              row.customerName,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
+              children: [
+                Text(formatDate(row.payment.paymentDate, format: 'j M Y')),
+                if (row.contactName != null) Text(row.contactName!),
+                Text('Amount: ${row.payment.amount}'),
+                Text('Allocated: ${row.allocated}'),
+                Text('Unallocated: ${row.unallocated}'),
+              ],
+            ),
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                if (row.payment.paymentMethod != null)
+                  Text(row.payment.paymentMethod!),
+                if (row.payment.reference != null) Text(row.payment.reference!),
+                _sourceWidget(row),
+                if (row.payment.notes != null) Text(row.payment.notes!),
+                if (row.unallocated.isPositive)
+                  HMBButton.withIcon(
+                    label: 'Allocate',
+                    hint: 'Allocate this payment to an invoice',
+                    icon: const Icon(Icons.call_split),
+                    onPressed: () => _allocatePayment(row),
+                  ),
+                HMBButton.withIcon(
+                  label: 'Allocations',
+                  hint: 'Show allocations for this payment',
+                  icon: const Icon(Icons.receipt_long),
+                  onPressed: () => _showPaymentDetails(row),
+                ),
+                HMBDeleteIcon(
+                  hint: 'Delete this payment',
+                  onPressed: () => _confirmDeletePayment(row),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     ),
   );
@@ -312,6 +318,241 @@ ORDER BY $orderBy
         ],
       ),
     );
+  }
+
+  Future<void> _showPaymentDetails(_PaymentRow row) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Payment Allocations'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: FutureBuilderEx<List<_PaymentAllocationRow>>(
+            future: _loadPaymentAllocations(row.payment.id),
+            waitingBuilder: (_) =>
+                const Center(child: CircularProgressIndicator()),
+            builder: (context, allocations) {
+              if (allocations == null) {
+                return const SizedBox.shrink();
+              }
+              return SingleChildScrollView(
+                child: HMBColumn(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Surface(
+                      elevation: SurfaceElevation.e2,
+                      child: HMBColumn(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Summary',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Wrap(
+                            spacing: 16,
+                            runSpacing: 8,
+                            children: [
+                              Text('Payment: ${row.payment.amount}'),
+                              Text('Allocated: ${row.allocated}'),
+                              Text('Unallocated: ${row.unallocated}'),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (allocations.isEmpty)
+                      const Surface(
+                        elevation: SurfaceElevation.e1,
+                        child: Text('No allocations recorded.'),
+                      )
+                    else
+                      const Text(
+                        'Allocations',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    if (allocations.isNotEmpty)
+                      for (final allocation in allocations)
+                        _allocationLine(allocation, row),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          if (row.unallocated.isPositive)
+            HMBButton(
+              label: 'Allocate',
+              hint: 'Allocate this payment to an invoice',
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _allocatePayment(row);
+              },
+            ),
+          HMBButton(
+            label: 'Close',
+            hint: 'Close payment allocations',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _allocationLine(
+    _PaymentAllocationRow row,
+    _PaymentRow paymentRow,
+  ) => Surface(
+    elevation: SurfaceElevation.e1,
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(Icons.receipt_long, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: HMBColumn(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                row.invoiceLabel,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              if (row.jobSummary != null) Text(row.jobSummary!),
+              Text(
+                'Allocation date: '
+                '${formatDate(row.allocation.allocatedDate, format: 'j M Y')}',
+              ),
+            ],
+          ),
+        ),
+        Text(
+          row.allocation.amount.toString(),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(width: 8),
+        HMBDeleteIcon(
+          hint: 'Delete this allocation',
+          onPressed: () => _confirmDeleteAllocation(row, paymentRow),
+        ),
+      ],
+    ),
+  );
+
+  Future<void> _confirmDeletePayment(_PaymentRow row) async {
+    await showConfirmDeleteDialog(
+      context: context,
+      nameSingular: 'payment',
+      child: Text(
+        'Delete this payment for ${row.payment.amount}? '
+        'Any allocations for this payment will also be deleted.',
+      ),
+      onConfirmed: () async {
+        await DebtorLedgerService().deletePayment(row.payment.id);
+        _reload();
+        if (mounted) {
+          HMBToast.info('Payment deleted');
+          setState(() {});
+        }
+      },
+    );
+  }
+
+  Future<void> _confirmDeleteAllocation(
+    _PaymentAllocationRow row,
+    _PaymentRow paymentRow,
+  ) async {
+    var deleted = false;
+    await showConfirmDeleteDialog(
+      context: context,
+      nameSingular: 'payment allocation',
+      child: Text(
+        'Delete the ${row.allocation.amount} allocation to '
+        '${row.invoiceLabel}?',
+      ),
+      onConfirmed: () async {
+        await DebtorLedgerService().deletePaymentAllocation(row.allocation.id);
+        deleted = true;
+        _reload();
+        if (mounted) {
+          HMBToast.info('Payment allocation deleted');
+          setState(() {});
+        }
+      },
+    );
+    if (deleted && mounted) {
+      Navigator.of(context).pop();
+      await _showPaymentDetails(
+        _PaymentRow(
+          payment: paymentRow.payment,
+          customerName: paymentRow.customerName,
+          contactName: paymentRow.contactName,
+          allocated: paymentRow.allocated - row.allocation.amount,
+        ),
+      );
+    }
+  }
+
+  Future<List<_PaymentAllocationRow>> _loadPaymentAllocations(
+    int paymentId,
+  ) async {
+    final db = DaoPaymentAllocation().withoutTransaction();
+    final rows = await db.rawQuery(
+      '''
+SELECT
+  pa.*,
+  i.invoice_num,
+  i.id AS invoice_id,
+  j.summary AS job_summary
+FROM debtor_payment_allocation pa
+LEFT JOIN invoice i ON i.id = pa.invoice_id
+LEFT JOIN job j ON j.id = i.job_id
+WHERE pa.payment_id = ?
+ORDER BY pa.allocated_date ASC, pa.id ASC
+''',
+      [paymentId],
+    );
+    return [
+      for (final row in rows)
+        _PaymentAllocationRow(
+          allocation: PaymentAllocation.fromMap(row),
+          invoiceLabel: _invoiceLabel(
+            invoiceId: row['invoice_id'] as int?,
+            invoiceNum: row['invoice_num'] as String?,
+          ),
+          jobSummary: _blankToNull(row['job_summary'] as String? ?? ''),
+        ),
+    ];
+  }
+
+  Future<void> _allocatePayment(_PaymentRow row) async {
+    final request = await showAllocatePaymentDialog(
+      context: context,
+      payment: row.payment,
+      unallocated: row.unallocated,
+    );
+    if (request == null) {
+      return;
+    }
+    try {
+      await DebtorLedgerService().applyPaymentToInvoice(
+        paymentId: row.payment.id,
+        invoiceId: request.invoiceId,
+        amount: request.amount,
+        allocatedDate: request.allocatedDate,
+      );
+      _reload();
+      if (!mounted) {
+        return;
+      }
+      HMBToast.info('Payment allocated');
+      setState(() {});
+    } catch (e) {
+      HMBToast.error(
+        'Failed to allocate payment: $e',
+        acknowledgmentRequired: true,
+      );
+    }
   }
 
   Future<void> _showFilterSheet() async {
@@ -406,59 +647,6 @@ ORDER BY $orderBy
         '${formatDate(end, format: format)}';
   }
 
-  String _fileName({required String extension}) =>
-      accountingReportExportFileName(
-        reportName: 'customer_payments',
-        extension: extension,
-        startInclusive: _period.startInclusive,
-        endInclusive: _period.endExclusive.subtract(const Duration(days: 1)),
-      );
-
-  List<List<String>> _exportRows(List<_PaymentRow> rows) => [
-    [
-      'Date',
-      'Customer',
-      'Contact',
-      'Method',
-      'Reference',
-      'Source',
-      'Amount',
-      'Allocated',
-      'Unallocated',
-    ],
-    for (final row in rows)
-      [
-        formatDate(row.payment.paymentDate, format: 'j M Y'),
-        row.customerName,
-        row.contactName ?? '',
-        row.payment.paymentMethod ?? '',
-        row.payment.reference ?? '',
-        row.sourceLabel,
-        row.payment.amount.toString(),
-        row.allocated.toString(),
-        row.unallocated.toString(),
-      ],
-  ];
-
-  String _csv(List<_PaymentRow> rows) =>
-      _exportRows(rows).map((row) => row.map(_csvCell).join(',')).join('\n');
-
-  String _csvCell(String value) => '"${value.replaceAll('"', '""')}"';
-
-  Future<void> _sendCsv(List<_PaymentRow> rows) => sendReportCsv(
-    context: context,
-    fileName: _fileName(extension: 'csv'),
-    title: 'Customer Payments',
-    csv: _csv(rows),
-  );
-
-  Future<void> _viewSendPdf(List<_PaymentRow> rows) => viewSendReportPdf(
-    context: context,
-    fileName: _fileName(extension: 'pdf'),
-    title: 'Customer Payments',
-    rows: _exportRows(rows),
-  );
-
   Future<void> _addPayment() async {
     final request = await showRecordCustomerPaymentDialog(context: context);
     if (request == null) {
@@ -516,6 +704,39 @@ class _PaymentRow {
   }
 }
 
+class _PaymentAllocationRow {
+  final PaymentAllocation allocation;
+  final String invoiceLabel;
+  final String? jobSummary;
+
+  const _PaymentAllocationRow({
+    required this.allocation,
+    required this.invoiceLabel,
+    required this.jobSummary,
+  });
+}
+
+class _InvoiceAllocationOption {
+  final Invoice invoice;
+  final Money balance;
+  final String? jobSummary;
+
+  const _InvoiceAllocationOption({
+    required this.invoice,
+    required this.balance,
+    required this.jobSummary,
+  });
+
+  String get label {
+    final parts = [
+      _invoiceLabel(invoiceId: invoice.id, invoiceNum: invoice.invoiceNum),
+      jobSummary,
+      'Balance: $balance',
+    ].nonNulls;
+    return parts.join(' - ');
+  }
+}
+
 class CustomerPaymentRequest {
   final int customerId;
   final int? contactId;
@@ -536,17 +757,34 @@ class CustomerPaymentRequest {
   });
 }
 
+class PaymentAllocationRequest {
+  final int invoiceId;
+  final Money amount;
+  final DateTime allocatedDate;
+
+  const PaymentAllocationRequest({
+    required this.invoiceId,
+    required this.amount,
+    required this.allocatedDate,
+  });
+}
+
 Future<CustomerPaymentRequest?> showRecordCustomerPaymentDialog({
   required BuildContext context,
-}) {
+}) async {
+  final paymentMethods = await loadPaymentMethodOptions();
+  if (!context.mounted) {
+    return null;
+  }
   final selectedCustomer = SelectedCustomer();
   final amountController = HMBMoneyEditingController();
-  final methodController = TextEditingController();
+  final otherMethodController = TextEditingController();
   final referenceController = TextEditingController();
   final notesController = TextEditingController();
   final formKey = GlobalKey<FormState>();
   Customer? customer;
   Contact? contact;
+  var paymentMethod = paymentMethods.first;
   var paymentDate = DateTime.now();
   var showCustomerError = false;
 
@@ -558,8 +796,9 @@ Future<CustomerPaymentRequest?> showRecordCustomerPaymentDialog({
         content: Form(
           key: formKey,
           child: SingleChildScrollView(
-            child: Column(
+            child: HMBColumn(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 HMBSelectCustomer(
                   selectedCustomer: selectedCustomer,
@@ -595,7 +834,34 @@ Future<CustomerPaymentRequest?> showRecordCustomerPaymentDialog({
                   fieldName: 'payment amount',
                   autofocus: true,
                 ),
-                HMBTextField(controller: methodController, labelText: 'Method'),
+                DropdownButtonFormField<String>(
+                  initialValue: paymentMethod,
+                  decoration: const InputDecoration(labelText: 'Method'),
+                  items: [
+                    for (final method in paymentMethods)
+                      DropdownMenuItem<String>(
+                        value: method,
+                        child: Text(method),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) {
+                      return;
+                    }
+                    setState(() => paymentMethod = value);
+                  },
+                ),
+                if (paymentMethod == otherPaymentMethod)
+                  HMBTextField(
+                    controller: otherMethodController,
+                    labelText: 'Other method',
+                    validator: (value) {
+                      if (_blankToNull(value ?? '') == null) {
+                        return 'Please enter the payment method';
+                      }
+                      return null;
+                    },
+                  ),
                 HMBTextField(
                   controller: referenceController,
                   labelText: 'Reference',
@@ -628,7 +894,10 @@ Future<CustomerPaymentRequest?> showRecordCustomerPaymentDialog({
                   contactId: contact?.id,
                   paymentDate: paymentDate,
                   amount: amountController.money ?? MoneyEx.zero,
-                  paymentMethod: _blankToNull(methodController.text),
+                  paymentMethod: selectedPaymentMethod(
+                    paymentMethod,
+                    otherMethodController.text,
+                  ),
                   reference: _blankToNull(referenceController.text),
                   notes: _blankToNull(notesController.text),
                 ),
@@ -639,6 +908,205 @@ Future<CustomerPaymentRequest?> showRecordCustomerPaymentDialog({
       ),
     ),
   );
+}
+
+Future<PaymentAllocationRequest?> showAllocatePaymentDialog({
+  required BuildContext context,
+  required DebtorPayment payment,
+  required Money unallocated,
+}) async {
+  final options = await _loadInvoiceAllocationOptions(payment);
+  if (!context.mounted) {
+    return null;
+  }
+  if (options.isEmpty) {
+    return showDialog<PaymentAllocationRequest>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Allocate Payment'),
+        content: const Text('No unpaid invoices for this customer.'),
+        actions: [
+          HMBButton(
+            label: 'Close',
+            hint: 'Close this dialog',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  var selected = _defaultInvoiceOption(options, unallocated);
+  var allocatedDate = DateTime.now();
+  final amountController = HMBMoneyEditingController();
+  final formKey = GlobalKey<FormState>();
+
+  Money defaultAmount(_InvoiceAllocationOption option) =>
+      option.balance < unallocated ? option.balance : unallocated;
+
+  void setDefaultAmount(_InvoiceAllocationOption option) =>
+      amountController.money = defaultAmount(option);
+
+  setDefaultAmount(selected);
+
+  return showDialog<PaymentAllocationRequest>(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: const Text('Allocate Payment'),
+        content: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: HMBColumn(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Unallocated: $unallocated'),
+                DropdownButtonFormField<_InvoiceAllocationOption>(
+                  initialValue: selected,
+                  decoration: const InputDecoration(labelText: 'Invoice'),
+                  items: [
+                    for (final option in options)
+                      DropdownMenuItem<_InvoiceAllocationOption>(
+                        value: option,
+                        child: Text(option.label),
+                      ),
+                  ],
+                  onChanged: (option) {
+                    if (option == null) {
+                      return;
+                    }
+                    setState(() {
+                      selected = option;
+                      setDefaultAmount(option);
+                    });
+                  },
+                ),
+                HMBMoneyField(
+                  controller: amountController,
+                  labelText: 'Amount',
+                  fieldName: 'payment allocation amount',
+                ),
+                HMBDateTimeField(
+                  label: 'Date',
+                  initialDateTime: allocatedDate,
+                  mode: HMBDateTimeFieldMode.dateOnly,
+                  onChanged: (date) => allocatedDate = date,
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          HMBButton(
+            label: 'Cancel',
+            hint: 'Close without allocating this payment',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          HMBButton(
+            label: 'Allocate',
+            hint: 'Allocate this payment to the selected invoice',
+            onPressed: () {
+              if (!(formKey.currentState?.validate() ?? false)) {
+                return;
+              }
+              final amount = amountController.money ?? MoneyEx.zero;
+              if (amount > unallocated || amount > selected.balance) {
+                HMBToast.error(
+                  'Allocation exceeds the payment or invoice balance.',
+                );
+                return;
+              }
+              Navigator.of(context).pop(
+                PaymentAllocationRequest(
+                  invoiceId: selected.invoice.id,
+                  amount: amount,
+                  allocatedDate: allocatedDate,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Future<List<_InvoiceAllocationOption>> _loadInvoiceAllocationOptions(
+  DebtorPayment payment,
+) async {
+  final customerId = payment.customerId;
+  if (customerId == null) {
+    return [];
+  }
+  final db = DaoInvoice().withoutTransaction();
+  final rows = await db.rawQuery(
+    '''
+WITH invoice_balances AS (
+  SELECT
+    i.*,
+    j.summary AS job_summary,
+    (
+      i.total_amount
+      - IFNULL(pa.paid, 0)
+      - IFNULL(ca.credited, 0)
+      - IFNULL(da.adjusted, 0)
+    ) AS balance
+  FROM invoice i
+  JOIN job j ON j.id = i.job_id
+  LEFT JOIN (
+    SELECT invoice_id, SUM(amount) AS paid
+    FROM debtor_payment_allocation
+    GROUP BY invoice_id
+  ) pa ON pa.invoice_id = i.id
+  LEFT JOIN (
+    SELECT invoice_id, SUM(amount) AS credited
+    FROM credit_allocation
+    GROUP BY invoice_id
+  ) ca ON ca.invoice_id = i.id
+  LEFT JOIN (
+    SELECT invoice_id, SUM(amount) AS adjusted
+    FROM debtor_adjustment
+    GROUP BY invoice_id
+  ) da ON da.invoice_id = i.id
+  WHERE j.customer_id = ?
+    AND IFNULL(i.paid, 0) = 0
+    AND IFNULL(i.external_sync_status, 0) NOT IN (?, ?)
+)
+SELECT *
+FROM invoice_balances
+WHERE balance > 0
+ORDER BY IFNULL(due_date, created_date) ASC, id ASC
+''',
+    [
+      customerId,
+      InvoiceExternalSyncStatus.deleted.ordinal,
+      InvoiceExternalSyncStatus.voided.ordinal,
+    ],
+  );
+  return [
+    for (final row in rows)
+      _InvoiceAllocationOption(
+        invoice: Invoice.fromMap(row),
+        balance: MoneyEx.fromInt(row['balance'] as int? ?? 0),
+        jobSummary: _blankToNull(row['job_summary'] as String? ?? ''),
+      ),
+  ];
+}
+
+_InvoiceAllocationOption _defaultInvoiceOption(
+  List<_InvoiceAllocationOption> options,
+  Money unallocated,
+) => options.firstWhere(
+  (option) => option.balance == unallocated,
+  orElse: () => options.first,
+);
+
+String _invoiceLabel({required int? invoiceId, required String? invoiceNum}) {
+  if (_blankToNull(invoiceNum ?? '') != null) {
+    return 'Invoice $invoiceNum';
+  }
+  return invoiceId == null ? 'Invoice' : 'Invoice #$invoiceId';
 }
 
 String? _blankToNull(String value) {

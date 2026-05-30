@@ -243,6 +243,20 @@ class XeroApi {
     );
   }
 
+  Future<http.Response> deletePayment(String paymentId) async {
+    await _checkIntegration();
+    final tenantId = await getTenantId();
+    return http.post(
+      Uri.parse('${_baseUrl}Payments/$paymentId'),
+      headers: {
+        'Authorization': 'Bearer ${xeroAuth.accessToken}',
+        'Content-Type': 'application/json',
+        'Xero-tenant-id': tenantId,
+      },
+      body: jsonEncode({'PaymentID': paymentId, 'Status': 'DELETED'}),
+    );
+  }
+
   Future<http.Response> createCreditNote(
     Map<String, dynamic> creditNote,
   ) async {

@@ -12,11 +12,14 @@
 */
 
 import 'package:money2/money2.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/entity.g.dart';
 import '../util/dart/exceptions.dart';
+import '../util/dart/format.dart';
 import '../util/dart/money_ex.dart';
+import 'dao_accounting_sync_event.dart';
 import 'dao_credit_allocation.dart';
 import 'dao_credit_note.dart';
 import 'dao_debtor_adjustment.dart';
@@ -81,6 +84,10 @@ class InvoiceLedgerHistoryEntry {
 }
 
 class DebtorLedgerService {
+  static const externalProvider = 'xero';
+  static const paymentEntity = 'payment';
+  static const paymentAllocationEntity = 'payment_allocation';
+
   final DaoInvoice _daoInvoice;
   final DaoJob _daoJob;
   final DaoDebtorTransaction _daoTransaction;
@@ -156,6 +163,7 @@ class DebtorLedgerService {
       notes: notes,
     );
     await _daoPayment.insert(payment);
+    await _queueCreate(paymentEntity, payment.id);
     await allocatePayment(
       paymentId: payment.id,
       invoiceId: invoice.id,
@@ -186,6 +194,7 @@ class DebtorLedgerService {
       notes: notes,
     );
     await _daoPayment.insert(payment);
+    await _queueCreate(paymentEntity, payment.id);
     return payment;
   }
 
@@ -238,7 +247,44 @@ class DebtorLedgerService {
       allocatedDate: allocatedDate ?? DateTime.now(),
     );
     await _daoPaymentAllocation.insert(allocation);
+    await _queueCreate(paymentAllocationEntity, allocation.id);
     return allocation;
+  }
+
+  Future<void> deletePayment(int paymentId) async {
+    final payment = await _daoPayment.getById(paymentId);
+    if (payment == null) {
+      return;
+    }
+    await _daoPayment.withTransaction((transaction) async {
+      final allocations = await _daoPaymentAllocation.getByPaymentId(
+        paymentId,
+        transaction,
+      );
+      for (final allocation in allocations) {
+        await _queueDeleteOrSupersedeAllocation(
+          allocation,
+          transaction: transaction,
+        );
+        await _daoPaymentAllocation.delete(allocation.id, transaction);
+      }
+      await _queueDeleteOrSupersedePayment(payment, transaction: transaction);
+      await _daoPayment.delete(payment.id, transaction);
+    });
+  }
+
+  Future<void> deletePaymentAllocation(int allocationId) async {
+    final allocation = await _daoPaymentAllocation.getById(allocationId);
+    if (allocation == null) {
+      return;
+    }
+    await _daoPaymentAllocation.withTransaction((transaction) async {
+      await _queueDeleteOrSupersedeAllocation(
+        allocation,
+        transaction: transaction,
+      );
+      await _daoPaymentAllocation.delete(allocation.id, transaction);
+    });
   }
 
   Future<CreditNote> createCreditNote({
@@ -557,11 +603,68 @@ class DebtorLedgerService {
     }
   }
 
+  Future<void> _queueCreate(String entityType, int localId) =>
+      DaoAccountingSyncEvent().enqueue(
+        provider: externalProvider,
+        entityType: entityType,
+        localId: localId,
+        operation: AccountingSyncOperation.create,
+      );
+
+  Future<void> _queueDeleteOrSupersedePayment(
+    DebtorPayment payment, {
+    required Transaction transaction,
+  }) async {
+    final syncEvents = DaoAccountingSyncEvent();
+    await syncEvents.supersedePendingCreates(
+      provider: externalProvider,
+      entityType: paymentEntity,
+      localId: payment.id,
+      transaction: transaction,
+    );
+    final externalId = payment.externalPaymentId;
+    if (Strings.isNotBlank(externalId)) {
+      await syncEvents.enqueue(
+        provider: externalProvider,
+        entityType: paymentEntity,
+        localId: payment.id,
+        externalId: externalId,
+        operation: AccountingSyncOperation.delete,
+        transaction: transaction,
+      );
+    }
+  }
+
+  Future<void> _queueDeleteOrSupersedeAllocation(
+    PaymentAllocation allocation, {
+    required Transaction transaction,
+  }) async {
+    final syncEvents = DaoAccountingSyncEvent();
+    await syncEvents.supersedePendingCreates(
+      provider: externalProvider,
+      entityType: paymentAllocationEntity,
+      localId: allocation.id,
+      transaction: transaction,
+    );
+    final externalId = allocation.externalAllocationId;
+    if (Strings.isNotBlank(externalId)) {
+      await syncEvents.enqueue(
+        provider: externalProvider,
+        entityType: paymentAllocationEntity,
+        localId: allocation.id,
+        externalId: externalId,
+        operation: AccountingSyncOperation.delete,
+        transaction: transaction,
+      );
+    }
+  }
+
   String? _paymentDetail(DebtorPayment? payment) {
     if (payment == null) {
       return null;
     }
     final parts = [
+      'Payment date: ${formatDate(payment.paymentDate, format: 'j M Y')}',
       payment.paymentMethod,
       payment.reference,
       payment.notes,

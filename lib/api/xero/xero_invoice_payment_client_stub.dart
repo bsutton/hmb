@@ -8,6 +8,8 @@ XeroInvoicePaymentClient createXeroInvoicePaymentClient() =>
           throw UnsupportedError('Xero invoice access requires Flutter.'),
       createPayment: (_) async =>
           throw UnsupportedError('Xero payment access requires Flutter.'),
+      deletePayment: (_) async =>
+          throw UnsupportedError('Xero payment access requires Flutter.'),
       createCreditNote: (_) async =>
           throw UnsupportedError('Xero credit note access requires Flutter.'),
       allocateCreditNote: (_, _) async => throw UnsupportedError(
