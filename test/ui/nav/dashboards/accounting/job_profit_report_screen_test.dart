@@ -33,4 +33,17 @@ void main() {
 
     expect(find.byIcon(Icons.add), findsNothing);
   });
+
+  testWidgets('job selector dialog shows active job filter', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: JobProfitReportScreen()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Select a Job'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final filterIcon = tester.widget<Icon>(find.byIcon(Icons.tune));
+    expect(filterIcon.color, Colors.blue);
+    expect(find.text('Show old jobs'), findsNothing);
+  });
 }

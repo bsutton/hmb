@@ -19,8 +19,10 @@ import '../../../util/dart/types.dart';
 import '../../../util/flutter/hmb_theme.dart';
 import '../icons/hmb_clear_icon.dart';
 import '../icons/hmb_close_icon.dart';
+import '../icons/hmb_filter_icon.dart';
 import '../layout/layout.g.dart';
 import '../widgets.g.dart';
+import 'hmb_filter_sheet.dart';
 
 class HMBDroplistDialog<T> extends StatefulWidget {
   final Future<List<T>> Function(String? filter) getItems;
@@ -29,6 +31,10 @@ class HMBDroplistDialog<T> extends StatefulWidget {
   final T? selectedItem;
   final bool allowClear;
   final AsyncVoidCallback? onAdd; // Optional "Add" button callback
+  final Widget Function(BuildContext context, VoidCallback onChange)?
+  filterSheetBuilder;
+  final VoidCallback? onFilterReset;
+  final bool Function()? isFilterActive;
   final bool showSearch;
 
   const HMBDroplistDialog({
@@ -38,6 +44,9 @@ class HMBDroplistDialog<T> extends StatefulWidget {
     this.selectedItem,
     this.allowClear = false,
     this.onAdd, // Optional "Add" button callback
+    this.filterSheetBuilder,
+    this.onFilterReset,
+    this.isFilterActive,
     super.key,
     this.showSearch = true,
   });
@@ -103,6 +112,40 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
     }
   }
 
+  Future<void> _showFilterSheet() async {
+    final builder = widget.filterSheetBuilder;
+    if (builder == null) {
+      return;
+    }
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => HMBFilterSheet(
+        contentBuilder: (context) => builder(context, () {
+          setState(() {
+            _loading = true;
+          });
+          unawaited(_loadItems());
+        }),
+        onReset: widget.onFilterReset == null
+            ? null
+            : () {
+                widget.onFilterReset!();
+                setState(() {
+                  _loading = true;
+                });
+                unawaited(_loadItems());
+              },
+      ),
+    );
+    if (mounted) {
+      setState(() {
+        _loading = true;
+      });
+      unawaited(_loadItems());
+    }
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -111,6 +154,7 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
 
   @override
   Widget build(BuildContext context) => Dialog(
+    insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     child: HMBColumn(
       mainAxisSize: MainAxisSize.min,
@@ -253,6 +297,16 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
                 enabled: true,
                 onAdd: _handleAdd,
                 hint: 'Add ${widget.title}',
+              ),
+            ),
+          if (widget.filterSheetBuilder != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: HMBFilterIcon(
+                onPressed: _showFilterSheet,
+                hint: 'Filter ${widget.title}',
+                small: true,
+                active: widget.isFilterActive?.call() ?? false,
               ),
             ),
         ],

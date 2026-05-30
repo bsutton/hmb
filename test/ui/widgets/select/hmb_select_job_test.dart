@@ -55,19 +55,40 @@ void main() {
     expect(find.byIcon(Icons.add), findsNothing);
   });
 
-  testWidgets('shows add button by default', (tester) async {
+  testWidgets('shows add button by default in selection dialog', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: HMBSelectJob(selectedJob: SelectedJob())),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Select a Job'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byIcon(Icons.add), findsOneWidget);
+  });
+
+  testWidgets('shows active filter icon by default in selection dialog', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: HMBSelectJob(
-            selectedJob: SelectedJob(),
-            items: (_) async => const <Job>[],
-          ),
+          body: HMBSelectJob(selectedJob: SelectedJob(), showAdd: false),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.add), findsOneWidget);
+    await tester.tap(find.text('Select a Job'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final filterIcon = tester.widget<Icon>(find.byIcon(Icons.tune));
+    expect(filterIcon.color, Colors.blue);
   });
 }

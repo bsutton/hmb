@@ -30,6 +30,10 @@ class HMBDroplist<T> extends StatefulWidget {
   final void Function(T?) onChanged;
   final String title;
   final AsyncVoidCallback? onAdd;
+  final Widget Function(BuildContext context, VoidCallback onChange)?
+  filterSheetBuilder;
+  final VoidCallback? onFilterReset;
+  final bool Function()? isFilterActive;
   final Color? backgroundColor;
   final void Function(T?)? onSaved;
   final T? initialValue;
@@ -44,6 +48,9 @@ class HMBDroplist<T> extends StatefulWidget {
     required this.onChanged,
     required this.title,
     this.onAdd,
+    this.filterSheetBuilder,
+    this.onFilterReset,
+    this.isFilterActive,
     this.backgroundColor,
     this.onSaved,
     this.initialValue,
@@ -124,6 +131,9 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
                   selectedItem: _selectedItem,
                   allowClear: !widget.required,
                   onAdd: widget.onAdd != null ? _handleAdd : null,
+                  filterSheetBuilder: widget.filterSheetBuilder,
+                  onFilterReset: widget.onFilterReset,
+                  isFilterActive: widget.isFilterActive,
                   showSearch: widget.showSearch,
                 ),
               );
