@@ -288,7 +288,15 @@ Closing balance: ${report.closingBalance}
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(row.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+            Text(
+              row.description,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: _statementRowColor(row),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             Wrap(
               spacing: 16,
               runSpacing: 8,
@@ -316,9 +324,21 @@ Closing balance: ${report.closingBalance}
     rows.add(_StatementRow.closing(balance));
     return rows;
   }
+
+  Color _statementRowColor(_StatementRow row) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return switch (row.type) {
+      DebtorStatementEntryType.invoice => colorScheme.primary,
+      DebtorStatementEntryType.payment ||
+      DebtorStatementEntryType.credit => Colors.green.shade700,
+      DebtorStatementEntryType.adjustment => Colors.orange.shade800,
+      null => colorScheme.onSurface,
+    };
+  }
 }
 
 class _StatementRow {
+  final DebtorStatementEntryType? type;
   final DateTime? date;
   final String? invoiceNumber;
   final String? customerName;
@@ -327,6 +347,7 @@ class _StatementRow {
   final Money balance;
 
   const _StatementRow({
+    required this.type,
     required this.date,
     required this.invoiceNumber,
     required this.customerName,
@@ -336,6 +357,7 @@ class _StatementRow {
   });
 
   factory _StatementRow.opening(Money balance) => _StatementRow(
+    type: null,
     date: null,
     invoiceNumber: null,
     customerName: null,
@@ -346,6 +368,7 @@ class _StatementRow {
 
   factory _StatementRow.entry(DebtorStatementEntry entry, Money balance) =>
       _StatementRow(
+        type: entry.type,
         date: entry.date,
         invoiceNumber: entry.invoiceNumber,
         customerName: entry.customerName,
@@ -355,6 +378,7 @@ class _StatementRow {
       );
 
   factory _StatementRow.closing(Money balance) => _StatementRow(
+    type: null,
     date: null,
     invoiceNumber: null,
     customerName: null,

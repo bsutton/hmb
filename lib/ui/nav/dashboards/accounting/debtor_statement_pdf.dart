@@ -191,52 +191,78 @@ pw.Widget _labelValue(String label, String value) => pw.Column(
 );
 
 pw.Widget _statementTable(List<_StatementPdfRow> rows, PdfColor systemColor) =>
-    pw.TableHelper.fromTextArray(
-      headers: [
-        'Date',
-        'Activity',
-        'Reference',
-        'Invoice Amount',
-        'Payments/\nCredits',
-        'Balance',
-      ],
-      data: [
-        for (final row in rows)
-          [
-            _formatRowDate(row),
-            row.activity,
-            row.reference,
-            row.invoiceAmount?.toString() ?? '',
-            row.paymentAmount?.toString() ?? '',
-            row.balance.toString(),
-          ],
-      ],
-      columnWidths: {
-        0: const pw.FixedColumnWidth(62),
-        1: const pw.FlexColumnWidth(2),
-        2: const pw.FlexColumnWidth(1.3),
-        3: const pw.FixedColumnWidth(78),
-        4: const pw.FixedColumnWidth(86),
-        5: const pw.FixedColumnWidth(72),
+    pw.Table(
+      columnWidths: const {
+        0: pw.FixedColumnWidth(62),
+        1: pw.FlexColumnWidth(2),
+        2: pw.FlexColumnWidth(1.3),
+        3: pw.FixedColumnWidth(78),
+        4: pw.FixedColumnWidth(86),
+        5: pw.FixedColumnWidth(72),
       },
-      headerStyle: pw.TextStyle(
-        fontWeight: pw.FontWeight.bold,
-        color: PdfColors.white,
-      ),
-      headerDecoration: pw.BoxDecoration(color: systemColor),
-      cellStyle: const pw.TextStyle(fontSize: 9),
-      cellAlignment: pw.Alignment.centerLeft,
-      cellAlignments: {
-        3: pw.Alignment.centerRight,
-        4: pw.Alignment.centerRight,
-        5: pw.Alignment.centerRight,
-      },
-      cellPadding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 4),
       border: const pw.TableBorder(
         horizontalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.4),
         bottom: pw.BorderSide(width: 0.8),
       ),
+      children: [
+        pw.TableRow(
+          decoration: pw.BoxDecoration(color: systemColor),
+          children: [
+            _headerCell('Date'),
+            _headerCell('Activity'),
+            _headerCell('Reference'),
+            _headerCell('Invoice Amount', alignRight: true),
+            _headerCell('Payments/\nCredits', alignRight: true),
+            _headerCell('Balance', alignRight: true),
+          ],
+        ),
+        for (final row in rows)
+          pw.TableRow(
+            children: [
+              _tableCell(_formatRowDate(row)),
+              _tableCell(
+                row.activity,
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  color: _statementActivityColor(row),
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              _tableCell(row.reference),
+              _tableCell(row.invoiceAmount?.toString() ?? '', alignRight: true),
+              _tableCell(row.paymentAmount?.toString() ?? '', alignRight: true),
+              _tableCell(row.balance.toString(), alignRight: true),
+            ],
+          ),
+      ],
     );
+
+pw.Widget _headerCell(String text, {bool alignRight = false}) => pw.Container(
+  padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+  alignment: alignRight ? pw.Alignment.centerRight : pw.Alignment.centerLeft,
+  child: pw.Text(
+    text,
+    style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+  ),
+);
+
+pw.Widget _tableCell(
+  String text, {
+  bool alignRight = false,
+  pw.TextStyle style = const pw.TextStyle(fontSize: 9),
+}) => pw.Container(
+  padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+  alignment: alignRight ? pw.Alignment.centerRight : pw.Alignment.centerLeft,
+  child: pw.Text(text, style: style),
+);
+
+PdfColor _statementActivityColor(_StatementPdfRow row) => switch (row.type) {
+  DebtorStatementEntryType.invoice => PdfColors.blue700,
+  DebtorStatementEntryType.payment ||
+  DebtorStatementEntryType.credit => PdfColors.green700,
+  DebtorStatementEntryType.adjustment => PdfColors.orange800,
+  null => PdfColors.black,
+};
 
 String _formatRowDate(_StatementPdfRow row) {
   final date = row.date;
@@ -323,6 +349,7 @@ List<_StatementPdfRow> _statementRows(DebtorStatementReport report) {
   var balance = report.openingBalance;
   final rows = <_StatementPdfRow>[
     _StatementPdfRow(
+      type: null,
       date: report.startInclusive,
       activity: 'Opening balance',
       reference: '',
@@ -337,6 +364,7 @@ List<_StatementPdfRow> _statementRows(DebtorStatementReport report) {
   }
   rows.add(
     _StatementPdfRow(
+      type: null,
       date: _lastDay(report),
       activity: 'Closing balance',
       reference: '',
@@ -377,6 +405,7 @@ String _formatTimestamp(DateTime date) {
 }
 
 class _StatementPdfRow {
+  final DebtorStatementEntryType? type;
   final DateTime? date;
   final String activity;
   final String reference;
@@ -385,6 +414,7 @@ class _StatementPdfRow {
   final Money balance;
 
   const _StatementPdfRow({
+    required this.type,
     required this.date,
     required this.activity,
     required this.reference,
@@ -395,6 +425,7 @@ class _StatementPdfRow {
 
   factory _StatementPdfRow.entry(DebtorStatementEntry entry, Money balance) =>
       _StatementPdfRow(
+        type: entry.type,
         date: entry.date,
         activity: entry.description,
         reference: entry.invoiceNumber,
