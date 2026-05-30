@@ -27,6 +27,7 @@ import '../widgets/hmb_toast.dart';
 import '../widgets/icons/help_button.dart';
 import '../widgets/select/hmb_select_email_multi.dart';
 import '../widgets/select/hmb_select_mobile_multi.dart';
+import 'email_self_warning.dart';
 
 enum NoticeChannel { email, sms }
 
@@ -213,6 +214,10 @@ ${Strings.isNotBlank(_system.businessNumber) ? '${Strings.orElseOnBlank(_system.
                   });
                 },
               ),
+              EmailSelfWarning(
+                ownEmail: _system.emailAddress,
+                recipients: _toEmails,
+              ),
               const SizedBox(height: 8),
               // Optional CC
               HMBSelectEmailMulti(
@@ -225,6 +230,10 @@ ${Strings.isNotBlank(_system.businessNumber) ? '${Strings.orElseOnBlank(_system.
                 },
               ).help('CC (optional)', '''
 Add additional recipients who should receive a copy of the email.'''),
+              EmailSelfWarning(
+                ownEmail: _system.emailAddress,
+                recipients: _ccEmails,
+              ),
               TextField(
                 controller: _subjectCtl,
                 decoration: const InputDecoration(labelText: 'Subject'),
@@ -300,6 +309,13 @@ Add additional recipients who should receive a copy of the email.'''),
     }
     if (_toEmails.isEmpty) {
       HMBToast.info('Please select at least one email address');
+      return;
+    }
+    if (!await confirmSendingToSelf(
+      context: context,
+      ownEmail: _system.emailAddress,
+      recipients: [..._toEmails, ..._ccEmails],
+    )) {
       return;
     }
 

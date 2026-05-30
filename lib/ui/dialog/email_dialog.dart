@@ -23,6 +23,7 @@ import '../../entity/system.dart';
 import '../../ui/widgets/hmb_toast.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/select/hmb_droplist.dart';
+import 'email_self_warning.dart';
 
 class EmailDialog extends StatefulWidget {
   final String subject;
@@ -117,6 +118,12 @@ $businessDetails
                   )
                   .toList(),
             ),
+            EmailSelfWarning(
+              ownEmail: system.emailAddress,
+              recipients: _selectedRecipient == null
+                  ? const []
+                  : [_selectedRecipient!],
+            ),
             TextField(
               controller: _subjectController,
               decoration: const InputDecoration(labelText: 'Subject'),
@@ -147,7 +154,11 @@ $businessDetails
               return;
             }
             if (_selectedRecipient != null) {
-              if (!await _confirmSendingToSelf([_selectedRecipient!])) {
+              if (!await confirmSendingToSelf(
+                context: context,
+                ownEmail: system.emailAddress,
+                recipients: [_selectedRecipient!],
+              )) {
                 return;
               }
               final email = Email(
@@ -170,40 +181,4 @@ $businessDetails
       ],
     ),
   );
-
-  Future<bool> _confirmSendingToSelf(List<String> recipients) async {
-    final systemEmail = system.emailAddress?.trim().toLowerCase();
-    if (Strings.isBlank(systemEmail)) {
-      return true;
-    }
-    final sendingToSelf = recipients
-        .map((email) => email.trim().toLowerCase())
-        .contains(systemEmail);
-    if (!sendingToSelf) {
-      return true;
-    }
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sending to yourself'),
-        content: Text(
-          'The selected recipient is your own email address '
-          '(${system.emailAddress}). Continue?',
-        ),
-        actions: [
-          HMBButton(
-            label: 'Cancel',
-            hint: "Don't send this email",
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-          HMBButton(
-            label: 'Continue',
-            hint: 'Continue sending this email',
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      ),
-    );
-    return confirmed ?? false;
-  }
 }
