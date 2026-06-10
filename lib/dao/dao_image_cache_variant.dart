@@ -87,11 +87,22 @@ class DaoImageCacheVariant extends Dao<ImageCacheVariant> {
     );
   }
 
+  Future<void> removeByPhotoId(int photoId, [Transaction? transaction]) async {
+    final db = withinTransaction(transaction);
+    await db.delete(tableName, where: 'photo_id = ?', whereArgs: [photoId]);
+  }
+
+  /// Clears all cache entries. Use with caution.
+  Future<void> clear([Transaction? transaction]) async {
+    final db = withinTransaction(transaction);
+    await db.delete(tableName);
+  }
+
   Future<void> removeMissingSince(
     int resyncStartMs,
     Transaction transaction,
   ) async {
-    await transaction.execute(
+    await withinTransaction(transaction).execute(
       '''
 DELETE FROM $tableName
 WHERE last_access <= ?
