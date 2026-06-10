@@ -66,6 +66,7 @@ class HMBDroplist<T> extends StatefulWidget {
 
 class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
   T? _selectedItem;
+  final _formFieldKey = GlobalKey<FormFieldState<T>>();
 
   bool get hasSelection => _selectedItem != null;
 
@@ -98,6 +99,9 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
           setState(() {
             _selectedItem = newSelection;
           });
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _formFieldKey.currentState?.didChange(newSelection);
+          });
         }
       }
     });
@@ -107,6 +111,7 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
   Widget build(BuildContext context) => DeferredBuilder(
     this,
     builder: (aacontext) => FormField<T>(
+      key: _formFieldKey,
       onSaved: widget.onSaved,
       initialValue: _selectedItem,
       autovalidateMode: AutovalidateMode.always,
