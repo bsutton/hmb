@@ -53,7 +53,7 @@ class SiteSource extends Source<Site> {
     }
 
     customerNotifier.value = sourceContext.customer;
-    site = null;
+    site = sourceContext.site;
   }
 
   @override
