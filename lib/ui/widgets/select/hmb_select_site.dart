@@ -43,8 +43,21 @@ class HMBSelectSite extends StatefulWidget {
 }
 
 class HMBSelectSiteState extends State<HMBSelectSite> {
-  Future<Site?> _getInitialSite() =>
-      DaoSite().getById(widget.initialSite.siteId);
+  Future<Site?> _getInitialSite() async {
+    if (widget.initialSite.siteId != null) {
+      return DaoSite().getById(widget.initialSite.siteId);
+    }
+
+    final sites = await DaoSite().getByFilter(widget.customer?.id, null);
+    if (sites.length != 1) {
+      return null;
+    }
+
+    final site = sites.first;
+    widget.initialSite.siteId = site.id;
+    widget.onSelected?.call(site);
+    return site;
+  }
 
   Future<List<Site>> _getSites(String? filter) =>
       DaoSite().getByFilter(widget.customer?.id, filter);
