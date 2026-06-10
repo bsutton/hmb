@@ -33,6 +33,7 @@ import '../../../util/dart/format.dart';
 import '../../../util/dart/local_date.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../../util/flutter/platform_ex.dart';
+import '../../dialog/hmb_comfirm_delete_dialog.dart';
 import '../../dialog/hmb_file_picker_linux.dart';
 import '../../scheduling/schedule_page.dart';
 import '../../widgets/fields/hmb_text_area.dart';
@@ -42,6 +43,7 @@ import '../../widgets/hmb_chip.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/icons/circle.dart';
 import '../../widgets/icons/help_button.dart';
+import '../../widgets/icons/hmb_add_button.dart';
 import '../../widgets/icons/hmb_delete_icon.dart';
 import '../../widgets/icons/hmb_edit_icon.dart';
 import '../../widgets/layout/layout.g.dart';
@@ -146,6 +148,7 @@ class _EditJobCardState extends DeferredState<EditJobCard> {
             _buildDescription(),
             _buildNotes(),
             _buildAssumption(),
+            if (job != null) _buildJobNotes(),
             if (job != null) _buildAttachments(),
           ],
         ),
@@ -356,6 +359,7 @@ You can set a default booking fee from System | Billing screen''');
       key: ValueKey(state.siteId),
       initialSite: state,
       customer: widget.customer,
+      associatedJob: job,
       onSelected: (site) {
         June.getState(SelectedSite.new).siteId = site?.id;
       },
@@ -788,6 +792,123 @@ You can set a default booking fee from System | Billing screen''');
       ),
     ],
   );
+
+  Widget _buildJobNotes() => FutureBuilderEx<List<Activity>>(
+    key: ValueKey(_notesVersion),
+    future: DaoActivity().getByJob(job!.id, type: ActivityType.note),
+    builder: (context, notes) => HMBColumn(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Expanded(child: HMBText('Notes:', bold: true)),
+            HMBButtonAdd(
+              onAdd: _addJobNote,
+              enabled: true,
+              small: true,
+              hint: 'Add a job note.',
+            ),
+          ],
+        ),
+        if (notes == null || notes.isEmpty)
+          const Text('No notes')
+        else
+          ...notes.map(_buildJobNoteRow),
+      ],
+    ),
+  );
+
+  Widget _buildJobNoteRow(Activity note) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: HMBColumn(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _noteText(note),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                formatDateTime(note.occurredAt),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+        HMBEditIcon(
+          hint: 'Edit this job note.',
+          onPressed: () => _editJobNote(note),
+        ),
+        HMBDeleteIcon(
+          hint: 'Delete this job note.',
+          onPressed: () => _deleteJobNote(note),
+        ),
+      ],
+    ),
+  );
+
+  Future<void> _addJobNote() async {
+    final text = await _showTextAreaEditDialog('', 'Add Note');
+    final noteText = text?.trim();
+    if (noteText == null || noteText.isEmpty || job == null) {
+      return;
+    }
+
+    await DaoActivity().insert(
+      Activity.forInsert(
+        jobId: job!.id,
+        type: ActivityType.note,
+        summary: _noteSummary(noteText),
+        details: noteText,
+      ),
+    );
+    if (mounted) {
+      setState(() => _notesVersion++);
+    }
+  }
+
+  Future<void> _editJobNote(Activity note) async {
+    final text = await _showTextAreaEditDialog(_noteText(note), 'Edit Note');
+    final noteText = text?.trim();
+    if (noteText == null || noteText.isEmpty) {
+      return;
+    }
+
+    await DaoActivity().update(
+      note.copyWith(summary: _noteSummary(noteText), details: noteText),
+    );
+    if (mounted) {
+      setState(() => _notesVersion++);
+    }
+  }
+
+  Future<void> _deleteJobNote(Activity note) async {
+    await showConfirmDeleteDialog(
+      context: context,
+      nameSingular: 'note',
+      question: 'Delete this job note?',
+      onConfirmed: () async {
+        await DaoActivity().delete(note.id);
+        if (mounted) {
+          setState(() => _notesVersion++);
+        }
+      },
+    );
+  }
+
+  String _noteText(Activity note) => (note.details ?? note.summary).trim();
+
+  String _noteSummary(String noteText) {
+    final firstLine = noteText
+        .split('\n')
+        .map((line) => line.trim())
+        .firstWhere((line) => line.isNotEmpty, orElse: () => 'Note');
+    return firstLine.length <= 80 ? firstLine : firstLine.substring(0, 80);
+  }
 
   Widget _buildAttachments() => FutureBuilderEx<List<JobAttachment>>(
     future: DaoJobAttachment().getByJob(job!.id),

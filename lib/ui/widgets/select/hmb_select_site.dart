@@ -18,6 +18,7 @@ import '../../../dao/dao_site.dart';
 import '../../../dao/join_adaptors/join_adaptor_customer_site.dart';
 import '../../../entity/customer.dart';
 import '../../../entity/site.dart';
+import '../../../entity/job.dart';
 import '../../crud/site/edit_site_screen.dart';
 import '../icons/hmb_add_button.dart';
 import 'hmb_droplist.dart';
@@ -29,11 +30,13 @@ class HMBSelectSite extends StatefulWidget {
   /// The customer that owns the site.
   final Customer? customer;
   final SelectedSite initialSite;
+  final Job? associatedJob;
   final void Function(Site? site)? onSelected;
 
   const HMBSelectSite({
     required this.initialSite,
     required this.customer,
+    this.associatedJob,
     super.key,
     this.onSelected,
   });
@@ -50,7 +53,13 @@ class HMBSelectSiteState extends State<HMBSelectSite> {
 
     final sites = await DaoSite().getByFilter(widget.customer?.id, null);
     if (sites.length != 1) {
-      return null;
+      final site = await DaoSite().getByJob(widget.associatedJob);
+      if (site == null) {
+        return null;
+      }
+      widget.initialSite.siteId = site.id;
+      widget.onSelected?.call(site);
+      return site;
     }
 
     final site = sites.first;
