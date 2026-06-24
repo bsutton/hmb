@@ -642,7 +642,12 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
             HMBButton.withIcon(
               label: _isExtractingLines ? 'Extracting...' : 'Extract Lines',
               hint: 'Use the ChatGPT integration to read receipt lines.',
-              icon: const Icon(Icons.document_scanner_outlined),
+              icon: _isExtractingLines
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.document_scanner_outlined),
               enabled: !_isExtractingLines,
               onPressed: _extractLineItems,
             ),
