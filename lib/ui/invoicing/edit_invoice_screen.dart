@@ -100,7 +100,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '''Invoice #${invoice.id} Issued: ${formatDate(invoice.createdDate)}''',
+                  '''Invoice #${invoice.id} - ${formatDate(invoice.createdDate)}''',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -108,13 +108,21 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                 ),
                 Text('Customer: ${customer?.name ?? "N/A"}'),
                 Text('Job: ${job.summary} #${job.id}'),
-                Text('Total: ${invoice.totalAmount}'),
-                Text('Sync: ${_syncStatusLabel(invoice.externalSyncStatus)}'),
                 if (Strings.isNotBlank(invoice.voidDescription))
                   Text('Void description: ${invoice.voidDescription}'),
-                Text(
-                  'Management: '
-                  '${_paymentManagementLabel(invoice)}',
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 8,
+                  children: [
+                    Text(
+                      'Payment tracking: '
+                      '${_paymentManagementLabel(invoice)}',
+                    ),
+                    Text(
+                      'Accounting sync: '
+                      '${_syncStatusLabel(invoice.externalSyncStatus)}',
+                    ),
+                  ],
                 ),
                 _buildLedgerSummary(details),
                 if (invoice.paymentSource == InvoicePaymentSource.unknown)
@@ -285,14 +293,14 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Money owed',
+              'Payment summary',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             Wrap(
               spacing: 16,
               runSpacing: 8,
               children: [
-                Text('Total: ${ledger.total}'),
+                Text('Invoice total: ${ledger.total}'),
                 Text('Paid: ${ledger.paid}'),
                 Text('Credited: ${ledger.credited}'),
                 Text('Adjusted: ${ledger.adjusted}'),
