@@ -119,8 +119,8 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                 _buildLedgerSummary(details),
                 if (invoice.paymentSource == InvoicePaymentSource.unknown)
                   const Text(
-                    'This is a legacy invoice. Convert it to manual '
-                    'management if it is no longer managed in Xero.',
+                    'This invoice needs payment tracking review. Convert it '
+                    'to manual tracking if it is no longer managed in Xero.',
                   ),
                 if (!readOnlyInvoice)
                   FutureBuilderEx<bool>(
@@ -143,7 +143,8 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                           HMBButton(
                             label: 'Convert to Manual Tracking',
                             hint:
-                                'Switch this legacy invoice to manual tracking',
+                                'Switch this invoice to manual payment '
+                                'tracking',
                             onPressed: () async {
                               await _convertToManualTracking();
                             },
