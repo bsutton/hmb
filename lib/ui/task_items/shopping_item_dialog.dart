@@ -130,12 +130,12 @@ Future<void> showShoppingItemDialog(
                   ),
                   HMBTextField(
                     controller: costController,
-                    labelText: 'Unit Cost',
+                    labelText: 'Unit Cost per Item',
                     keyboardType: TextInputType.number,
                   ),
                   HMBTextField(
                     controller: quantityController,
-                    labelText: 'Quantity',
+                    labelText: 'Total Quantity',
                     keyboardType: TextInputType.number,
                   ),
                 ],
