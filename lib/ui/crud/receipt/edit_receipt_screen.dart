@@ -88,6 +88,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   var _linkableTaskItems = <TaskItem>[];
   final _jobAllocations = <_ReceiptJobAllocationEditor>[];
   final _lineItems = <_ReceiptLineItemEditor>[];
+  Task? _lastCreatedLineTask;
 
   var _isCalculating = false;
   var _isExtractingLines = false;
@@ -1185,7 +1186,9 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
 
   Future<void> _createTaskItemForLine(_ReceiptLineItemEditor line) async {
     final selectedJob = SelectedJob()..jobId = _selectedJob.jobId;
-    Task? selectedTask;
+    var selectedTask = _lastCreatedLineTask?.jobId == _selectedJob.jobId
+        ? _lastCreatedLineTask
+        : null;
     var selectedItemType = _itemTypeForExpenseCategory(line.expenseCategory);
     final descriptionController = TextEditingController(text: line.description);
     final quantityController = TextEditingController(
@@ -1290,6 +1293,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
                     unitCostText: unitCostController.text,
                   );
                   setState(() {
+                    _lastCreatedLineTask = selectedTask;
                     line.matchedTaskItemId = item.id;
                     _linkedTaskItemIds.add(item.id);
                   });
