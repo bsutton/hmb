@@ -315,6 +315,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         parentType: ParentType.receipt,
         controller: _photoCtrl,
         allowPendingPhotos: true,
+        showCommentField: false,
       ),
     ],
   );
