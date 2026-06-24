@@ -43,6 +43,7 @@ class _AccountingDashboardPageState extends State<AccountingDashboardPage> {
     title: 'Accounting',
     header: _header(),
     dashlets: [
+      const ReceiptDashlet(),
       DashletCard<void>.route(
         label: 'Estimator',
         hint:
@@ -59,7 +60,6 @@ class _AccountingDashboardPageState extends State<AccountingDashboardPage> {
         value: getQuoteValue,
         route: '/home/accounting/quotes',
       ),
-      const ReceiptDashlet(),
       DashletCard<int>.route(
         label: 'To Be Invoiced',
         hint: 'List of Jobs that have unbilled hours',
