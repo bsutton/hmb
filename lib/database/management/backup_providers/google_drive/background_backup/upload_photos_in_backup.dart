@@ -268,6 +268,15 @@ Future<http.StreamedResponse> _uploadFileWithProgress({
     ..headers['Content-Type'] = 'image/jpeg'
     ..contentLength = totalBytes;
 
+  sendPort.send(
+    ProgressUpdate(
+      'Sending photo ($photoIndex/$totalPhotos, 0%, '
+      '${_formatBytes(totalBytes)})',
+      stageNo,
+      stageCount,
+    ),
+  );
+
   final responseFuture = _withTimeout(
     driveApi.send(request),
     timeout: _photoUploadTimeout,

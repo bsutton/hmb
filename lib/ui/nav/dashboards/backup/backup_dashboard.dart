@@ -43,6 +43,8 @@ class BackupDashboardPage extends StatefulWidget {
 class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   var _isDbOffline = false;
   var _photoStageDescription = '';
+  var _photoStageNo = 0;
+  var _photoStageCount = 0;
   var _syncRunning = false;
 
   GoogleDriveAuth? _auth;
@@ -57,7 +59,11 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     super.initState();
     // Listen for photo sync progress
     _photoSub = PhotoSyncService().progressStream.listen((update) {
-      setState(() => _photoStageDescription = update.stageDescription);
+      setState(() {
+        _photoStageDescription = update.stageDescription;
+        _photoStageNo = update.stageNo;
+        _photoStageCount = update.stageCount;
+      });
     });
     _photoErrorSub = PhotoSyncService().errorStream.listen((message) {
       if (mounted) {
@@ -356,6 +362,12 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     children: [
       if (_photoStageDescription.isNotEmpty) ...[
         Text(_photoStageDescription, style: const TextStyle(fontSize: 16)),
+        if (_photoStageCount > 0) ...[
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: (_photoStageNo / _photoStageCount).clamp(0, 1).toDouble(),
+          ),
+        ],
       ],
       if (!_isDbOffline && !_syncRunning)
         FutureBuilderEx<List<PhotoPayload>>(
