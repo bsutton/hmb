@@ -166,15 +166,19 @@ class _ContactEditScreenState extends State<ContactEditScreen>
   );
 
   @override
-  Future<Contact> forUpdate(Contact contact) async => contact.copyWith(
-    firstName: _firstNameController.text,
-    surname: _surnameController.text,
-    mobileNumber: _mobileNumberController.text,
-    landLine: _landlineController.text,
-    officeNumber: _officeNumberController.text,
-    emailAddress: _emailaddressController.text.toLowerCase(),
-    alternateEmail: _emailOrNull(_alternateEmailController.text),
-  );
+  Future<Contact> forUpdate(Contact contact) async {
+    final alternateEmail = _emailOrNull(_alternateEmailController.text);
+    return contact.copyWith(
+      firstName: _firstNameController.text,
+      surname: _surnameController.text,
+      mobileNumber: _mobileNumberController.text,
+      landLine: _landlineController.text,
+      officeNumber: _officeNumberController.text,
+      emailAddress: _emailaddressController.text.toLowerCase(),
+      alternateEmail: alternateEmail,
+      clearAlternateEmail: alternateEmail == null,
+    );
+  }
 
   @override
   Future<Contact> forInsert() async => Contact.forInsert(

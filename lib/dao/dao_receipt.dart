@@ -29,18 +29,21 @@ class ReceiptJobAllocation {
   final int receiptId;
   final int jobId;
   final Money amount;
+  final int? invoiceLineId;
 
   const ReceiptJobAllocation({
     required this.id,
     required this.receiptId,
     required this.jobId,
     required this.amount,
+    required this.invoiceLineId,
   });
 
   ReceiptJobAllocation.forInsert({
     required this.receiptId,
     required this.jobId,
     required this.amount,
+    this.invoiceLineId,
   }) : id = null;
 
   factory ReceiptJobAllocation.fromMap(Map<String, Object?> map) =>
@@ -49,7 +52,10 @@ class ReceiptJobAllocation {
         receiptId: map['receipt_id']! as int,
         jobId: map['job_id']! as int,
         amount: MoneyEx.fromInt(map['amount'] as int?),
+        invoiceLineId: map['invoice_line_id'] as int?,
       );
+
+  bool get billed => invoiceLineId != null;
 }
 
 class DaoReceipt extends Dao<Receipt> {
@@ -140,6 +146,61 @@ class DaoReceipt extends Dao<Receipt> {
     return rows.map(ReceiptJobAllocation.fromMap).toList();
   }
 
+  Future<List<ReceiptJobAllocation>> getUnbilledJobAllocationsForJob(
+    int jobId,
+  ) async {
+    final rows = await withoutTransaction().rawQuery(
+      '''
+SELECT rja.*
+  FROM receipt_job_allocation rja
+ WHERE rja.job_id = ?
+   AND rja.invoice_line_id IS NULL
+   AND NOT EXISTS (
+     SELECT 1
+       FROM receipt_task_item rti
+      WHERE rti.receipt_id = rja.receipt_id
+   )
+ ORDER BY rja.id ASC
+''',
+      [jobId],
+    );
+    return rows.map(ReceiptJobAllocation.fromMap).toList();
+  }
+
+  Future<void> markJobAllocationAsBilled(
+    ReceiptJobAllocation allocation,
+    int invoiceLineId, [
+    Transaction? transaction,
+  ]) async {
+    if (allocation.id == null) {
+      return;
+    }
+    await withinTransaction(transaction).update(
+      'receipt_job_allocation',
+      {
+        'invoice_line_id': invoiceLineId,
+        'modified_date': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [allocation.id],
+    );
+  }
+
+  Future<void> markJobAllocationsNotBilled(
+    int invoiceLineId, [
+    Transaction? transaction,
+  ]) async {
+    await withinTransaction(transaction).update(
+      'receipt_job_allocation',
+      {
+        'invoice_line_id': null,
+        'modified_date': DateTime.now().toIso8601String(),
+      },
+      where: 'invoice_line_id = ?',
+      whereArgs: [invoiceLineId],
+    );
+  }
+
   Future<void> replaceJobAllocations(
     int receiptId,
     Iterable<ReceiptJobAllocation> allocations,
@@ -158,6 +219,7 @@ class DaoReceipt extends Dao<Receipt> {
           'receipt_id': receiptId,
           'job_id': allocation.jobId,
           'amount': allocation.amount.minorUnits.toInt(),
+          'invoice_line_id': allocation.invoiceLineId,
           'created_date': now,
           'modified_date': now,
         });

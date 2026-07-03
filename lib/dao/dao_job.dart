@@ -583,19 +583,21 @@ where q.id=?
     final customer = await DaoCustomer().getById(job!.customerId);
     final contacts = await DaoContact().getByCustomer(customer!.id);
 
-    /// make sure we have no dups.
-    final emails = <String>{};
+    /// Make sure we have no case/whitespace-only duplicates.
+    final emails = <String, String>{};
 
     for (final contact in contacts) {
       if (Strings.isNotBlank(contact.emailAddress)) {
-        emails.add(contact.emailAddress.trim());
+        final email = contact.emailAddress.trim();
+        emails.putIfAbsent(email.toLowerCase(), () => email);
       }
       if (Strings.isNotBlank(contact.alternateEmail)) {
-        emails.add(contact.alternateEmail!.trim());
+        final email = contact.alternateEmail!.trim();
+        emails.putIfAbsent(email.toLowerCase(), () => email);
       }
     }
 
-    return emails.toList();
+    return emails.values.toList();
   }
 
   Future<bool> hasQuoteableItems(Job job) async {

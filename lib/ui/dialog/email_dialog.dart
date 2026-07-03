@@ -57,7 +57,11 @@ class _EmailDialogState extends DeferredState<EmailDialog> {
   void initState() {
     super.initState();
 
-    emailRecipients = [...widget.emailRecipients];
+    emailRecipients = [];
+    for (final recipient in widget.emailRecipients) {
+      _addEmailRecipient(recipient);
+    }
+    _addEmailRecipient(widget.preferredRecipient);
     _subjectController = TextEditingController(text: widget.subject);
   }
 
@@ -66,7 +70,7 @@ class _EmailDialogState extends DeferredState<EmailDialog> {
     system = await DaoSystem().get();
 
     if (Strings.isNotBlank(system.emailAddress)) {
-      emailRecipients.add(system.emailAddress!);
+      _addEmailRecipient(system.emailAddress);
     }
 
     final businessDetails = StringBuffer();
@@ -103,7 +107,7 @@ $businessDetails
         child: ListBody(
           children: <Widget>[
             HMBDroplist<String>(
-              title: 'Recepients',
+              title: 'Recipients',
               selectedItem: () async => _selectedRecipient,
               onChanged: (newValue) {
                 setState(() {
@@ -181,4 +185,18 @@ $businessDetails
       ],
     ),
   );
+
+  void _addEmailRecipient(String? email) {
+    if (Strings.isBlank(email)) {
+      return;
+    }
+    final trimmed = email!.trim();
+    final key = trimmed.toLowerCase();
+    final exists = emailRecipients.any(
+      (recipient) => recipient.trim().toLowerCase() == key,
+    );
+    if (!exists) {
+      emailRecipients.add(trimmed);
+    }
+  }
 }

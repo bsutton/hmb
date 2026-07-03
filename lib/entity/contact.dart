@@ -60,6 +60,7 @@ class Contact extends Entity<Contact> {
     String? emailAddress,
     String? xeroContactId,
     String? alternateEmail,
+    bool clearAlternateEmail = false,
   }) => Contact._(
     id: id,
     firstName: firstName ?? this.firstName,
@@ -68,7 +69,9 @@ class Contact extends Entity<Contact> {
     landLine: landLine ?? this.landLine,
     officeNumber: officeNumber ?? this.officeNumber,
     emailAddress: emailAddress ?? this.emailAddress,
-    alternateEmail: alternateEmail ?? this.alternateEmail,
+    alternateEmail: clearAlternateEmail
+        ? null
+        : alternateEmail ?? this.alternateEmail,
     xeroContactId: xeroContactId ?? this.xeroContactId,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),

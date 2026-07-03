@@ -125,28 +125,30 @@ Future<Money> _createInvoiceLinesForSelectedTasks(
     totalAmount += await _emitFixedPriceTaskSummary(invoiceId, job, task);
   }
 
-  if (timeAndMaterialsTasks.isEmpty) {
-    return totalAmount;
-  }
-
-  if (groupByTask) {
-    for (final task in timeAndMaterialsTasks) {
-      totalAmount += await _emitTimeAndMaterialsLabourByTask(
+  if (timeAndMaterialsTasks.isNotEmpty) {
+    if (groupByTask) {
+      for (final task in timeAndMaterialsTasks) {
+        totalAmount += await _emitTimeAndMaterialsLabourByTask(
+          invoiceId,
+          job,
+          task,
+        );
+      }
+    } else {
+      totalAmount += await _emitTimeAndMaterialsLabourByDate(
         invoiceId,
         job,
-        task,
+        timeAndMaterialsTasks,
       );
     }
-  } else {
-    totalAmount += await _emitTimeAndMaterialsLabourByDate(
-      invoiceId,
-      job,
-      timeAndMaterialsTasks,
-    );
   }
 
   return totalAmount +
-      await _emitTimeAndMaterialsMaterials(invoiceId, timeAndMaterialsTasks);
+      await _emitTimeAndMaterialsMaterials(
+        invoiceId,
+        job,
+        timeAndMaterialsTasks,
+      );
 }
 
 Future<Money> _emitFixedPriceTaskSummary(
@@ -318,6 +320,7 @@ Future<Money> _emitTimeAndMaterialsLabourByDate(
 
 Future<Money> _emitTimeAndMaterialsMaterials(
   int invoiceId,
+  Job job,
   List<Task> tasks,
 ) async {
   final daoTaskItem = DaoTaskItem();
@@ -367,6 +370,50 @@ Future<Money> _emitTimeAndMaterialsMaterials(
       await daoTaskItem.markAsBilled(item, invoiceLineId);
       totalAmount += calculator.lineChargeTotal;
     }
+  }
+
+  return totalAmount + await _emitReceiptJobAllocations(invoiceId, job);
+}
+
+Future<Money> _emitReceiptJobAllocations(int invoiceId, Job job) async {
+  final daoReceipt = DaoReceipt();
+  final daoInvoiceLine = DaoInvoiceLine();
+  final allocations = await daoReceipt.getUnbilledJobAllocationsForJob(job.id);
+  if (allocations.isEmpty) {
+    return MoneyEx.zero;
+  }
+
+  final invoiceLineGroup = InvoiceLineGroup.forInsert(
+    invoiceId: invoiceId,
+    name: 'Receipts',
+  );
+  final groupId = await DaoInvoiceLineGroup().insert(invoiceLineGroup);
+  var totalAmount = MoneyEx.zero;
+
+  for (final allocation in allocations) {
+    if (!allocation.amount.isPositive) {
+      continue;
+    }
+    final receipt = await daoReceipt.getById(allocation.receiptId);
+    final supplier = receipt == null
+        ? null
+        : await DaoSupplier().getById(receipt.supplierId);
+    final receiptDate = receipt == null
+        ? ''
+        : ' ${formatDate(receipt.receiptDate)}';
+    final supplierName = supplier == null ? '' : ' ${supplier.name}';
+    final line = InvoiceLine.forInsert(
+      invoiceId: invoiceId,
+      invoiceLineGroupId: groupId,
+      description:
+          'Material: Receipt #${allocation.receiptId}$supplierName$receiptDate',
+      quantity: Fixed.one,
+      unitPrice: allocation.amount,
+      lineTotal: allocation.amount,
+    );
+    final invoiceLineId = await daoInvoiceLine.insert(line);
+    await daoReceipt.markJobAllocationAsBilled(allocation, invoiceLineId);
+    totalAmount += allocation.amount;
   }
 
   return totalAmount;

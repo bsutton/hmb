@@ -90,26 +90,45 @@ class ContactAndEmail {
     }
     return other is ContactAndEmail &&
         other.contact.id == contact.id &&
-        other.email == email;
+        other.email.trim().toLowerCase() == email.trim().toLowerCase();
   }
 
   @override
-  int get hashCode => Object.hash(contact.id, email);
+  int get hashCode => Object.hash(contact.id, email.trim().toLowerCase());
 
   /// Returns all [ContactAndEmail] selectable for the given [job].
   /// If [filter] is provided, performs a case-insensitive contains match
   /// against contact fullname and email.
   static Future<List<ContactAndEmail>> fromJob(Job job, String? filter) async {
     final list = <ContactAndEmail>[];
+    final seenEmails = <String>{};
 
-    final contacts = await DaoContact().getByJob(job.id);
+    void addEmail(Contact contact, String email) {
+      final trimmed = email.trim();
+      if (trimmed.isEmpty) {
+        return;
+      }
+      if (seenEmails.add(trimmed.toLowerCase())) {
+        list.add(ContactAndEmail._internal(contact, trimmed));
+      }
+    }
+
+    final contactsById = <int, Contact>{};
+    for (final contact in await DaoContact().getByCustomer(job.customerId)) {
+      contactsById[contact.id] = contact;
+    }
+    for (final contact in await DaoContact().getByJob(job.id)) {
+      contactsById[contact.id] = contact;
+    }
+
+    final contacts = contactsById.values;
     for (final contact in contacts) {
       // Extract all email addresses from each contact.
       if (Strings.isNotBlank(contact.emailAddress)) {
-        list.add(ContactAndEmail._internal(contact, contact.emailAddress));
+        addEmail(contact, contact.emailAddress);
       }
       if (Strings.isNotBlank(contact.alternateEmail)) {
-        list.add(ContactAndEmail._internal(contact, contact.alternateEmail!));
+        addEmail(contact, contact.alternateEmail!);
       }
     }
 
@@ -118,18 +137,16 @@ class ContactAndEmail {
     if (Strings.isNotBlank(system.emailAddress)) {
       // Create a fake contact so we can give the user the option to
       // select their own email address.
-      list.add(
-        ContactAndEmail._internal(
-          Contact.forInsert(
-            firstName: system.firstname ?? '',
-            surname: system.surname ?? '',
-            mobileNumber: '',
-            landLine: '',
-            officeNumber: '',
-            emailAddress: system.emailAddress!,
-          ),
-          system.emailAddress!,
+      addEmail(
+        Contact.forInsert(
+          firstName: system.firstname ?? '',
+          surname: system.surname ?? '',
+          mobileNumber: '',
+          landLine: '',
+          officeNumber: '',
+          emailAddress: system.emailAddress!,
         ),
+        system.emailAddress!,
       );
     }
 
