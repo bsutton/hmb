@@ -92,6 +92,22 @@ class ToDo extends Entity<ToDo> {
     modifiedDate: DateTime.now(),
   );
 
+  /// Changes the due date and keeps an invalidated reminder the same distance
+  /// ahead of it.
+  ToDo withDueDate(DateTime newDueDate) {
+    final currentReminder = remindAt;
+    var adjustedReminder = currentReminder;
+
+    if (currentReminder != null && currentReminder.isAfter(newDueDate)) {
+      final reminderLeadTime = dueDate?.difference(currentReminder);
+      adjustedReminder = reminderLeadTime == null || reminderLeadTime.isNegative
+          ? newDueDate
+          : newDueDate.subtract(reminderLeadTime);
+    }
+
+    return copyWith(dueDate: newDueDate, remindAt: adjustedReminder);
+  }
+
   factory ToDo.fromMap(Map<String, dynamic> map) => ToDo(
     id: map['id'] as int,
     title: map['title'] as String,

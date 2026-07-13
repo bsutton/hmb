@@ -162,7 +162,7 @@ class _ToDoEditorCardState extends State<ToDoEditorCard> {
               DateTime.now()
                   .add(const Duration(days: 3))
                   .withTime(const LocalTime(hour: 9, minute: 0)),
-          onChanged: (d) => _emit(v.copyWith(dueDate: d)),
+          onChanged: (d) => _emit(v.withDueDate(d)),
         ),
 
         // Reminder
