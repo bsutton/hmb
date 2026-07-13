@@ -11,6 +11,8 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'dart:async';
+
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
@@ -28,8 +30,13 @@ import 'source_context.dart';
 
 class MessageTemplateDialog extends StatefulWidget {
   final SourceContext sourceContext;
+  final MessageType? messageType;
 
-  const MessageTemplateDialog({required this.sourceContext, super.key});
+  const MessageTemplateDialog({
+    required this.sourceContext,
+    this.messageType,
+    super.key,
+  });
 
   @override
   _MessageTemplateDialogState createState() => _MessageTemplateDialogState();
@@ -38,9 +45,13 @@ class MessageTemplateDialog extends StatefulWidget {
 Future<SelectedMessageTemplate?> showMessageTemplateDialog(
   BuildContext context, {
   required SourceContext sourceContext,
+  MessageType? messageType,
 }) => Navigator.of(context).push(
   MaterialPageRoute(
-    builder: (context) => MessageTemplateDialog(sourceContext: sourceContext),
+    builder: (context) => MessageTemplateDialog(
+      sourceContext: sourceContext,
+      messageType: messageType,
+    ),
   ),
 );
 
@@ -53,6 +64,7 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
 
   late TabController _tabController;
   final _messageController = TextEditingController();
+  var _selectionGeneration = 0;
 
   @override
   Future<void> asyncInitState() async {
@@ -64,6 +76,9 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
   Future<void> _loadTemplates() async {
     final templates = await DaoMessageTemplate().getByFilter(null);
     final filtered = await _filterTemplates(templates);
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _templates = filtered;
     });
@@ -74,6 +89,11 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
   ) async {
     final filtered = <MessageTemplate>[];
     for (final template in templates) {
+      if (!template.enabled ||
+          (widget.messageType != null &&
+              template.messageType != widget.messageType)) {
+        continue;
+      }
       final names = _extractPlaceholderNames(template.message);
       var canUse = true;
       for (final name in names) {
@@ -126,43 +146,47 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
     }
   }
 
-  Future<void> _initializePlaceholders() async {
-    if (_selectedTemplate != null) {
-      final newPlaceholders = _extractPlaceholderNames(
-        _selectedTemplate!.message,
+  Future<void> _selectTemplate(MessageTemplate template) async {
+    final generation = ++_selectionGeneration;
+    _selectedTemplate = template;
+    _messageController.text = template.message;
+    placeholders.clear();
+    setState(() {});
+
+    final resolved = <String, PlaceHolder<dynamic>>{};
+    for (final name in _extractPlaceholderNames(template.message)) {
+      final placeholder = await PlaceHolderManager().resolvePlaceholder(
+        name,
+        widget.sourceContext,
       );
-
-      // Remove placeholders that are no longer in the new template
-      placeholders.entries
-          .where((field) => !newPlaceholders.contains(field.key))
-          .toList()
-          .forEach(placeholders.remove);
-
-      // Add new placeholders or keep existing ones
-      for (final name in newPlaceholders) {
-        final placeholder = await PlaceHolderManager().resolvePlaceholder(
-          name,
-          widget.sourceContext,
-        );
-
-        if (placeholder != null) {
-          /// provide each source with an initial value
-          placeholder.source.dependencyChanged(
-            NoopSource(),
-            widget.sourceContext,
-          );
-
-          // listen to source changes and propergate them to
-          // other sources and the preview window.
-          placeholder.listen = (value, reset) {
-            placeholder.source.revise(widget.sourceContext);
-            _reset(placeholder.source, reset);
-            _refreshPreview();
-          };
-          placeholders[placeholder.name] = placeholder;
-        }
+      if (!mounted || generation != _selectionGeneration) {
+        return;
       }
+      if (placeholder == null) {
+        continue;
+      }
+
+      placeholder.source.dependencyChanged(NoopSource(), widget.sourceContext);
+      placeholder.listen = (value, reset) {
+        placeholder.source.revise(widget.sourceContext);
+        _reset(placeholder.source, reset);
+        _refreshPreview();
+      };
+      resolved[placeholder.name] = placeholder;
     }
+
+    placeholders
+      ..clear()
+      ..addAll(resolved);
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _selectionGeneration++;
+    _messageController.dispose();
+    _tabController.dispose();
+    super.dispose();
   }
 
   /// Preview window
@@ -227,11 +251,10 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
                             )
                             .toList(),
                   format: (template) => template.title,
-                  onChanged: (template) async {
-                    _selectedTemplate = template;
-                    await _initializePlaceholders();
-                    _messageController.text = _selectedTemplate?.message ?? '';
-                    setState(() {});
+                  onChanged: (template) {
+                    if (template != null) {
+                      unawaited(_selectTemplate(template));
+                    }
                   },
                 ),
                 if (_selectedTemplate != null) _buildSourceWidgets(),
@@ -340,7 +363,9 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
   }
 
   void _refreshPreview() {
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _reset(Source<dynamic> source, ResetFields reset) {
