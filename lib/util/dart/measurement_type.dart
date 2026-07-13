@@ -34,8 +34,8 @@ class MeasurementType {
 
   static const area = MeasurementType(
     name: 'area',
-    defaultMetric: Units.m2,
-    defaultImperial: Units.yd2,
+    defaultMetric: Units.mm2,
+    defaultImperial: Units.ft2,
     metric: [Units.m2, Units.cm2, Units.mm2],
     imperial: [Units.yd2, Units.ft2],
   );
