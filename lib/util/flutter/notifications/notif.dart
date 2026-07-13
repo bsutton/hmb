@@ -21,6 +21,11 @@ class Channel {
     name: 'TODO_REMINDERS',
     description: 'Todo Reminders',
   );
+  factory Channel.job() => const Channel._(
+    id: 'HMB_NOTIF_JOB',
+    name: 'JOB_REMINDERS',
+    description: 'Schedule Reminders',
+  );
   const Channel._({
     required this.id,
     required this.name,
@@ -31,6 +36,8 @@ class Channel {
 /// A lightweight description of a local notification.
 @immutable
 class Notif {
+  static const jobActivityReminderLead = Duration(minutes: 30);
+
   final Channel channel;
   final int id;
   final String title;
@@ -50,4 +57,37 @@ class Notif {
     required this.channel,
     this.payload,
   });
+
+  factory Notif.forToDo({
+    required int todoId,
+    required String title,
+    required DateTime remindAt,
+  }) => Notif(
+    id: 20_000_000 + todoId,
+    title: 'Reminder',
+    body: title,
+    scheduledAtMillis: remindAt.millisecondsSinceEpoch,
+    payload: {'type': 'todo', 'id': '$todoId'},
+    channel: Channel.todo(),
+  );
+
+  factory Notif.forJobActivity({
+    required int activityId,
+    required int jobId,
+    required String jobSummary,
+    required DateTime startsAt,
+  }) => Notif(
+    id: 30_000_000 + activityId,
+    title: 'Upcoming job',
+    body: '$jobSummary starts soon',
+    scheduledAtMillis: startsAt
+        .subtract(jobActivityReminderLead)
+        .millisecondsSinceEpoch,
+    payload: {
+      'type': 'job_reminder',
+      'activityId': '$activityId',
+      'jobId': '$jobId',
+    },
+    channel: Channel.job(),
+  );
 }

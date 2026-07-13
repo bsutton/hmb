@@ -17,7 +17,9 @@ import 'package:flutter/material.dart';
 import '../../dao/dao_job_activity.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
+import '../../util/flutter/notifications/local_notifs.dart';
 import '../dialog/send_notice_for_job_dialog.dart';
+import '../widgets/hmb_toast.dart';
 import 'job_activity_dialog.dart';
 import 'job_activity_ex.dart';
 
@@ -63,6 +65,7 @@ mixin ScheduleHelper {
           jobActivityAction.jobActivity!.jobActivity,
         );
         jobActivityAction.jobActivity!.jobActivity.id = newId;
+        await _syncActivityReminder(jobActivityAction.jobActivity!);
         if (!context.mounted) {
           return;
         }
@@ -120,12 +123,26 @@ mixin ScheduleHelper {
 
     // 1) Update DB
     await dao.update(updated.jobActivity);
+    await _syncActivityReminder(updated);
   }
 
   /// Delete an existing activity from the DB
   Future<void> _deleteActivity(JobActivityEx activity) async {
     final dao = DaoJobActivity();
     await dao.delete(activity.jobActivity.id);
+    await LocalNotifs().cancelForJobActivity(activity.jobActivity.id);
+  }
+
+  Future<void> _syncActivityReminder(JobActivityEx activity) async {
+    final synced = await LocalNotifs().syncForJobActivity(
+      activity.jobActivity,
+      jobSummary: activity.job.summary,
+    );
+    if (!synced) {
+      HMBToast.info(
+        'Schedule saved, but reminder notifications are unavailable.',
+      );
+    }
   }
 
   /// header style

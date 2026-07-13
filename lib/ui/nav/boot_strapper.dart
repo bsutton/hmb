@@ -176,6 +176,17 @@ class BootStrapper {
   Future<void> _initScheduler() async {
     final openTodos = await DaoToDo().getOpenWithReminders();
     await LocalNotifs().resyncFromToDos(openTodos);
+
+    final activities = await DaoJobActivity().getStartingAfter(DateTime.now());
+    for (final activity in activities) {
+      final job = await DaoJob().getById(activity.jobId);
+      if (job != null) {
+        await LocalNotifs().syncForJobActivity(
+          activity,
+          jobSummary: job.summary,
+        );
+      }
+    }
   }
 
   Future<void> _initializeTimeEntryState({required bool refresh}) async {

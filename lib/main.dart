@@ -127,6 +127,12 @@ class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
         return;
       }
       GoRouter.of(context).go('/home/todo');
+    } else if (type == 'job_reminder') {
+      final context = _rootNavKey.currentContext;
+      if (context == null) {
+        return;
+      }
+      GoRouter.of(context).go('/home/schedule');
     }
   }
 
