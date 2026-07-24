@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:flutter/material.dart';
 
 import '../widgets/icons/hmb_complete_icon.dart';
@@ -24,6 +23,7 @@ class ToPurchaseItemCard extends ShoppingItemCard {
   const ToPurchaseItemCard({
     required super.onReload,
     required super.itemContext,
+    required super.details,
     super.key,
   });
 

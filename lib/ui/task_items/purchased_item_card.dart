@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart';
 
@@ -28,6 +27,7 @@ import 'shopping_item_card.dart';
 class PurchasedItemCard extends ShoppingItemCard {
   const PurchasedItemCard({
     required super.itemContext,
+    required super.details,
     required super.onReload,
     super.key,
   });

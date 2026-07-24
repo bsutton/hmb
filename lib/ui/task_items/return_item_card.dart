@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:flutter/material.dart';
 
 import '../../dao/dao.g.dart';
@@ -27,6 +26,7 @@ import 'shopping_item_card.dart';
 class ReturnItemCard extends ShoppingItemCard {
   const ReturnItemCard({
     required super.itemContext,
+    required super.details,
     required super.onReload,
     super.key,
   });

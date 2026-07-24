@@ -126,6 +126,7 @@ class SurfaceCardWithActions extends StatelessWidget {
   final void Function()? onPressed;
   final SurfaceElevation elevation;
   final EdgeInsetsGeometry? padding;
+  final int titleMaxLines;
 
   const SurfaceCardWithActions({
     required this.title,
@@ -135,6 +136,7 @@ class SurfaceCardWithActions extends StatelessWidget {
     this.onPressed,
     this.elevation = SurfaceElevation.e4,
     this.padding = const EdgeInsets.all(HMBTheme.padding),
+    this.titleMaxLines = 2,
     super.key,
   });
 
@@ -156,12 +158,12 @@ class SurfaceCardWithActions extends StatelessWidget {
               fontSize: HMBTextHeadline2.fontSize,
               fontWeight: FontWeight.w500,
             ),
-            maxLines: 2,
+            maxLines: titleMaxLines,
             overflow: TextOverflow.ellipsis,
             softWrap: true,
           ),
         ),
-        body,
+        if (height == null) body else Expanded(child: body),
         if (actions.isNotEmpty)
           HMBRow(mainAxisAlignment: MainAxisAlignment.end, children: actions),
       ],

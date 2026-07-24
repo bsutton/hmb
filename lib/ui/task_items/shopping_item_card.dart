@@ -12,7 +12,6 @@
 */
 
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../dao/dao.g.dart';
 import '../../util/dart/types.dart';
@@ -30,10 +29,12 @@ import 'shopping_item_dialog.dart';
 /// and then calls [onReload] after edits.
 abstract class ShoppingItemCard extends StatelessWidget {
   final TaskItemContext itemContext;
+  final CustomerAndJob details;
   final AsyncVoidCallback onReload;
 
   const ShoppingItemCard({
     required this.itemContext,
+    required this.details,
     required this.onReload,
     super.key,
   });
@@ -42,12 +43,15 @@ abstract class ShoppingItemCard extends StatelessWidget {
   Widget buildActions(BuildContext context, CustomerAndJob det);
 
   @override
-  Widget build(BuildContext context) => FutureBuilderEx<CustomerAndJob>(
-    future: CustomerAndJob.fetch(itemContext),
-    builder: (context, details) => SurfaceCardWithActions(
+  Widget build(BuildContext context) => Surface(
+    key: ValueKey('shopping-item-card-${itemContext.taskItem.id}'),
+    elevation: SurfaceElevation.e6,
+    margin: const EdgeInsets.only(bottom: 8),
+    padding: EdgeInsets.zero,
+    child: SurfaceCardWithActions(
       title: itemContext.taskItem.description,
       actions: [
-        buildActions(context, details!),
+        buildActions(context, details),
         if (_canDeleteFromShoppingList)
           HMBDeleteIcon(
             onPressed: () async {
@@ -62,10 +66,10 @@ abstract class ShoppingItemCard extends StatelessWidget {
           hint: 'Edit Item',
         ),
       ],
-      height: 340,
+      elevation: SurfaceElevation.e6,
+      titleMaxLines: 1,
       body: HMBRow(
         children: [
-          // <-- Make the text column take all available space
           Expanded(
             child: ItemCardCommon(
               customerAndJob: details,

@@ -19,6 +19,148 @@ void main() {
     await tearDownTestDb();
   });
 
+  test('shopping history ranges calculate rolling cutoffs', () {
+    final reference = DateTime(2026, 7, 24, 12);
+
+    expect(
+      ShoppingHistoryRange.last7Days.cutoff(reference),
+      DateTime(2026, 7, 17, 12),
+    );
+    expect(
+      ShoppingHistoryRange.last30Days.cutoff(reference),
+      DateTime(2026, 6, 24, 12),
+    );
+    expect(
+      ShoppingHistoryRange.last90Days.cutoff(reference),
+      DateTime(2026, 4, 25, 12),
+    );
+    expect(
+      ShoppingHistoryRange.lastYear.cutoff(reference),
+      DateTime(2025, 7, 24, 12),
+    );
+    expect(ShoppingHistoryRange.all.cutoff(reference), isNull);
+  });
+
+  test(
+    'purchased history supports ranges, consumables, and inactive jobs',
+    () async {
+      final recent = await _insertTaskItemForJob(
+        jobStatus: JobStatus.inProgress,
+        taskStatus: TaskStatus.inProgress,
+        itemType: TaskItemType.materialsBuy,
+        completed: true,
+      );
+      final recentJob = await _jobForItem(recent);
+      final oldConsumable = await _insertTaskItemForExistingJob(
+        jobId: recentJob.id,
+        itemType: TaskItemType.consumablesBuy,
+        completed: true,
+      );
+      await _setModifiedDate(
+        oldConsumable,
+        DateTime.now().subtract(const Duration(days: 60)),
+      );
+
+      final inactive = await _insertTaskItemForJob(
+        jobStatus: JobStatus.completed,
+        taskStatus: TaskStatus.completed,
+        itemType: TaskItemType.toolsBuy,
+        completed: true,
+      );
+      final inactiveJob = await _jobForItem(inactive);
+
+      final recentOnly = await DaoTaskItem().getPurchasedItems(
+        historyRange: ShoppingHistoryRange.last30Days,
+        jobs: [recentJob, inactiveJob],
+      );
+      expect(recentOnly.map((item) => item.id), [recent.id]);
+
+      final activeHistory = await DaoTaskItem().getPurchasedItems(
+        historyRange: ShoppingHistoryRange.all,
+        jobs: [recentJob, inactiveJob],
+      );
+      expect(
+        activeHistory.map((item) => item.id),
+        containsAll([recent.id, oldConsumable.id]),
+      );
+      expect(
+        activeHistory.map((item) => item.id),
+        isNot(contains(inactive.id)),
+      );
+
+      final allHistory = await DaoTaskItem().getPurchasedItems(
+        historyRange: ShoppingHistoryRange.all,
+        jobs: [recentJob, inactiveJob],
+        includeInactiveJobs: true,
+      );
+      expect(
+        allHistory.map((item) => item.id),
+        containsAll([recent.id, oldConsumable.id, inactive.id]),
+      );
+    },
+  );
+
+  test('returned history supports ranges and inactive jobs', () async {
+    final recentPurchase = await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.inProgress,
+      itemType: TaskItemType.materialsBuy,
+      completed: true,
+    );
+    final recentJob = await _jobForItem(recentPurchase);
+    await DaoTaskItem().markAsReturned(
+      recentPurchase.id,
+      Fixed.one,
+      MoneyEx.fromInt(500),
+    );
+    final recentReturn = (await DaoTaskItem().getByTask(
+      recentPurchase.taskId,
+    )).singleWhere((item) => item.isReturn);
+
+    final inactivePurchase = await _insertTaskItemForJob(
+      jobStatus: JobStatus.completed,
+      taskStatus: TaskStatus.completed,
+      itemType: TaskItemType.toolsBuy,
+      completed: true,
+    );
+    final inactiveJob = await _jobForItem(inactivePurchase);
+    await DaoTaskItem().markAsReturned(
+      inactivePurchase.id,
+      Fixed.one,
+      MoneyEx.fromInt(500),
+    );
+    final inactiveReturn = (await DaoTaskItem().getByTask(
+      inactivePurchase.taskId,
+    )).singleWhere((item) => item.isReturn);
+    await _setModifiedDate(
+      inactiveReturn,
+      DateTime.now().subtract(const Duration(days: 60)),
+    );
+
+    final recentOnly = await DaoTaskItem().getReturnedItems(
+      historyRange: ShoppingHistoryRange.last30Days,
+      jobs: [recentJob, inactiveJob],
+      includeInactiveJobs: true,
+    );
+    expect(recentOnly.map((item) => item.id), [recentReturn.id]);
+
+    final activeHistory = await DaoTaskItem().getReturnedItems(
+      historyRange: ShoppingHistoryRange.all,
+      jobs: [recentJob, inactiveJob],
+    );
+    expect(activeHistory.map((item) => item.id), [recentReturn.id]);
+
+    final allHistory = await DaoTaskItem().getReturnedItems(
+      historyRange: ShoppingHistoryRange.all,
+      jobs: [recentJob, inactiveJob],
+      includeInactiveJobs: true,
+    );
+    expect(
+      allHistory.map((item) => item.id),
+      containsAll([recentReturn.id, inactiveReturn.id]),
+    );
+  });
+
   test('wasReturned is true only when a linked return row exists', () async {
     final item = await _insertMaterialTaskItem();
 
@@ -406,4 +548,18 @@ Future<TaskItem> _insertTaskItemForExistingJob({
   );
   await DaoTaskItem().insert(item);
   return item;
+}
+
+Future<Job> _jobForItem(TaskItem item) async {
+  final task = (await DaoTask().getById(item.taskId))!;
+  return (await DaoJob().getById(task.jobId))!;
+}
+
+Future<void> _setModifiedDate(TaskItem item, DateTime modifiedDate) async {
+  await testDb!.update(
+    DaoTaskItem.tableName,
+    {'modified_date': modifiedDate.toIso8601String()},
+    where: 'id = ?',
+    whereArgs: [item.id],
+  );
 }

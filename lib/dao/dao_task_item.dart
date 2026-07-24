@@ -19,6 +19,26 @@ import '../util/dart/fixed_ex.dart';
 import '../util/dart/money_ex.dart';
 import 'dao.dart';
 
+enum ShoppingHistoryRange {
+  last7Days('Last 7 Days', 7),
+  last30Days('Last 30 Days', 30),
+  last90Days('Last 90 Days', 90),
+  lastYear('Last Year', 365),
+  all('All Dates', null);
+
+  const ShoppingHistoryRange(this.displayName, this.days);
+
+  final String displayName;
+  final int? days;
+
+  DateTime? cutoff(DateTime referenceTime) {
+    if (days == null) {
+      return null;
+    }
+    return referenceTime.subtract(Duration(days: days!));
+  }
+}
+
 class DaoTaskItem extends Dao<TaskItem> {
   static final _closedShoppingJobStatusIds = [
     JobStatus.rejected.id,
@@ -385,9 +405,10 @@ SELECT ti.*
 
   /// Items that have been purchased but not returned.
   Future<List<TaskItem>> getPurchasedItems({
-    required DateTime since,
+    required ShoppingHistoryRange historyRange,
     required List<Job> jobs,
     int? supplierId,
+    bool includeInactiveJobs = false,
   }) async {
     final db = withoutTransaction();
 
@@ -396,12 +417,17 @@ SELECT ti.*
   FROM task_item ti
   JOIN task t               ON ti.task_id       = t.id
   JOIN job j                ON t.job_id         = j.id
- WHERE (ti.item_type_id = 1 -- 'Materials - buy' 
- OR ti.item_type_id = 3 -- 'Tools - buy'
+ WHERE (ti.item_type_id = ${TaskItemType.materialsBuy.id}
+ OR ti.item_type_id = ${TaskItemType.toolsBuy.id}
  OR ti.item_type_id = ${TaskItemType.toolsHire.id} -- 'Tools - hire'
+ OR ti.item_type_id = ${TaskItemType.consumablesBuy.id} -- 'Consumables - buy'
  )
    AND ti.completed = 1
    AND ti.is_return = 0
+''');
+
+    if (!includeInactiveJobs) {
+      sql.write('''
    AND j.status_id NOT IN (
       '${JobStatus.rejected.id}',
       '${JobStatus.onHold.id}',
@@ -409,7 +435,17 @@ SELECT ti.*
       '${JobStatus.completed.id}',
       '${JobStatus.toBeBilled.id}'
     )
-   AND ti.modified_date >= ?
+''');
+    }
+
+    final params = <dynamic>[];
+    final cutoff = historyRange.cutoff(DateTime.now());
+    if (cutoff != null) {
+      sql.write(' AND ti.modified_date >= ?');
+      params.add(cutoff.toIso8601String());
+    }
+
+    sql.write('''
    -- exclude any purchase that has been returned
    AND NOT EXISTS (
      SELECT 1
@@ -417,8 +453,6 @@ SELECT ti.*
       WHERE r.source_task_item_id = ti.id
    )
 ''');
-
-    final params = <dynamic>[since.toIso8601String()];
 
     if (jobs.isNotEmpty) {
       final placeholders = List.filled(jobs.length, '?').join(',');
@@ -437,8 +471,10 @@ SELECT ti.*
 
   /// “Returned” tab (items that have already been returned)
   Future<List<TaskItem>> getReturnedItems({
+    required ShoppingHistoryRange historyRange,
     List<Job>? jobs,
     int? supplierId,
+    bool includeInactiveJobs = false,
   }) async {
     final db = withoutTransaction();
 
@@ -448,6 +484,10 @@ SELECT ti.*
   JOIN task t               ON ti.task_id       = t.id
   JOIN job j                ON t.job_id         = j.id
  WHERE ti.is_return = 1
+''');
+
+    if (!includeInactiveJobs) {
+      sql.write('''
    AND j.status_id NOT IN (
       '${JobStatus.rejected.id}',
       '${JobStatus.onHold.id}',
@@ -456,8 +496,14 @@ SELECT ti.*
       '${JobStatus.toBeBilled.id}'
     )
 ''');
+    }
 
     final params = <dynamic>[];
+    final cutoff = historyRange.cutoff(DateTime.now());
+    if (cutoff != null) {
+      sql.write(' AND ti.modified_date >= ?');
+      params.add(cutoff.toIso8601String());
+    }
 
     // Optional job filter
     if (jobs != null && jobs.isNotEmpty) {

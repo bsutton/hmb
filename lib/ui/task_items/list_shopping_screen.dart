@@ -87,16 +87,32 @@ class ShoppingScreen extends StatefulWidget {
 class ShoppingScreenState extends DeferredState<ShoppingScreen> {
   static ShoppingMode _selectedMode = ShoppingMode.toPurchase;
   static ScheduleFilter _selectedScheduleFilter = ScheduleFilter.all;
+  static ShoppingHistoryRange _selectedHistoryRange =
+      ShoppingHistoryRange.last30Days;
 
-  final _jobKey = GlobalKey<HMBDroplistMultiSelectState<Job>>();
+  final _jobKey = GlobalKey<HMBSelectJobMultiState>();
   final _searchKey = GlobalKey<HMBSearchState>();
   final _supplierKey = GlobalKey<HMBSelectSupplierState>();
   final _scheduleKey = GlobalKey<HMBDroplistState<ScheduleFilter>>();
+  final _historyRangeKey = GlobalKey<HMBDroplistState<ShoppingHistoryRange>>();
 
-  final _taskItems = <TaskItemContext>[];
+  final _taskItems = <_ShoppingItemView>[];
   List<Job> _selectedJobs = [];
+  var _showInactiveJobs = false;
+  var _loadGeneration = 0;
+  var _displayedMode = _selectedMode;
   final selectedSupplier = SelectedSupplier();
   String? filter;
+
+  bool get _isHistoryMode =>
+      _selectedMode == ShoppingMode.purchased ||
+      _selectedMode == ShoppingMode.returns;
+
+  String get _historyRangeTitle => switch (_selectedMode) {
+    ShoppingMode.purchased => 'Purchased in',
+    ShoppingMode.returns => 'Returned in',
+    ShoppingMode.toPurchase => 'History Range',
+  };
 
   @override
   Future<void> asyncInitState() async {
@@ -105,8 +121,12 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
   }
 
   Future<void> _loadTaskItems() async {
+    final generation = ++_loadGeneration;
+    final requestedMode = _selectedMode;
+    final requestedFilter = filter?.toLowerCase();
+    final requestedScheduleFilter = _selectedScheduleFilter;
     List<TaskItem> items;
-    switch (_selectedMode) {
+    switch (requestedMode) {
       case ShoppingMode.toPurchase:
         items = await DaoTaskItem().getShoppingItems(
           jobs: _selectedJobs,
@@ -114,52 +134,81 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
         );
       case ShoppingMode.purchased:
         items = await DaoTaskItem().getPurchasedItems(
-          since: DateTime.now().subtract(const Duration(days: 1)),
+          historyRange: _selectedHistoryRange,
           jobs: _selectedJobs,
           supplierId: selectedSupplier.selected,
+          includeInactiveJobs: _showInactiveJobs,
         );
       case ShoppingMode.returns:
         items = await DaoTaskItem().getReturnedItems(
+          historyRange: _selectedHistoryRange,
           jobs: _selectedJobs,
           supplierId: selectedSupplier.selected,
+          includeInactiveJobs: _showInactiveJobs,
         );
     }
 
-    _taskItems.clear();
-    for (final item in items) {
-      final task = await DaoTask().getById(item.taskId);
-      final billing = await DaoTask().getBillingTypeByTaskItem(item);
-      final returned = await DaoTaskItem().wasReturned(item.id);
-
-      if (!Strings.isBlank(filter) &&
-          !item.description.toLowerCase().contains(filter!.toLowerCase())) {
-        continue;
-      }
-      if (_selectedScheduleFilter != ScheduleFilter.all) {
-        final job = await DaoJob().getJobForTask(task!.id);
-        final next = job == null
-            ? null
-            : await DaoJobActivity().getNextActivityByJob(job.id);
-        if (next == null || !_selectedScheduleFilter.includes(next.start)) {
-          continue;
-        }
-      }
-      _taskItems.add(
-        TaskItemContext(
-          task: task!,
-          taskItem: item,
-          billingType: billing,
-          wasReturned: returned,
+    final loaded = await Future.wait(
+      items.map(
+        (item) => _loadShoppingItem(
+          item,
+          requestedFilter: requestedFilter,
+          requestedScheduleFilter: requestedScheduleFilter,
         ),
-      );
+      ),
+    );
+    final loadedItems = loaded.whereType<_ShoppingItemView>().toList();
+
+    if (!mounted || generation != _loadGeneration) {
+      return;
     }
+    _displayedMode = requestedMode;
+    _taskItems
+      ..clear()
+      ..addAll(loadedItems);
     setState(() {});
+  }
+
+  Future<_ShoppingItemView?> _loadShoppingItem(
+    TaskItem item, {
+    required String? requestedFilter,
+    required ScheduleFilter requestedScheduleFilter,
+  }) async {
+    if (Strings.isNotBlank(requestedFilter) &&
+        !item.description.toLowerCase().contains(requestedFilter!)) {
+      return null;
+    }
+
+    final task = await DaoTask().getById(item.taskId);
+    if (task == null) {
+      return null;
+    }
+    if (requestedScheduleFilter != ScheduleFilter.all) {
+      final job = await DaoJob().getJobForTask(task.id);
+      final next = job == null
+          ? null
+          : await DaoJobActivity().getNextActivityByJob(job.id);
+      if (next == null || !requestedScheduleFilter.includes(next.start)) {
+        return null;
+      }
+    }
+
+    final itemContext = TaskItemContext(
+      task: task,
+      taskItem: item,
+      billingType: await DaoTask().getBillingTypeByTaskItem(item),
+      wasReturned: await DaoTaskItem().wasReturned(item.id),
+    );
+    return _ShoppingItemView(
+      itemContext: itemContext,
+      details: await CustomerAndJob.fetch(itemContext),
+    );
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
     body: Surface(
-      elevation: SurfaceElevation.e6,
+      elevation: SurfaceElevation.e0,
       child: HMBColumn(
         children: [
           Padding(
@@ -176,6 +225,9 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
                         format: (m) => m.displayName,
                         onChanged: (m) async {
                           _selectedMode = m ?? ShoppingMode.toPurchase;
+                          if (!_isHistoryMode) {
+                            _showInactiveJobs = false;
+                          }
                           await _loadTaskItems();
                         },
                         title: 'View',
@@ -200,6 +252,10 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
                     filter = null;
                     _scheduleKey.currentState?.clear();
                     _selectedScheduleFilter = ScheduleFilter.all;
+                    _historyRangeKey.currentState?.clear();
+                    _selectedHistoryRange = ShoppingHistoryRange.last30Days;
+                    _showInactiveJobs = false;
+                    _selectedJobs = [];
                     await _loadTaskItems();
                     setState(() {});
                   },
@@ -207,10 +263,20 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
                       (_jobKey.currentState?.hasSelections() ?? false) ||
                       selectedSupplier.selected != null ||
                       (_scheduleKey.currentState?.hasSelection ?? false) ||
+                      _isHistoryMode &&
+                          (_selectedHistoryRange !=
+                                  ShoppingHistoryRange.last30Days ||
+                              _showInactiveJobs) ||
                       Strings.isNotBlank(filter),
                   lineBuilder: (context) => HMBSelectJobMulti(
                     key: _jobKey,
                     initialJobs: _selectedJobs,
+                    allowInactiveJobs: _isHistoryMode,
+                    showInactiveJobs: _showInactiveJobs,
+                    onShowInactiveJobsChanged: (show) async {
+                      _showInactiveJobs = show;
+                      await _loadTaskItems();
+                    },
                     onChanged: (list) async {
                       _selectedJobs = list;
                       await _loadTaskItems();
@@ -224,6 +290,8 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
           Expanded(
             child: DeferredBuilder(
               this,
+              waitingBuilder: (context) =>
+                  const Center(child: Text('Loading shopping items…')),
               builder: (ctx) {
                 if (_taskItems.isEmpty) {
                   return Center(
@@ -240,12 +308,14 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
                   builder: (c, cons) {
                     final isMobile = cons.maxWidth < 900;
                     return isMobile
-                        ? ListView.builder(
+                        ? SingleChildScrollView(
                             padding: const EdgeInsets.all(8),
-                            itemCount: _taskItems.length,
-                            itemExtent: 340,
-                            itemBuilder: (c, i) =>
-                                _buildShoppingItem(c, _taskItems[i]),
+                            child: Column(
+                              children: [
+                                for (final item in _taskItems)
+                                  _buildShoppingItem(c, item),
+                              ],
+                            ),
                           )
                         : GridView.builder(
                             padding: const EdgeInsets.all(8),
@@ -256,8 +326,10 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
                                   mainAxisExtent: 352,
                                 ),
                             itemCount: _taskItems.length,
-                            itemBuilder: (c, i) =>
-                                _buildShoppingItem(c, _taskItems[i]),
+                            itemBuilder: (c, i) => Align(
+                              alignment: Alignment.topCenter,
+                              child: _buildShoppingItem(c, _taskItems[i]),
+                            ),
                           );
                   },
                 );
@@ -308,18 +380,53 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
         'Filter by Schedule',
         'Only show items scheduled in the selected range',
       ),
+      if (_isHistoryMode)
+        HMBDroplist<ShoppingHistoryRange>(
+          key: _historyRangeKey,
+          selectedItem: () async => _selectedHistoryRange,
+          items: (filter) async => ShoppingHistoryRange.values,
+          format: (range) => range.displayName,
+          onChanged: (range) async {
+            _selectedHistoryRange = range ?? ShoppingHistoryRange.last30Days;
+            await _loadTaskItems();
+          },
+          title: _historyRangeTitle,
+          required: false,
+        ).help(
+          'Filter by $_historyRangeTitle',
+          'Only show purchases and returns modified in the selected range',
+        ),
     ],
   );
-  Widget _buildShoppingItem(BuildContext context, TaskItemContext ctx) {
-    switch (_selectedMode) {
+  Widget _buildShoppingItem(BuildContext context, _ShoppingItemView item) {
+    switch (_displayedMode) {
       case ShoppingMode.toPurchase:
-        return ToPurchaseItemCard(itemContext: ctx, onReload: _loadTaskItems);
+        return ToPurchaseItemCard(
+          itemContext: item.itemContext,
+          details: item.details,
+          onReload: _loadTaskItems,
+        );
       case ShoppingMode.purchased:
-        return PurchasedItemCard(itemContext: ctx, onReload: _loadTaskItems);
+        return PurchasedItemCard(
+          itemContext: item.itemContext,
+          details: item.details,
+          onReload: _loadTaskItems,
+        );
       case ShoppingMode.returns:
-        return ReturnItemCard(itemContext: ctx, onReload: _loadTaskItems);
+        return ReturnItemCard(
+          itemContext: item.itemContext,
+          details: item.details,
+          onReload: _loadTaskItems,
+        );
     }
   }
+}
+
+class _ShoppingItemView {
+  final TaskItemContext itemContext;
+  final CustomerAndJob details;
+
+  const _ShoppingItemView({required this.itemContext, required this.details});
 }
 
 Future<List<TaskItemContext>> withContext(List<TaskItem> items) async {
@@ -352,7 +459,6 @@ class CustomerAndJob {
 
   static Future<CustomerAndJob> fetch(TaskItemContext itemContext) async {
     final job = await DaoJob().getJobForTask(itemContext.task.id);
-    final task = await DaoTask().getById(itemContext.task.id);
     final customer = await DaoCustomer().getByJob(job!.id);
     final supplier = itemContext.taskItem.supplierId == null
         ? null
@@ -362,7 +468,7 @@ class CustomerAndJob {
     return CustomerAndJob._internal(
       customer!,
       job,
-      task!,
+      itemContext.task,
       supplier,
       nextActivity,
     );

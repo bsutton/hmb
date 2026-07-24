@@ -32,6 +32,7 @@ class ItemCardCommon extends StatelessWidget {
   @override
   Widget build(BuildContext context) => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.start,
+    spacing: 2,
     children: [
       _line(customerAndJob.customer.name),
       _line('Job: ${customerAndJob.job.summary}'),
@@ -53,8 +54,8 @@ class ItemCardCommon extends StatelessWidget {
     padding: const EdgeInsets.only(bottom: 2),
     child: Text(
       text,
-      softWrap: true,
-      maxLines: 3,
+      softWrap: false,
+      maxLines: 1,
       overflow: TextOverflow.ellipsis,
     ),
   );
