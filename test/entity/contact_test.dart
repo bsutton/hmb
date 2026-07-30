@@ -17,4 +17,21 @@ void main() {
 
     expect(updated.alternateEmail, isNull);
   });
+
+  test('role description is copied and persisted in maps', () {
+    final contact = Contact.forInsert(
+      firstName: 'Pat',
+      surname: 'Tester',
+      mobileNumber: '',
+      landLine: '',
+      officeNumber: '',
+      emailAddress: 'pat@example.com',
+      roleDescription: 'Property manager',
+    );
+
+    final updated = contact.copyWith(roleDescription: 'Site manager');
+
+    expect(updated.roleDescription, 'Site manager');
+    expect(updated.toMap()['role_description'], 'Site manager');
+  });
 }

@@ -23,6 +23,7 @@ class Contact extends Entity<Contact> {
   String landLine;
   String officeNumber;
   String emailAddress; // primary (non-null)
+  String roleDescription;
   String? alternateEmail;
   String? xeroContactId;
 
@@ -34,6 +35,7 @@ class Contact extends Entity<Contact> {
     required this.landLine,
     required this.officeNumber,
     required this.emailAddress,
+    required this.roleDescription,
     required super.createdDate,
     required super.modifiedDate,
     this.alternateEmail,
@@ -47,6 +49,7 @@ class Contact extends Entity<Contact> {
     required this.landLine,
     required this.officeNumber,
     required this.emailAddress,
+    this.roleDescription = '',
     this.xeroContactId,
     this.alternateEmail,
   }) : super.forInsert();
@@ -58,6 +61,7 @@ class Contact extends Entity<Contact> {
     String? landLine,
     String? officeNumber,
     String? emailAddress,
+    String? roleDescription,
     String? xeroContactId,
     String? alternateEmail,
     bool clearAlternateEmail = false,
@@ -69,6 +73,7 @@ class Contact extends Entity<Contact> {
     landLine: landLine ?? this.landLine,
     officeNumber: officeNumber ?? this.officeNumber,
     emailAddress: emailAddress ?? this.emailAddress,
+    roleDescription: roleDescription ?? this.roleDescription,
     alternateEmail: clearAlternateEmail
         ? null
         : alternateEmail ?? this.alternateEmail,
@@ -85,6 +90,7 @@ class Contact extends Entity<Contact> {
     landLine: map['landLine'] as String,
     officeNumber: map['officeNumber'] as String,
     emailAddress: map['emailAddress'] as String,
+    roleDescription: map['role_description'] as String? ?? '',
     alternateEmail: map['alternateEmail'] as String?, // NEW
     xeroContactId: map['xeroContactId'] as String?,
     createdDate: DateTime.parse(map['createdDate'] as String),
@@ -102,6 +108,7 @@ class Contact extends Entity<Contact> {
     'landLine': landLine,
     'officeNumber': officeNumber,
     'emailAddress': emailAddress,
+    'role_description': roleDescription,
     'alternateEmail': alternateEmail, // NEW
     'xeroContactId': xeroContactId,
     'createdDate': createdDate.toIso8601String(),
