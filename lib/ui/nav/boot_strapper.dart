@@ -63,7 +63,7 @@ class BootStrapper {
       () => _initializeTimeEntryState(refresh: false),
     );
     unawaited(logAppStartup());
-    await _runStartupPhase('init scheduler', _initScheduler);
+    await _runStartupPhase('init scheduler', resyncNotifications);
     unawaited(_runStartupBookingSync());
 
     // camera & deep link init
@@ -173,9 +173,20 @@ class BootStrapper {
     await postv134Upgrade(DatabaseHelper().database);
   }
 
-  Future<void> _initScheduler() async {
+  Future<void> resyncNotifications() async {
     final openTodos = await DaoToDo().getOpenWithReminders();
     await LocalNotifs().resyncFromToDos(openTodos);
+
+    final activities = await DaoJobActivity().getStartingAfter(DateTime.now());
+    for (final activity in activities) {
+      final job = await DaoJob().getById(activity.jobId);
+      if (job != null) {
+        await LocalNotifs().syncForJobActivity(
+          activity,
+          jobSummary: job.summary,
+        );
+      }
+    }
   }
 
   Future<void> _initializeTimeEntryState({required bool refresh}) async {

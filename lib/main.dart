@@ -127,6 +127,12 @@ class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
         return;
       }
       GoRouter.of(context).go('/home/todo');
+    } else if (type == 'job_reminder') {
+      final context = _rootNavKey.currentContext;
+      if (context == null) {
+        return;
+      }
+      GoRouter.of(context).go('/home/schedule');
     }
   }
 
@@ -286,4 +292,10 @@ Future<void> _bootstrap(BuildContext context) async {
   final next = launchState.isFirstRun ? '/home/settings/wizard' : '/home';
   // Replace splash route (not push) so it is removed
   GoRouter.of(context).clearStackAndNavigate(next);
+
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    if (await LocalNotifs().requestPermissions()) {
+      await launchState.resyncNotifications();
+    }
+  });
 }
