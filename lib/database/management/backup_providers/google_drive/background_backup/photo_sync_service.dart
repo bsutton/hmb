@@ -79,6 +79,7 @@ class PhotoSyncService {
   Timer? _retryTimer;
   var _autoRetryAttempts = 0;
   var _syncHadError = false;
+  var _waitingForSignIn = false;
   String? _lastErrorSummary;
 
   final StreamController<ProgressUpdate> _controller =
@@ -87,12 +88,20 @@ class PhotoSyncService {
       StreamController.broadcast();
 
   factory PhotoSyncService() => _instance;
-  PhotoSyncService._();
+  PhotoSyncService._() {
+    GoogleDriveAuth.authStateChanges.listen((signedIn) {
+      if (signedIn && _waitingForSignIn && !isRunning) {
+        _waitingForSignIn = false;
+        unawaited(start());
+      }
+    });
+  }
 
   Stream<ProgressUpdate> get progressStream => _controller.stream;
   Stream<String> get errorStream => _errorController.stream;
 
   bool get isRunning => _isolate != null;
+  bool get isWaitingForSignIn => _waitingForSignIn;
   String? get lastErrorSummary => _lastErrorSummary;
 
   /// Kick off the sync and listen for both progress and payload messages.
@@ -107,6 +116,7 @@ class PhotoSyncService {
         )
         .toList();
     if (photos.isEmpty && deletes.isEmpty) {
+      _waitingForSignIn = false;
       _autoRetryAttempts = 0;
       _lastErrorSummary = null;
       return;
@@ -116,11 +126,13 @@ class PhotoSyncService {
       final headers = await (await GoogleDriveAuth.instance())
           .authHeadersOrNull(allowAutomaticSignIn: false);
       if (headers == null) {
+        _waitingForSignIn = true;
         _controller.add(
           ProgressUpdate('Photo sync waiting for Google sign-in.', 0, 0),
         );
         return;
       }
+      _waitingForSignIn = false;
       await _startSync(
         photos: photos,
         deletes: deletes,
