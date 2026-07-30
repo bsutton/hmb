@@ -60,11 +60,14 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     super.initState();
     // Listen for photo sync progress
     _photoSub = PhotoSyncService().progressStream.listen((update) {
-      setState(() {
-        _photoStageDescription = update.stageDescription;
-        _photoStageNo = update.stageNo;
-        _photoStageCount = update.stageCount;
-      });
+      if (mounted) {
+        setState(() {
+          _photoStageDescription = update.stageDescription;
+          _photoStageNo = update.stageNo;
+          _photoStageCount = update.stageCount;
+          _syncRunning = PhotoSyncService().isRunning;
+        });
+      }
     });
     _photoErrorSub = PhotoSyncService().errorStream.listen((message) {
       if (mounted) {
@@ -265,14 +268,30 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   }
 
   Future<void> _syncPhotos() async {
+    final photoSync = PhotoSyncService();
+    if (_syncRunning || photoSync.isRunning) {
+      photoSync.cancelSync();
+      if (mounted) {
+        setState(() {
+          _syncRunning = false;
+          _photoStageDescription = 'Photo sync cancelled.';
+          _photoStageNo = 0;
+          _photoStageCount = 0;
+        });
+        HMBToast.info('Photo sync cancelled.');
+      }
+      return;
+    }
     if (!await _ensureSignedInForAction()) {
       return;
     }
     // Sync Photos Button
     await WakelockPlus.enable();
     try {
-      _syncRunning = true;
-      await _provider.syncPhotos();
+      if (mounted) {
+        setState(() => _syncRunning = true);
+      }
+      await photoSync.start(retryOnFailure: false);
       await BackupHistoryStore.record(
         provider: _provider.name,
         operation: BackupHistoryStore.operationPhotoSync,
@@ -289,7 +308,11 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         HMBToast.error('Error during photo sync: $e');
       }
     } finally {
-      _syncRunning = false;
+      if (mounted) {
+        setState(() => _syncRunning = false);
+      } else {
+        _syncRunning = false;
+      }
       await WakelockPlus.disable();
     }
   }
@@ -413,6 +436,12 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
                 : '${unsynced.length} photos to be synced ';
             return Text(text, style: const TextStyle(fontSize: 16));
           },
+        ),
+      if (_syncRunning)
+        const Text(
+          'Photo sync running. Tap Sync Photos to cancel.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 16),
         ),
     ],
   );

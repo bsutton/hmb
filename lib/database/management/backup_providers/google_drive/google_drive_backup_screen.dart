@@ -55,6 +55,8 @@ class _GoogleDriveBackupScreenState
   var _isLoading = false;
   var _stageDescription = '';
   var _photoStageDescription = '';
+  var _photoStageNo = 0;
+  var _photoStageCount = 0;
 
   late final BackupProvider _provider;
   late Future<DateTime?> _lastBackupFuture;
@@ -73,7 +75,14 @@ class _GoogleDriveBackupScreenState
     });
     // Listen for photo sync progress
     _photoSub = PhotoSyncService().progressStream.listen((update) {
-      setState(() => _photoStageDescription = update.stageDescription);
+      if (mounted) {
+        setState(() {
+          _photoStageDescription = update.stageDescription;
+          _photoStageNo = update.stageNo;
+          _photoStageCount = update.stageCount;
+          _syncRunning = PhotoSyncService().isRunning;
+        });
+      }
     });
     _photoErrorSub = PhotoSyncService().errorStream.listen((message) {
       if (mounted) {
@@ -283,9 +292,23 @@ class _GoogleDriveBackupScreenState
       hint: 'Copy your photos to google drive - including receipts and tools',
       icon: const Icon(Icons.cloud_upload, size: 24),
       onPressed: () async {
+        if (_syncRunning || PhotoSyncService().isRunning) {
+          PhotoSyncService().cancelSync();
+          if (mounted) {
+            setState(() {
+              _syncRunning = false;
+              _photoStageDescription = 'Photo sync cancelled.';
+              _photoStageNo = 0;
+              _photoStageCount = 0;
+            });
+          }
+          return;
+        }
         await WakelockPlus.enable();
         try {
-          _syncRunning = true;
+          if (mounted) {
+            setState(() => _syncRunning = true);
+          }
           await _provider.syncPhotos();
           await BackupHistoryStore.record(
             provider: _provider.name,
@@ -303,14 +326,26 @@ class _GoogleDriveBackupScreenState
             HMBToast.error('Error during photo sync: $e');
           }
         } finally {
-          _syncRunning = false;
+          if (mounted) {
+            setState(() => _syncRunning = false);
+          } else {
+            _syncRunning = false;
+          }
           await WakelockPlus.disable();
         }
       },
     ),
     if (_photoStageDescription.isNotEmpty) ...[
       Text(_photoStageDescription, style: const TextStyle(fontSize: 16)),
+      if (_photoStageCount > 0) ...[
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+          value: (_photoStageNo / _photoStageCount).clamp(0, 1).toDouble(),
+        ),
+      ],
     ],
+    if (_syncRunning)
+      const Text('Tap Sync Photos to cancel.', textAlign: TextAlign.center),
     if (!_syncRunning)
       FutureBuilderEx<List<PhotoPayload>>(
         future: DaoPhoto().getUnsyncedPhotos(),

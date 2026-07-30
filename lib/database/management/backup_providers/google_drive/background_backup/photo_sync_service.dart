@@ -79,6 +79,7 @@ class PhotoSyncService {
   Timer? _retryTimer;
   var _autoRetryAttempts = 0;
   var _syncHadError = false;
+  var _cancelRequested = false;
   var _waitingForSignIn = false;
   String? _lastErrorSummary;
 
@@ -158,6 +159,7 @@ class PhotoSyncService {
       return;
     }
     _retryTimer?.cancel();
+    _cancelRequested = false;
     _syncHadError = false;
     _lastErrorSummary = null;
 
@@ -203,7 +205,14 @@ class PhotoSyncService {
     // Error and exit notifications arrive on separate ports. Yield once so a
     // terminal isolate error cannot be misclassified as a successful exit.
     await Future<void>.delayed(Duration.zero);
+    final wasCancelled = _cancelRequested;
     _cleanup();
+    if (wasCancelled) {
+      _cancelRequested = false;
+      _autoRetryAttempts = 0;
+      _lastErrorSummary = null;
+      return;
+    }
     if (_syncHadError) {
       if (retryOnFailure) {
         _scheduleRetry();
@@ -219,8 +228,18 @@ class PhotoSyncService {
   }
 
   void cancelSync() {
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    _autoRetryAttempts = 0;
+    _lastErrorSummary = null;
+    _waitingForSignIn = false;
+    if (!isRunning) {
+      _controller.add(ProgressUpdate('Photo sync cancelled.', 0, 0));
+      return;
+    }
+    _cancelRequested = true;
     _isolate?.kill(priority: Isolate.immediate);
-    _cleanup();
+    _controller.add(ProgressUpdate('Photo sync cancelled.', 0, 0));
   }
 
   void _cleanup() {
