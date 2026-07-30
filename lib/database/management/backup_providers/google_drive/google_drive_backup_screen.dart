@@ -61,6 +61,7 @@ class _GoogleDriveBackupScreenState
   late final StreamSubscription<ProgressUpdate> _backupSub;
   late final StreamSubscription<ProgressUpdate> _photoSub;
   late final StreamSubscription<String> _photoErrorSub;
+  late final StreamSubscription<bool> _authSub;
 
   @override
   void initState() {
@@ -79,6 +80,11 @@ class _GoogleDriveBackupScreenState
         HMBToast.error('Photo sync failed: $message');
       }
     });
+    _authSub = GoogleDriveAuth.authStateChanges.listen((signedIn) {
+      if (mounted) {
+        setState(() => _isGoogleSignedIn = signedIn);
+      }
+    });
   }
 
   @override
@@ -86,6 +92,7 @@ class _GoogleDriveBackupScreenState
     unawaited(_backupSub.cancel());
     unawaited(_photoSub.cancel());
     unawaited(_photoErrorSub.cancel());
+    unawaited(_authSub.cancel());
     super.dispose();
   }
 
@@ -98,7 +105,12 @@ class _GoogleDriveBackupScreenState
 
     if (!GoogleDriveApi.isSupported()) {
       _isGoogleSignedIn = false;
+      return;
     }
+
+    final auth = await GoogleDriveAuth.instance();
+    await auth.signInIfAutomatic();
+    _isGoogleSignedIn = auth.isSignedIn;
   }
 
   Future<DateTime?> _refreshLastBackup() =>
