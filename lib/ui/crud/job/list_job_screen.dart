@@ -16,10 +16,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import '../../../dao/dao_job.dart';
+import '../../../dao/dao.g.dart';
 import '../../../entity/flutter_extensions/job_status_ex.dart';
 import '../../../entity/job.dart';
 import '../../../entity/job_status_stage.dart';
+import '../../../util/dart/format.dart';
 import '../../widgets/icons/hmb_copy_icon.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/select.g.dart';
@@ -176,6 +177,7 @@ class _JobListScreenState extends State<JobListScreen> {
               buildActionItems: _buildActionItems,
               canEdit: (job) => !job.isStock,
               canDelete: (job) => !job.isStock,
+              confirmDelete: _confirmJobDelete,
             ),
           ),
         ],
@@ -202,6 +204,80 @@ class _JobListScreenState extends State<JobListScreen> {
     }
     return selected;
   }
+
+  Future<bool> _confirmJobDelete(Job job, BuildContext context) async {
+    final invoiceCount = await DaoInvoice().count(
+      where: 'job_id = ?',
+      whereArgs: [job.id],
+    );
+    if (invoiceCount > 0) {
+      if (context.mounted) {
+        HMBToast.error(
+          'Job "${job.summary}" cannot be deleted because it has '
+          '$invoiceCount invoice${invoiceCount == 1 ? '' : 's'}.',
+        );
+      }
+      return false;
+    }
+
+    final customer = await DaoCustomer().getByJob(job.id);
+    if (!context.mounted) {
+      return false;
+    }
+    final firstConfirmed = await _showDeleteConfirmation(
+      context,
+      title: 'Delete Job',
+      message:
+          'Delete "${job.summary}" for '
+          '"${customer?.name ?? 'Unknown customer'}"?',
+    );
+    if (!firstConfirmed) {
+      return false;
+    }
+
+    final entries = await DaoTimeEntry().getByJob(job.id);
+    if (entries.isEmpty || !context.mounted) {
+      return entries.isEmpty;
+    }
+    final total = entries.fold(
+      Duration.zero,
+      (duration, entry) => duration + entry.duration,
+    );
+    return _showDeleteConfirmation(
+      context,
+      title: 'Delete Logged Time?',
+      message:
+          'This job has ${formatDuration(total)} logged across '
+          '${entries.length} time entr${entries.length == 1 ? 'y' : 'ies'}. '
+          'Delete the job and this time?',
+    );
+  }
+
+  Future<bool> _showDeleteConfirmation(
+    BuildContext context, {
+    required String title,
+    required String message,
+  }) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            HMBButton(
+              label: 'Cancel',
+              hint: "Don't delete this job",
+              onPressed: () => Navigator.pop(dialogContext, false),
+            ),
+            HMBButton(
+              label: 'Delete',
+              hint: 'Delete this job',
+              onPressed: () => Navigator.pop(dialogContext, true),
+            ),
+          ],
+        ),
+      ) ??
+      false;
 
   Widget _buildFilterSheet(void Function() onChange) => HMBColumn(
     children: [
