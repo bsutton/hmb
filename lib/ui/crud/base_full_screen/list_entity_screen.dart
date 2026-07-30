@@ -67,6 +67,7 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   /// to make back navigation clear.
   final bool showBackButton;
   final Widget? emptyBody;
+  final bool scrollToTopOnReturn;
 
   EntityListScreen({
     required this.entityNamePlural,
@@ -108,6 +109,7 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     this.buildActionItems,
     this.editButtonKey,
     this.emptyBody,
+    this.scrollToTopOnReturn = false,
   }) {
     _fetchList = fetchList ?? (_) => dao.getAll();
   }
@@ -403,7 +405,14 @@ class EntityListScreenState<T extends Entity<T>>
 
   @override
   void didPopNext() {
-    unawaited(refresh());
+    unawaited(_refreshAfterPop());
+  }
+
+  Future<void> _refreshAfterPop() async {
+    await refresh();
+    if (widget.scrollToTopOnReturn && _scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+    }
   }
 
   Future<void> _delete(T entity) async {
