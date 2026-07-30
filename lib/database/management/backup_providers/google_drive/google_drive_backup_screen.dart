@@ -359,6 +359,13 @@ class _GoogleDriveBackupScreenState
                     _isGoogleSignedIn = true;
                     setState(() {});
                   }
+                } on GoogleAuthResult catch (e) {
+                  /// ensure we are not left in a 'half signed-in'
+                  /// state.
+                  await auth?.signOut();
+                  if (mounted && !e.wasCancelled) {
+                    HMBToast.error('Sign-in failed: $e');
+                  }
                 } catch (e) {
                   /// ensure we are not left in a 'half signed-in'
                   /// state.

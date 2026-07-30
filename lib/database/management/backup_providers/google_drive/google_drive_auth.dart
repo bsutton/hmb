@@ -35,6 +35,11 @@ class GoogleDriveAuth {
 
   static var _initialised = false;
   static late GoogleDriveAuth _instance;
+  static final _authStateController = StreamController<bool>.broadcast(
+    sync: true,
+  );
+
+  static Stream<bool> get authStateChanges => _authStateController.stream;
 
   final List<String> scopes = [drive.DriveApi.driveFileScope];
 
@@ -132,14 +137,17 @@ class GoogleDriveAuth {
     final signIn = GoogleSignIn.instance;
 
     _awaitingAuth = Completer<GoogleAuthResult>();
-    if (await hasSignedIn()) {
-      unawaited(signIn.attemptLightweightAuthentication());
-    } else {
-      /// testing on android show that a call to
-      /// attemptLightweightAuthentication is always sufficient
-      /// but it may be different on other platforms so as
-      /// an act of caution.
-      unawaited(signIn.authenticate());
+    try {
+      if (await hasSignedIn()) {
+        await signIn.attemptLightweightAuthentication();
+      } else {
+        /// Testing on Android shows that a lightweight authentication is
+        /// generally sufficient for a returning user, but an explicit
+        /// authentication is required after sign-out.
+        await signIn.authenticate();
+      }
+    } catch (error) {
+      await _handleAuthenticationError(error);
     }
 
     await _awaitingAuth.future;
@@ -155,32 +163,22 @@ class GoogleDriveAuth {
   ) async {
     final account = event.user;
 
-    final authorization = await account.authorizationClient
-        .authorizationForScopes(scopes);
+    try {
+      final authorization =
+          await account.authorizationClient.authorizationForScopes(scopes) ??
+          await account.authorizationClient.authorizeScopes(scopes);
 
-    if (authorization != null) {
+      _authHeaders = {
+        'Authorization': 'Bearer ${authorization.accessToken}',
+        'X-Goog-AuthUser': '0',
+      };
       await _markSignedIn();
-      await _buildAuthHeaders(account);
       if (!_awaitingAuth.isCompleted) {
         _awaitingAuth.complete(GoogleAuthResult.success());
       }
-      return;
+    } catch (error) {
+      await _handleAuthenticationError(error);
     }
-    await _markSignedOut();
-    if (!_awaitingAuth.isCompleted) {
-      _awaitingAuth.completeError(
-        GoogleAuthResult.failure(
-          'Google sign-in completed without Drive authorization.',
-        ),
-      );
-    }
-  }
-
-  Future<void> _buildAuthHeaders(GoogleSignInAccount user) async {
-    /// Get the access token for the driveFileScope.
-    final client = await user.authorizationClient.authorizeScopes(scopes);
-
-    _authHeaders = {'Authorization': 'Bearer ${client.accessToken}'};
   }
 
   Future<void> _handleAuthenticationError(Object e) async {
@@ -241,6 +239,7 @@ class GoogleDriveAuth {
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
     settings['GoogleSignedIn'] = true;
     await settings.save();
+    _authStateController.add(true);
   }
 
   Future<void> _markSignedOut() async {
@@ -251,6 +250,7 @@ class GoogleDriveAuth {
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
     settings['GoogleSignedIn'] = false;
     await settings.save();
+    _authStateController.add(false);
   }
 }
 
