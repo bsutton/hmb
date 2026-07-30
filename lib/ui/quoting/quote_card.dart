@@ -410,9 +410,15 @@ To approve it, reply to this email with:
     );
   }
 
+  HMBChipTone get _stateTone => switch (quote.state) {
+    QuoteState.approved || QuoteState.invoiced => HMBChipTone.accent,
+    QuoteState.rejected || QuoteState.withdrawn => HMBChipTone.danger,
+    QuoteState.sent => HMBChipTone.warning,
+    QuoteState.reviewing => HMBChipTone.neutral,
+  };
+
   @override
   Widget build(BuildContext context) {
-    final isApproved = quote.state == QuoteState.approved;
     final isRejected = quote.state == QuoteState.rejected;
     final isWithdrawn = quote.state == QuoteState.withdrawn;
     final showSentRollback = quote.state == QuoteState.approved;
@@ -448,9 +454,15 @@ To approve it, reply to this email with:
             ],
           ),
           // Display current state and date info.
-          HMBRow(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Text(quote.state.name.toCapitalised()),
+              HMBChip(
+                label: 'Status: ${quote.state.name.toCapitalised()}',
+                tone: _stateTone,
+              ),
               if (quote.state == QuoteState.sent && quote.dateSent != null)
                 Text('Sent: ${formatDate(quote.dateSent!)}'),
               if (quote.state == QuoteState.approved &&
@@ -459,7 +471,9 @@ To approve it, reply to this email with:
             ],
           ),
 
-          HMBRow(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               HMBButton(
                 label: 'Send...',
@@ -489,53 +503,54 @@ To approve it, reply to this email with:
           ),
 
           // --- State Update Buttons ---
-          HMBRow(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              HMBButton(
-                label: showSentRollback ? 'Unapprove' : 'Approve',
-                hint: showSentRollback
-                    ? 'Move approved quote back to sent'
-                    : 'Mark the quote as approved by the customer',
-                enabled: showSentRollback || (!isApproved && !isWithdrawn),
-                onPressed: () async {
-                  final addScheduleTodo =
-                      !showSentRollback && await _offerScheduleTodo();
-                  await _updateQuote(() async {
-                    if (showSentRollback) {
-                      await DaoQuote().markQuoteSent(quote.id);
-                    } else {
-                      await DaoQuote().approveQuote(quote.id);
-                      if (addScheduleTodo) {
-                        await _ensureScheduleTodo();
+              if (!isRejected && !isWithdrawn)
+                HMBButton(
+                  label: showSentRollback ? 'Unapprove' : 'Approve',
+                  hint: showSentRollback
+                      ? 'Move approved quote back to sent'
+                      : 'Mark the quote as approved by the customer',
+                  onPressed: () async {
+                    final addScheduleTodo =
+                        !showSentRollback && await _offerScheduleTodo();
+                    await _updateQuote(() async {
+                      if (showSentRollback) {
+                        await DaoQuote().markQuoteSent(quote.id);
+                      } else {
+                        await DaoQuote().approveQuote(quote.id);
+                        if (addScheduleTodo) {
+                          await _ensureScheduleTodo();
+                        }
                       }
+                    });
+                  },
+                ),
+              if (!isRejected && !isWithdrawn)
+                HMBButton(
+                  label: 'Reject',
+                  hint: 'Mark the quote as rejected by the Customer',
+                  onPressed: () async {
+                    final action = await _promptRejectAction(context);
+                    if (action == null) {
+                      return;
                     }
-                  });
-                },
-              ),
-              HMBButton(
-                label: 'Reject',
-                hint: 'Mark the quote as rejected by the Customer',
-                // disable when already rejected
-                enabled: !isRejected && !isWithdrawn,
-                onPressed: () async {
-                  final action = await _promptRejectAction(context);
-                  if (action == null) {
-                    return;
-                  }
 
-                  await _updateQuote(() async {
-                    await DaoQuote().rejectQuote(quote.id);
+                    await _updateQuote(() async {
+                      await DaoQuote().rejectQuote(quote.id);
 
-                    if (action == _RejectAction.quoteAndJob) {
-                      final job = await DaoJob().getById(quote.jobId);
-                      if (job != null) {
-                        job.status = JobStatus.rejected;
-                        await DaoJob().update(job);
+                      if (action == _RejectAction.quoteAndJob) {
+                        final job = await DaoJob().getById(quote.jobId);
+                        if (job != null) {
+                          job.status = JobStatus.rejected;
+                          await DaoJob().update(job);
+                        }
                       }
-                    }
-                  });
-                },
-              ),
+                    });
+                  },
+                ),
               if (showWithdrawn)
                 HMBButton(
                   label: 'Withdraw',
