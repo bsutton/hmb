@@ -183,10 +183,7 @@ WHERE ti.id = ?
             item.itemType == TaskItemType.toolsHire) {
           if ((includeBilled && item.billed) || !item.billed) {
             // Materials and tools to be purchased
-            totalMaterialCharges +=
-                (item.actualMaterialUnitCost ?? MoneyEx.zero).multiplyByFixed(
-                  item.actualMaterialQuantity ?? Fixed.one,
-                );
+            totalMaterialCharges += item.actualPrice?.totalCost ?? MoneyEx.zero;
           }
         }
       }
