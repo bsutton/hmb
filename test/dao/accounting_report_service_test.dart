@@ -142,15 +142,15 @@ void main() {
   });
 
   test('financial year period defaults from business country', () async {
-    final system = await DaoSystem().get();
-    await DaoSystem().update(system.copyWith(countryCode: 'AU'));
+    final system = await DaoSystem().getForUpdate();
+    await DaoSystem().updateConfiguration(system.copyWith(countryCode: 'AU'));
 
     final auPeriod = await AccountingPeriod.forFinancialYear(DateTime(2026, 5));
 
     expect(auPeriod.startInclusive, DateTime(2025, 7));
     expect(auPeriod.endExclusive, DateTime(2026, 7));
 
-    await DaoSystem().update(system.copyWith(countryCode: 'NZ'));
+    await DaoSystem().updateConfiguration(system.copyWith(countryCode: 'NZ'));
     final nzPeriod = await AccountingPeriod.forFinancialYear(DateTime(2026, 5));
 
     expect(nzPeriod.startInclusive, DateTime(2026, 4));
@@ -160,8 +160,8 @@ void main() {
   test(
     'configured financial year start month overrides country default',
     () async {
-      final system = await DaoSystem().get();
-      await DaoSystem().update(system.copyWith(countryCode: 'AU'));
+      final system = await DaoSystem().getForUpdate();
+      await DaoSystem().updateConfiguration(system.copyWith(countryCode: 'AU'));
       await AppSettings.setFinancialYearStartMonth(1);
 
       final period = await AccountingPeriod.forFinancialYear(DateTime(2026, 5));

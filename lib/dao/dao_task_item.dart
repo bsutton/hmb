@@ -15,7 +15,6 @@ import 'package:money2/money2.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.g.dart';
-import '../util/dart/fixed_ex.dart';
 import '../util/dart/money_ex.dart';
 import 'dao.dart';
 
@@ -75,28 +74,7 @@ class DaoTaskItem extends Dao<TaskItem> {
       return;
     }
 
-    final estimatedUnitCost = item.estimatedMaterialUnitCost;
-    final estimatedQuantity = item.estimatedMaterialQuantity;
-    if (estimatedUnitCost == null || estimatedQuantity == null) {
-      return;
-    }
-
-    if (MoneyEx.isZeroOrNull(item.actualMaterialUnitCost)) {
-      item.actualMaterialUnitCost = estimatedUnitCost;
-    }
-    if (FixedEx.isZeroOrNull(item.actualMaterialQuantity)) {
-      item.actualMaterialQuantity = estimatedQuantity;
-    }
-
-    final actualUnitCost = item.actualMaterialUnitCost;
-    final actualQuantity = item.actualMaterialQuantity;
-    if (actualUnitCost == null || actualQuantity == null) {
-      return;
-    }
-
-    if (MoneyEx.isZeroOrNull(item.actualCost)) {
-      item.actualCost = actualUnitCost.multiplyByFixed(actualQuantity);
-    }
+    item.actualPrice ??= item.estimatedPrice;
   }
 
   Future<List<TaskItem>> getByTask(int? taskId) async {
@@ -131,15 +109,11 @@ WHERE task_id = ?
 
   Future<void> markAsCompleted({
     required TaskItem item,
-    required Money materialUnitCost,
-    required Fixed materialQuantity,
+    required MaterialPrice price,
   }) async {
     item
       ..completed = true
-      ..setActualCosts(
-        actualMaterialQuantity: materialQuantity,
-        actualMaterialUnitCost: materialUnitCost,
-      );
+      ..setActualPrice(price);
 
     await update(item);
   }
@@ -369,9 +343,8 @@ SELECT ti.*
     required LabourEntryMode labourEntryMode,
     required Fixed estimatedLabourHours,
     required Money hourlyRate,
-    required Money estimatedMaterialUnitCost,
+    required MaterialPrice estimatedPrice,
     required Money estimatedLabourCost,
-    required Fixed estimatedMaterialQuantity,
     required Money charge,
   }) {
     Money? estimatedCost;
@@ -385,8 +358,7 @@ SELECT ti.*
       case TaskItemType.consumablesStock:
       case TaskItemType.consumablesBuy:
         {
-          final quantity = estimatedMaterialQuantity;
-          estimatedCost = estimatedMaterialUnitCost.multiplyByFixed(quantity);
+          estimatedCost = estimatedPrice.totalCost;
           charge = estimatedCost.plusPercentage(margin);
         }
       case TaskItemType.labour:
@@ -572,15 +544,11 @@ SELECT ti.*
   ///  - records how many units were returned
   ///  - records the refund per unit
   ///  - timestamps the return
-  Future<void> markAsReturned(
-    int originalId,
-    Fixed returnQuantity,
-    Money returnUnitPrice,
-  ) async {
+  Future<void> markAsReturned(int originalId, MaterialPrice returnPrice) async {
     final taskItem = await DaoTaskItem().getById(originalId);
 
     // 2. Build and insert the return row
-    final returnItem = taskItem!.forReturn(returnQuantity, returnUnitPrice);
+    final returnItem = taskItem!.forReturn(returnPrice);
     await insert(returnItem);
   }
 
@@ -597,5 +565,15 @@ SELECT 1
       [taskItemId],
     );
     return rows.isNotEmpty;
+  }
+
+  Future<List<TaskItem>> getReturnsFor(int taskItemId) async {
+    final rows = await withoutTransaction().query(
+      tableName,
+      where: 'source_task_item_id = ? AND is_return = 1',
+      whereArgs: [taskItemId],
+      orderBy: 'created_date ASC',
+    );
+    return toList(rows);
   }
 }

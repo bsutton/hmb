@@ -15,7 +15,6 @@
 
 import 'dart:async';
 
-import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart';
 import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -23,10 +22,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../dao/dao_supplier.dart';
 import '../../dao/dao_task_item.dart';
 import '../../entity/supplier.dart';
-import '../../util/dart/fixed_ex.dart';
-import '../../util/dart/money_ex.dart';
 import '../../util/dart/types.dart';
 import '../widgets/fields/fields.g.dart';
+import '../widgets/hmb_button.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'task_items.g.dart';
@@ -41,23 +39,10 @@ Future<void> showShoppingItemDialog(
   final item = ctx.taskItem;
   final descriptionController = TextEditingController(text: item.description);
   final purposeController = TextEditingController(text: item.purpose);
-  var usePacketDetails = false;
-  final costController = TextEditingController(
-    text:
-        (item.actualMaterialUnitCost ?? item.estimatedMaterialUnitCost)
-            ?.toString() ??
-        '',
-  );
-  final quantityController = TextEditingController(
-    text:
-        (item.actualMaterialQuantity ?? item.estimatedMaterialQuantity)
-            ?.toString() ??
-        '',
-  );
-  final packetCostController = TextEditingController(text: costController.text);
-  final packetSizeController = TextEditingController(text: '1');
-  final packetsPurchasedController = TextEditingController(
-    text: quantityController.text,
+  final priceController = MaterialPriceEditingController(
+    price: item.completed
+        ? item.actualPrice ?? item.estimatedPrice
+        : item.estimatedPrice,
   );
   Supplier? selectedSupplier;
   if (item.supplierId != null) {
@@ -75,25 +60,6 @@ Future<void> showShoppingItemDialog(
   final screenWidth = MediaQuery.of(context).size.width;
   final targetWidth = screenWidth * 0.8;
   final dialogWidth = targetWidth > 600 ? 600.0 : targetWidth;
-
-  void setPacketDefaultsFromUnitFields() {
-    packetCostController.text = costController.text;
-    packetSizeController.text = '1';
-    packetsPurchasedController.text = quantityController.text;
-  }
-
-  void setUnitFieldsFromPacketDetails() {
-    final packetsPurchased =
-        Fixed.tryParse(packetsPurchasedController.text) ?? Fixed.one;
-    final packetSize = FixedEx.tryParseOrElse(
-      packetSizeController.text,
-      Fixed.one,
-    );
-    final safePacketSize = packetSize.isZero ? Fixed.one : packetSize;
-    final packetCost = MoneyEx.tryParse(packetCostController.text);
-    costController.text = packetCost.divideByFixed(safePacketSize).toString();
-    quantityController.text = (packetsPurchased * safePacketSize).toString();
-  }
 
   try {
     await showDialog<void>(
@@ -158,82 +124,47 @@ Future<void> showShoppingItemDialog(
                         setState(() => selectedSupplier = sup);
                       },
                     ),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Enter Packet Details'),
-                      value: usePacketDetails,
-                      onChanged: (value) {
-                        setState(() {
-                          if (value) {
-                            setPacketDefaultsFromUnitFields();
-                          } else {
-                            setUnitFieldsFromPacketDetails();
-                          }
-                          usePacketDetails = value;
-                        });
-                      },
+                    MaterialPriceEditor(
+                      controller: priceController,
+                      title: item.completed
+                          ? 'Actual pricing'
+                          : 'Estimated pricing',
                     ),
-                    if (usePacketDetails) ...[
-                      HMBTextField(
-                        controller: packetCostController,
-                        labelText: 'Cost per Packet',
-                        keyboardType: TextInputType.number,
-                      ),
-                      HMBTextField(
-                        controller: packetSizeController,
-                        labelText: 'Items per Packet',
-                        keyboardType: TextInputType.number,
-                      ),
-                      HMBTextField(
-                        controller: packetsPurchasedController,
-                        labelText: 'Packets Purchased',
-                        keyboardType: TextInputType.number,
-                      ),
-                    ] else ...[
-                      HMBTextField(
-                        controller: costController,
-                        labelText: 'Unit Cost per Item',
-                        keyboardType: TextInputType.number,
-                      ),
-                      HMBTextField(
-                        controller: quantityController,
-                        labelText: 'Total Quantity',
-                        keyboardType: TextInputType.number,
-                      ),
-                    ],
                   ],
                 ),
               ),
             ),
           ),
           actions: [
-            TextButton(
+            HMBButton(
               onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: const Text('Cancel'),
+              label: 'Cancel',
+              hint: "Don't save changes to this item",
             ),
-            TextButton(
+            HMBButton(
               onPressed: () async {
-                if (usePacketDetails) {
-                  setUnitFieldsFromPacketDetails();
+                final price = priceController.value;
+                if (price == null) {
+                  return;
                 }
-                // update fields
-                final unitCost = MoneyEx.tryParse(costController.text);
-                final quantity = FixedEx.tryParse(quantityController.text);
-                item
-                  ..description = descriptionController.text
-                  ..purpose = purposeController.text
-                  ..supplierId = selectedSupplier?.id
-                  ..setActualCosts(
-                    actualMaterialUnitCost: unitCost,
-                    actualMaterialQuantity: quantity,
-                  );
-                await DaoTaskItem().update(item);
+                final updated = item.copyWith(
+                  description: descriptionController.text,
+                  purpose: purposeController.text,
+                  supplierId: selectedSupplier?.id,
+                  estimatedPrice: item.completed ? null : price,
+                  actualPrice: item.completed ? price : null,
+                );
+                if (item.completed) {
+                  updated.setActualPrice(price);
+                }
+                await DaoTaskItem().update(updated);
                 if (dialogCtx.mounted) {
                   Navigator.of(dialogCtx).pop();
                 }
                 await onReload();
               },
-              child: const Text('Save'),
+              label: 'Save',
+              hint: 'Save changes to this item',
             ),
           ],
         ),
@@ -242,10 +173,6 @@ Future<void> showShoppingItemDialog(
   } finally {
     descriptionController.dispose();
     purposeController.dispose();
-    costController.dispose();
-    quantityController.dispose();
-    packetCostController.dispose();
-    packetSizeController.dispose();
-    packetsPurchasedController.dispose();
+    priceController.dispose();
   }
 }

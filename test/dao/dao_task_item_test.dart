@@ -110,8 +110,7 @@ void main() {
     final recentJob = await _jobForItem(recentPurchase);
     await DaoTaskItem().markAsReturned(
       recentPurchase.id,
-      Fixed.one,
-      MoneyEx.fromInt(500),
+      MaterialPrice.items(quantity: Fixed.one, unitCost: MoneyEx.fromInt(500)),
     );
     final recentReturn = (await DaoTaskItem().getByTask(
       recentPurchase.taskId,
@@ -126,8 +125,7 @@ void main() {
     final inactiveJob = await _jobForItem(inactivePurchase);
     await DaoTaskItem().markAsReturned(
       inactivePurchase.id,
-      Fixed.one,
-      MoneyEx.fromInt(500),
+      MaterialPrice.items(quantity: Fixed.one, unitCost: MoneyEx.fromInt(500)),
     );
     final inactiveReturn = (await DaoTaskItem().getByTask(
       inactivePurchase.taskId,
@@ -168,8 +166,7 @@ void main() {
 
     await DaoTaskItem().markAsReturned(
       item.id,
-      Fixed.one,
-      MoneyEx.fromInt(500),
+      MaterialPrice.items(quantity: Fixed.one, unitCost: MoneyEx.fromInt(500)),
     );
 
     expect(await DaoTaskItem().wasReturned(item.id), isTrue);
@@ -186,8 +183,7 @@ void main() {
 
     await DaoTaskItem().markAsReturned(
       item.id,
-      Fixed.one,
-      MoneyEx.fromInt(500),
+      MaterialPrice.items(quantity: Fixed.one, unitCost: MoneyEx.fromInt(500)),
     );
 
     final returned = await DaoTaskItem().getReturnedItemsForReceiptLink(
@@ -338,7 +334,7 @@ void main() {
   });
 
   test(
-    'marking shopping item complete keeps invoice charge calculated',
+    'marking shopping item complete keeps its direct customer charge',
     () async {
       final item = await _insertTaskItemForJob(
         jobStatus: JobStatus.inProgress,
@@ -356,16 +352,18 @@ void main() {
       final reloaded = (await DaoTaskItem().getById(item.id))!;
       await DaoTaskItem().markAsCompleted(
         item: reloaded,
-        materialUnitCost: MoneyEx.fromInt(200),
-        materialQuantity: Fixed.parse('3'),
+        price: MaterialPrice.items(
+          quantity: Fixed.parse('3'),
+          unitCost: MoneyEx.fromInt(200),
+        ),
       );
 
       final completed = (await DaoTaskItem().getById(item.id))!;
-      expect(completed.chargeMode, ChargeMode.calculated);
-      expect(completed.userDefinedCharge, isNull);
+      expect(completed.chargeMode, ChargeMode.userDefined);
+      expect(completed.userDefinedCharge, Money.fromInt(99999, isoCode: 'AUD'));
       expect(
         completed.getTotalLineCharge(BillingType.timeAndMaterial, MoneyEx.zero),
-        MoneyEx.fromInt(600),
+        Money.fromInt(99999, isoCode: 'AUD'),
       );
     },
   );
@@ -384,11 +382,39 @@ void main() {
 
     final reloaded = (await DaoTaskItem().getById(item.id))!;
     expect(reloaded.completed, isTrue);
-    expect(reloaded.actualMaterialUnitCost, MoneyEx.fromInt(500));
-    expect(reloaded.actualMaterialQuantity, Fixed.one);
-    expect(reloaded.actualCost, MoneyEx.fromInt(500));
+    expect(reloaded.actualPrice?.unitCost, MoneyEx.fromInt(500));
+    expect(reloaded.actualPrice?.quantity, Fixed.one);
+    expect(reloaded.actualPrice?.totalCost, MoneyEx.fromInt(500));
     expect(reloaded.chargeMode, ChargeMode.calculated);
   });
+
+  test(
+    'issue 552 completion copies the estimate without corrupting price',
+    () async {
+      final item = await _insertTaskItemForJob(
+        jobStatus: JobStatus.inProgress,
+        taskStatus: TaskStatus.inProgress,
+        itemType: TaskItemType.materialsBuy,
+        completed: false,
+        includeActuals: false,
+      );
+      final estimate = MaterialPrice.items(
+        quantity: Fixed.fromNum(2, decimalDigits: 3),
+        unitCost: MoneyEx.fromInt(150),
+      );
+
+      await DaoTaskItem().update(item.copyWith(estimatedPrice: estimate));
+      final incomplete = (await DaoTaskItem().getById(item.id))!;
+      expect(incomplete.actualPrice, isNull);
+
+      await DaoTaskItem().update(incomplete.copyWith(completed: true));
+      final completed = (await DaoTaskItem().getById(item.id))!;
+
+      expect(completed.actualPrice?.quantity, estimate.quantity);
+      expect(completed.actualPrice?.unitCost, MoneyEx.fromInt(150));
+      expect(completed.actualPrice?.totalCost, MoneyEx.fromInt(300));
+    },
+  );
 
   test('receipt can link to multiple task items', () async {
     final firstItem = await _insertTaskItemForJob(
@@ -494,10 +520,16 @@ Future<TaskItem> _insertTaskItemForJob({
     description: 'Paint',
     purpose: '',
     itemType: itemType,
-    estimatedMaterialUnitCost: MoneyEx.fromInt(500),
-    estimatedMaterialQuantity: Fixed.one,
-    actualMaterialUnitCost: includeActuals ? MoneyEx.fromInt(500) : null,
-    actualMaterialQuantity: includeActuals ? Fixed.one : null,
+    estimatedPrice: MaterialPrice.items(
+      quantity: Fixed.one,
+      unitCost: MoneyEx.fromInt(500),
+    ),
+    actualPrice: includeActuals
+        ? MaterialPrice.items(
+            quantity: Fixed.one,
+            unitCost: MoneyEx.fromInt(500),
+          )
+        : null,
     chargeMode: ChargeMode.calculated,
     margin: Percentage.zero,
     completed: completed,
@@ -531,10 +563,14 @@ Future<TaskItem> _insertTaskItemForExistingJob({
     description: 'Second item',
     purpose: '',
     itemType: itemType,
-    estimatedMaterialUnitCost: MoneyEx.fromInt(500),
-    estimatedMaterialQuantity: Fixed.one,
-    actualMaterialUnitCost: MoneyEx.fromInt(500),
-    actualMaterialQuantity: Fixed.one,
+    estimatedPrice: MaterialPrice.items(
+      quantity: Fixed.one,
+      unitCost: MoneyEx.fromInt(500),
+    ),
+    actualPrice: MaterialPrice.items(
+      quantity: Fixed.one,
+      unitCost: MoneyEx.fromInt(500),
+    ),
     chargeMode: ChargeMode.calculated,
     margin: Percentage.zero,
     completed: completed,

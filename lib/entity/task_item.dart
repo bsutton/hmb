@@ -26,6 +26,7 @@ import 'helpers/charge_mode.dart';
 import 'helpers/labour_calculator.dart';
 import 'helpers/material_calculator.dart';
 import 'job.dart';
+import 'material_price.dart';
 import 'task_item_type.dart';
 
 enum LabourEntryMode {
@@ -80,14 +81,11 @@ class TaskItem extends Entity<TaskItem> {
 
   final Fixed? estimatedLabourHours;
   final Money? estimatedLabourCost;
-  final Money? estimatedMaterialUnitCost;
-  final Fixed? estimatedMaterialQuantity;
+  final MaterialPrice? estimatedPrice;
 
   // ---- Actuals --------------------------------------------------------------
 
-  Money? actualMaterialUnitCost;
-  Fixed? actualMaterialQuantity;
-  Money? actualCost;
+  MaterialPrice? actualPrice;
 
   // ---- Pricing and margin ---------------------------------------------------
 
@@ -141,8 +139,7 @@ class TaskItem extends Entity<TaskItem> {
     required this.taskId,
     required this.description,
     required this.itemType,
-    required this.estimatedMaterialUnitCost,
-    required this.estimatedMaterialQuantity,
+    required this.estimatedPrice,
     required this.estimatedLabourHours,
     required this.estimatedLabourCost,
     required Money? totalLineCharge,
@@ -160,9 +157,7 @@ class TaskItem extends Entity<TaskItem> {
     required this.labourEntryMode,
     required this.invoiceLineId,
     required this.supplierId,
-    required this.actualMaterialUnitCost,
-    required this.actualMaterialQuantity,
-    required this.actualCost,
+    required this.actualPrice,
     required this.sourceTaskItemId,
     required this.isReturn,
   }) : _totalLineCharge = totalLineCharge,
@@ -182,8 +177,7 @@ class TaskItem extends Entity<TaskItem> {
     required String purpose,
     required LabourEntryMode labourEntryMode,
     required ChargeMode chargeMode,
-    Money? estimatedMaterialUnitCost,
-    Fixed? estimatedMaterialQuantity,
+    MaterialPrice? estimatedPrice,
     Money? estimatedLabourCost,
     Fixed? estimatedLabourHours,
     Money? totalLineCharge,
@@ -191,9 +185,7 @@ class TaskItem extends Entity<TaskItem> {
     bool billed = false,
     int? invoiceLineId,
     int? supplierId,
-    Money? actualMaterialUnitCost,
-    Fixed? actualMaterialQuantity,
-    Money? actualCost,
+    MaterialPrice? actualPrice,
     int? sourceTaskItemId,
     bool isReturn = false,
   }) {
@@ -211,8 +203,7 @@ class TaskItem extends Entity<TaskItem> {
       taskId: taskId,
       description: description,
       itemType: itemType,
-      estimatedMaterialUnitCost: estimatedMaterialUnitCost,
-      estimatedMaterialQuantity: estimatedMaterialQuantity,
+      estimatedPrice: estimatedPrice,
       estimatedLabourHours: estimatedLabourHours,
       estimatedLabourCost: estimatedLabourCost,
       margin: margin,
@@ -230,9 +221,7 @@ class TaskItem extends Entity<TaskItem> {
       labourEntryMode: labourEntryMode,
       invoiceLineId: invoiceLineId,
       supplierId: supplierId,
-      actualMaterialUnitCost: actualMaterialUnitCost,
-      actualMaterialQuantity: actualMaterialQuantity,
-      actualCost: actualCost,
+      actualPrice: actualPrice,
       sourceTaskItemId: sourceTaskItemId,
       isReturn: isReturn,
     );
@@ -242,8 +231,8 @@ class TaskItem extends Entity<TaskItem> {
     int? taskId,
     String? description,
     TaskItemType? itemType,
-    Money? estimatedMaterialUnitCost,
-    Fixed? estimatedMaterialQuantity,
+    MaterialPrice? estimatedPrice,
+    bool clearEstimatedPrice = false,
     Fixed? estimatedLabourHours,
     Money? estimatedLabourCost,
     Percentage? margin,
@@ -261,9 +250,8 @@ class TaskItem extends Entity<TaskItem> {
     String? purpose,
     int? supplierId,
     LabourEntryMode? labourEntryMode,
-    Money? actualMaterialUnitCost,
-    Fixed? actualMaterialQuantity,
-    Money? actualCost,
+    MaterialPrice? actualPrice,
+    bool clearActualPrice = false,
     int? sourceTaskItemId,
     bool? isReturn,
   }) {
@@ -275,13 +263,14 @@ class TaskItem extends Entity<TaskItem> {
       description: description ?? this.description,
       purpose: purpose ?? this.purpose,
       itemType: itemType ?? this.itemType,
-      estimatedMaterialUnitCost:
-          estimatedMaterialUnitCost ?? this.estimatedMaterialUnitCost,
+      estimatedPrice: clearEstimatedPrice
+          ? null
+          : estimatedPrice ?? this.estimatedPrice,
       estimatedLabourHours: estimatedLabourHours ?? this.estimatedLabourHours,
-      estimatedMaterialQuantity:
-          estimatedMaterialQuantity ?? this.estimatedMaterialQuantity,
       estimatedLabourCost: estimatedLabourCost ?? this.estimatedLabourCost,
-      totalLineCharge: totalLineCharge ?? _totalLineCharge,
+      totalLineCharge: (chargeMode ?? this.chargeMode) == ChargeMode.calculated
+          ? null
+          : totalLineCharge ?? _totalLineCharge,
       chargeMode: chargeMode ?? this.chargeMode,
       margin: margin ?? this.margin,
       completed: completed ?? this.completed,
@@ -295,11 +284,7 @@ class TaskItem extends Entity<TaskItem> {
       supplierId: supplierId ?? this.supplierId,
       labourEntryMode: labourEntryMode ?? this.labourEntryMode,
       url: url ?? this.url,
-      actualMaterialUnitCost:
-          actualMaterialUnitCost ?? this.actualMaterialUnitCost,
-      actualMaterialQuantity:
-          actualMaterialQuantity ?? this.actualMaterialQuantity,
-      actualCost: actualCost ?? this.actualCost,
+      actualPrice: clearActualPrice ? null : actualPrice ?? this.actualPrice,
       sourceTaskItemId: sourceTaskItemId ?? this.sourceTaskItemId,
       isReturn: isReturn ?? this.isReturn,
     );
@@ -322,12 +307,7 @@ class TaskItem extends Entity<TaskItem> {
     taskId: map['task_id'] as int,
     description: map['description'] as String,
     itemType: TaskItemType.fromId(map['item_type_id'] as int),
-    estimatedMaterialUnitCost: MoneyEx.moneyOrNull(
-      map['estimated_material_unit_cost'] as int?,
-    ),
-    estimatedMaterialQuantity: FixedEx.fromIntOrNull(
-      map['estimated_material_quantity'] as int?,
-    ),
+    estimatedPrice: MaterialPrice.fromMapOrNull(map, prefix: 'estimated'),
     estimatedLabourHours: FixedEx.fromIntOrNull(
       map['estimated_labour_hours'] as int?,
     ),
@@ -358,13 +338,7 @@ class TaskItem extends Entity<TaskItem> {
     labourEntryMode: LabourEntryMode.fromString(
       (map['labour_entry_mode'] as String?) ?? 'Hours',
     ),
-    actualMaterialUnitCost: MoneyEx.moneyOrNull(
-      map['actual_material_unit_cost'] as int?,
-    ),
-    actualMaterialQuantity: FixedEx.fromIntOrNull(
-      map['actual_material_quantity'] as int?,
-    ),
-    actualCost: MoneyEx.moneyOrNull(map['actual_cost'] as int?),
+    actualPrice: MaterialPrice.fromMapOrNull(map, prefix: 'actual'),
     sourceTaskItemId: map['source_task_item_id'] as int?,
     isReturn: (map['is_return'] as int? ?? 0) == 1,
   );
@@ -404,14 +378,9 @@ class TaskItem extends Entity<TaskItem> {
 
   /// Capture actual purchase costs while keeping material charges calculated
   /// from the current quantity, unit cost, and margin.
-  void setActualCosts({
-    required Money actualMaterialUnitCost,
-    required Fixed actualMaterialQuantity,
-  }) {
-    this.actualMaterialUnitCost = actualMaterialUnitCost;
-    this.actualMaterialQuantity = actualMaterialQuantity;
-    _totalLineCharge = null;
-    chargeMode = ChargeMode.calculated;
+  // ignore: use_setters_to_change_properties
+  void setActualPrice(MaterialPrice price) {
+    actualPrice = price;
   }
 
   /// Generates a human-readable dimension string.
@@ -435,14 +404,11 @@ class TaskItem extends Entity<TaskItem> {
     'task_id': taskId,
     'description': description,
     'item_type_id': itemType.id,
-    'estimated_material_unit_cost': estimatedMaterialUnitCost
-        ?.twoDigits()
-        .minorUnits
-        .toInt(),
-    'estimated_material_quantity': estimatedMaterialQuantity
-        ?.threeDigits()
-        .minorUnits
-        .toInt(),
+    'estimated_price_mode': null,
+    'estimated_quantity': null,
+    'estimated_unit_cost': null,
+    'estimated_items_per_package': null,
+    ...?estimatedPrice?.toMap(prefix: 'estimated'),
     'estimated_labour_hours': estimatedLabourHours
         ?.threeDigits()
         .minorUnits
@@ -466,15 +432,11 @@ class TaskItem extends Entity<TaskItem> {
     'purpose': purpose,
     'supplier_id': supplierId,
     'labour_entry_mode': labourEntryMode.toSqlString(),
-    'actual_material_unit_cost': actualMaterialUnitCost
-        ?.twoDigits()
-        .minorUnits
-        .toInt(),
-    'actual_material_quantity': actualMaterialQuantity
-        ?.threeDigits()
-        .minorUnits
-        .toInt(),
-    'actual_cost': actualCost?.twoDigits().minorUnits.toInt(),
+    'actual_price_mode': null,
+    'actual_quantity': null,
+    'actual_unit_cost': null,
+    'actual_items_per_package': null,
+    ...?actualPrice?.toMap(prefix: 'actual'),
     'source_task_item_id': sourceTaskItemId,
     'is_return': isReturn ? 1 : 0,
     'created_date': createdDate.toIso8601String(),
@@ -482,7 +444,7 @@ class TaskItem extends Entity<TaskItem> {
   };
 
   /// Creates a return item (negative line totals).
-  TaskItem forReturn(Fixed returnQuantity, Money returnUnitPrice) {
+  TaskItem forReturn(MaterialPrice returnPrice) {
     final now = DateTime.now();
     return TaskItem._(
       id: -1,
@@ -491,8 +453,7 @@ class TaskItem extends Entity<TaskItem> {
       taskId: taskId,
       description: description,
       itemType: itemType,
-      estimatedMaterialUnitCost: estimatedMaterialUnitCost,
-      estimatedMaterialQuantity: estimatedMaterialQuantity,
+      estimatedPrice: returnPrice,
       estimatedLabourHours: estimatedLabourHours,
       estimatedLabourCost: estimatedLabourCost,
       margin: margin,
@@ -510,9 +471,7 @@ class TaskItem extends Entity<TaskItem> {
       labourEntryMode: labourEntryMode,
       invoiceLineId: null,
       supplierId: supplierId,
-      actualMaterialUnitCost: returnUnitPrice,
-      actualMaterialQuantity: returnQuantity,
-      actualCost: returnUnitPrice.multiplyByFixed(returnQuantity),
+      actualPrice: returnPrice,
       sourceTaskItemId: id,
       isReturn: true,
     );

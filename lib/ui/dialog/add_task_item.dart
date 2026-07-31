@@ -20,8 +20,8 @@ import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../../entity/helpers/charge_mode.dart';
 import '../../util/dart/measurement_type.dart';
-import '../../util/dart/money_ex.dart';
 import '../../util/dart/units.dart';
+import '../task_items/material_price_editor.dart';
 import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/layout/layout.g.dart';
@@ -36,8 +36,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
   TaskItemType? selectedItemType;
   final descriptionController = TextEditingController();
   final purposeController = TextEditingController();
-  final quantityController = TextEditingController();
-  final unitCostController = TextEditingController();
+  final priceController = MaterialPriceEditingController();
   final formKey = GlobalKey<FormState>();
 
   await showDialog<void>(
@@ -117,18 +116,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
                   controller: purposeController,
                   labelText: 'Purpose',
                 ),
-                // Quantity Input
-                HMBTextField(
-                  controller: quantityController,
-                  labelText: 'Quantity',
-                  keyboardType: TextInputType.number,
-                ),
-                // Unit Cost Input
-                HMBTextField(
-                  controller: unitCostController,
-                  labelText: 'Unit Cost',
-                  keyboardType: TextInputType.number,
-                ),
+                MaterialPriceEditor(controller: priceController),
               ],
             ),
           ),
@@ -151,8 +139,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
                   selectedJobId: selectedJob.jobId,
                   selectedTask: selectedTask,
                   selectedItemType: selectedItemType,
-                  quantityController: quantityController,
-                  unitCostController: unitCostController,
+                  priceController: priceController,
                   descriptionController: descriptionController,
                   purposeController: purposeController,
                   context: context,
@@ -170,8 +157,7 @@ Future<void> _addTaskItem({
   required int? selectedJobId,
   required Task? selectedTask,
   required TaskItemType? selectedItemType,
-  required TextEditingController quantityController,
-  required TextEditingController unitCostController,
+  required MaterialPriceEditingController priceController,
   required TextEditingController descriptionController,
   required TextEditingController purposeController,
   required BuildContext context,
@@ -180,8 +166,10 @@ Future<void> _addTaskItem({
       selectedTask != null &&
       selectedItemType != null) {
     final description = descriptionController.text.trim();
-    final quantity = Fixed.tryParse(quantityController.text) ?? Fixed.one;
-    final unitCost = MoneyEx.tryParse(unitCostController.text);
+    final price = priceController.value;
+    if (price == null) {
+      return;
+    }
     final defaultMargin = await DaoSystem().getDefaultProfitMargin();
 
     // Create and insert the new TaskItem
@@ -190,8 +178,7 @@ Future<void> _addTaskItem({
       description: description,
       purpose: purposeController.text.trim(),
       itemType: selectedItemType,
-      estimatedMaterialQuantity: quantity,
-      estimatedMaterialUnitCost: unitCost,
+      estimatedPrice: price,
       chargeMode: ChargeMode.calculated,
       dimension1: Fixed.zero,
       dimension2: Fixed.zero,

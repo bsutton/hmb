@@ -7,7 +7,9 @@ import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/entity/helpers/charge_mode.dart';
 import 'package:hmb/ui/task_items/list_packing_screen.dart';
+import 'package:hmb/ui/task_items/material_price_editor.dart';
 import 'package:hmb/ui/task_items/shopping_item_dialog.dart';
+import 'package:hmb/ui/widgets/hmb_button.dart';
 import 'package:hmb/util/dart/measurement_type.dart';
 import 'package:hmb/util/dart/units.dart';
 import 'package:money2/money2.dart';
@@ -26,9 +28,71 @@ void main() {
     await tearDownTestDb();
   });
 
-  testWidgets('shopping item edit saves packet details as unit values', (
-    tester,
-  ) async {
+  test('package editor preserves its draft across mode changes', () {
+    final controller = MaterialPriceEditingController(
+      price: MaterialPrice.packages(
+        packageCount: Fixed.parse('3'),
+        packageCost: Money.fromInt(600, isoCode: 'AUD'),
+        itemsPerPackage: Fixed.parse('2'),
+      ),
+    );
+    addTearDown(controller.dispose);
+
+    expect(controller.quantity.text, '3');
+    expect(controller.itemsPerPackage.text, '2');
+
+    controller.changeMode(MaterialPriceEntryMode.items);
+    expect(controller.quantity.text, '6');
+    expect(controller.value?.unitCost, Money.fromInt(300, isoCode: 'AUD'));
+
+    controller.changeMode(MaterialPriceEntryMode.packages);
+    expect(controller.quantity.text, '3');
+    expect(controller.itemsPerPackage.text, '2');
+    expect(controller.value?.unitCost, Money.fromInt(600, isoCode: 'AUD'));
+  });
+
+  test('first visit to package mode derives an equivalent price', () {
+    final controller = MaterialPriceEditingController(
+      price: MaterialPrice.items(
+        quantity: Fixed.parse('6'),
+        unitCost: Money.fromInt(300, isoCode: 'AUD'),
+      ),
+    );
+    addTearDown(controller.dispose);
+
+    controller.changeMode(MaterialPriceEntryMode.packages);
+
+    expect(controller.quantity.text, '1');
+    expect(controller.itemsPerPackage.text, '6');
+    expect(controller.value?.unitCost, Money.fromInt(1800, isoCode: 'AUD'));
+
+    controller.changeMode(MaterialPriceEntryMode.items);
+    expect(controller.quantity.text, '6');
+    expect(controller.value?.unitCost, Money.fromInt(300, isoCode: 'AUD'));
+  });
+
+  test('editing one mode invalidates and rederives the other draft', () {
+    final controller = MaterialPriceEditingController(
+      price: MaterialPrice.packages(
+        packageCount: Fixed.parse('3'),
+        packageCost: Money.fromInt(600, isoCode: 'AUD'),
+        itemsPerPackage: Fixed.parse('2'),
+      ),
+    );
+    addTearDown(controller.dispose);
+
+    controller
+      ..changeMode(MaterialPriceEntryMode.items)
+      ..quantity.text = '8'
+      ..markCurrentModeEdited()
+      ..changeMode(MaterialPriceEntryMode.packages);
+
+    expect(controller.quantity.text, '1');
+    expect(controller.itemsPerPackage.text, '8');
+    expect(controller.value?.unitCost, Money.fromInt(2400, isoCode: 'AUD'));
+  });
+
+  testWidgets('shopping item edit preserves package pricing', (tester) async {
     late Task task;
     late TaskItem item;
 
@@ -64,8 +128,10 @@ void main() {
         url: '',
         labourEntryMode: LabourEntryMode.hours,
         chargeMode: ChargeMode.calculated,
-        estimatedMaterialUnitCost: Money.fromInt(100, isoCode: 'AUD'),
-        estimatedMaterialQuantity: Fixed.fromNum(1, decimalDigits: 3),
+        estimatedPrice: MaterialPrice.items(
+          quantity: Fixed.fromNum(1, decimalDigits: 3),
+          unitCost: Money.fromInt(100, isoCode: 'AUD'),
+        ),
       );
       await DaoTaskItem().insert(item);
     });
@@ -92,21 +158,79 @@ void main() {
 
     await tester.tap(find.text('Edit Item'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Enter Packet Details'));
+    expect(find.widgetWithText(HMBButton, 'Cancel'), findsOneWidget);
+    expect(find.widgetWithText(HMBButton, 'Save'), findsOneWidget);
+    await tester.tap(find.text('Packages'));
     await tester.pumpAndSettle();
 
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.widgetWithText(TextFormField, 'Number of packages'),
+          )
+          .controller!
+          .text,
+      '1',
+    );
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.widgetWithText(TextFormField, 'Items per package'),
+          )
+          .controller!
+          .text,
+      '1',
+    );
+
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Cost per Packet'),
+      find.widgetWithText(TextFormField, 'Cost per package'),
       '12.00',
     );
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Items per Packet'),
+      find.widgetWithText(TextFormField, 'Items per package'),
       '6',
     );
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Packets Purchased'),
+      find.widgetWithText(TextFormField, 'Number of packages'),
       '3',
     );
+    tester.testTextInput.hide();
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Individual items'));
+    await tester.tap(find.text('Individual items'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Packages'));
+    await tester.tap(find.text('Packages'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.widgetWithText(TextFormField, 'Number of packages'),
+          )
+          .controller!
+          .text,
+      '3',
+    );
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.widgetWithText(TextFormField, 'Items per package'),
+          )
+          .controller!
+          .text,
+      '6',
+    );
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.widgetWithText(TextFormField, 'Cost per package'),
+          )
+          .controller!
+          .text,
+      '12.00',
+    );
+
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
@@ -114,13 +238,22 @@ void main() {
       final reloaded = await DaoTaskItem().getById(item.id);
 
       expect(
-        reloaded!.actualMaterialUnitCost,
-        Money.fromInt(200, isoCode: 'AUD'),
+        reloaded!.estimatedPrice?.unitCost,
+        Money.fromInt(1200, isoCode: 'AUD'),
       );
       expect(
-        reloaded.actualMaterialQuantity,
+        reloaded.estimatedPrice?.quantity,
+        Fixed.fromNum(3, decimalDigits: 3),
+      );
+      expect(
+        reloaded.estimatedPrice?.itemsPerPackage,
+        Fixed.fromNum(6, decimalDigits: 3),
+      );
+      expect(
+        reloaded.estimatedPrice?.totalItemQuantity,
         Fixed.fromNum(18, decimalDigits: 3),
       );
+      expect(reloaded.actualPrice, isNull);
     });
   });
 }

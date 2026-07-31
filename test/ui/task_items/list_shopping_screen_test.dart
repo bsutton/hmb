@@ -11,6 +11,7 @@ import 'package:hmb/entity/helpers/charge_mode.dart';
 import 'package:hmb/ui/task_items/list_packing_screen.dart';
 import 'package:hmb/ui/task_items/list_shopping_screen.dart';
 import 'package:hmb/ui/task_items/purchased_item_card.dart';
+import 'package:hmb/ui/widgets/hmb_button.dart';
 import 'package:hmb/ui/widgets/layout/surface.dart';
 import 'package:hmb/ui/widgets/select/hmb_droplist_multi.dart';
 import 'package:hmb/ui/widgets/select/hmb_select_job_multi.dart'
@@ -97,8 +98,10 @@ void main() {
           url: '',
           labourEntryMode: LabourEntryMode.hours,
           chargeMode: ChargeMode.calculated,
-          estimatedMaterialUnitCost: Money.fromInt(1000, isoCode: 'AUD'),
-          estimatedMaterialQuantity: Fixed.fromNum(1, decimalDigits: 3),
+          estimatedPrice: MaterialPrice.items(
+            quantity: Fixed.fromNum(1, decimalDigits: 3),
+            unitCost: Money.fromInt(1000, isoCode: 'AUD'),
+          ),
         ),
       );
     });
@@ -156,8 +159,10 @@ void main() {
           url: '',
           labourEntryMode: LabourEntryMode.hours,
           chargeMode: ChargeMode.calculated,
-          estimatedMaterialUnitCost: Money.fromInt(1000, isoCode: 'AUD'),
-          estimatedMaterialQuantity: Fixed.fromNum(1, decimalDigits: 3),
+          estimatedPrice: MaterialPrice.items(
+            quantity: Fixed.fromNum(1, decimalDigits: 3),
+            unitCost: Money.fromInt(1000, isoCode: 'AUD'),
+          ),
         ),
       );
     });
@@ -224,10 +229,14 @@ void main() {
         url: '',
         labourEntryMode: LabourEntryMode.hours,
         chargeMode: ChargeMode.calculated,
-        estimatedMaterialUnitCost: Money.fromInt(2800, isoCode: 'AUD'),
-        estimatedMaterialQuantity: Fixed.one,
-        actualMaterialUnitCost: Money.fromInt(2800, isoCode: 'AUD'),
-        actualMaterialQuantity: Fixed.one,
+        estimatedPrice: MaterialPrice.items(
+          quantity: Fixed.one,
+          unitCost: Money.fromInt(2800, isoCode: 'AUD'),
+        ),
+        actualPrice: MaterialPrice.items(
+          quantity: Fixed.one,
+          unitCost: Money.fromInt(2800, isoCode: 'AUD'),
+        ),
         supplierId: supplier.id,
         completed: true,
       );
@@ -265,6 +274,8 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('Supplier: Purchased card supplier'), findsOneWidget);
     expect(find.text('Note: Purchase note'), findsOneWidget);
+    expect(find.text('Quantity: 1'), findsOneWidget);
+    expect(find.text(r'Total: $28.00'), findsOneWidget);
     final cardFinder = find.byKey(
       ValueKey('shopping-item-card-${itemContext.taskItem.id}'),
     );
@@ -272,6 +283,12 @@ void main() {
     expect(card.elevation, SurfaceElevation.e6);
     expect(card.margin, const EdgeInsets.only(bottom: 8));
     expect(tester.getSize(cardFinder).height, lessThan(340));
+
+    await tester.tap(find.byIcon(Icons.undo));
+    await waitForText(tester, 'Return Item');
+
+    expect(find.widgetWithText(HMBButton, 'Cancel'), findsOneWidget);
+    expect(find.widgetWithText(HMBButton, 'Return'), findsOneWidget);
   });
 
   testWidgets('multi-job selector can include inactive jobs on request', (

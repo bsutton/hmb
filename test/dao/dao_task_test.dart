@@ -135,8 +135,10 @@ Future<Task> _insertEstimatedTask({
     purpose: '',
     labourEntryMode: LabourEntryMode.hours,
     chargeMode: ChargeMode.calculated,
-    estimatedMaterialUnitCost: unitCost,
-    estimatedMaterialQuantity: Fixed.one,
+    estimatedPrice: MaterialPrice.items(
+      quantity: Fixed.one,
+      unitCost: unitCost,
+    ),
   );
   await DaoTaskItem().insert(item);
   return task;

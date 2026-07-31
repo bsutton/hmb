@@ -203,11 +203,12 @@ SELECT rja.*
 
   Future<void> replaceJobAllocations(
     int receiptId,
-    Iterable<ReceiptJobAllocation> allocations,
-  ) async {
+    Iterable<ReceiptJobAllocation> allocations, [
+    Transaction? transaction,
+  ]) async {
     final allocationList = allocations.toList();
 
-    await db.transaction((txn) async {
+    Future<void> replace(Transaction txn) async {
       await txn.delete(
         'receipt_job_allocation',
         where: 'receipt_id = ?',
@@ -224,7 +225,13 @@ SELECT rja.*
           'modified_date': now,
         });
       }
-    });
+    }
+
+    if (transaction != null) {
+      await replace(transaction);
+    } else {
+      await db.transaction(replace);
+    }
   }
 
   Future<int> countLinkedTaskItems(int receiptId) async {
@@ -261,9 +268,10 @@ SELECT task_item_id
 
   Future<void> replaceTaskItemLinks(
     int receiptId,
-    Iterable<int> taskItemIds,
-  ) async {
-    await db.transaction((txn) async {
+    Iterable<int> taskItemIds, [
+    Transaction? transaction,
+  ]) async {
+    Future<void> replace(Transaction txn) async {
       await txn.delete(
         'receipt_task_item',
         where: 'receipt_id = ?',
@@ -278,7 +286,13 @@ SELECT task_item_id
           'modified_date': now,
         });
       }
-    });
+    }
+
+    if (transaction != null) {
+      await replace(transaction);
+    } else {
+      await db.transaction(replace);
+    }
   }
 
   /// Filter receipts by optional criteria

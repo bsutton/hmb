@@ -67,6 +67,35 @@ void main() {
       expect(sorted.first, returned);
     },
   );
+
+  test('receipt pricing preserves package details and overwrites total', () {
+    final item =
+        _taskItem(
+          description: 'Boxed screws',
+          unitCost: MoneyEx.dollars(10),
+          modifiedDate: DateTime(2026, 5, 3),
+          supplierId: 7,
+        ).copyWith(
+          estimatedPrice: MaterialPrice.packages(
+            packageCount: Fixed.fromNum(2, decimalDigits: 3),
+            packageCost: MoneyEx.dollars(10),
+            itemsPerPackage: Fixed.fromNum(50, decimalDigits: 3),
+          ),
+          clearActualPrice: true,
+        );
+
+    final actual = ReceiptTaskItemMatcher.actualPriceForLine(
+      item: item,
+      lineTotalExTax: MoneyEx.dollars(30),
+      fallbackQuantity: Fixed.one,
+    );
+
+    expect(actual.mode, MaterialPriceEntryMode.packages);
+    expect(actual.quantity, Fixed.fromNum(2, decimalDigits: 3));
+    expect(actual.itemsPerPackage, Fixed.fromNum(50, decimalDigits: 3));
+    expect(actual.unitCost, MoneyEx.dollars(15));
+    expect(actual.totalCost, MoneyEx.dollars(30));
+  });
 }
 
 TaskItem _taskItem({
@@ -81,10 +110,11 @@ TaskItem _taskItem({
     description: description,
     purpose: '',
     itemType: TaskItemType.materialsBuy,
-    estimatedMaterialUnitCost: unitCost,
-    estimatedMaterialQuantity: Fixed.one,
-    actualMaterialUnitCost: unitCost,
-    actualMaterialQuantity: Fixed.one,
+    estimatedPrice: MaterialPrice.items(
+      quantity: Fixed.one,
+      unitCost: unitCost,
+    ),
+    actualPrice: MaterialPrice.items(quantity: Fixed.one, unitCost: unitCost),
     chargeMode: ChargeMode.calculated,
     margin: Percentage.zero,
     completed: true,

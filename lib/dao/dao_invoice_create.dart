@@ -372,49 +372,5 @@ Future<Money> _emitTimeAndMaterialsMaterials(
     }
   }
 
-  return totalAmount + await _emitReceiptJobAllocations(invoiceId, job);
-}
-
-Future<Money> _emitReceiptJobAllocations(int invoiceId, Job job) async {
-  final daoReceipt = DaoReceipt();
-  final daoInvoiceLine = DaoInvoiceLine();
-  final allocations = await daoReceipt.getUnbilledJobAllocationsForJob(job.id);
-  if (allocations.isEmpty) {
-    return MoneyEx.zero;
-  }
-
-  final invoiceLineGroup = InvoiceLineGroup.forInsert(
-    invoiceId: invoiceId,
-    name: 'Receipts',
-  );
-  final groupId = await DaoInvoiceLineGroup().insert(invoiceLineGroup);
-  var totalAmount = MoneyEx.zero;
-
-  for (final allocation in allocations) {
-    if (!allocation.amount.isPositive) {
-      continue;
-    }
-    final receipt = await daoReceipt.getById(allocation.receiptId);
-    final supplier = receipt == null
-        ? null
-        : await DaoSupplier().getById(receipt.supplierId);
-    final receiptDate = receipt == null
-        ? ''
-        : ' ${formatDate(receipt.receiptDate)}';
-    final supplierName = supplier == null ? '' : ' ${supplier.name}';
-    final line = InvoiceLine.forInsert(
-      invoiceId: invoiceId,
-      invoiceLineGroupId: groupId,
-      description:
-          'Material: Receipt #${allocation.receiptId}$supplierName$receiptDate',
-      quantity: Fixed.one,
-      unitPrice: allocation.amount,
-      lineTotal: allocation.amount,
-    );
-    final invoiceLineId = await daoInvoiceLine.insert(line);
-    await daoReceipt.markJobAllocationAsBilled(allocation, invoiceLineId);
-    totalAmount += allocation.amount;
-  }
-
   return totalAmount;
 }

@@ -15,7 +15,9 @@ import 'dart:math';
 
 import 'package:money2/money2.dart';
 
+import '../../../entity/material_price.dart';
 import '../../../entity/task_item.dart';
+import '../../../util/dart/money_ex.dart';
 
 class ReceiptLineMatchInput {
   final String description;
@@ -93,6 +95,28 @@ class ReceiptTaskItemMatcher {
     return score;
   }
 
+  /// Converts a receipt line total into the matched item's actual price while
+  /// preserving package mode and package size.
+  static MaterialPrice actualPriceForLine({
+    required TaskItem item,
+    required Money lineTotalExTax,
+    required Fixed fallbackQuantity,
+  }) {
+    final previous = item.actualPrice ?? item.estimatedPrice;
+    final quantity = previous?.quantity ?? fallbackQuantity;
+    final total = MoneyEx.fromInt(lineTotalExTax.minorUnits.toInt().abs());
+    final unitCost = total.divideByFixed(quantity);
+    if (previous?.mode == MaterialPriceEntryMode.packages &&
+        previous?.itemsPerPackage != null) {
+      return MaterialPrice.packages(
+        packageCount: quantity,
+        packageCost: unitCost,
+        itemsPerPackage: previous!.itemsPerPackage!,
+      );
+    }
+    return MaterialPrice.items(quantity: quantity, unitCost: unitCost);
+  }
+
   static int _scoreDescription(String taskDescription, String lineDescription) {
     final taskText = taskDescription.toLowerCase();
     final lineText = lineDescription.toLowerCase();
@@ -150,16 +174,8 @@ class ReceiptTaskItemMatcher {
     return 0;
   }
 
-  static Money? _taskItemCost(TaskItem item) {
-    final unitCost =
-        item.actualMaterialUnitCost ?? item.estimatedMaterialUnitCost;
-    final quantity =
-        item.actualMaterialQuantity ?? item.estimatedMaterialQuantity;
-    if (unitCost == null || quantity == null) {
-      return item.actualCost;
-    }
-    return unitCost.multiplyByFixed(quantity);
-  }
+  static Money? _taskItemCost(TaskItem item) =>
+      (item.actualPrice ?? item.estimatedPrice)?.totalCost;
 
   static Set<String> _tokens(String value) => RegExp('[a-z0-9]+')
       .allMatches(value)

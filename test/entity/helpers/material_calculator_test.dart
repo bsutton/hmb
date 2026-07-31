@@ -9,6 +9,7 @@
 import 'package:hmb/entity/helpers/charge_mode.dart';
 import 'package:hmb/entity/helpers/material_calculator.dart';
 import 'package:hmb/entity/job.dart'; // for BillingType
+import 'package:hmb/entity/material_price.dart';
 import 'package:hmb/entity/task_item.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:money2/money2.dart';
@@ -34,8 +35,9 @@ void main() {
     test('multiplies unit cost by qty, applies margin on line only', () {
       final item = _MockTaskItem();
       when(() => item.chargeMode).thenReturn(ChargeMode.calculated);
-      when(() => item.estimatedMaterialUnitCost).thenReturn(dollars(10));
-      when(() => item.estimatedMaterialQuantity).thenReturn(qty(3));
+      when(() => item.estimatedPrice).thenReturn(
+        MaterialPrice.items(quantity: qty(3), unitCost: dollars(10)),
+      );
       when(() => item.margin).thenReturn(Percentage.fromInt(2000));
       when(() => item.isReturn).thenReturn(false);
 
@@ -53,14 +55,36 @@ void main() {
       // calcMaterialCharges should match the line charge total
       expect(mc.calcMaterialCharges(BillingType.fixedPrice), dollars(36));
     });
+
+    test('uses package count and package price without item rounding', () {
+      final item = _MockTaskItem();
+      when(() => item.chargeMode).thenReturn(ChargeMode.calculated);
+      when(() => item.estimatedPrice).thenReturn(
+        MaterialPrice.packages(
+          packageCount: qty(3),
+          packageCost: dollars(10),
+          itemsPerPackage: qty(6),
+        ),
+      );
+      when(() => item.margin).thenReturn(Percentage.zero);
+      when(() => item.isReturn).thenReturn(false);
+
+      final calculator = MaterialCalculator(BillingType.fixedPrice, item);
+
+      expect(calculator.quantity, qty(3));
+      expect(calculator.unitCost, dollars(10));
+      expect(calculator.lineCostTotal, dollars(30));
+      expect(calculator.lineChargeTotal, dollars(30));
+    });
   });
 
   group('MaterialCalculator.fixedPrice (userDefined)', () {
     test('uses user-defined line total and keeps cost total separate', () {
       final item = _MockTaskItem();
       when(() => item.chargeMode).thenReturn(ChargeMode.userDefined);
-      when(() => item.estimatedMaterialUnitCost).thenReturn(dollars(7.5));
-      when(() => item.estimatedMaterialQuantity).thenReturn(qty(5));
+      when(() => item.estimatedPrice).thenReturn(
+        MaterialPrice.items(quantity: qty(5), unitCost: dollars(7.5)),
+      );
       when(() => item.userDefinedCharge).thenReturn(dollars(100));
       when(() => item.isReturn).thenReturn(false);
 
@@ -81,8 +105,9 @@ void main() {
       final item = _MockTaskItem();
       when(() => item.completed).thenReturn(false);
       when(() => item.chargeMode).thenReturn(ChargeMode.calculated);
-      when(() => item.estimatedMaterialUnitCost).thenReturn(dollars(4.25));
-      when(() => item.estimatedMaterialQuantity).thenReturn(qty(8));
+      when(() => item.estimatedPrice).thenReturn(
+        MaterialPrice.items(quantity: qty(8), unitCost: dollars(4.25)),
+      );
       when(() => item.margin).thenReturn(Percentage.fromInt(1000));
       when(() => item.isReturn).thenReturn(false);
 
@@ -107,8 +132,9 @@ void main() {
       final item = _MockTaskItem();
       when(() => item.completed).thenReturn(true);
       when(() => item.chargeMode).thenReturn(ChargeMode.calculated);
-      when(() => item.actualMaterialUnitCost).thenReturn(dollars(5.00));
-      when(() => item.actualMaterialQuantity).thenReturn(qty(2.5));
+      when(() => item.actualPrice).thenReturn(
+        MaterialPrice.items(quantity: qty(2.5), unitCost: dollars(5.00)),
+      );
       when(() => item.margin).thenReturn(Percentage.fromInt(5000));
       when(() => item.isReturn).thenReturn(false);
 
@@ -133,8 +159,9 @@ void main() {
       final item = _MockTaskItem();
       when(() => item.completed).thenReturn(false);
       when(() => item.chargeMode).thenReturn(ChargeMode.userDefined);
-      when(() => item.estimatedMaterialUnitCost).thenReturn(dollars(1.99));
-      when(() => item.estimatedMaterialQuantity).thenReturn(qty(10));
+      when(() => item.estimatedPrice).thenReturn(
+        MaterialPrice.items(quantity: qty(10), unitCost: dollars(1.99)),
+      );
       when(() => item.userDefinedCharge).thenReturn(dollars(15.25));
       when(() => item.isReturn).thenReturn(false);
 
@@ -158,8 +185,9 @@ void main() {
       final item = _MockTaskItem();
       when(() => item.completed).thenReturn(false);
       when(() => item.chargeMode).thenReturn(ChargeMode.calculated);
-      when(() => item.estimatedMaterialUnitCost).thenReturn(dollars(12));
-      when(() => item.estimatedMaterialQuantity).thenReturn(qty(2));
+      when(() => item.estimatedPrice).thenReturn(
+        MaterialPrice.items(quantity: qty(2), unitCost: dollars(12)),
+      );
       when(() => item.margin).thenReturn(Percentage.fromInt(2500));
       when(() => item.isReturn).thenReturn(true);
 
@@ -178,8 +206,9 @@ void main() {
       final item = _MockTaskItem();
       when(() => item.completed).thenReturn(false);
       when(() => item.chargeMode).thenReturn(ChargeMode.userDefined);
-      when(() => item.estimatedMaterialUnitCost).thenReturn(dollars(3));
-      when(() => item.estimatedMaterialQuantity).thenReturn(qty(4));
+      when(
+        () => item.estimatedPrice,
+      ).thenReturn(MaterialPrice.items(quantity: qty(4), unitCost: dollars(3)));
       when(() => item.userDefinedCharge).thenReturn(dollars(50));
       when(() => item.isReturn).thenReturn(true);
 
@@ -197,8 +226,9 @@ void main() {
       final item = _MockTaskItem();
       when(() => item.completed).thenReturn(false);
       when(() => item.chargeMode).thenReturn(ChargeMode.calculated);
-      when(() => item.estimatedMaterialUnitCost).thenReturn(dollars(2.40));
-      when(() => item.estimatedMaterialQuantity).thenReturn(qty(3));
+      when(() => item.estimatedPrice).thenReturn(
+        MaterialPrice.items(quantity: qty(3), unitCost: dollars(2.40)),
+      );
       when(() => item.margin).thenReturn(Percentage.fromInt(1000));
       when(() => item.isReturn).thenReturn(false);
 

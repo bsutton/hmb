@@ -5,8 +5,10 @@
 
 import 'package:money2/money2.dart';
 
+import '../../util/dart/fixed_ex.dart';
 import '../../util/dart/money_ex.dart';
 import '../job.dart';
+import '../material_price.dart';
 import '../task_item.dart';
 import 'charge_mode.dart';
 
@@ -52,8 +54,9 @@ class MaterialCalculator {
       case BillingType.fixedPrice:
         {
           // FP uses estimates only; actuals are for P&L.
-          final qty = item.estimatedMaterialQuantity ?? Fixed.one;
-          final unit = item.estimatedMaterialUnitCost ?? MoneyEx.zero;
+          final price = item.estimatedPrice;
+          final qty = price?.quantity ?? FixedEx.zero;
+          final unit = price?.unitCost ?? MoneyEx.zero;
           if (item.chargeMode == ChargeMode.userDefined) {
             return MaterialCalculator._defined(
               quantity: qty,
@@ -128,27 +131,18 @@ class MaterialCalculator {
     lineChargeTotal = MoneyEx.zero;
   }
 
-  static Fixed _pickQtyFor(BillingType billingType, TaskItem item) {
+  static MaterialPrice? _pickPriceFor(BillingType billingType, TaskItem item) {
     if (billingType == BillingType.timeAndMaterial && item.completed) {
-      return item.actualMaterialQuantity ??
-          item.estimatedMaterialQuantity ??
-          Fixed.one;
+      return item.actualPrice ?? item.estimatedPrice;
     }
-    return item.estimatedMaterialQuantity ??
-        item.actualMaterialQuantity ??
-        Fixed.one;
+    return item.estimatedPrice ?? item.actualPrice;
   }
 
-  static Money _pickUnitFor(BillingType billingType, TaskItem item) {
-    if (billingType == BillingType.timeAndMaterial && item.completed) {
-      return item.actualMaterialUnitCost ??
-          item.estimatedMaterialUnitCost ??
-          MoneyEx.zero;
-    }
-    return item.estimatedMaterialUnitCost ??
-        item.actualMaterialUnitCost ??
-        MoneyEx.zero;
-  }
+  static Fixed _pickQtyFor(BillingType billingType, TaskItem item) =>
+      _pickPriceFor(billingType, item)?.quantity ?? FixedEx.zero;
+
+  static Money _pickUnitFor(BillingType billingType, TaskItem item) =>
+      _pickPriceFor(billingType, item)?.unitCost ?? MoneyEx.zero;
 
   // ---- Inputs / derived fields ---------------------------------------------
 

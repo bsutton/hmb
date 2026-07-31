@@ -38,8 +38,10 @@ class InvoicePaymentRequest {
 Future<InvoicePaymentRequest?> showRecordInvoicePaymentDialog({
   required BuildContext context,
   required Money balance,
+  List<String>? paymentMethods,
 }) async {
-  final paymentMethods = await loadPaymentMethodOptions();
+  final availablePaymentMethods =
+      paymentMethods ?? await loadPaymentMethodOptions();
   if (!context.mounted) {
     return null;
   }
@@ -48,7 +50,7 @@ Future<InvoicePaymentRequest?> showRecordInvoicePaymentDialog({
   final referenceController = TextEditingController();
   final notesController = TextEditingController();
   final formKey = GlobalKey<FormState>();
-  var paymentMethod = paymentMethods.first;
+  var paymentMethod = availablePaymentMethods.first;
 
   return showDialog<InvoicePaymentRequest>(
     context: context,
@@ -84,7 +86,7 @@ Future<InvoicePaymentRequest?> showRecordInvoicePaymentDialog({
                     initialValue: paymentMethod,
                     decoration: const InputDecoration(labelText: 'Method'),
                     items: [
-                      for (final method in paymentMethods)
+                      for (final method in availablePaymentMethods)
                         DropdownMenuItem<String>(
                           value: method,
                           child: Text(method),

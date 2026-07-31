@@ -11,16 +11,18 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart';
+import 'package:money2/money2.dart';
 
 import '../../dao/dao.g.dart';
-import '../../util/flutter/flutter_util.g.dart';
+import '../../entity/material_price.dart';
+import '../widgets/hmb_button.dart';
+import '../widgets/hmb_toast.dart';
 import '../widgets/icons/hmb_undo_icon.dart';
 import '../widgets/layout/layout.g.dart';
-import '../widgets/text/text.g.dart';
 import 'list_packing_screen.dart';
 import 'list_shopping_screen.dart';
+import 'material_price_editor.dart';
 import 'shopping_item_card.dart';
 
 /// “Purchased” mode: perhaps a “view invoice” button.
@@ -44,61 +46,92 @@ class PurchasedItemCard extends ShoppingItemCard {
     TaskItemContext itemContext,
     BuildContext context,
   ) async {
-    final qtyCtrl = TextEditingController(
-      text: (itemContext.taskItem.actualMaterialQuantity ?? Fixed.one)
-          .toString(),
+    final originalPrice =
+        itemContext.taskItem.actualPrice ?? itemContext.taskItem.estimatedPrice;
+    if (originalPrice == null) {
+      HMBToast.error('This item has no purchase price to return.');
+      return;
+    }
+    final previousReturns = await DaoTaskItem().getReturnsFor(
+      itemContext.taskItem.id,
     );
-    final refundCtrl = TextEditingController(
-      text: itemContext.taskItem.actualMaterialUnitCost.toString(),
+    final returnedQuantity = previousReturns
+        .map((item) => item.actualPrice)
+        .whereType<MaterialPrice>()
+        .where((price) => price.mode == originalPrice.mode)
+        .fold(Fixed.zero, (total, price) => total + price.quantity);
+    final remainingQuantity = originalPrice.quantity - returnedQuantity;
+    if (!remainingQuantity.isPositive) {
+      HMBToast.error('This purchase has already been fully returned.');
+      return;
+    }
+    if (!context.mounted) {
+      return;
+    }
+    final remainingPrice = originalPrice.isPackagePrice
+        ? MaterialPrice.packages(
+            packageCount: remainingQuantity,
+            packageCost: originalPrice.unitCost,
+            itemsPerPackage: originalPrice.itemsPerPackage!,
+          )
+        : MaterialPrice.items(
+            quantity: remainingQuantity,
+            unitCost: originalPrice.unitCost,
+          );
+    final priceController = MaterialPriceEditingController(
+      price: remainingPrice,
     );
-
-    final totalCost =
-        (itemContext.taskItem.actualMaterialUnitCost ?? MoneyEx.zero)
-            .multiplyByFixed(
-              itemContext.taskItem.actualMaterialQuantity ?? Fixed.zero,
-            );
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Return Item'),
-        content: HMBColumn(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(itemContext.taskItem.description),
-            TextField(
-              controller: qtyCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Quantity to return',
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Return Item'),
+          content: HMBColumn(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(itemContext.taskItem.description),
+              MaterialPriceEditor(
+                controller: priceController,
+                title: 'Refund pricing',
+                canChangeMode: false,
               ),
-              keyboardType: TextInputType.number,
+            ],
+          ),
+          actions: [
+            HMBButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              label: 'Cancel',
+              hint: "Don't return this item",
             ),
-            TextField(
-              controller: refundCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Refund amount each',
-              ),
-              keyboardType: TextInputType.number,
+            HMBButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              label: 'Return',
+              hint: 'Record this item as returned',
             ),
-            HMBText('Total: $totalCost'),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Return'),
-          ),
-        ],
-      ),
-    );
+      );
 
-    if (confirmed ?? false) {
-      final qty = Fixed.tryParse(qtyCtrl.text) ?? Fixed.one;
-      final refund = MoneyEx.tryParse(refundCtrl.text);
-      await DaoTaskItem().markAsReturned(itemContext.taskItem.id, qty, refund);
+      if (confirmed ?? false) {
+        final returnPrice = priceController.value;
+        if (returnPrice == null) {
+          return;
+        }
+        if (returnPrice.mode != originalPrice.mode ||
+            returnPrice.quantity > remainingQuantity) {
+          HMBToast.error(
+            'The return must use the purchase mode and cannot exceed '
+            '$remainingQuantity.',
+          );
+          return;
+        }
+        await DaoTaskItem().markAsReturned(
+          itemContext.taskItem.id,
+          returnPrice,
+        );
+      }
+    } finally {
+      priceController.dispose();
     }
   }
 }

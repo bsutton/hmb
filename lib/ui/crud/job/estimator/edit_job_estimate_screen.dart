@@ -23,6 +23,7 @@ import '../../../../api/chat_gpt/job_assist_api_client.dart';
 import '../../../../dao/dao.g.dart';
 import '../../../../entity/helpers/charge_mode.dart';
 import '../../../../entity/job.dart';
+import '../../../../entity/material_price.dart';
 import '../../../../entity/task.dart';
 import '../../../../entity/task_item.dart';
 import '../../../../entity/task_item_type.dart';
@@ -664,12 +665,14 @@ class _JobEstimateBuilderScreenState
       estimatedLabourCost: isLabour && unitCost > 0
           ? Money.fromNum(unitCost * qty, isoCode: 'AUD')
           : null,
-      estimatedMaterialUnitCost: isLabour || unitCost <= 0
+      estimatedPrice: isLabour
           ? null
-          : Money.fromNum(unitCost, isoCode: 'AUD'),
-      estimatedMaterialQuantity: isLabour
-          ? null
-          : Fixed.fromNum(qty, decimalDigits: 3),
+          : MaterialPrice.items(
+              quantity: Fixed.fromNum(qty, decimalDigits: 3),
+              unitCost: unitCost <= 0
+                  ? MoneyEx.zero
+                  : Money.fromNum(unitCost, isoCode: 'AUD'),
+            ),
       supplierId: supplierId,
     );
   }

@@ -15,7 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:strings/strings.dart';
 
 import '../../entity/task_item.dart';
-import '../../util/dart/money_ex.dart';
+import '../../util/dart/fixed_ex.dart';
 import '../widgets/layout/layout.g.dart';
 import 'list_shopping_screen.dart';
 
@@ -41,14 +41,37 @@ class ItemCardCommon extends StatelessWidget {
         _line('Supplier: ${customerAndJob.supplier!.name}'),
       if (Strings.isNotBlank(taskItem.purpose))
         _line('Note: ${taskItem.purpose}'),
-      _line(
-        '''Qty: ${taskItem.actualMaterialQuantity ?? taskItem.estimatedMaterialQuantity ?? MoneyEx.zero}''',
-      ),
-      _line(
-        '''Unit Cost: ${taskItem.actualMaterialUnitCost ?? taskItem.estimatedMaterialUnitCost ?? MoneyEx.zero}''',
-      ),
+      _line(_quantityLabel),
+      _line(_costLabel),
+      if (_totalLabel case final totalLabel?) _line(totalLabel),
     ],
   );
+
+  String get _quantityLabel {
+    final price = taskItem.actualPrice ?? taskItem.estimatedPrice;
+    if (price == null) {
+      return 'Quantity: —';
+    }
+    return price.isPackagePrice
+        ? 'Packages: ${price.quantity.toInt()} '
+              '(${price.totalItemQuantity.toInt()} items)'
+        : 'Quantity: ${price.quantity.compact()}';
+  }
+
+  String get _costLabel {
+    final price = taskItem.actualPrice ?? taskItem.estimatedPrice;
+    if (price == null) {
+      return 'Cost: —';
+    }
+    return price.isPackagePrice
+        ? 'Cost per package: ${price.unitCost}'
+        : 'Cost per item: ${price.unitCost}';
+  }
+
+  String? get _totalLabel {
+    final price = taskItem.actualPrice ?? taskItem.estimatedPrice;
+    return price == null ? null : 'Total: ${price.totalCost}';
+  }
 
   Widget _line(String text) => Padding(
     padding: const EdgeInsets.only(bottom: 2),

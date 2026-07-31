@@ -1021,11 +1021,20 @@ ${_periodClause(period, 'cn.credit_date')}
 
   Future<Money> _unreceiptedActualCosts(int jobId) => _sum(
     '''
-SELECT IFNULL(SUM(ti.actual_cost), 0) AS total
+SELECT IFNULL(
+  SUM(
+    CAST(
+      ROUND(ti.actual_unit_cost * ti.actual_quantity / 1000.0)
+      AS INTEGER
+    )
+  ),
+  0
+) AS total
 FROM task_item ti
 JOIN task t ON t.id = ti.task_id
 WHERE t.job_id = ?
-AND ti.actual_cost IS NOT NULL
+AND ti.actual_unit_cost IS NOT NULL
+AND ti.actual_quantity IS NOT NULL
 AND NOT EXISTS (
   SELECT 1
   FROM receipt_task_item rti

@@ -243,15 +243,13 @@ class DaoQuote extends Dao<Quote> {
           taskMargin,
         );
 
+        final quantity = item.estimatedPrice?.quantity ?? Fixed.zero;
         final matLine = QuoteLine.forInsert(
           quoteId: quoteId,
           quoteLineGroupId: group.id,
           description: 'Material: ${item.description}',
-          quantity: item.estimatedMaterialQuantity!,
-          unitCharge: _unitChargeForLine(
-            matTotal,
-            item.estimatedMaterialQuantity!,
-          ),
+          quantity: quantity,
+          unitCharge: _unitChargeForLine(matTotal, quantity),
           lineTotal: matTotal,
         );
         await DaoQuoteLine().insert(matLine);

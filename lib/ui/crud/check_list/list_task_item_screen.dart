@@ -23,9 +23,11 @@ import '../../../dao/dao_task.dart';
 import '../../../dao/dao_task_item.dart';
 import '../../../entity/entity.dart';
 import '../../../entity/job.dart';
+import '../../../entity/material_price.dart';
 import '../../../entity/task.dart';
 import '../../../entity/task_item.dart';
 import '../../../entity/task_item_type.dart';
+import '../../../util/dart/fixed_ex.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../task_items/task_items.g.dart';
 import '../../widgets/hmb_search.dart';
@@ -109,7 +111,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
           billingType: taskAndRate?.billingType ?? BillingType.timeAndMaterial,
           hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
         ),
-        cardHeight: 220,
+        extended: true,
         details: (entity, details) {
           final taskItem = entity;
           return HMBColumn(
@@ -237,10 +239,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
     BillingType billingType,
     Money hourlyRate,
   ) => [
-    HMBText(
-      'Est: Unit Cost: ${checkListItem.estimatedMaterialUnitCost} '
-      'Qty: ${checkListItem.estimatedMaterialQuantity} ',
-    ),
+    TaskItemMaterialCostSummary(taskItem: checkListItem),
     HMBText(
       'Margin (%): ${checkListItem.margin} '
       'Charge: ${checkListItem.getTotalLineCharge(billingType, hourlyRate)}',
@@ -252,15 +251,41 @@ class _TaskItemListScreenState<P extends Entity<P>>
     BillingType billingType,
     Money hourlyRate,
   ) => [
-    HMBText(
-      'Unit Charge: ${checkListItem.estimatedMaterialUnitCost} '
-      'Qty: ${checkListItem.estimatedMaterialQuantity} ',
-    ),
+    TaskItemMaterialCostSummary(taskItem: checkListItem),
     HMBText(
       'Margin (%): ${checkListItem.margin} '
       'Charge: ${checkListItem.getTotalLineCharge(billingType, hourlyRate)}',
     ),
   ];
+}
+
+class TaskItemMaterialCostSummary extends StatelessWidget {
+  final TaskItem taskItem;
+
+  const TaskItemMaterialCostSummary({required this.taskItem, super.key});
+
+  @override
+  Widget build(BuildContext context) => HMBColumn(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      HMBText(_priceLine('Est', taskItem.estimatedPrice)),
+      if (taskItem.completed)
+        HMBText(_priceLine('Actual', taskItem.actualPrice)),
+    ],
+  );
+
+  String _priceLine(String label, MaterialPrice? price) {
+    if (price == null) {
+      return '$label: —';
+    }
+    if (price.isPackagePrice) {
+      return '$label: Package Cost: ${price.unitCost} '
+          'Packages: ${price.quantity.toInt()}';
+    }
+    return '$label: Unit Cost: ${price.unitCost} '
+        'Qty: ${price.quantity.compact()}';
+  }
 }
 
 class ShowCompltedItems extends JuneState {

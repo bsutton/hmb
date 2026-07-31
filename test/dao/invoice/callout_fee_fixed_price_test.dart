@@ -108,5 +108,5 @@ void main() {
 // Future<void> _setSystemBookingFee(Money amount) async {
 //   final system = await DaoSystem().get();
 //   system!.defaultBookingFee = amount;
-//   await DaoSystem().update(system);
+//   await DaoSystem().updateConfiguration(system);
 // }

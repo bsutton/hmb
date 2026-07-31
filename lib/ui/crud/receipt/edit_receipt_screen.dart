@@ -28,6 +28,7 @@ import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../../util/dart/photo_meta.dart';
 import '../../../util/dart/units.dart';
+import '../../task_items/material_price_editor.dart';
 import '../../test_keys.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../../widgets/layout/layout.g.dart';
@@ -85,6 +86,8 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   late HMBMoneyEditingController _totalInclCtrl;
   late PhotoController<Receipt> _photoCtrl;
   final _linkedTaskItemIds = <int>{};
+  final _legacyLinkedTaskItemIds = <int>{};
+  final _matchedTaskItemUpdates = <int, TaskItem>{};
   var _linkableTaskItems = <TaskItem>[];
   final _jobAllocations = <_ReceiptJobAllocationEditor>[];
   final _lineItems = <_ReceiptLineItemEditor>[];
@@ -150,13 +153,21 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       parentType: ParentType.receipt,
     );
     if (currentEntity != null) {
-      _linkedTaskItemIds.addAll(
-        await DaoReceipt().getLinkedTaskItemIds(currentEntity!.id),
+      final linkedIds = await DaoReceipt().getLinkedTaskItemIds(
+        currentEntity!.id,
       );
+      _linkedTaskItemIds.addAll(linkedIds);
       _lineItems.addAll(
         (await DaoReceiptLineItem().getByReceiptId(
           currentEntity!.id,
         )).map(_ReceiptLineItemEditor.fromEntity),
+      );
+      final matchedIds = {
+        for (final line in _lineItems)
+          if (line.matchedTaskItemId != null) line.matchedTaskItemId!,
+      };
+      _legacyLinkedTaskItemIds.addAll(
+        linkedIds.where((id) => !matchedIds.contains(id)),
       );
       final allocations = await DaoReceipt().getJobAllocations(
         currentEntity!.id,
@@ -248,17 +259,51 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     if (!await _validateTotals()) {
       return false;
     }
+    if (!await _prepareMatchedTaskItemUpdates()) {
+      return false;
+    }
 
     try {
-      if (currentEntity == null) {
-        final newEntity = await forInsert();
-        await DaoReceipt().insert(newEntity);
-        currentEntity = newEntity;
-      } else {
-        final updatedEntity = await forUpdate(currentEntity!);
-        await DaoReceipt().update(updatedEntity);
-        currentEntity = updatedEntity;
-      }
+      final receiptDao = DaoReceipt();
+      late Receipt savedReceipt;
+      await receiptDao.withTransaction((transaction) async {
+        if (currentEntity == null) {
+          final newEntity = await forInsert();
+          await receiptDao.insert(newEntity, transaction);
+          savedReceipt = newEntity;
+        } else {
+          final updatedEntity = await forUpdate(currentEntity!);
+          await receiptDao.update(updatedEntity, transaction);
+          savedReceipt = updatedEntity;
+        }
+
+        _syncLinkedTaskItemIdsFromLines();
+        for (final item in _matchedTaskItemUpdates.values) {
+          await DaoTaskItem().update(item, transaction);
+        }
+        await receiptDao.replaceTaskItemLinks(
+          savedReceipt.id,
+          _linkedTaskItemIds,
+          transaction,
+        );
+        await DaoReceiptLineItem().replaceForReceipt(
+          savedReceipt.id,
+          _lineItems.map((line) => line.toEntity(receiptId: savedReceipt.id)),
+          transaction,
+        );
+        await receiptDao.replaceJobAllocations(
+          savedReceipt.id,
+          _jobAllocations.map(
+            (allocation) => ReceiptJobAllocation.forInsert(
+              receiptId: savedReceipt.id,
+              jobId: allocation.jobId!,
+              amount: allocation.amount,
+            ),
+          ),
+          transaction,
+        );
+      });
+      currentEntity = savedReceipt;
       await postSave(currentEntity!);
       if (mounted) {
         setState(() {});
@@ -593,25 +638,6 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     if (currentEntity != null) {
       await _photoCtrl.savePendingPhotos();
       await _photoCtrl.save();
-      _syncLinkedTaskItemIdsFromLines();
-      await DaoReceipt().replaceTaskItemLinks(
-        currentEntity!.id,
-        _linkedTaskItemIds,
-      );
-      await DaoReceiptLineItem().replaceForReceipt(
-        currentEntity!.id,
-        _lineItems.map((line) => line.toEntity(receiptId: currentEntity!.id)),
-      );
-      await DaoReceipt().replaceJobAllocations(
-        currentEntity!.id,
-        _jobAllocations.map(
-          (allocation) => ReceiptJobAllocation.forInsert(
-            receiptId: currentEntity!.id,
-            jobId: allocation.jobId!,
-            amount: allocation.amount,
-          ),
-        ),
-      );
     }
     await _photoCtrl.load();
     await _reloadLinkableTaskItems();
@@ -792,14 +818,25 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
                     ),
               items: (_) async => _rankedTaskItemsForLine(line),
               onAdd: () => _createTaskItemForLine(line),
-              onChanged: (item) => setState(() {
-                line.matchedTaskItemId = item?.id;
-                if (item != null) {
-                  _linkedTaskItemIds.add(item.id);
-                }
-              }),
+              onChanged: (item) => _setLineMatch(line, item),
               format: _formatTaskItemMatch,
             ),
+            if (line.matchedTaskItemId != null && !line.matchReviewed)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.auto_awesome),
+                title: const Text('Suggested match'),
+                subtitle: const Text(
+                  'Review this suggestion before saving the receipt.',
+                ),
+                trailing: HMBButton.small(
+                  onPressed: () => setState(() {
+                    line.matchReviewed = true;
+                  }),
+                  label: 'Confirm',
+                  hint: 'Confirm this suggested task item match',
+                ),
+              ),
             const SizedBox(height: 10),
             Align(
               alignment: Alignment.centerLeft,
@@ -972,7 +1009,9 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         continue;
       }
 
-      line.matchedTaskItemId = best.item.id;
+      line
+        ..matchedTaskItemId = best.item.id
+        ..matchReviewed = false;
       alreadyUsedTaskItemIds.add(best.item.id);
       _linkedTaskItemIds.add(best.item.id);
       matchedCount++;
@@ -985,46 +1024,41 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   }
 
   Widget _buildTaskItemLinks() {
-    final jobId = _selectedJob.jobId;
+    final matchedIds = {
+      for (final line in _lineItems)
+        if (line.matchedTaskItemId != null) line.matchedTaskItemId!,
+    };
+    final legacyIds = _linkedTaskItemIds.difference(matchedIds);
+    final itemsById = {for (final item in _linkableTaskItems) item.id: item};
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildStepIntro(
-          'Optional. Select the purchased job items this receipt covers.',
+          'Task Item links are derived from the receipt-line matches. '
+          'Return to Receipt Lines to change them.',
         ),
-        if (jobId == null && _linkableTaskItems.isEmpty)
-          const Padding(
-            padding: EdgeInsets.only(top: 8),
-            child: Text(
-              'No recent purchased task items are available for this supplier.',
-            ),
-          )
-        else if (_linkableTaskItems.isEmpty)
-          const Padding(
-            padding: EdgeInsets.only(top: 8),
-            child: Text(
-              'No completed buy items are available for this job and supplier.',
-            ),
-          )
+        if (matchedIds.isEmpty)
+          const Text('No receipt lines are matched to Task Items.')
         else
-          ..._rankedTaskItemsForReceipt().map(
-            (item) => CheckboxListTile(
-              key: TestKeys.receiptTaskItemCheckbox(item.id),
+          for (final id in matchedIds)
+            ListTile(
               contentPadding: EdgeInsets.zero,
-              title: Text(item.description),
-              subtitle: Text(_formatTaskItemCost(item)),
-              value: _linkedTaskItemIds.contains(item.id),
-              onChanged: (selected) {
-                setState(() {
-                  if (selected ?? false) {
-                    _linkedTaskItemIds.add(item.id);
-                  } else {
-                    _linkedTaskItemIds.remove(item.id);
-                  }
-                });
-              },
+              leading: const Icon(Icons.link),
+              title: Text(itemsById[id]?.description ?? 'Task Item #$id'),
+              subtitle: itemsById[id] == null
+                  ? null
+                  : Text(_formatTaskItemCost(itemsById[id]!)),
             ),
-          ),
+        if (legacyIds.isNotEmpty) ...[
+          const Divider(),
+          const Text('Legacy receipt links retained for audit:'),
+          for (final id in legacyIds)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.history),
+              title: Text(itemsById[id]?.description ?? 'Task Item #$id'),
+            ),
+        ],
       ],
     );
   }
@@ -1168,17 +1202,35 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         _date,
       );
 
+  void _setLineMatch(_ReceiptLineItemEditor line, TaskItem? item) {
+    if (item != null &&
+        _lineItems.any(
+          (other) =>
+              !identical(other, line) && other.matchedTaskItemId == item.id,
+        )) {
+      HMBToast.error('That Task Item is already matched to another line.');
+      return;
+    }
+    setState(() {
+      line
+        ..matchedTaskItemId = item?.id
+        ..matchReviewed = true;
+      if (item != null) {
+        _linkedTaskItemIds.add(item.id);
+      }
+      _syncLinkedTaskItemIdsFromLines();
+    });
+  }
+
   String _formatTaskItemCost(TaskItem item) {
-    final unitCost =
-        item.actualMaterialUnitCost ?? item.estimatedMaterialUnitCost;
-    final quantity =
-        item.actualMaterialQuantity ?? item.estimatedMaterialQuantity;
-    if (unitCost == null || quantity == null) {
+    final price = item.actualPrice ?? item.estimatedPrice;
+    if (price == null) {
       return item.itemType.label;
     }
 
-    final total = unitCost.multiplyByFixed(quantity);
-    return '${item.itemType.label} - $quantity x $unitCost = $total';
+    final unitLabel = price.isPackagePrice ? 'packages' : 'items';
+    return '${item.itemType.label} - ${price.quantity} $unitLabel x '
+        '${price.unitCost} = ${price.totalCost}';
   }
 
   String _formatTaskItemMatch(TaskItem item) =>
@@ -1191,11 +1243,11 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         : null;
     var selectedItemType = _itemTypeForExpenseCategory(line.expenseCategory);
     final descriptionController = TextEditingController(text: line.description);
-    final quantityController = TextEditingController(
-      text: line.quantity.toString(),
-    );
-    final unitCostController = TextEditingController(
-      text: _unitCostForTaskItem(line).toString(),
+    final priceController = MaterialPriceEditingController(
+      price: MaterialPrice.items(
+        quantity: _parsePositiveFixed(line.quantity.toString()),
+        unitCost: _unitCostForTaskItem(line),
+      ),
     );
     final formKey = GlobalKey<FormState>();
 
@@ -1256,26 +1308,21 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
                       labelText: 'Description',
                       required: true,
                     ),
-                    HMBTextField(
-                      controller: quantityController,
-                      labelText: 'Quantity',
-                      keyboardType: TextInputType.number,
-                    ),
-                    HMBTextField(
-                      controller: unitCostController,
-                      labelText: 'Unit Cost',
-                      keyboardType: TextInputType.number,
+                    MaterialPriceEditor(
+                      controller: priceController,
+                      title: 'Actual pricing',
                     ),
                   ],
                 ),
               ),
             ),
             actions: [
-              TextButton(
+              HMBButton(
                 onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancel'),
+                label: 'Cancel',
+                hint: "Don't create a task item",
               ),
-              TextButton(
+              HMBButton(
                 onPressed: () async {
                   if (!(formKey.currentState?.validate() ?? false)) {
                     return;
@@ -1284,17 +1331,23 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
                     HMBToast.error('Select a task for this receipt line.');
                     return;
                   }
+                  final price = priceController.value;
+                  if (price == null) {
+                    return;
+                  }
                   final item = await _insertTaskItemFromLine(
                     isReturn: line.isReturn,
                     task: selectedTask!,
                     itemType: selectedItemType,
                     description: descriptionController.text.trim(),
-                    quantityText: quantityController.text,
-                    unitCostText: unitCostController.text,
+                    price: price,
+                    lineTotalExTax: line.lineTotalExTax,
                   );
                   setState(() {
                     _lastCreatedLineTask = selectedTask;
-                    line.matchedTaskItemId = item.id;
+                    line
+                      ..matchedTaskItemId = item.id
+                      ..matchReviewed = true;
                     _linkedTaskItemIds.add(item.id);
                   });
                   await _reloadLinkableTaskItems();
@@ -1302,7 +1355,8 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
                     Navigator.of(dialogContext).pop();
                   }
                 },
-                child: const Text('Create'),
+                label: 'Create',
+                hint: 'Create and match this task item',
               ),
             ],
           ),
@@ -1310,8 +1364,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       );
     } finally {
       descriptionController.dispose();
-      quantityController.dispose();
-      unitCostController.dispose();
+      priceController.dispose();
     }
   }
 
@@ -1320,22 +1373,30 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     required Task task,
     required TaskItemType itemType,
     required String description,
-    required String quantityText,
-    required String unitCostText,
+    required MaterialPrice price,
+    required Money lineTotalExTax,
   }) async {
-    final quantity = _parsePositiveFixed(quantityText);
-    final unitCost = MoneyEx.tryParse(unitCostText);
+    final exactUnitCost = _absoluteMoney(
+      lineTotalExTax,
+    ).divideByFixed(price.quantity);
+    final exactPrice = price.mode == MaterialPriceEntryMode.packages
+        ? MaterialPrice.packages(
+            packageCount: price.quantity,
+            packageCost: exactUnitCost,
+            itemsPerPackage: price.itemsPerPackage!,
+          )
+        : MaterialPrice.items(
+            quantity: price.quantity,
+            unitCost: exactUnitCost,
+          );
     final defaultMargin = await DaoSystem().getDefaultProfitMargin();
     final item = TaskItem.forInsert(
       taskId: task.id,
       description: description,
       purpose: 'Created from receipt line',
       itemType: itemType,
-      estimatedMaterialUnitCost: unitCost,
-      estimatedMaterialQuantity: quantity,
-      actualMaterialUnitCost: unitCost,
-      actualMaterialQuantity: quantity,
-      actualCost: unitCost.multiplyByFixed(quantity),
+      estimatedPrice: exactPrice,
+      actualPrice: exactPrice,
       chargeMode: ChargeMode.calculated,
       margin: defaultMargin,
       completed: true,
@@ -1390,7 +1451,111 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   Money _absoluteMoney(Money money) =>
       MoneyEx.fromInt(money.minorUnits.toInt().abs());
 
+  Future<bool> _prepareMatchedTaskItemUpdates() async {
+    _matchedTaskItemUpdates.clear();
+    final matchedLines = _lineItems
+        .where((line) => line.matchedTaskItemId != null)
+        .toList();
+    final ids = matchedLines.map((line) => line.matchedTaskItemId!).toList();
+    if (ids.toSet().length != ids.length) {
+      HMBToast.error('A Task Item can only be matched to one receipt line.');
+      return false;
+    }
+    if (matchedLines.any((line) => !line.matchReviewed)) {
+      HMBToast.error('Review each suggested Task Item match before saving.');
+      return false;
+    }
+
+    final changes = <String>[];
+    final billedWarnings = <String>[];
+    for (final line in matchedLines) {
+      final item = await DaoTaskItem().getById(line.matchedTaskItemId);
+      if (item == null) {
+        HMBToast.error('A matched Task Item no longer exists.');
+        return false;
+      }
+      if (item.billed || item.invoiceLineId != null) {
+        billedWarnings.add(
+          '${item.description}: already invoiced; its price will not change.',
+        );
+        continue;
+      }
+
+      final previous = item.actualPrice ?? item.estimatedPrice;
+      final proposed = ReceiptTaskItemMatcher.actualPriceForLine(
+        item: item,
+        lineTotalExTax: line.lineTotalExTax,
+        fallbackQuantity: _parsePositiveFixed(line.quantityController.text),
+      );
+
+      changes.add(
+        '${item.description}: ${previous?.totalCost ?? MoneyEx.zero} '
+        '→ ${proposed.totalCost}',
+      );
+      _matchedTaskItemUpdates[item.id] = item.copyWith(
+        completed: true,
+        actualPrice: proposed,
+      );
+    }
+
+    final warnings = <String>[
+      ...changes,
+      ...billedWarnings,
+      if (matchedLines.isEmpty && _selectedJob.jobId != null)
+        '''This receipt is linked only to a job. It will not be added to an invoice; match its lines to Task Items to bill them.''',
+      if (matchedLines.isEmpty && _selectedJob.jobId == null)
+        '''This receipt is linked to neither a Task Item nor a job. It will be saved for bookkeeping but will not be billed.''',
+      if (matchedLines.isNotEmpty && _jobAllocations.isNotEmpty)
+        '''Job allocations are bookkeeping only. Only matched Task Items can flow through to an invoice.''',
+    ];
+    if (warnings.isEmpty) {
+      return true;
+    }
+    if (!mounted) {
+      return false;
+    }
+    return await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(
+              changes.isEmpty
+                  ? 'Receipt billing warning'
+                  : 'Apply receipt prices?',
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final warning in warnings)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(warning),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              HMBButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                label: 'Cancel',
+                hint: "Don't apply the receipt prices",
+              ),
+              HMBButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                label: 'Continue',
+                hint: 'Apply the receipt prices and continue',
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
   void _syncLinkedTaskItemIdsFromLines() {
+    _linkedTaskItemIds
+      ..clear()
+      ..addAll(_legacyLinkedTaskItemIds);
     for (final line in _lineItems) {
       final taskItemId = line.matchedTaskItemId;
       if (taskItemId != null) {
@@ -1605,6 +1770,7 @@ class _ReceiptLineItemEditor {
   final HMBMoneyEditingController lineTotalIncTaxController;
   final TextEditingController customTaxRateController;
   int? matchedTaskItemId;
+  var matchReviewed = true;
   _ReceiptTaxMode taxMode;
   ReceiptExpenseCategory expenseCategory;
   final int confidence;

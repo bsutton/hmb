@@ -30,6 +30,17 @@ extension FixedEx on Fixed {
 
   Fixed threeDigits() => copyWith(decimalDigits: 3);
 
+  /// Formats a quantity without insignificant trailing decimal zeroes.
+  String compact() {
+    final text = toString();
+    if (!text.contains('.')) {
+      return text;
+    }
+    return text
+        .replaceFirst(RegExp(r'0+$'), '')
+        .replaceFirst(RegExp(r'\.$'), '');
+  }
+
   static Fixed fromInt(int? amount) =>
       Fixed.fromInt(amount ?? 0, decimalDigits: 3);
 

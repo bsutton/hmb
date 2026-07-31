@@ -20,6 +20,7 @@ import '../../src/version/version.g.dart' as code;
 import '../management/backup_providers/backup_provider.dart';
 import '../management/db_utility.dart';
 import 'pre_upgrade/pre_upgrade_154.dart';
+import 'pre_upgrade/pre_upgrade_208.dart';
 import 'source.dart';
 
 const dbForUpgradeKey = ScopeKey<Database>('dbForUpgrade');
@@ -79,7 +80,14 @@ Future<void> upgradeDb({
       if (preUpgradeActions.containsKey(scriptVersion)) {
         await preUpgradeActions[scriptVersion]!.call(db);
       }
-      await _executeScript(db, src, pathToScript, verbose: verbose);
+      try {
+        await _executeScript(db, src, pathToScript, verbose: verbose);
+      } catch (_) {
+        if (scriptVersion == 208) {
+          await db.execute('PRAGMA foreign_keys = ON');
+        }
+        rethrow;
+      }
 
       /// As the db singleton hasn't been fully initialised at this point
       /// we need to inject a db for Dao instances to use.
@@ -104,12 +112,14 @@ Future<void> upgradeDb({
 
 final preUpgradeActions = <int, Future<void> Function(Database)>{
   154: prev154Upgrade,
+  208: pre208Upgrade,
 };
 
 final upgradeActions = <int, Future<void> Function(Database)>{
   77: postv77Upgrade,
   142: postv142Upgrade,
   168: postv168Upgrade,
+  208: post208Upgrade,
 };
 
 /// We can't use the Dao layer as it uses June which assumes
