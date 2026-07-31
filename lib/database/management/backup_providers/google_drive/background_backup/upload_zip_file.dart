@@ -84,12 +84,12 @@ Future<void> uploadZipFile(BackupParams params) async {
       sendPort.send(ProgressUpdate.upload('Upload complete'));
       break;
     } else {
-      sendPort.send(
-        ProgressUpdate.upload(
-          'Failed to upload chunk. Status: ${response.statusCode}',
-        ),
+      final body = await response.stream.bytesToString();
+      throw HttpException(
+        'Failed to upload backup chunk. '
+        'Status: ${response.statusCode}, body: $body',
+        uri: Uri.parse(uploadUrl),
       );
-      return;
     }
   }
   driveApi.close();

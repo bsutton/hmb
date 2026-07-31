@@ -24,6 +24,8 @@ import '../../../../util/flutter/paths_flutter.dart';
 import 'google_drive_folder_store.dart';
 
 class GoogleDriveAuth {
+  static const _automaticSignInTimeout = Duration(seconds: 10);
+
   /// OAuth Client in Google Play Console: HMB-Production-Signed-By-Google
   static const _clientId =
       '''704526923643-ot7i0jpo27urkkibm1gsqpji7f2nigt3.apps.googleusercontent.com''';
@@ -125,9 +127,29 @@ class GoogleDriveAuth {
 
   /// triggers and automatic signin
   Future<void> signInIfAutomatic() async {
-    if ((await hasSignedIn()) && !isSignedIn) {
-      // this should trigger a silent signin.
-      await signIn();
+    if (!(await hasSignedIn()) || isSignedIn) {
+      return;
+    }
+
+    final signIn = GoogleSignIn.instance;
+    _awaitingAuth = Completer<GoogleAuthResult>();
+
+    try {
+      final attempt = signIn.attemptLightweightAuthentication(
+        reportAllExceptions: true,
+      );
+      final account = attempt == null
+          ? null
+          : await attempt.timeout(_automaticSignInTimeout);
+      if (account == null) {
+        await _markSignedOut();
+        return;
+      }
+      await _awaitingAuth.future;
+    } catch (_) {
+      // A remembered sign-in is only a hint. If Android cannot restore the
+      // credential, leave the screen usable so the user can sign in again.
+      await _markSignedOut();
     }
   }
 
@@ -138,14 +160,10 @@ class GoogleDriveAuth {
 
     _awaitingAuth = Completer<GoogleAuthResult>();
     try {
-      if (await hasSignedIn()) {
-        await signIn.attemptLightweightAuthentication();
-      } else {
-        /// Testing on Android shows that a lightweight authentication is
-        /// generally sufficient for a returning user, but an explicit
-        /// authentication is required after sign-out.
-        await signIn.authenticate();
-      }
+      // This method is called from an explicit user action. Always allow the
+      // platform to show account selection instead of relying on stale local
+      // state left behind by a previous sign-in.
+      await signIn.authenticate();
     } catch (error) {
       await _handleAuthenticationError(error);
     }
@@ -154,7 +172,7 @@ class GoogleDriveAuth {
   }
 
   Future<void> signOut() async {
-    await GoogleSignIn.instance.signOut();
+    await GoogleSignIn.instance.disconnect();
     await _markSignedOut();
   }
 
