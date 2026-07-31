@@ -11,8 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'dart:io';
-
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
@@ -24,6 +22,7 @@ import '../../ui/widgets/hmb_toast.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'email_self_warning.dart';
+import 'hmb_email_sender.dart';
 
 class EmailDialog extends StatefulWidget {
   final String subject;
@@ -47,7 +46,7 @@ class EmailDialog extends StatefulWidget {
 }
 
 class _EmailDialogState extends DeferredState<EmailDialog> {
-  late final System system;
+  late final SystemConfiguration system;
   late TextEditingController _subjectController;
   late TextEditingController _bodyController;
   String? _selectedRecipient;
@@ -153,10 +152,6 @@ $businessDetails
           hint:
               '''Send the email using your devices email app. You will have another opportunity to cancel the send.''',
           onPressed: () async {
-            if (!(Platform.isAndroid || Platform.isIOS)) {
-              HMBToast.error('This platform does not support sending emails');
-              return;
-            }
             if (_selectedRecipient != null) {
               if (!await confirmSendingToSelf(
                 context: context,
@@ -172,10 +167,14 @@ $businessDetails
                 attachmentPaths: widget.attachmentPaths,
               );
 
-              await FlutterEmailSender.send(email);
-              HMBToast.info('Email sent successfully');
-              if (context.mounted) {
-                Navigator.of(context).pop(true);
+              try {
+                await HMBEmailSender().send(email);
+                HMBToast.info('Email sent successfully');
+                if (context.mounted) {
+                  Navigator.of(context).pop(true);
+                }
+              } catch (e) {
+                HMBToast.error(e.toString(), acknowledgmentRequired: true);
               }
             } else {
               HMBToast.info('Please select a recipient');

@@ -1,0 +1,14 @@
+ALTER TABLE system
+ADD COLUMN smtp_host TEXT;
+
+ALTER TABLE system
+ADD COLUMN smtp_port INTEGER NOT NULL DEFAULT 587;
+
+ALTER TABLE system
+ADD COLUMN smtp_username TEXT;
+
+ALTER TABLE system
+ADD COLUMN smtp_from_email TEXT;
+
+ALTER TABLE system
+ADD COLUMN smtp_use_ssl INTEGER NOT NULL DEFAULT 0;

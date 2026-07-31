@@ -11,8 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'dart:io';
-
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
@@ -25,6 +23,7 @@ import '../../ui/widgets/hmb_toast.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/select/hmb_select_email_multi.dart';
 import 'email_self_warning.dart';
+import 'hmb_email_sender.dart';
 
 class EmailDialogForJob extends StatefulWidget {
   final Job job;
@@ -48,7 +47,7 @@ class EmailDialogForJob extends StatefulWidget {
 }
 
 class _EmailDialogState extends DeferredState<EmailDialogForJob> {
-  late final System system;
+  late final SystemConfiguration system;
   late TextEditingController _subjectController;
   late TextEditingController _bodyController;
   List<String> _selectedRecipients = [];
@@ -149,14 +148,14 @@ $businessDetails
                 attachmentPaths: widget.attachmentPaths,
               );
 
-              if (!(Platform.isAndroid || Platform.isIOS)) {
-                HMBToast.error('This platform does not support sending emails');
-                return;
-              }
-              await FlutterEmailSender.send(email);
-              HMBToast.info('Email sent successfully');
-              if (context.mounted) {
-                Navigator.of(context).pop(true);
+              try {
+                await HMBEmailSender().send(email);
+                HMBToast.info('Email sent successfully');
+                if (context.mounted) {
+                  Navigator.of(context).pop(true);
+                }
+              } catch (e) {
+                HMBToast.error(e.toString(), acknowledgmentRequired: true);
               }
             } else {
               HMBToast.info('Please select a recipient');

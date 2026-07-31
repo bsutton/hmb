@@ -21,6 +21,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../dao/dao_system.dart';
 import '../../../../src/appname.dart';
+import '../../../../ui/dialog/hmb_email_sender.dart';
 import '../../../../ui/dialog/hmb_file_picker_linux.dart';
 import '../../../../util/dart/exceptions.dart';
 import '../../../../util/dart/paths.dart';
@@ -57,10 +58,6 @@ class EmailBackupProvider extends BackupProvider {
     required String pathToZippedBackup,
     required int version,
   }) async {
-    if (!(Platform.isAndroid || Platform.isIOS)) {
-      throw BackupException('Email backup is not supported on this platform.');
-    }
-
     // await copyDatabase(context
     await sendEmailWithAttachment(pathToZippedBackup);
     return BackupResult(
@@ -124,14 +121,13 @@ class EmailBackupProvider extends BackupProvider {
         attachmentPaths: [pathToZippedBackup],
       );
 
-      await FlutterEmailSender.send(email);
+      await HMBEmailSender().send(email);
     } catch (e) {
       throw BackupException('Error sending email: $e');
     }
   }
 
   Future<File?> pickBackupFile(BuildContext context) async {
-    
     String? selectedFilePath;
     try {
       if (Platform.isLinux) {

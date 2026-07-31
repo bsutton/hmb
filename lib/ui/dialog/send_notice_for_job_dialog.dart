@@ -28,6 +28,7 @@ import '../widgets/icons/help_button.dart';
 import '../widgets/select/hmb_select_email_multi.dart';
 import '../widgets/select/hmb_select_mobile_multi.dart';
 import 'email_self_warning.dart';
+import 'hmb_email_sender.dart';
 
 enum NoticeChannel { email, sms }
 
@@ -95,7 +96,7 @@ class SendNoticeForJobDialog extends StatefulWidget {
 
 class _SendNoticeForJobDialogState
     extends DeferredState<SendNoticeForJobDialog> {
-  late final System _system;
+  late final SystemConfiguration _system;
   late TextEditingController _subjectCtl;
   late TextEditingController _bodyCtl;
   late TextEditingController _smsBodyCtl;
@@ -303,10 +304,6 @@ Add additional recipients who should receive a copy of the email.'''),
   }
 
   Future<void> _sendEmail(BuildContext context) async {
-    if (!(Platform.isAndroid || Platform.isIOS)) {
-      HMBToast.error('Email sending is only supported on mobile');
-      return;
-    }
     if (_toEmails.isEmpty) {
       HMBToast.info('Please select at least one email address');
       return;
@@ -327,7 +324,12 @@ Add additional recipients who should receive a copy of the email.'''),
       // Attachments can be added by the caller in a future enhancement.
     );
 
-    await FlutterEmailSender.send(email);
+    try {
+      await HMBEmailSender().send(email);
+    } catch (e) {
+      HMBToast.error(e.toString(), acknowledgmentRequired: true);
+      return;
+    }
 
     HMBToast.info('Email send initiated');
     await _stampNoticeSent();
