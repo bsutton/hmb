@@ -16,6 +16,18 @@ import 'dao.dart';
 
 class DaoMessageTemplate extends Dao<MessageTemplate> {
   static const tableName = 'message_template';
+  static const _selectClause = '''
+    id,
+    title,
+    message,
+    message_type,
+    owner,
+    enabled,
+    ordinal,
+    createdDate,
+    modifiedDate
+  ''';
+
   DaoMessageTemplate() : super(tableName);
   @override
   MessageTemplate fromMap(Map<String, dynamic> map) =>
@@ -24,17 +36,22 @@ class DaoMessageTemplate extends Dao<MessageTemplate> {
   Future<List<MessageTemplate>> getByFilter(String? filter) async {
     final db = withoutTransaction();
 
+    const whereClause = '''
+      title LIKE ?
+    ''';
+
     if (filter == null || filter.isEmpty) {
-      return getAll(orderByClause: 'modifiedDate desc');
+      return toList(
+        await db.rawQuery(
+          'SELECT $_selectClause FROM message_template ORDER BY ordinal',
+        ),
+      );
     }
 
     return toList(
       await db.rawQuery(
-        '''
-      SELECT * FROM message_template 
-      WHERE title LIKE ? 
-      ORDER BY modifiedDate DESC
-    ''',
+        'SELECT $_selectClause FROM message_template WHERE $whereClause '
+        'ORDER BY ordinal',
         ['%$filter%'],
       ),
     );

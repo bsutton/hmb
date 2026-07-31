@@ -105,10 +105,9 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
   @override
   Future<MessageTemplate> forUpdate(MessageTemplate messageTemplate) async =>
       messageTemplate.copyWith(
-        ordinal: messageTemplate.ordinal,
         title: _titleController.text,
         message: _messageController.text,
-        owner: MessageTemplateOwner.user,
+        owner: _coerceOwner(messageTemplate.owner, messageTemplate.title),
         messageType: messageTemplate.messageType,
         enabled: _enabled,
       );
@@ -117,6 +116,7 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
   Future<MessageTemplate> forInsert() async => MessageTemplate.forInsert(
     title: _titleController.text,
     message: _messageController.text,
+    ordinal: await _nextOrdinal(),
     enabled: _enabled,
     messageType: MessageType.sms,
   );
@@ -124,5 +124,30 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
   @override
   Future<void> postSave(_) async {
     setState(() {});
+  }
+
+  Future<int> _nextOrdinal() async {
+    final db = DaoMessageTemplate().withoutTransaction();
+    final rows = await db.rawQuery(
+      'SELECT COALESCE(MAX(ordinal), 0) AS max_ordinal '
+      'FROM message_template '
+      'WHERE message_type = ?',
+      [MessageType.sms.name],
+    );
+    final rawMax = rows.first['max_ordinal'];
+    final maxOrdinal = rawMax is int
+        ? rawMax
+        : int.tryParse(rawMax.toString()) ?? 0;
+
+    return maxOrdinal + 1;
+  }
+
+  MessageTemplateOwner _coerceOwner(MessageTemplateOwner owner, String title) {
+    final trimmed = title.trim().toLowerCase();
+    if (trimmed == 'thank you for choosing me' ||
+        trimmed == 'thank you for choosing us') {
+      return MessageTemplateOwner.system;
+    }
+    return owner;
   }
 }

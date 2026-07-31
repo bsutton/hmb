@@ -16,7 +16,7 @@ import 'place_holder.dart';
 
 class DelayPeriod extends PlaceHolder<String> {
   // ignore: omit_obvious_property_types
-  static String tagName = 'delay_period';
+  static String tagName = 'delay.period';
   static const _tagBase = 'delay_period';
 
   final DelaySource delaySource;

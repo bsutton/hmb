@@ -30,7 +30,8 @@ class ServiceDate extends PlaceHolder<LocalDate> {
     : super(name: tagName, base: _tagBase, source: dateSource);
 
   @override
-  Future<String> value() async => formatLocalDate(dateSource.date!);
+  Future<String> value() async =>
+      formatLocalDate(dateSource.date ?? LocalDate.today());
 }
 
 class DueDate extends PlaceHolder<LocalDate> {

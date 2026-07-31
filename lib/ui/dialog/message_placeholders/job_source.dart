@@ -37,6 +37,10 @@ class JobSource extends Source<Job> {
       format: (job) => customerJob.job?.summary ?? '',
       onChanged: (job) {
         this.job = job;
+        customerNotifier.value = CustomerJob(
+          customerNotifier.value.customer,
+          job,
+        );
         onChanged(job, ResetFields(contact: true, site: true));
       },
     ),
@@ -54,6 +58,7 @@ class JobSource extends Source<Job> {
       sourceContext.customer,
       sourceContext.job,
     );
+    job = sourceContext.job;
   }
 
   @override

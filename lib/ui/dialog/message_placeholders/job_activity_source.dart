@@ -40,6 +40,7 @@ class JobActivitySource extends Source<JobActivity> {
           : '',
       onChanged: (jobActivity) {
         this.jobActivity = jobActivity;
+        notifier.value = JobAndActivity(jobActivity, notifier.value.job);
         onChanged(jobActivity, ResetFields(contact: true, site: true));
       },
     ),
@@ -57,6 +58,7 @@ class JobActivitySource extends Source<JobActivity> {
       sourceContext.jobActivity,
       sourceContext.job,
     );
+    jobActivity = sourceContext.jobActivity;
   }
 
   @override

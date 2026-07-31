@@ -45,6 +45,7 @@ class DelaySource extends Source<String> {
         .toList(),
     onChanged: (newValue) {
       delay = newValue ?? '';
+      super.onChanged(delay, ResetFields());
     },
   );
 

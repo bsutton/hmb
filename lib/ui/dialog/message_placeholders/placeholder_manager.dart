@@ -42,6 +42,9 @@ class PlaceHolderManager {
   late final JobActivitySource jobActivitySource;
 
   final Map<String, PlaceHolder<dynamic>> placeholders = {};
+  final Map<String, String> placeholderAliases = {
+    'delay_period': DelayPeriod.tagName,
+  };
 
   factory PlaceHolderManager() {
     placeHolderManager ??= PlaceHolderManager._internal();
@@ -112,9 +115,11 @@ class PlaceHolderManager {
     // Add fields for other sources in the correct order
   ];
 
-  // ignore: strict_raw_type
-  Future<PlaceHolder?> resolvePlaceholder(
+  Future<PlaceHolder<dynamic>?> resolvePlaceholder(
     String name,
     SourceContext data,
-  ) async => placeholders[name];
+  ) async {
+    final key = placeholderAliases[name] ?? name;
+    return placeholders[key] ?? DefaultHolder(name: name);
+  }
 }
