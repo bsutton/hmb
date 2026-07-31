@@ -128,11 +128,73 @@ void _runPubGet() {
 
 void installApk() {
   print(
-    orange('Make certain you have first run --build so you get the lastet apk'),
+    orange('Make certain you have first run --build so you get the latest apk'),
   );
-  // 'flutter install'.run;
 
-  'adb install -r build/app/outputs/flutter-apk/app-release.apk'.run;
+  final serial = _selectAndroidInstallTarget();
+  final args = [
+    '-s',
+    serial,
+    'install',
+    '-r',
+    'build/app/outputs/flutter-apk/app-release.apk',
+  ];
+  final result = Process.runSync('adb', args);
+  stdout.write(result.stdout);
+  stderr.write(result.stderr);
+  if (result.exitCode != 0) {
+    throw ProcessException(
+      'adb',
+      args,
+      result.stderr.toString(),
+      result.exitCode,
+    );
+  }
+}
+
+String _selectAndroidInstallTarget() {
+  final result = Process.runSync('adb', ['devices', '-l']);
+  if (result.exitCode != 0) {
+    throw ProcessException(
+      'adb',
+      ['devices', '-l'],
+      result.stderr.toString(),
+      result.exitCode,
+    );
+  }
+
+  final devices = result.stdout
+      .toString()
+      .split('\n')
+      .map((line) => line.trim())
+      .where((line) => RegExp(r'^\S+\s+device(?:\s|$)').hasMatch(line))
+      .toList();
+
+  final requestedSerial = Platform.environment['ANDROID_SERIAL'];
+  if (requestedSerial != null && requestedSerial.isNotEmpty) {
+    final isConnected = devices.any(
+      (line) => line.startsWith('$requestedSerial '),
+    );
+    if (!isConnected) {
+      throw StateError(
+        'ANDROID_SERIAL=$requestedSerial is not a connected Android device.',
+      );
+    }
+    return requestedSerial;
+  }
+
+  final usbDevices = devices.where((line) => line.contains(' usb:')).toList();
+  if (usbDevices.length == 1) {
+    return usbDevices.single.split(RegExp(r'\s+')).first;
+  }
+  if (usbDevices.isEmpty && devices.length == 1) {
+    return devices.single.split(RegExp(r'\s+')).first;
+  }
+
+  throw StateError(
+    'Expected exactly one USB-connected Android device. '
+    'Set ANDROID_SERIAL to choose a target.',
+  );
 }
 
 void buildApk() {
