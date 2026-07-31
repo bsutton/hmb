@@ -57,6 +57,7 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
   late TextEditingController _descriptionController;
   late TextEditingController _hourlyRateController;
   late bool _disbarred;
+  late bool _excludeFromMailings;
   late CustomerType _selectedCustomerType;
 
   @override
@@ -75,6 +76,7 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
       text: widget.customer?.hourlyRate.amount.toString() ?? '0.00',
     );
     _disbarred = widget.customer?.disbarred ?? false;
+    _excludeFromMailings = widget.customer?.excludeFromMailings ?? false;
     _selectedCustomerType =
         widget.customer?.customerType ?? CustomerType.residential;
   }
@@ -145,6 +147,13 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
                   setState(() => _disbarred = value);
                 },
               ),
+              HMBSwitch(
+                labelText: 'Exclude from mailings',
+                initialValue: _excludeFromMailings,
+                onChanged: (value) {
+                  setState(() => _excludeFromMailings = value);
+                },
+              ),
               HMBDroplist<CustomerType>(
                 selectedItem: () async => _selectedCustomerType,
                 items: (filter) async => CustomerType.values,
@@ -193,6 +202,7 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
     name: _nameController.text,
     description: _descriptionController.text,
     disbarred: _disbarred,
+    excludeFromMailings: _excludeFromMailings,
     customerType: _selectedCustomerType,
     hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
     billingContactId: June.getState(CustomerBillingContact.new).contact?.id,
@@ -203,6 +213,7 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
     name: _nameController.text,
     description: _descriptionController.text,
     disbarred: _disbarred,
+    excludeFromMailings: _excludeFromMailings,
     customerType: _selectedCustomerType,
     hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
     billingContactId: June.getState(CustomerBillingContact.new).contact?.id,

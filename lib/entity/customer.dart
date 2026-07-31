@@ -31,6 +31,7 @@ class Customer extends Entity<Customer> {
   final String name;
   final String? description;
   final bool disbarred;
+  final bool excludeFromMailings;
   final CustomerType customerType;
   final Money hourlyRate;
   final int? billingContactId;
@@ -45,6 +46,7 @@ class Customer extends Entity<Customer> {
     required this.billingContactId,
     required super.createdDate,
     required super.modifiedDate,
+    this.excludeFromMailings = false,
   }) : super();
 
   Customer.forInsert({
@@ -54,12 +56,14 @@ class Customer extends Entity<Customer> {
     required this.customerType,
     required this.hourlyRate,
     required this.billingContactId,
+    this.excludeFromMailings = false,
   }) : super.forInsert();
 
   Customer copyWith({
     String? name,
     String? description,
     bool? disbarred,
+    bool? excludeFromMailings,
     CustomerType? customerType,
     Money? hourlyRate,
     int? billingContactId,
@@ -68,6 +72,7 @@ class Customer extends Entity<Customer> {
     name: name ?? this.name,
     description: description ?? this.description,
     disbarred: disbarred ?? this.disbarred,
+    excludeFromMailings: excludeFromMailings ?? this.excludeFromMailings,
     customerType: customerType ?? this.customerType,
     hourlyRate: hourlyRate ?? this.hourlyRate,
     billingContactId: billingContactId ?? this.billingContactId,
@@ -80,6 +85,7 @@ class Customer extends Entity<Customer> {
     name: map['name'] as String,
     description: map['description'] as String?,
     disbarred: map['disbarred'] as int == 1,
+    excludeFromMailings: (map['exclude_from_mailings'] as int? ?? 0) == 1,
     customerType: CustomerType.values[map['customerType'] as int],
     hourlyRate: MoneyEx.fromInt(map['default_hourly_rate'] as int?),
     billingContactId: map['billing_contact_id'] as int?,
@@ -95,6 +101,7 @@ class Customer extends Entity<Customer> {
     'createdDate': createdDate.toIso8601String(),
     'modifiedDate': modifiedDate.toIso8601String(),
     'disbarred': disbarred ? 1 : 0,
+    'exclude_from_mailings': excludeFromMailings ? 1 : 0,
     'customerType': customerType.index,
     'default_hourly_rate': hourlyRate.minorUnits.toInt(),
     'billing_contact_id': billingContactId,

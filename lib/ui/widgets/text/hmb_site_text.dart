@@ -18,6 +18,7 @@ import 'package:strings/strings.dart';
 import '../../../dao/dao_site.dart';
 import '../../../entity/job.dart';
 import '../../../entity/site.dart';
+import '../../../util/dart/address_format.dart';
 import '../../../util/flutter/hmb_theme.dart';
 import '../icons/hmb_map_icon.dart';
 import '../layout/hmb_placeholder.dart';
@@ -48,17 +49,14 @@ class HMBSiteText extends StatelessWidget {
         ),
       Expanded(
         child: Text(
-          Strings.join(
-            [
-              site?.addressLine1,
-              site?.addressLine2,
-              site?.suburb,
-              site?.state,
-              site?.postcode,
-            ],
-            separator: ', ',
-            excludeEmpty: true,
-          ),
+          joinAddressParts([
+            site?.name,
+            site?.addressLine1,
+            site?.addressLine2,
+            site?.suburb,
+            site?.state,
+            site?.postcode,
+          ]),
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(color: HMBColors.textPrimary),
         ),

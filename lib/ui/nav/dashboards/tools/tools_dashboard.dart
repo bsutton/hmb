@@ -33,6 +33,13 @@ class ToolsDashboardPage extends StatelessWidget {
             DashletValue((await DaoPlasterProject().getByFilter(null)).length),
         route: '/home/tools/plasterboard',
       ),
+      DashletCard<String>.route(
+        label: 'Mailings',
+        hint: 'Print mailing labels and plan delivery routes',
+        icon: Icons.local_post_office,
+        value: () async => const DashletValue(''),
+        route: '/home/tools/mailings',
+      ),
       DashletCard<String>.onTap(
         label: 'Job Report',
         hint: 'Create a customer report for completed job tasks',

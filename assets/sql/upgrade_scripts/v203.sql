@@ -1,0 +1,2 @@
+ALTER TABLE mailing
+ADD COLUMN route_optimised INTEGER NOT NULL DEFAULT 0;

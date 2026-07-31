@@ -27,8 +27,10 @@ import '../crud/milestone/list_milestone_screen.dart';
 import '../crud/receipt/list_receipt_screen.dart';
 import '../crud/supplier/list_supplier_screen.dart';
 import '../crud/system/chatgpt_integration_screen.dart';
+import '../crud/system/google_maps_integration_screen.dart';
 import '../crud/system/ihserver_integration_screen.dart';
 import '../crud/system/plasterboard_layout_settings_screen.dart';
+import '../crud/system/smtp_integration_screen.dart';
 import '../crud/system/system_billing_screen.dart';
 import '../crud/system/system_business_screen.dart';
 import '../crud/system/system_contact_screen.dart';
@@ -46,6 +48,7 @@ import '../scheduling/schedule_page.dart';
 import '../scheduling/today/today_page.dart';
 import '../task_items/list_packing_screen.dart';
 import '../task_items/list_shopping_screen.dart';
+import '../tools/mailings/mailing_list_screen.dart';
 import '../tools/plasterboard/plaster_project_list_screen.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/media/full_screen_photo_view.dart';
@@ -202,6 +205,10 @@ List<GoRoute> dashboardRoutes() => [
     path: 'tools/plasterboard',
     builder: (_, _) =>
         const HomeScaffold(initialScreen: PlasterProjectListScreen()),
+  ),
+  GoRoute(
+    path: 'tools/mailings',
+    builder: (_, _) => const HomeScaffold(initialScreen: MailingListScreen()),
   ),
   GoRoute(
     path: 'manufacturers',
@@ -391,9 +398,19 @@ List<GoRoute> settingRoutes() => [
             const HomeScaffold(initialScreen: ChatGptIntegrationScreen()),
       ),
       GoRoute(
+        path: 'google_maps',
+        builder: (_, _) =>
+            const HomeScaffold(initialScreen: GoogleMapsIntegrationScreen()),
+      ),
+      GoRoute(
         path: 'xero',
         builder: (_, _) =>
             const HomeScaffold(initialScreen: XeroIntegrationScreen()),
+      ),
+      GoRoute(
+        path: 'smtp',
+        builder: (_, _) =>
+            const HomeScaffold(initialScreen: SmtpIntegrationScreen()),
       ),
     ],
   ),
