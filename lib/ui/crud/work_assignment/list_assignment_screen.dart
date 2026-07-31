@@ -56,7 +56,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
                 children: [
                   Text('Contact : ${supplierAndTasks.contact.fullname}'),
                   HMBPhoneIcon(
-                    supplierAndTasks.contact.fullname,
+                    supplierAndTasks.contact.bestPhone,
                     sourceContext: SourceContext(
                       supplier: supplierAndTasks.supplier,
                       contact: supplierAndTasks.contact,

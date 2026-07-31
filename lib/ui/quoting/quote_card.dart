@@ -377,13 +377,15 @@ To approve it, reply to this email with:
               'Create a high priority todo to schedule this job.',
             ),
             actions: [
-              TextButton(
+              HMBButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Not Now'),
+                label: 'Not Now',
+                hint: "Don't add a scheduling todo",
               ),
-              ElevatedButton(
+              HMBButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Add Todo'),
+                label: 'Add Todo',
+                hint: 'Add a high-priority scheduling todo',
               ),
             ],
           ),

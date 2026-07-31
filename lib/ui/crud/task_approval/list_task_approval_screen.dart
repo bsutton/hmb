@@ -63,7 +63,7 @@ class _TaskApprovalListScreenState extends State<TaskApprovalListScreen> {
                       ),
                     ),
                     HMBPhoneIcon(
-                      details.contact.fullname,
+                      details.contact.bestPhone,
                       sourceContext: SourceContext(
                         customer: details.customer,
                         contact: details.contact,

@@ -68,6 +68,11 @@ class NestedEntityListScreen<C extends Entity<C>, P extends Entity<P>>
   final String entityNameSingular;
   final double cardHeight;
 
+  /// Whether [details] renders distinct summary and full card variants.
+  ///
+  /// Keep this false when [details] ignores its [CardDetail] argument.
+  final bool supportsDetailToggle;
+
   /// All cards are displayed on screen rather than in a listview.
   final bool extended;
 
@@ -85,6 +90,7 @@ class NestedEntityListScreen<C extends Entity<C>, P extends Entity<P>>
     this.filterBar,
     this.canEdit,
     this.canDelete,
+    this.supportsDetailToggle = false,
     this.extended = false,
     this.cardHeight = 212,
     super.key,
@@ -165,30 +171,33 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
   }
 
   Widget _buildTitle() => HMBColumn(
-    crossAxisAlignment: CrossAxisAlignment.start,
+    crossAxisAlignment: CrossAxisAlignment.end,
     mainAxisSize: MainAxisSize.min,
     children: [
-      Row(children: [const Spacer(), _buildFilter(), _buildAddButton(context)]),
+      if (widget.supportsDetailToggle) _buildDetailToggle(),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.filterBar != null && widget.parent.parent != null)
+            Expanded(child: widget.filterBar!(widget.parent.parent!))
+          else
+            const Spacer(),
+          const SizedBox(width: 8),
+          _buildAddButton(context),
+        ],
+      ),
     ],
   );
 
-  Widget _buildFilter() => HMBColumn(
-    mainAxisAlignment: MainAxisAlignment.end,
-    crossAxisAlignment: CrossAxisAlignment.end,
-    children: [
-      HMBToggle(
-        label: 'Show details',
-        hint: 'Show/Hide full card details',
-        initialValue: cardDetail == CardDetail.full,
-        onToggled: (on) {
-          setState(() {
-            cardDetail = on ? CardDetail.full : CardDetail.summary;
-          });
-        },
-      ),
-      if (widget.filterBar != null && widget.parent.parent != null)
-        widget.filterBar!(widget.parent.parent!),
-    ],
+  Widget _buildDetailToggle() => HMBToggle(
+    label: 'Show details',
+    hint: 'Show/Hide full card details',
+    initialValue: cardDetail == CardDetail.full,
+    onToggled: (on) {
+      setState(() {
+        cardDetail = on ? CardDetail.full : CardDetail.summary;
+      });
+    },
   );
 
   Widget _buildBody() => DaoJuneBuilder.builder(

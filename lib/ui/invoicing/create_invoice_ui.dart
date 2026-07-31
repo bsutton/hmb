@@ -78,19 +78,21 @@ Future<_FixedPriceInvoicePath?> _selectFixedPriceInvoicePath(
         'invoice.',
       ),
       actions: [
-        TextButton(
+        HMBButton(
           key: TestKeys.fixedPriceInvoiceMilestonesButton,
           onPressed: () =>
               Navigator.pop(dialogContext, _FixedPriceInvoicePath.milestones),
-          child: const Text('Milestones'),
+          label: 'Milestones',
+          hint: 'Create an invoice from job milestones',
         ),
-        ElevatedButton(
+        HMBButton(
           key: TestKeys.fixedPriceInvoiceTimeAndMaterialsButton,
           onPressed: () => Navigator.pop(
             dialogContext,
             _FixedPriceInvoicePath.timeAndMaterials,
           ),
-          child: const Text('Time & Materials'),
+          label: 'Time & Materials',
+          hint: 'Create an invoice from accrued time and materials',
         ),
       ],
     ),

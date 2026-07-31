@@ -33,6 +33,7 @@ class HMBRow extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     mainAxisAlignment: mainAxisAlignment,
     crossAxisAlignment: crossAxisAlignment,
+    mainAxisSize: mainAxisSize,
     children: withSpacing(children),
   );
 }

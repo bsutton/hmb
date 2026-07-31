@@ -80,7 +80,13 @@ class HMBButton extends StatelessWidget {
         ? ElevatedButton.icon(
             onPressed: enabled ? onPressed : null,
             label: Text(label, style: TextStyle(color: color)),
-            icon: icon,
+            icon: IconTheme.merge(
+              data: IconThemeData(
+                color: enabled ? color : null,
+                size: _smallFlag ? 18 : 24,
+              ),
+              child: icon!,
+            ),
             style: _smallFlag ? _smallStyle(context) : null,
           )
         : ElevatedButton(
@@ -93,10 +99,10 @@ class HMBButton extends StatelessWidget {
   }
 
   ButtonStyle _smallStyle(BuildContext context) => ElevatedButton.styleFrom(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-    minimumSize: const Size(0, 28),
+    padding: const EdgeInsets.symmetric(horizontal: 10),
+    minimumSize: const Size(0, 32),
     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    visualDensity: VisualDensity.compact,
+    visualDensity: VisualDensity.standard,
     textStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
       fontSize: 12,
       fontWeight: FontWeight.w600,
