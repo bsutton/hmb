@@ -21,6 +21,7 @@ import 'dart:isolate';
 import 'package:googleapis/drive/v3.dart' as gdrive show File;
 import 'package:http/http.dart' as http;
 
+import '../../../../../util/dart/transient_network_retry.dart';
 import '../../progress_update.dart';
 import '../google_drive_api.dart';
 import 'photo_sync_params.dart';
@@ -48,8 +49,8 @@ Future<void> uploadPhotosInBackup({
   // Init Drive API
   final driveApi = await GoogleDriveApi.fromHeaders(authHeaders);
   try {
-    final photoSyncFolderId = await _withTimeout(
-      driveApi.getPhotoSyncFolder(),
+    final photoSyncFolderId = await _withNetworkRetry(
+      driveApi.getPhotoSyncFolder,
       timeout: _driveMetadataTimeout,
       operation: 'finding the Google Drive photo sync folder',
     );
@@ -63,10 +64,9 @@ Future<void> uploadPhotosInBackup({
           stageCount,
         ),
       );
-      final deleted = await _withTimeout(
-        _deleteRemoteByPhotoId(driveApi: driveApi, photoId: payload.photoId),
-        timeout: _driveMetadataTimeout,
-        operation: 'deleting remote photo ${payload.photoId}',
+      final deleted = await _deleteRemoteByPhotoId(
+        driveApi: driveApi,
+        photoId: payload.photoId,
       );
       if (deleted) {
         sendPort.send(PhotoDeleted(payload.photoDeleteQueueId));
@@ -113,8 +113,8 @@ Future<void> uploadPhotosInBackup({
 
       var parentId = photoSyncFolderId;
       for (final part in cloudStorageParts) {
-        parentId = await _withTimeout(
-          driveApi.getOrCreateFolderId(part, parentId: parentId),
+        parentId = await _withNetworkRetry(
+          () => driveApi.getOrCreateFolderId(part, parentId: parentId),
           timeout: _driveMetadataTimeout,
           operation: 'creating Google Drive folder "$part"',
         );
@@ -130,8 +130,8 @@ Future<void> uploadPhotosInBackup({
         },
       });
 
-      final initResp = await _withTimeout(
-        driveApi.send(
+      final initResp = await _withNetworkRetry(
+        () => driveApi.send(
           http.Request(
               'POST',
               Uri.parse(
@@ -240,6 +240,14 @@ Future<T> _withTimeout<T>(
   onTimeout: () => throw TimeoutException(
     'Timed out after ${timeout.inSeconds}s while $operation.',
   ),
+);
+
+Future<T> _withNetworkRetry<T>(
+  Future<T> Function() request, {
+  required Duration timeout,
+  required String operation,
+}) => retryTransientNetworkOperation(
+  () => _withTimeout(request(), timeout: timeout, operation: operation),
 );
 
 String _formatBytes(int bytes) {
@@ -361,8 +369,12 @@ Future<bool> _deleteRemoteByPhotoId({
   final idStr = photoId.toString();
   final qByProp =
       "properties has { key='photoId' and value='$idStr' } and trashed=false";
-  final res = await _withTimeout(
-    driveApi.files.list(q: qByProp, $fields: 'files(id, name)', pageSize: 100),
+  final res = await _withNetworkRetry(
+    () => driveApi.files.list(
+      q: qByProp,
+      $fields: 'files(id, name)',
+      pageSize: 100,
+    ),
     timeout: _driveMetadataTimeout,
     operation: 'finding remote photo $photoId for deletion',
   );
@@ -374,8 +386,8 @@ Future<bool> _deleteRemoteByPhotoId({
     if (file.id == null) {
       continue;
     }
-    await _withTimeout(
-      driveApi.files.delete(file.id!),
+    await _withNetworkRetry(
+      () => driveApi.files.delete(file.id!),
       timeout: _driveMetadataTimeout,
       operation: 'deleting Google Drive file ${file.id}',
     );
