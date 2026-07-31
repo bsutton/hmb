@@ -39,6 +39,15 @@ void main() {
     expect(notification.channel.id, 'HMB_NOTIF_JOB');
   });
 
+  test('only Todo and job activity ids are managed', () {
+    expect(Notif.idForToDo(42), 20_000_042);
+    expect(Notif.idForJobActivity(7), 30_000_007);
+    expect(Notif.isManagedId(20_000_042), isTrue);
+    expect(Notif.isManagedId(30_000_007), isTrue);
+    expect(Notif.isManagedId(999001), isFalse);
+    expect(Notif.isManagedId(40_000_000), isFalse);
+  });
+
   test('Android declares scheduled notification receivers', () {
     final manifest = File(
       'android/app/src/main/AndroidManifest.xml',

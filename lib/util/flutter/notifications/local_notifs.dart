@@ -234,6 +234,48 @@ class LocalNotifs {
     await _fln.cancelAll();
   }
 
+  /// Makes the platform scheduler exactly match HMB's current reminders.
+  ///
+  /// This removes both pending and already-visible notifications whose
+  /// backing To-Do or job activity is no longer eligible.
+  Future<void> reconcile(
+    Iterable<Notif> notifications, {
+    Iterable<int>? validIds,
+  }) async {
+    await init();
+    final desired = {for (final notification in notifications) notification.id};
+    final valid = validIds?.toSet() ?? desired;
+
+    if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+      _desktop?.resync(notifications);
+    }
+
+    final pendingIds = {
+      for (final pending in await _fln.pendingNotificationRequests())
+        pending.id,
+    };
+    for (final id in pendingIds) {
+      if (Notif.isManagedId(id) && !desired.contains(id)) {
+        await cancel(id);
+      }
+    }
+
+    if (!kIsWeb && !Platform.isLinux) {
+      final activeIds = (await _fln.getActiveNotifications())
+          .map((notification) => notification.id)
+          .whereType<int>();
+      for (final id in activeIds) {
+        if (Notif.isManagedId(id) && !valid.contains(id)) {
+          await cancel(id);
+        }
+      }
+    }
+
+    for (final notification in notifications) {
+      await schedule(notification);
+    }
+  }
+
   /// Schedule from ToDo (store LOCAL → schedule in LOCAL tz).
   Future<bool> scheduleForToDo(ToDo todo) async {
     final when = todo.remindAt;
@@ -324,8 +366,8 @@ class LocalNotifs {
 
   // ---- Helpers -------------------------------------------------------------
 
-  int _idForToDo(int todoId) => 20_000_000 + todoId;
-  int _idForJobActivity(int activityId) => 30_000_000 + activityId;
+  int _idForToDo(int todoId) => Notif.idForToDo(todoId);
+  int _idForJobActivity(int activityId) => Notif.idForJobActivity(activityId);
 
   String? _encodePayload(Map<String, String>? p) {
     if (p == null || p.isEmpty) {

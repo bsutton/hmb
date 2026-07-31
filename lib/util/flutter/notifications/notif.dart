@@ -36,6 +36,10 @@ class Channel {
 /// A lightweight description of a local notification.
 @immutable
 class Notif {
+  static const todoIdBase = 20_000_000;
+  static const jobActivityIdBase = 30_000_000;
+  static const _idRangeSize = 10_000_000;
+
   static const jobActivityReminderLead = Duration(minutes: 30);
 
   final Channel channel;
@@ -63,7 +67,7 @@ class Notif {
     required String title,
     required DateTime remindAt,
   }) => Notif(
-    id: 20_000_000 + todoId,
+    id: todoIdBase + todoId,
     title: 'Reminder',
     body: title,
     scheduledAtMillis: remindAt.millisecondsSinceEpoch,
@@ -77,7 +81,7 @@ class Notif {
     required String jobSummary,
     required DateTime startsAt,
   }) => Notif(
-    id: 30_000_000 + activityId,
+    id: jobActivityIdBase + activityId,
     title: 'Upcoming job',
     body: '$jobSummary starts soon',
     scheduledAtMillis: startsAt
@@ -90,4 +94,12 @@ class Notif {
     },
     channel: Channel.job(),
   );
+
+  static int idForToDo(int todoId) => todoIdBase + todoId;
+
+  static int idForJobActivity(int activityId) => jobActivityIdBase + activityId;
+
+  static bool isManagedId(int id) =>
+      (id >= todoIdBase && id < todoIdBase + _idRangeSize) ||
+      (id >= jobActivityIdBase && id < jobActivityIdBase + _idRangeSize);
 }
