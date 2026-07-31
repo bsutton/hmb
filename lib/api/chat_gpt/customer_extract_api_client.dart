@@ -8,8 +8,8 @@ import '../../util/dart/parse/parse_customer.dart';
 
 class CustomerExtractApiClient {
   Future<ParsedCustomer?> extract(String text) async {
-    final system = await DaoSystem().get();
-    final apiKey = system.openaiApiKey?.trim();
+    final credentials = await DaoSystem().getOpenAiCredentials();
+    final apiKey = credentials.apiKey?.trim();
     if (apiKey == null || apiKey.isEmpty) {
       return null;
     }

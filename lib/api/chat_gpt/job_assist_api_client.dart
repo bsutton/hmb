@@ -48,8 +48,8 @@ class TaskItemAssistTaskContext {
 
 class JobAssistApiClient {
   Future<JobAssistResult?> analyzeDescription(String description) async {
-    final system = await DaoSystem().get();
-    final apiKey = system.openaiApiKey?.trim();
+    final credentials = await DaoSystem().getOpenAiCredentials();
+    final apiKey = credentials.apiKey?.trim();
     if (apiKey == null || apiKey.isEmpty) {
       return null;
     }
@@ -114,8 +114,8 @@ class JobAssistApiClient {
     required String taskDescription,
     required List<TaskItemAssistTaskContext> existingTasks,
   }) async {
-    final system = await DaoSystem().get();
-    final apiKey = system.openaiApiKey?.trim();
+    final credentials = await DaoSystem().getOpenAiCredentials();
+    final apiKey = credentials.apiKey?.trim();
     if (apiKey == null || apiKey.isEmpty) {
       return null;
     }

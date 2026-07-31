@@ -140,13 +140,15 @@ class _CustomerCreatorState extends State<CustomerCreator> {
       ),
     ),
     actions: [
-      TextButton(
+      HMBButton(
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Cancel'),
+        label: 'Cancel',
+        hint: "Don't create this customer",
       ),
-      ElevatedButton(
+      HMBButton(
         onPressed: _createEntities,
-        child: const Text('Create Customer'),
+        label: 'Create Customer',
+        hint: 'Create this customer',
       ),
     ],
   );
@@ -158,8 +160,8 @@ class _CustomerCreatorState extends State<CustomerCreator> {
     }
 
     ParsedCustomer parsedCustomer;
-    final system = await DaoSystem().get();
-    final apiKey = system.openaiApiKey?.trim() ?? '';
+    final credentials = await DaoSystem().getOpenAiCredentials();
+    final apiKey = credentials.apiKey?.trim() ?? '';
     if (apiKey.isNotEmpty) {
       final extracted = await CustomerExtractApiClient().extract(text);
       if (extracted == null) {

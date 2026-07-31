@@ -10,13 +10,13 @@ void main() {
   setUp(() async {
     await setupTestDb();
 
-    final system = await DaoSystem().get();
+    final system = await DaoSystem().getForUpdate();
 
     system
       ..firstname = 'Brett'
       ..surname = 'Sutton';
 
-    await DaoSystem().update(system);
+    await DaoSystem().updateConfiguration(system);
   });
 
   test('Jan Twain ...', () async {

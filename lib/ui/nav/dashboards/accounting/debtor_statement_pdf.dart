@@ -69,7 +69,7 @@ Future<File> buildDebtorStatementPdfFile({
 
 pw.Widget _background(
   pw.Context context,
-  System system,
+  SystemConfiguration system,
   PdfColor systemColor,
   String generatedAt,
 ) => pw.Stack(
@@ -120,7 +120,7 @@ pw.Widget _background(
 );
 
 pw.Widget _header(
-  System system,
+  SystemConfiguration system,
   String phone,
   pw.Widget? logo,
   DebtorStatementReport report,
@@ -287,7 +287,7 @@ pw.Widget _balanceDue(Money balance) => pw.Row(
   ],
 );
 
-pw.Widget _howToPay(System system) {
+pw.Widget _howToPay(SystemConfiguration system) {
   final rows = <pw.Widget>[];
   if (system.paymentOptions.trim().isNotEmpty) {
     rows.add(pw.Text('Payment Options: ${system.paymentOptions}'));
@@ -379,7 +379,7 @@ List<_StatementPdfRow> _statementRows(DebtorStatementReport report) {
 DateTime _lastDay(DebtorStatementReport report) =>
     report.endExclusive.subtract(const Duration(days: 1));
 
-Future<pw.Widget?> _getLogo(System system) async {
+Future<pw.Widget?> _getLogo(SystemConfiguration system) async {
   final logoPath = system.logoPath;
   if (logoPath.isEmpty) {
     return null;

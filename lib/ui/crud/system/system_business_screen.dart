@@ -67,7 +67,7 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
   Future<void> asyncInitState() async {
     setAppTitle('Business Details');
 
-    system = await DaoSystem().get();
+    system = await DaoSystem().getForUpdate();
 
     // 1. Populate existing fields
     _selectedCountryCode = system.countryCode ?? _defaultCountryCode();
@@ -253,7 +253,7 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
     }
 
     // 1. Update fields in the System
-    final localSystem = await DaoSystem().get();
+    final localSystem = await DaoSystem().getForUpdate();
 
     localSystem
       ..businessName = _businessNameController.text
@@ -265,7 +265,7 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
       ..setOperatingHours(_operatingHoursController!.operatingHours);
 
     // 3. Update in DB
-    await DaoSystem().update(localSystem);
+    await DaoSystem().updateConfiguration(localSystem);
 
     if (mounted) {
       if (widget.showButtons) {

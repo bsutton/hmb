@@ -19,6 +19,8 @@ import 'package:june/june.dart';
 import 'package:strings/strings.dart';
 
 import '../../../dao/dao_system.dart';
+import '../../../entity/system.dart';
+import '../../../entity/system_credentials.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../nav/dashboards/sync_warnings.dart';
 import '../../widgets/fields/hmb_text_field.dart';
@@ -52,9 +54,13 @@ class XeroIntegrationScreenState extends State<XeroIntegrationScreen> {
 
   void _initializeControllers() {
     unawaited(
-      DaoSystem().get().then((system) {
+      Future.wait([DaoSystem().get(), DaoSystem().getXeroCredentials()]).then((
+        results,
+      ) {
+        final system = results[0] as SystemConfiguration;
+        final credentials = results[1] as XeroCredentials;
         _xeroClientIdController.text = system.xeroClientId ?? '';
-        _xeroClientSecretController.text = system.xeroClientSecret ?? '';
+        _xeroClientSecretController.text = credentials.clientSecret ?? '';
         _invoiceLineAccountCodeController.text =
             system.invoiceLineRevenueAccountCode ?? '';
         _invoiceLineItemCodeController.text =
@@ -87,15 +93,18 @@ class XeroIntegrationScreenState extends State<XeroIntegrationScreen> {
       return false;
     }
 
-    final system = await DaoSystem().get();
+    final daoSystem = DaoSystem();
+    final system = await daoSystem.getForUpdate();
     // Save the form data
     system
       ..xeroClientId = _xeroClientIdController.text
-      ..xeroClientSecret = _xeroClientSecretController.text
       ..invoiceLineRevenueAccountCode = _invoiceLineAccountCodeController.text
       ..invoiceLineInventoryItemCode = _invoiceLineItemCodeController.text
       ..enableXeroIntegration = _xeroEnabled;
-    await DaoSystem().update(system);
+    await daoSystem.updateConfiguration(system);
+    await daoSystem.updateXeroCredentials(
+      XeroCredentials(clientSecret: _xeroClientSecretController.text),
+    );
 
     if (!_xeroEnabled) {
       June.getState<AccountingSyncWarningState>(

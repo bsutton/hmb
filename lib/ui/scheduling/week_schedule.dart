@@ -50,7 +50,7 @@ class WeekSchedule extends StatefulWidget with ScheduleHelper {
 
 class _WeekScheduleState extends DeferredState<WeekSchedule> {
   late final EventController<JobActivityEx> _weekController;
-  late final System system;
+  late final SystemConfiguration system;
   late final bool showWeekends;
   late final OperatingHours operatingHours;
   late bool _hasActivitiesInExtendedHours;

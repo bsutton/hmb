@@ -60,7 +60,7 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
 
   late LocalDate currentDate;
   late bool showWeekends;
-  late final System system;
+  late final SystemConfiguration system;
   late final OperatingHours operatingHours;
 
   @override

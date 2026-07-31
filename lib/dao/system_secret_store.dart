@@ -15,6 +15,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/system.dart';
+import '../entity/system_credentials.dart';
 import 'system_secret_backend.dart';
 import 'system_secret_backend_stub.dart'
     if (dart.library.ui) 'system_secret_backend_flutter.dart';
@@ -29,15 +30,58 @@ class SystemSecretStore {
   static const _chatGptAccessTokenKey = 'system.chatgpt_access_token';
   static const _chatGptRefreshTokenKey = 'system.chatgpt_refresh_token';
   static const _openAiApiKey = 'system.openai_api_key';
+  static const _googleMapsApiKey = 'system.google_maps_api_key';
   static const _ihserverTokenKey = 'system.ihserver_token';
+  static const _smtpPasswordKey = 'system.smtp_password';
 
-  Future<void> hydrate(System system) async {
-    system
-      ..xeroClientSecret = await _read(_xeroClientSecretKey)
-      ..chatgptAccessToken = await _read(_chatGptAccessTokenKey)
-      ..chatgptRefreshToken = await _read(_chatGptRefreshTokenKey)
-      ..openaiApiKey = await _read(_openAiApiKey)
-      ..ihserverToken = await _read(_ihserverTokenKey);
+  Future<XeroCredentials> readXeroCredentials() async =>
+      XeroCredentials(clientSecret: await _read(_xeroClientSecretKey));
+
+  Future<void> writeXeroCredentials(XeroCredentials credentials) async {
+    await _writeOrThrow(_xeroClientSecretKey, credentials.clientSecret);
+  }
+
+  Future<ChatGptCredentials> readChatGptCredentials() async {
+    final values = await Future.wait([
+      _read(_chatGptAccessTokenKey),
+      _read(_chatGptRefreshTokenKey),
+    ]);
+    return ChatGptCredentials(accessToken: values[0], refreshToken: values[1]);
+  }
+
+  Future<void> writeChatGptCredentials(ChatGptCredentials credentials) async {
+    await _writeOrThrow(_chatGptAccessTokenKey, credentials.accessToken);
+    await _writeOrThrow(_chatGptRefreshTokenKey, credentials.refreshToken);
+  }
+
+  Future<OpenAiCredentials> readOpenAiCredentials() async =>
+      OpenAiCredentials(apiKey: await _read(_openAiApiKey));
+
+  Future<void> writeOpenAiCredentials(OpenAiCredentials credentials) async {
+    await _writeOrThrow(_openAiApiKey, credentials.apiKey);
+  }
+
+  Future<GoogleMapsCredentials> readGoogleMapsCredentials() async =>
+      GoogleMapsCredentials(apiKey: await _read(_googleMapsApiKey));
+
+  Future<void> writeGoogleMapsCredentials(
+    GoogleMapsCredentials credentials,
+  ) async {
+    await _writeOrThrow(_googleMapsApiKey, credentials.apiKey);
+  }
+
+  Future<IhserverCredentials> readIhserverCredentials() async =>
+      IhserverCredentials(token: await _read(_ihserverTokenKey));
+
+  Future<void> writeIhserverCredentials(IhserverCredentials credentials) async {
+    await _writeOrThrow(_ihserverTokenKey, credentials.token);
+  }
+
+  Future<SmtpCredentials> readSmtpCredentials() async =>
+      SmtpCredentials(password: await _read(_smtpPasswordKey));
+
+  Future<void> writeSmtpCredentials(SmtpCredentials credentials) async {
+    await _writeOrThrow(_smtpPasswordKey, credentials.password);
   }
 
   Future<bool> migrateFromDb(System system) async {
@@ -46,7 +90,9 @@ class SystemSecretStore {
       _chatGptAccessTokenKey: system.chatgptAccessToken,
       _chatGptRefreshTokenKey: system.chatgptRefreshToken,
       _openAiApiKey: system.openaiApiKey,
+      _googleMapsApiKey: system.googleMapsApiKey,
       _ihserverTokenKey: system.ihserverToken,
+      _smtpPasswordKey: system.smtpPassword,
     };
 
     var hadLegacySecrets = false;
@@ -74,7 +120,9 @@ class SystemSecretStore {
       await _write(_chatGptAccessTokenKey, system.chatgptAccessToken) &&
       await _write(_chatGptRefreshTokenKey, system.chatgptRefreshToken) &&
       await _write(_openAiApiKey, system.openaiApiKey) &&
-      await _write(_ihserverTokenKey, system.ihserverToken);
+      await _write(_googleMapsApiKey, system.googleMapsApiKey) &&
+      await _write(_ihserverTokenKey, system.ihserverToken) &&
+      await _write(_smtpPasswordKey, system.smtpPassword);
 
   Future<void> clearLegacyDbCopies({
     required DatabaseExecutor executor,
@@ -128,6 +176,12 @@ class SystemSecretStore {
       return true;
     } catch (_) {
       return false;
+    }
+  }
+
+  Future<void> _writeOrThrow(String key, String? value) async {
+    if (!await _write(key, value)) {
+      throw StateError('Unable to update encrypted system credentials.');
     }
   }
 }

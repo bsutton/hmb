@@ -18,6 +18,7 @@ import 'package:oauth2/oauth2.dart' as oauth2;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../dao/dao.g.dart';
+import '../../entity/system_credentials.dart';
 import '../oauth/redirect_handler.dart';
 import 'chat_gpt_redirect_handler_config.dart';
 
@@ -44,7 +45,9 @@ class ChatGptAuth {
   /// Ensures the user is logged in: reuse valid token, refresh expired,
   ///  or do full OAuth.
   Future<void> login() async {
-    final system = await DaoSystem().get();
+    final daoSystem = DaoSystem();
+    final system = await daoSystem.get();
+    final credentials = await daoSystem.getChatGptCredentials();
 
     // If we already have a valid client in memory
     if (_client != null && !_client!.credentials.isExpired) {
@@ -52,11 +55,11 @@ class ChatGptAuth {
     }
 
     // Try loading saved credentials from system
-    if (_client == null && system.chatgptAccessToken != null) {
+    if (_client == null && credentials.accessToken != null) {
       _client = oauth2.Client(
         oauth2.Credentials(
-          system.chatgptAccessToken!,
-          refreshToken: system.chatgptRefreshToken,
+          credentials.accessToken!,
+          refreshToken: credentials.refreshToken,
           expiration: system.chatgptTokenExpiry,
         ),
         identifier: _clientId,
@@ -113,11 +116,15 @@ class ChatGptAuth {
 
   /// Stores refreshed credentials back to the system table.
   Future<void> _persistCredentials(oauth2.Credentials creds) async {
-    final system = await DaoSystem().get();
-    system
-      ..chatgptAccessToken = creds.accessToken
-      ..chatgptRefreshToken = creds.refreshToken
-      ..chatgptTokenExpiry = creds.expiration;
-    await DaoSystem().update(system);
+    final daoSystem = DaoSystem();
+    final system = await daoSystem.getForUpdate();
+    system.chatgptTokenExpiry = creds.expiration;
+    await daoSystem.updateConfiguration(system);
+    await daoSystem.updateChatGptCredentials(
+      ChatGptCredentials(
+        accessToken: creds.accessToken,
+        refreshToken: creds.refreshToken,
+      ),
+    );
   }
 }

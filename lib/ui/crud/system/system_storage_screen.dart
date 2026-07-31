@@ -76,7 +76,7 @@ class SystemStorageScreenState extends DeferredState<SystemStorageScreen> {
   @override
   Future<void> asyncInitState() async {
     setAppTitle('Storage');
-    final system = await DaoSystem().get();
+    final system = await DaoSystem().getForUpdate();
     _photoCacheMaxMbController.text = system.photoCacheMaxMb.toString();
     _stats = await StorageStats.load();
   }
@@ -94,9 +94,9 @@ class SystemStorageScreenState extends DeferredState<SystemStorageScreen> {
     }
 
     final cacheMb = int.parse(_photoCacheMaxMbController.text);
-    final system = await DaoSystem().get();
+    final system = await DaoSystem().getForUpdate();
     system.photoCacheMaxMb = cacheMb;
-    await DaoSystem().update(system);
+    await DaoSystem().updateConfiguration(system);
     await HMBImageCache().updateMaxBytes(cacheMb * 1024 * 1024);
     await _reloadStats();
 
