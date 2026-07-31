@@ -274,7 +274,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
       if (mounted) {
         setState(() {
           _syncRunning = false;
-          _photoStageDescription = 'Photo sync cancelled.';
+          _photoStageDescription = '';
           _photoStageNo = 0;
           _photoStageCount = 0;
         });
@@ -289,7 +289,12 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     await WakelockPlus.enable();
     try {
       if (mounted) {
-        setState(() => _syncRunning = true);
+        setState(() {
+          _syncRunning = true;
+          _photoStageDescription = '';
+          _photoStageNo = 0;
+          _photoStageCount = 0;
+        });
       }
       await photoSync.start(retryOnFailure: false);
       await BackupHistoryStore.record(
@@ -309,7 +314,12 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
       }
     } finally {
       if (mounted) {
-        setState(() => _syncRunning = false);
+        setState(() {
+          _syncRunning = false;
+          _photoStageDescription = '';
+          _photoStageNo = 0;
+          _photoStageCount = 0;
+        });
       } else {
         _syncRunning = false;
       }

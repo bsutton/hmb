@@ -243,6 +243,7 @@ class PhotoSyncService {
   }
 
   void _cleanup() {
+    final wasRunning = _isolate != null;
     _receivePort?.close();
     _errorPort?.close();
     _exitPort?.close();
@@ -250,6 +251,12 @@ class PhotoSyncService {
     _receivePort = null;
     _errorPort = null;
     _exitPort = null;
+    if (wasRunning) {
+      // Progress is emitted before the worker exits, while [isRunning] is
+      // still true. Publish the post-cleanup idle state so mounted screens do
+      // not retain a completed message or a full progress bar.
+      _controller.add(ProgressUpdate('', 0, 0));
+    }
   }
 
   void _onSyncError(dynamic error) {

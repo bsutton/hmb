@@ -297,7 +297,7 @@ class _GoogleDriveBackupScreenState
           if (mounted) {
             setState(() {
               _syncRunning = false;
-              _photoStageDescription = 'Photo sync cancelled.';
+              _photoStageDescription = '';
               _photoStageNo = 0;
               _photoStageCount = 0;
             });
@@ -307,7 +307,12 @@ class _GoogleDriveBackupScreenState
         await WakelockPlus.enable();
         try {
           if (mounted) {
-            setState(() => _syncRunning = true);
+            setState(() {
+              _syncRunning = true;
+              _photoStageDescription = '';
+              _photoStageNo = 0;
+              _photoStageCount = 0;
+            });
           }
           await _provider.syncPhotos();
           await BackupHistoryStore.record(
@@ -327,7 +332,12 @@ class _GoogleDriveBackupScreenState
           }
         } finally {
           if (mounted) {
-            setState(() => _syncRunning = false);
+            setState(() {
+              _syncRunning = false;
+              _photoStageDescription = '';
+              _photoStageNo = 0;
+              _photoStageCount = 0;
+            });
           } else {
             _syncRunning = false;
           }
