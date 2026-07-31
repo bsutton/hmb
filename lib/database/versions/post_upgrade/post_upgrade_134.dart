@@ -21,7 +21,7 @@ import '../../../util/flutter/rich_text_helper.dart';
 /// Convert all rich text fields to plain text.
 Future<void> postv134Upgrade(Database db) async {
   await db.transaction((transaction) async {
-    final system = await DaoSystem().get(transaction);
+    final system = await DaoSystem().getForUpdate(transaction);
 
     final removed = system.richTextRemoved;
 
@@ -39,7 +39,7 @@ Future<void> postv134Upgrade(Database db) async {
               ..description = RichTextHelper.toPlainText(job.description);
             await daoJob.update(job, transaction);
           }
-          await DaoSystem().update(
+          await DaoSystem().updateConfiguration(
             system.copyWith(richTextRemoved: RichTextRemoved.job),
             transaction,
           );
@@ -54,7 +54,7 @@ Future<void> postv134Upgrade(Database db) async {
             quote.assumption = RichTextHelper.toPlainText(quote.assumption);
             await daoQuote.update(quote, transaction);
           }
-          await DaoSystem().update(
+          await DaoSystem().updateConfiguration(
             system.copyWith(richTextRemoved: RichTextRemoved.quote),
             transaction,
           );
