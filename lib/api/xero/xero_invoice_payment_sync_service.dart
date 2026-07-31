@@ -19,21 +19,18 @@ class XeroInvoicePaymentSyncService {
   static const _minInterval = Duration(hours: 6);
 
   late XeroInvoicePaymentClient _xeroClient;
-  final DaoInvoice _daoInvoice;
-  final DebtorLedgerService _ledgerService;
+  final DaoInvoice? _daoInvoice;
 
   XeroInvoicePaymentSyncService({
     XeroInvoicePaymentClient? xeroClient,
     DaoInvoice? daoInvoice,
-    DebtorLedgerService? ledgerService,
     XeroLogin? login,
     XeroGetInvoice? getInvoice,
     XeroCreatePayment? createPayment,
     XeroDeletePayment? deletePayment,
     XeroCreateCreditNote? createCreditNote,
     XeroAllocateCreditNote? allocateCreditNote,
-  }) : _daoInvoice = daoInvoice ?? DaoInvoice(),
-       _ledgerService = ledgerService ?? DebtorLedgerService() {
+  }) : _daoInvoice = daoInvoice {
     _xeroClient = xeroClient ?? createDefaultXeroInvoicePaymentClient();
     if (login != null ||
         getInvoice != null ||
@@ -52,6 +49,8 @@ class XeroInvoicePaymentSyncService {
       );
     }
   }
+
+  DaoInvoice _daoInvoiceForSync() => _daoInvoice ?? DaoInvoice();
 
   Future<int> sync({
     bool force = false,
@@ -76,8 +75,8 @@ class XeroInvoicePaymentSyncService {
         return 0;
       }
 
-      final pending = await _daoInvoice.getUploadedUnpaid();
-      final missingInvoiceNumbers = await _daoInvoice
+      final pending = await _daoInvoiceForSync().getUploadedUnpaid();
+      final missingInvoiceNumbers = await _daoInvoiceForSync()
           .getUploadedMissingInvoiceNumber();
       final unsyncedPayments = await DaoDebtorPayment().getUnsyncedForProvider(
         'xero',
@@ -128,12 +127,12 @@ class XeroInvoicePaymentSyncService {
             currentInvoice = currentInvoice.copyWith(
               invoiceNum: remoteState.invoiceNumber,
             );
-            await _daoInvoice.update(currentInvoice);
+            await _daoInvoiceForSync().update(currentInvoice);
             updated += 1;
           }
           if (currentInvoice.externalSyncStatus !=
               remoteState.externalSyncStatus) {
-            await _daoInvoice.updateExternalSyncStatus(
+            await _daoInvoiceForSync().updateExternalSyncStatus(
               currentInvoice.id,
               remoteState.externalSyncStatus,
             );
@@ -146,7 +145,7 @@ class XeroInvoicePaymentSyncService {
           }
           if (remoteState.paidDate != null &&
               _needsPaidUpdate(currentInvoice, remoteState.paidDate!)) {
-            await _daoInvoice.markPaidFromXero(
+            await _daoInvoiceForSync().markPaidFromXero(
               currentInvoice.id,
               paidDate: remoteState.paidDate,
             );
@@ -203,7 +202,9 @@ class XeroInvoicePaymentSyncService {
         if (allocation.externalAllocationId != null) {
           continue;
         }
-        final invoice = await _daoInvoice.getById(allocation.invoiceId);
+        final invoice = await _daoInvoiceForSync().getById(
+          allocation.invoiceId,
+        );
         if (invoice?.externalInvoiceId == null) {
           continue;
         }
@@ -250,7 +251,7 @@ class XeroInvoicePaymentSyncService {
       final invoiceId = creditNote.relatedInvoiceId;
       final invoice = invoiceId == null
           ? null
-          : await _daoInvoice.getById(invoiceId);
+          : await _daoInvoiceForSync().getById(invoiceId);
       if (invoice?.externalInvoiceId == null) {
         continue;
       }
@@ -286,7 +287,7 @@ class XeroInvoicePaymentSyncService {
         if (allocation.externalAllocationId != null) {
           continue;
         }
-        final allocatedInvoice = await _daoInvoice.getById(
+        final allocatedInvoice = await _daoInvoiceForSync().getById(
           allocation.invoiceId,
         );
         if (allocatedInvoice?.externalInvoiceId == null) {
@@ -392,7 +393,7 @@ class XeroInvoicePaymentSyncService {
       if (existing != null) {
         continue;
       }
-      final debtorPayment = await _ledgerService.recordPayment(
+      final debtorPayment = await DebtorLedgerService().recordPayment(
         invoiceId: invoice.id,
         amount: payment.amount,
         paymentDate: payment.date,
@@ -531,7 +532,7 @@ class XeroInvoicePaymentSyncService {
       if (existing != null) {
         continue;
       }
-      final created = await _ledgerService.createCreditNote(
+      final created = await DebtorLedgerService().createCreditNote(
         invoiceId: invoice.id,
         amount: creditNote.amount,
         reason: creditNote.reference ?? 'Xero credit note',

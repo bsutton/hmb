@@ -88,35 +88,8 @@ class DebtorLedgerService {
   static const paymentEntity = 'payment';
   static const paymentAllocationEntity = 'payment_allocation';
 
-  final DaoInvoice _daoInvoice;
-  final DaoJob _daoJob;
-  final DaoDebtorTransaction _daoTransaction;
-  final DaoDebtorPayment _daoPayment;
-  final DaoPaymentAllocation _daoPaymentAllocation;
-  final DaoCreditNote _daoCreditNote;
-  final DaoCreditAllocation _daoCreditAllocation;
-  final DaoDebtorAdjustment _daoAdjustment;
-
-  DebtorLedgerService({
-    DaoInvoice? daoInvoice,
-    DaoJob? daoJob,
-    DaoDebtorTransaction? daoTransaction,
-    DaoDebtorPayment? daoPayment,
-    DaoPaymentAllocation? daoPaymentAllocation,
-    DaoCreditNote? daoCreditNote,
-    DaoCreditAllocation? daoCreditAllocation,
-    DaoDebtorAdjustment? daoAdjustment,
-  }) : _daoInvoice = daoInvoice ?? DaoInvoice(),
-       _daoJob = daoJob ?? DaoJob(),
-       _daoTransaction = daoTransaction ?? DaoDebtorTransaction(),
-       _daoPayment = daoPayment ?? DaoDebtorPayment(),
-       _daoPaymentAllocation = daoPaymentAllocation ?? DaoPaymentAllocation(),
-       _daoCreditNote = daoCreditNote ?? DaoCreditNote(),
-       _daoCreditAllocation = daoCreditAllocation ?? DaoCreditAllocation(),
-       _daoAdjustment = daoAdjustment ?? DaoDebtorAdjustment();
-
   Future<DebtorTransaction> recordInvoice(Invoice invoice) async {
-    final existing = await _daoTransaction.getBySource(
+    final existing = await DaoDebtorTransaction().getBySource(
       type: DebtorTransactionType.invoice,
       sourceTable: 'invoice',
       sourceId: invoice.id,
@@ -125,7 +98,7 @@ class DebtorLedgerService {
       return existing;
     }
 
-    final job = await _daoJob.getById(invoice.jobId);
+    final job = await DaoJob().getById(invoice.jobId);
     final transaction = DebtorTransaction.forInsert(
       debtorCustomerId: job?.customerId,
       debtorContactId: invoice.billingContactId,
@@ -138,7 +111,7 @@ class DebtorLedgerService {
       taxAmount: MoneyEx.zero,
       description: 'Invoice #${invoice.bestNumber}',
     );
-    await _daoTransaction.insert(transaction);
+    await DaoDebtorTransaction().insert(transaction);
     return transaction;
   }
 
@@ -152,7 +125,7 @@ class DebtorLedgerService {
   }) async {
     _requirePositive(amount, 'Payment amount');
     final invoice = await _requireInvoice(invoiceId);
-    final job = await _daoJob.getById(invoice.jobId);
+    final job = await DaoJob().getById(invoice.jobId);
     final payment = DebtorPayment.forInsert(
       customerId: job?.customerId,
       contactId: invoice.billingContactId,
@@ -162,7 +135,7 @@ class DebtorLedgerService {
       reference: reference,
       notes: notes,
     );
-    await _daoPayment.insert(payment);
+    await DaoDebtorPayment().insert(payment);
     await _queueCreate(paymentEntity, payment.id);
     await allocatePayment(
       paymentId: payment.id,
@@ -193,19 +166,19 @@ class DebtorLedgerService {
       reference: reference,
       notes: notes,
     );
-    await _daoPayment.insert(payment);
+    await DaoDebtorPayment().insert(payment);
     await _queueCreate(paymentEntity, payment.id);
     return payment;
   }
 
   Future<List<DebtorPayment>> unallocatedPaymentsForCustomer(int customerId) =>
-      _daoPayment.getUnallocatedForCustomer(customerId);
+      DaoDebtorPayment().getUnallocatedForCustomer(customerId);
 
   Future<Money> paymentAllocatedAmount(int paymentId) =>
-      _daoPayment.allocatedAmount(paymentId);
+      DaoDebtorPayment().allocatedAmount(paymentId);
 
   Future<Money> paymentUnallocatedAmount(DebtorPayment payment) =>
-      _daoPayment.unallocatedAmount(payment);
+      DaoDebtorPayment().unallocatedAmount(payment);
 
   Future<PaymentAllocation> applyPaymentToInvoice({
     required int paymentId,
@@ -230,13 +203,13 @@ class DebtorLedgerService {
     DateTime? allocatedDate,
   }) async {
     _requirePositive(amount, 'Payment allocation amount');
-    final payment = await _daoPayment.getById(paymentId);
+    final payment = await DaoDebtorPayment().getById(paymentId);
     if (payment == null) {
       throw HMBException('Payment $paymentId does not exist.');
     }
     final invoice = await _requireInvoice(invoiceId);
     await _requirePaymentForInvoiceCustomer(payment: payment, invoice: invoice);
-    final allocated = await _daoPaymentAllocation.totalForPayment(paymentId);
+    final allocated = await DaoPaymentAllocation().totalForPayment(paymentId);
     if (allocated + amount > payment.amount) {
       throw HMBException('Payment allocations exceed the payment amount.');
     }
@@ -246,18 +219,18 @@ class DebtorLedgerService {
       amount: amount,
       allocatedDate: allocatedDate ?? DateTime.now(),
     );
-    await _daoPaymentAllocation.insert(allocation);
+    await DaoPaymentAllocation().insert(allocation);
     await _queueCreate(paymentAllocationEntity, allocation.id);
     return allocation;
   }
 
   Future<void> deletePayment(int paymentId) async {
-    final payment = await _daoPayment.getById(paymentId);
+    final payment = await DaoDebtorPayment().getById(paymentId);
     if (payment == null) {
       return;
     }
-    await _daoPayment.withTransaction((transaction) async {
-      final allocations = await _daoPaymentAllocation.getByPaymentId(
+    await DaoDebtorPayment().withTransaction((transaction) async {
+      final allocations = await DaoPaymentAllocation().getByPaymentId(
         paymentId,
         transaction,
       );
@@ -266,24 +239,24 @@ class DebtorLedgerService {
           allocation,
           transaction: transaction,
         );
-        await _daoPaymentAllocation.delete(allocation.id, transaction);
+        await DaoPaymentAllocation().delete(allocation.id, transaction);
       }
       await _queueDeleteOrSupersedePayment(payment, transaction: transaction);
-      await _daoPayment.delete(payment.id, transaction);
+      await DaoDebtorPayment().delete(payment.id, transaction);
     });
   }
 
   Future<void> deletePaymentAllocation(int allocationId) async {
-    final allocation = await _daoPaymentAllocation.getById(allocationId);
+    final allocation = await DaoPaymentAllocation().getById(allocationId);
     if (allocation == null) {
       return;
     }
-    await _daoPaymentAllocation.withTransaction((transaction) async {
+    await DaoPaymentAllocation().withTransaction((transaction) async {
       await _queueDeleteOrSupersedeAllocation(
         allocation,
         transaction: transaction,
       );
-      await _daoPaymentAllocation.delete(allocation.id, transaction);
+      await DaoPaymentAllocation().delete(allocation.id, transaction);
     });
   }
 
@@ -298,7 +271,7 @@ class DebtorLedgerService {
       throw HMBException('A credit reason is required.');
     }
     final invoice = await _requireInvoice(invoiceId);
-    final job = await _daoJob.getById(invoice.jobId);
+    final job = await DaoJob().getById(invoice.jobId);
     final creditNote = CreditNote.forInsert(
       customerId: job?.customerId,
       contactId: invoice.billingContactId,
@@ -309,7 +282,7 @@ class DebtorLedgerService {
       status: CreditNoteStatus.approved,
       reason: reason.trim(),
     );
-    await _daoCreditNote.insert(creditNote);
+    await DaoCreditNote().insert(creditNote);
     await allocateCredit(
       creditNoteId: creditNote.id,
       invoiceId: invoice.id,
@@ -327,12 +300,12 @@ class DebtorLedgerService {
     DateTime? allocatedDate,
   }) async {
     _requirePositive(amount, 'Credit allocation amount');
-    final creditNote = await _daoCreditNote.getById(creditNoteId);
+    final creditNote = await DaoCreditNote().getById(creditNoteId);
     if (creditNote == null) {
       throw HMBException('Credit note $creditNoteId does not exist.');
     }
     await _requireInvoice(invoiceId);
-    final allocated = await _daoCreditAllocation.totalForCreditNote(
+    final allocated = await DaoCreditAllocation().totalForCreditNote(
       creditNoteId,
     );
     if (allocated + amount > creditNote.totalAmount) {
@@ -344,13 +317,13 @@ class DebtorLedgerService {
       amount: amount,
       allocatedDate: allocatedDate ?? DateTime.now(),
     );
-    await _daoCreditAllocation.insert(allocation);
+    await DaoCreditAllocation().insert(allocation);
 
     final totalAllocated = allocated + amount;
     final nextStatus = totalAllocated == creditNote.totalAmount
         ? CreditNoteStatus.allocated
         : CreditNoteStatus.partiallyAllocated;
-    await _daoCreditNote.update(creditNote.copyWith(status: nextStatus));
+    await DaoCreditNote().update(creditNote.copyWith(status: nextStatus));
     return allocation;
   }
 
@@ -428,7 +401,7 @@ class DebtorLedgerService {
       throw HMBException('An adjustment reason is required.');
     }
     final invoice = await _requireInvoice(invoiceId);
-    final job = await _daoJob.getById(invoice.jobId);
+    final job = await DaoJob().getById(invoice.jobId);
     final adjustment = DebtorAdjustment.forInsert(
       customerId: job?.customerId,
       contactId: invoice.billingContactId,
@@ -440,29 +413,29 @@ class DebtorLedgerService {
       reason: reason.trim(),
       notes: notes,
     );
-    await _daoAdjustment.insert(adjustment);
+    await DaoDebtorAdjustment().insert(adjustment);
     await recordInvoice(invoice);
     return adjustment;
   }
 
   Future<Money> invoicePaidAmount(int invoiceId) =>
-      _daoPaymentAllocation.totalForInvoice(invoiceId);
+      DaoPaymentAllocation().totalForInvoice(invoiceId);
 
   Future<Money> invoiceCreditedAmount(int invoiceId) =>
-      _daoCreditAllocation.totalForInvoice(invoiceId);
+      DaoCreditAllocation().totalForInvoice(invoiceId);
 
   Future<Money> invoiceAdjustedAmount(int invoiceId) =>
-      _daoAdjustment.totalForInvoice(invoiceId);
+      DaoDebtorAdjustment().totalForInvoice(invoiceId);
 
   Future<List<InvoiceLedgerHistoryEntry>> invoiceHistory(int invoiceId) async {
     await _requireInvoice(invoiceId);
     final entries = <InvoiceLedgerHistoryEntry>[];
 
-    final paymentAllocations = await _daoPaymentAllocation.getByInvoiceId(
+    final paymentAllocations = await DaoPaymentAllocation().getByInvoiceId(
       invoiceId,
     );
     for (final allocation in paymentAllocations) {
-      final payment = await _daoPayment.getById(allocation.paymentId);
+      final payment = await DaoDebtorPayment().getById(allocation.paymentId);
       entries.add(
         InvoiceLedgerHistoryEntry(
           type: InvoiceLedgerHistoryEntryType.payment,
@@ -474,11 +447,11 @@ class DebtorLedgerService {
       );
     }
 
-    final creditAllocations = await _daoCreditAllocation.getByInvoiceId(
+    final creditAllocations = await DaoCreditAllocation().getByInvoiceId(
       invoiceId,
     );
     for (final allocation in creditAllocations) {
-      final creditNote = await _daoCreditNote.getById(allocation.creditNoteId);
+      final creditNote = await DaoCreditNote().getById(allocation.creditNoteId);
       entries.add(
         InvoiceLedgerHistoryEntry(
           type: InvoiceLedgerHistoryEntryType.credit,
@@ -490,7 +463,7 @@ class DebtorLedgerService {
       );
     }
 
-    final adjustments = await _daoAdjustment.getByInvoiceId(invoiceId);
+    final adjustments = await DaoDebtorAdjustment().getByInvoiceId(invoiceId);
     for (final adjustment in adjustments) {
       entries.add(
         InvoiceLedgerHistoryEntry(
@@ -552,7 +525,9 @@ class DebtorLedgerService {
       return DebtorInvoiceStatus.voided;
     }
 
-    final writtenOff = await _daoAdjustment.writeOffTotalForInvoice(invoice.id);
+    final writtenOff = await DaoDebtorAdjustment().writeOffTotalForInvoice(
+      invoice.id,
+    );
     final allocated = paid + credited + adjusted;
     final balance = invoice.totalAmount - allocated;
 
@@ -575,7 +550,7 @@ class DebtorLedgerService {
   }
 
   Future<Invoice> _requireInvoice(int invoiceId) async {
-    final invoice = await _daoInvoice.getById(invoiceId);
+    final invoice = await DaoInvoice().getById(invoiceId);
     if (invoice == null) {
       throw HMBException('Invoice $invoiceId does not exist.');
     }
@@ -589,7 +564,7 @@ class DebtorLedgerService {
     if (payment.customerId == null) {
       return;
     }
-    final job = await _daoJob.getById(invoice.jobId);
+    final job = await DaoJob().getById(invoice.jobId);
     if (job?.customerId != payment.customerId) {
       throw HMBException(
         'Payment ${payment.id} does not belong to the invoice customer.',

@@ -19,8 +19,8 @@ void main() {
 
   setUp(() async {
     await setupTestDb();
-    final system = await DaoSystem().get();
-    await DaoSystem().update(
+    final system = await DaoSystem().getForUpdate();
+    await DaoSystem().updateConfiguration(
       system.copyWith(enableXeroIntegration: true, xeroClientId: 'client-id'),
     );
   });
