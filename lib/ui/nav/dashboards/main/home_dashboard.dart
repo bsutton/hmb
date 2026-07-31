@@ -26,35 +26,39 @@ class MainDashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
-    future: DaoSystem().get(),
-    builder: (context, system) {
-      final showBookingRequests =
-          (system?.enableIhserverIntegration ?? false) &&
-          Strings.isNotBlank(system?.ihserverUrl) &&
-          Strings.isNotBlank(system?.ihserverToken);
-
-      return Scaffold(
-        body: DashboardPage(
-          title: 'Dashboard',
-          dashlets: [
-            const JobsDashlet(),
-            const TodayDashlet(),
-            if (showBookingRequests) const BookingRequestsDashlet(),
-            const HelpDashlet(),
-            const NextJobDashlet(),
-            const ToDoDashlet(),
-            const ShoppingDashlet(),
-            const PackingDashlet(),
-            const AccountingDashlet(),
-            const CustomersDashlet(),
-            const SuppliersDashlet(),
-            const ToolsDashlet(),
-            const ManufacturersDashlet(),
-            const BackupDashlet(),
-            const SettingsDashlet(),
-          ],
-        ),
-      );
-    },
+    future: _showBookingRequests(),
+    builder: (context, showBookingRequests) => Scaffold(
+      body: DashboardPage(
+        title: 'Dashboard',
+        dashlets: [
+          const JobsDashlet(),
+          const TodayDashlet(),
+          if (showBookingRequests ?? false) const BookingRequestsDashlet(),
+          const HelpDashlet(),
+          const NextJobDashlet(),
+          const ToDoDashlet(),
+          const ShoppingDashlet(),
+          const PackingDashlet(),
+          const AccountingDashlet(),
+          const CustomersDashlet(),
+          const SuppliersDashlet(),
+          const ToolsDashlet(),
+          const ManufacturersDashlet(),
+          const BackupDashlet(),
+          const SettingsDashlet(),
+        ],
+      ),
+    ),
   );
+
+  Future<bool> _showBookingRequests() async {
+    final daoSystem = DaoSystem();
+    final system = await daoSystem.get();
+    if (!system.enableIhserverIntegration ||
+        Strings.isBlank(system.ihserverUrl)) {
+      return false;
+    }
+    final credentials = await daoSystem.getIhserverCredentials();
+    return Strings.isNotBlank(credentials.token);
+  }
 }
