@@ -48,7 +48,10 @@ final hmbScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 //----------------------------------------------------------------------
 
-Future<void> main(List<String> args) async {
+Future<void> main(List<String> args) =>
+    runHmbApp(devicePreviewEnabled: !kReleaseMode);
+
+Future<void> runHmbApp({required bool devicePreviewEnabled}) async {
   Log.configure('.');
   _ensureBindingInitialized();
   // initialize Sentry
@@ -75,8 +78,7 @@ Future<void> main(List<String> args) async {
       Log.i('Package Name: ${packageInfo.packageName}');
       runApp(
         DevicePreview(
-          // ignore: avoid_redundant_argument_values
-          enabled: !kReleaseMode,
+          enabled: devicePreviewEnabled,
           builder: (_) => const HmbApp(),
         ),
       );

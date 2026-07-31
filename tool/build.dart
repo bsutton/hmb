@@ -48,6 +48,11 @@ void main(List<String> args) async {
       abbr: 'i',
       help: 'install the apk to a device connected via USB',
     )
+    ..addOption(
+      'device',
+      abbr: 'd',
+      help: 'Android device serial to install the apk onto',
+    )
     ..addFlag(
       'release',
       abbr: 'r',
@@ -69,6 +74,7 @@ Create a signed release appbundle suitable to upload to Google Play store.''',
   var install = results['install'] as bool;
   var assets = results['assets'] as bool;
   final release = results['release'] as bool;
+  final device = results['device'] as String?;
 
   if (!build && !install && !assets && !release) {
     /// no switches passed so do it all.
@@ -109,7 +115,7 @@ Create a signed release appbundle suitable to upload to Google Play store.''',
   }
 
   if (install) {
-    installApk();
+    installApk(device: device);
   }
 }
 
@@ -126,12 +132,13 @@ void _runPubGet() {
   'flutter pub get'.start(workingDirectory: DartProject.self.pathToProjectRoot);
 }
 
-void installApk() {
+void installApk({String? device}) {
   print(
     orange('Make certain you have first run --build so you get the latest apk'),
   );
 
-  final serial = _selectAndroidInstallTarget();
+  final serial = _selectAndroidInstallTarget(device);
+  print(orange('Installing APK to Android device $serial'));
   final args = [
     '-s',
     serial,
@@ -152,7 +159,7 @@ void installApk() {
   }
 }
 
-String _selectAndroidInstallTarget() {
+String _selectAndroidInstallTarget(String? requestedSerial) {
   final result = Process.runSync('adb', ['devices', '-l']);
   if (result.exitCode != 0) {
     throw ProcessException(
@@ -170,14 +177,21 @@ String _selectAndroidInstallTarget() {
       .where((line) => RegExp(r'^\S+\s+device(?:\s|$)').hasMatch(line))
       .toList();
 
-  final requestedSerial = Platform.environment['ANDROID_SERIAL'];
+  if (devices.isEmpty) {
+    throw StateError(
+      'No Android devices are attached. '
+      'Start an emulator or connect a device, then run adb devices -l.',
+    );
+  }
+
   if (requestedSerial != null && requestedSerial.isNotEmpty) {
     final isConnected = devices.any(
       (line) => line.startsWith('$requestedSerial '),
     );
     if (!isConnected) {
       throw StateError(
-        'ANDROID_SERIAL=$requestedSerial is not a connected Android device.',
+        'Device $requestedSerial is not connected. '
+        'Connected devices:\n${devices.join('\n')}',
       );
     }
     return requestedSerial;
@@ -193,7 +207,7 @@ String _selectAndroidInstallTarget() {
 
   throw StateError(
     'Expected exactly one USB-connected Android device. '
-    'Set ANDROID_SERIAL to choose a target.',
+    'Use --device <serial> to choose a target.',
   );
 }
 
