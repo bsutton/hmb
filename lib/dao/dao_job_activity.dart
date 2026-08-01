@@ -151,4 +151,20 @@ SELECT ja.*
 
     return fromMap(data.first);
   }
+
+  Future<List<JobActivity>> getStartingAfter(DateTime date) async {
+    final db = withoutTransaction();
+    final rows = await db.rawQuery(
+      '''
+SELECT ja.*
+  FROM $tableName ja
+  JOIN job j ON ja.job_id = j.id
+ WHERE ja.start_date > ?
+   AND j.status_id NOT IN (?, ?)
+ ORDER BY ja.start_date ASC
+''',
+      [date.toIso8601String(), JobStatus.rejected.id, JobStatus.completed.id],
+    );
+    return rows.map(fromMap).toList();
+  }
 }

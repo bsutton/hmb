@@ -108,8 +108,12 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
                 _isSameTimeEntry(timeEntry, timeEntryState.activeTimeEntry);
 
             return IconButton(
-              padding: const EdgeInsets.only(top: 8, bottom: 8),
-              visualDensity: const VisualDensity(horizontal: -4),
+              constraints: const BoxConstraints.tightFor(
+                width: kMinInteractiveDimension,
+                height: kMinInteractiveDimension,
+              ),
+              padding: const EdgeInsets.all(8),
+              tooltip: isActive ? 'Stop task timer' : 'Start task timer',
               // start / stop icon
               icon: Icon(
                 isActive ? Icons.stop : Icons.play_arrow,

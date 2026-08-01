@@ -77,6 +77,11 @@ class _JobEstimateBuilderScreenState
 
   @override
   Future<void> asyncInitState() async {
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) {
+      return;
+    }
+
     final canProceed = await _ensureFixedPrice();
     if (!canProceed) {
       if (mounted) {

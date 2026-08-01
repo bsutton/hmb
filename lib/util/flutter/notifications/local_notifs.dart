@@ -18,6 +18,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../../entity/job_activity.dart';
 import '../../../entity/todo.dart';
 import 'desktop_scheduler.dart';
 import 'native_timezone.dart';
@@ -35,6 +36,7 @@ class LocalNotifs {
   final _fln = FlutterLocalNotificationsPlugin();
   DesktopNotifScheduler? _desktop;
   var _inited = false;
+  var _permissionGranted = true;
   var _iana = 'UTC';
   void Function(Map<String, String> payload)? onNotificationPayload;
 
@@ -88,7 +90,10 @@ class LocalNotifs {
             .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin
             >();
-        await android?.requestNotificationsPermission();
+        final granted = await android?.requestNotificationsPermission();
+        if (granted == false) {
+          _permissionGranted = false;
+        }
         // NOTE: If you later require exact alarms, add the manifest permission
         // and deep-link users to the exact-alarm settings screen.
       } else if (Platform.isIOS) {
@@ -96,13 +101,27 @@ class LocalNotifs {
             .resolvePlatformSpecificImplementation<
               IOSFlutterLocalNotificationsPlugin
             >();
-        await ios?.requestPermissions(alert: true, badge: true, sound: true);
+        final granted = await ios?.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        if (granted == false) {
+          _permissionGranted = false;
+        }
       } else if (Platform.isMacOS) {
         final macos = _fln
             .resolvePlatformSpecificImplementation<
               MacOSFlutterLocalNotificationsPlugin
             >();
-        await macos?.requestPermissions(alert: true, badge: true, sound: true);
+        final granted = await macos?.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        if (granted == false) {
+          _permissionGranted = false;
+        }
       }
 
       // ---- desktop in-app scheduler (Windows/Linux only) ----
@@ -134,8 +153,11 @@ class LocalNotifs {
     ),
   );
 
-  Future<void> schedule(Notif n) async {
+  Future<bool> schedule(Notif n) async {
     await init();
+    if (!_permissionGranted) {
+      return false;
+    }
 
     // Normalize: treat n.scheduledAtMillis as a local wall-clock instant.
     // We recreate a TZDateTime in tz.local to preserve wall-clock semantics
@@ -167,7 +189,7 @@ class LocalNotifs {
 
       // If after the grace and min-lead it's still in the past, skip.
       if (whenTz.isBefore(tz.TZDateTime.now(tz.local).add(_grace))) {
-        return;
+        return false;
       }
 
       await _fln.zonedSchedule(
@@ -183,8 +205,8 @@ class LocalNotifs {
     } else if (Platform.isWindows || Platform.isLinux) {
       // Enqueue into in-app scheduler (fires while app is open).
       // If way in the past (beyond grace), skip enqueue.
-      if (ms + _grace.inMilliseconds < nowMs) {
-        return;
+      if (target.millisecondsSinceEpoch + _grace.inMilliseconds < nowMs) {
+        return false;
       }
     }
 
@@ -196,9 +218,10 @@ class LocalNotifs {
         body: n.body,
         scheduledAtMillis: target.millisecondsSinceEpoch,
         payload: n.payload,
-        channel: Channel.todo(),
+        channel: n.channel,
       ),
     );
+    return true;
   }
 
   Future<void> cancel(int id) async {
@@ -214,25 +237,33 @@ class LocalNotifs {
   }
 
   /// Schedule from ToDo (store LOCAL → schedule in LOCAL tz).
-  Future<void> scheduleForToDo(ToDo todo) async {
+  Future<bool> scheduleForToDo(ToDo todo) async {
     final when = todo.remindAt;
     if (when == null) {
-      return;
+      return false;
     }
 
-    final n = Notif(
-      id: _idForToDo(todo.id),
-      title: 'Reminder',
-      body: todo.title,
-      // `when` is LOCAL; keep it local by passing its epoch straight through.
-      scheduledAtMillis: when.millisecondsSinceEpoch,
-      payload: {'type': 'todo', 'id': '${todo.id}'},
-      channel: Channel.todo(),
+    return schedule(
+      Notif.forToDo(todoId: todo.id, title: todo.title, remindAt: when),
     );
-    await schedule(n);
   }
 
+  Future<bool> scheduleForJobActivity(
+    JobActivity activity, {
+    required String jobSummary,
+  }) => schedule(
+    Notif.forJobActivity(
+      activityId: activity.id,
+      jobId: activity.jobId,
+      jobSummary: jobSummary,
+      startsAt: activity.start,
+    ),
+  );
+
   Future<void> cancelForToDo(int todoId) => cancel(_idForToDo(todoId));
+
+  Future<void> cancelForJobActivity(int activityId) =>
+      cancel(_idForJobActivity(activityId));
 
   /// Sync reminder state for a To-Do.
   /// Returns `false` when scheduling/canceling fails so callers can degrade
@@ -242,7 +273,7 @@ class LocalNotifs {
       if (todo.status != ToDoStatus.open || todo.remindAt == null) {
         await cancelForToDo(todo.id);
       } else {
-        await scheduleForToDo(todo);
+        return scheduleForToDo(todo);
       }
       return true;
     } catch (e, st) {
@@ -251,33 +282,50 @@ class LocalNotifs {
     }
   }
 
-  /// Optional: resync desktop scheduler from current open To-Dos.
-  /// Call this on app start or after a big data refresh.
+  Future<bool> syncForJobActivity(
+    JobActivity activity, {
+    required String jobSummary,
+  }) async {
+    try {
+      await cancelForJobActivity(activity.id);
+      return scheduleForJobActivity(activity, jobSummary: jobSummary);
+    } catch (e, st) {
+      debugPrint(
+        'Failed to sync reminder for job activity ${activity.id}: $e\n$st',
+      );
+      return false;
+    }
+  }
+
+  /// Resync reminders from current open To-Dos on app startup.
   Future<void> resyncFromToDos(Iterable<ToDo> todos) async {
     await init();
-    if (!Platform.isWindows && !Platform.isLinux) {
+    final pendingTodos = todos
+        .where((t) => t.remindAt != null && t.status == ToDoStatus.open)
+        .toList();
+
+    if (Platform.isWindows || Platform.isLinux) {
+      _desktop?.resync(
+        pendingTodos.map(
+          (todo) => Notif.forToDo(
+            todoId: todo.id,
+            title: todo.title,
+            remindAt: todo.remindAt!,
+          ),
+        ),
+      );
       return;
     }
 
-    final notifs = todos
-        .where((t) => t.remindAt != null && t.status == ToDoStatus.open)
-        .map(
-          (t) => Notif(
-            id: _idForToDo(t.id),
-            title: 'Reminder',
-            body: t.title,
-            scheduledAtMillis: t.remindAt!.millisecondsSinceEpoch,
-            payload: {'type': 'todo', 'id': '${t.id}'},
-            channel: Channel.todo(),
-          ),
-        );
-
-    _desktop?.resync(notifs);
+    for (final todo in pendingTodos) {
+      await scheduleForToDo(todo);
+    }
   }
 
   // ---- Helpers -------------------------------------------------------------
 
   int _idForToDo(int todoId) => 20_000_000 + todoId;
+  int _idForJobActivity(int activityId) => 30_000_000 + activityId;
 
   String? _encodePayload(Map<String, String>? p) {
     if (p == null || p.isEmpty) {
