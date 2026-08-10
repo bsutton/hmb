@@ -251,11 +251,15 @@ class LocalNotifs {
   Future<bool> scheduleForJobActivity(
     JobActivity activity, {
     required String jobSummary,
+    required int shoppingCount,
+    required int packingCount,
   }) => schedule(
     Notif.forJobActivity(
       activityId: activity.id,
       jobId: activity.jobId,
       jobSummary: jobSummary,
+      shoppingCount: shoppingCount,
+      packingCount: packingCount,
       startsAt: activity.start,
     ),
   );
@@ -285,10 +289,17 @@ class LocalNotifs {
   Future<bool> syncForJobActivity(
     JobActivity activity, {
     required String jobSummary,
+    required int shoppingCount,
+    required int packingCount,
   }) async {
     try {
       await cancelForJobActivity(activity.id);
-      return scheduleForJobActivity(activity, jobSummary: jobSummary);
+      return scheduleForJobActivity(
+        activity,
+        jobSummary: jobSummary,
+        shoppingCount: shoppingCount,
+        packingCount: packingCount,
+      );
     } catch (e, st) {
       debugPrint(
         'Failed to sync reminder for job activity ${activity.id}: $e\n$st',

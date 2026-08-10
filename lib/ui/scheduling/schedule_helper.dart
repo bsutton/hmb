@@ -14,7 +14,7 @@
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 
-import '../../dao/dao_job_activity.dart';
+import '../../dao/dao.g.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
 import '../../util/flutter/notifications/local_notifs.dart';
@@ -134,9 +134,12 @@ mixin ScheduleHelper {
   }
 
   Future<void> _syncActivityReminder(JobActivityEx activity) async {
+    final counts = await DaoTaskItem().getReminderCounts(activity.job);
     final synced = await LocalNotifs().syncForJobActivity(
       activity.jobActivity,
       jobSummary: activity.job.summary,
+      shoppingCount: counts.shopping,
+      packingCount: counts.packing,
     );
     if (!synced) {
       HMBToast.info(
