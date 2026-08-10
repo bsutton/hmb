@@ -9,8 +9,7 @@ import 'package:june/june.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../crud/job/job_creator.dart';
-import '../icons/hmb_add_button.dart';
-import '../layout/hmb_row.dart';
+import '../layout/layout.g.dart';
 import 'hmb_droplist.dart';
 
 /// Allows the user to select a Job from the database.
@@ -21,6 +20,7 @@ class HMBSelectJob extends StatefulWidget {
   final Future<List<Job>> Function(String? filter)? items;
   final bool required;
   final String title;
+  final bool showAdd;
 
   const HMBSelectJob({
     required this.selectedJob,
@@ -29,6 +29,7 @@ class HMBSelectJob extends StatefulWidget {
     this.title = 'Job',
     this.items,
     this.required = false,
+    this.showAdd = true,
   });
 
   @override
@@ -43,6 +44,9 @@ class JobAndCustomer {
 }
 
 class _HMBSelectJobState extends State<HMBSelectJob> {
+  var _showActiveJobs = true;
+  var _showInactiveJobs = false;
+
   Future<JobAndCustomer?> _getInitialJob() async {
     final job = await DaoJob().getById(widget.selectedJob.jobId);
     if (job == null) {
@@ -59,7 +63,11 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
     if (widget.items != null) {
       jobs = await widget.items?.call(filter);
     } else {
-      jobs = await DaoJob().getActiveJobs(filter);
+      final allJobs = await DaoJob().getByFilter(filter);
+      jobs = allJobs.where((job) {
+        final active = _isActiveJob(job);
+        return _showActiveJobs && active || _showInactiveJobs && !active;
+      }).toList();
     }
 
     final jc = <JobAndCustomer>[];
@@ -71,6 +79,13 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
     }
     return jc;
   }
+
+  bool _isActiveJob(Job job) =>
+      job.status != JobStatus.rejected &&
+      job.status != JobStatus.onHold &&
+      job.status != JobStatus.awaitingPayment &&
+      job.status != JobStatus.completed &&
+      job.status != JobStatus.toBeBilled;
 
   void _onJobChanged(JobAndCustomer? jc) {
     setState(() {
@@ -90,31 +105,64 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
   }
 
   @override
-  Widget build(BuildContext context) => HMBRow(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Expanded(
-        child: HMBDroplist<JobAndCustomer>(
-          title: widget.title,
-          selectedItem: _getInitialJob,
-          onChanged: _onJobChanged,
-          onAccessed: (jc) async {
-            final jobId = jc.job?.id;
-            if (jobId != null) {
-              await DaoJob().recordAccess(jobId);
-            }
-          },
-          items: _getJobs,
-          format: (jc) => '${jc.job!.summary}\n${jc.customer?.name ?? ''}',
-          required: widget.required,
-        ),
-      ),
-      Padding(
-        padding: const EdgeInsets.only(top: 10),
-        child: HMBButtonAdd(enabled: true, onAdd: _addJob, small: true),
-      ),
-    ],
+  Widget build(BuildContext context) => HMBDroplist<JobAndCustomer>(
+    title: widget.title,
+    selectedItem: _getInitialJob,
+    onChanged: _onJobChanged,
+    onAccessed: (jc) async {
+      final jobId = jc.job?.id;
+      if (jobId != null) {
+        await DaoJob().recordAccess(jobId);
+      }
+    },
+    items: _getJobs,
+    format: (jc) => '${jc.job!.summary}\n${jc.customer?.name ?? ''}',
+    required: widget.required,
+    onAdd: widget.showAdd ? _addJob : null,
+    filterSheetBuilder: widget.items == null ? _buildFilterSheet : null,
+    onFilterReset: widget.items == null ? _resetFilters : null,
+    isFilterActive: widget.items == null ? _isFilterActive : null,
   );
+
+  bool _isFilterActive() => !_showActiveJobs || !_showInactiveJobs;
+
+  void _resetFilters() {
+    _showActiveJobs = true;
+    _showInactiveJobs = false;
+    setState(() {});
+  }
+
+  Widget _buildFilterSheet(BuildContext context, VoidCallback onChange) =>
+      StatefulBuilder(
+        builder: (context, setSheetState) => HMBColumn(
+          children: [
+            CheckboxListTile(
+              title: const Text('Show Active Jobs'),
+              value: _showActiveJobs,
+              onChanged: (selected) {
+                if (selected == null || !selected && !_showInactiveJobs) {
+                  return;
+                }
+                setState(() => _showActiveJobs = selected);
+                setSheetState(() {});
+                onChange();
+              },
+            ),
+            CheckboxListTile(
+              title: const Text('Show Inactive Jobs'),
+              value: _showInactiveJobs,
+              onChanged: (selected) {
+                if (selected == null || !selected && !_showActiveJobs) {
+                  return;
+                }
+                setState(() => _showInactiveJobs = selected);
+                setSheetState(() {});
+                onChange();
+              },
+            ),
+          ],
+        ),
+      );
 }
 
 class SelectedJob extends JuneState {

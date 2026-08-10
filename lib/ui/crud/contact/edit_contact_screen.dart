@@ -25,6 +25,7 @@ import '../../dialog/source_context.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_name_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
+import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../base_nested/edit_nested_screen.dart';
 
@@ -59,6 +60,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
   late TextEditingController _officeNumberController;
   late TextEditingController _emailaddressController;
   late TextEditingController _alternateEmailController;
+  late TextEditingController _roleDescriptionController;
   late FocusNode _firstNameFocusNode;
 
   @override
@@ -93,6 +95,9 @@ class _ContactEditScreenState extends State<ContactEditScreen>
     _alternateEmailController = TextEditingController(
       text: currentEntity?.alternateEmail,
     );
+    _roleDescriptionController = TextEditingController(
+      text: currentEntity?.roleDescription,
+    );
 
     _firstNameFocusNode = FocusNode();
   }
@@ -106,6 +111,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
     _officeNumberController.dispose();
     _emailaddressController.dispose();
     _alternateEmailController.dispose();
+    _roleDescriptionController.dispose();
     _firstNameFocusNode.dispose();
     super.dispose();
   }
@@ -140,6 +146,11 @@ class _ContactEditScreenState extends State<ContactEditScreen>
           labelText: 'Surname',
           keyboardType: TextInputType.name,
         ),
+        HMBTextField(
+          controller: _roleDescriptionController,
+          labelText: 'Role / Description',
+          textCapitalization: TextCapitalization.sentences,
+        ),
         HMBPhoneField(
           controller: _mobileNumberController,
           labelText: 'Mobile Number',
@@ -166,15 +177,20 @@ class _ContactEditScreenState extends State<ContactEditScreen>
   );
 
   @override
-  Future<Contact> forUpdate(Contact contact) async => contact.copyWith(
-    firstName: _firstNameController.text,
-    surname: _surnameController.text,
-    mobileNumber: _mobileNumberController.text,
-    landLine: _landlineController.text,
-    officeNumber: _officeNumberController.text,
-    emailAddress: _emailaddressController.text.toLowerCase(),
-    alternateEmail: _emailOrNull(_alternateEmailController.text),
-  );
+  Future<Contact> forUpdate(Contact contact) async {
+    final alternateEmail = _emailOrNull(_alternateEmailController.text);
+    return contact.copyWith(
+      firstName: _firstNameController.text,
+      surname: _surnameController.text,
+      mobileNumber: _mobileNumberController.text,
+      landLine: _landlineController.text,
+      officeNumber: _officeNumberController.text,
+      emailAddress: _emailaddressController.text.toLowerCase(),
+      roleDescription: _roleDescriptionController.text.trim(),
+      alternateEmail: alternateEmail,
+      clearAlternateEmail: alternateEmail == null,
+    );
+  }
 
   @override
   Future<Contact> forInsert() async => Contact.forInsert(
@@ -184,6 +200,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
     landLine: _landlineController.text,
     officeNumber: _officeNumberController.text,
     emailAddress: _emailaddressController.text.toLowerCase(),
+    roleDescription: _roleDescriptionController.text.trim(),
     alternateEmail: _emailOrNull(_alternateEmailController.text),
   );
 

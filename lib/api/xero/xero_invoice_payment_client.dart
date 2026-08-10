@@ -7,6 +7,7 @@ typedef XeroLogin = Future<bool> Function({bool allowInteractive});
 typedef XeroGetInvoice = Future<http.Response> Function(String externalId);
 typedef XeroCreatePayment =
     Future<http.Response> Function(Map<String, dynamic> payment);
+typedef XeroDeletePayment = Future<http.Response> Function(String paymentId);
 typedef XeroCreateCreditNote =
     Future<http.Response> Function(Map<String, dynamic> creditNote);
 typedef XeroAllocateCreditNote =
@@ -19,6 +20,7 @@ class XeroInvoicePaymentClient {
   final XeroLogin login;
   final XeroGetInvoice getInvoice;
   final XeroCreatePayment createPayment;
+  final XeroDeletePayment deletePayment;
   final XeroCreateCreditNote createCreditNote;
   final XeroAllocateCreditNote allocateCreditNote;
 
@@ -26,6 +28,7 @@ class XeroInvoicePaymentClient {
     required this.login,
     required this.getInvoice,
     required this.createPayment,
+    required this.deletePayment,
     required this.createCreditNote,
     required this.allocateCreditNote,
   });

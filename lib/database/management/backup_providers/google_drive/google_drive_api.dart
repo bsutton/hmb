@@ -169,8 +169,11 @@ class GoogleDriveApi {
       return file.id == folderId &&
           file.trashed != true &&
           file.mimeType == 'application/vnd.google-apps.folder';
-    } catch (_) {
-      return false;
+    } on drive.DetailedApiRequestError catch (error) {
+      if (error.status == 404) {
+        return false;
+      }
+      rethrow;
     }
   }
 }

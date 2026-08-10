@@ -34,10 +34,22 @@ class TaskItemAssistSuggestion {
   });
 }
 
+class TaskItemAssistTaskContext {
+  final String taskName;
+  final String taskDescription;
+  final List<String> itemDescriptions;
+
+  const TaskItemAssistTaskContext({
+    required this.taskName,
+    required this.taskDescription,
+    required this.itemDescriptions,
+  });
+}
+
 class JobAssistApiClient {
   Future<JobAssistResult?> analyzeDescription(String description) async {
-    final system = await DaoSystem().get();
-    final apiKey = system.openaiApiKey?.trim();
+    final credentials = await DaoSystem().getOpenAiCredentials();
+    final apiKey = credentials.apiKey?.trim();
     if (apiKey == null || apiKey.isEmpty) {
       return null;
     }
@@ -96,11 +108,14 @@ class JobAssistApiClient {
   Future<List<TaskItemAssistSuggestion>?> expandTaskToItems({
     required String jobSummary,
     required String jobDescription,
+    required String jobAssumptions,
+    required String jobInternalNotes,
     required String taskName,
     required String taskDescription,
+    required List<TaskItemAssistTaskContext> existingTasks,
   }) async {
-    final system = await DaoSystem().get();
-    final apiKey = system.openaiApiKey?.trim();
+    final credentials = await DaoSystem().getOpenAiCredentials();
+    final apiKey = credentials.apiKey?.trim();
     if (apiKey == null || apiKey.isEmpty) {
       return null;
     }
@@ -123,16 +138,26 @@ class JobAssistApiClient {
                 '(string), category (one of labour|material|tool|consumable), '
                 'quantity (number), unitCost (number in AUD, 0 if unknown), '
                 'supplier (string, empty if unknown), notes (string). '
-                'Prefer 3-8 practical items and include likely materials with '
-                'ballpark unit costs where reasonable.',
+                'Suggest only missing estimate items for the named task. '
+                'Avoid items already covered by the existing job estimate '
+                'context. Keep the list concise, normally 1-5 practical '
+                'items. Include likely materials with ballpark unit costs '
+                'where reasonable. Do not add common tools a handyman is '
+                'expected to own for free. Include a tool only when it is '
+                'likely to be hired or bought for this job, and explain why '
+                'in notes.',
           },
           {
             'role': 'user',
-            'content':
-                'Job summary: $jobSummary\n'
-                'Job description: $jobDescription\n'
-                'Task: $taskName\n'
-                'Task description: $taskDescription',
+            'content': _buildTaskItemPrompt(
+              jobSummary: jobSummary,
+              jobDescription: jobDescription,
+              jobAssumptions: jobAssumptions,
+              jobInternalNotes: jobInternalNotes,
+              taskName: taskName,
+              taskDescription: taskDescription,
+              existingTasks: existingTasks,
+            ),
           },
         ],
         'temperature': 0.2,
@@ -154,7 +179,7 @@ class JobAssistApiClient {
     final parsed = jsonDecode(content) as Map<String, dynamic>;
     final rawItems = parsed['items'] as List<dynamic>? ?? const [];
 
-    return rawItems
+    final suggestions = rawItems
         .map((item) {
           final map = item as Map<String, dynamic>;
           return TaskItemAssistSuggestion(
@@ -168,6 +193,50 @@ class JobAssistApiClient {
         })
         .where((item) => item.description.isNotEmpty)
         .toList();
+
+    return filterTaskItemAssistSuggestions(
+      suggestions,
+      existingDescriptions: existingTasks.expand(
+        (task) => task.itemDescriptions,
+      ),
+    );
+  }
+
+  String _buildTaskItemPrompt({
+    required String jobSummary,
+    required String jobDescription,
+    required String jobAssumptions,
+    required String jobInternalNotes,
+    required String taskName,
+    required String taskDescription,
+    required List<TaskItemAssistTaskContext> existingTasks,
+  }) {
+    final buffer = StringBuffer()
+      ..writeln('Job summary: $jobSummary')
+      ..writeln('Job description: $jobDescription');
+    if (jobAssumptions.trim().isNotEmpty) {
+      buffer.writeln('Job assumptions: $jobAssumptions');
+    }
+    if (jobInternalNotes.trim().isNotEmpty) {
+      buffer.writeln('Internal notes: $jobInternalNotes');
+    }
+    buffer
+      ..writeln('Task to expand: $taskName')
+      ..writeln('Task description: $taskDescription')
+      ..writeln('Existing job estimate context:');
+
+    for (final task in existingTasks) {
+      buffer.writeln('- Task: ${task.taskName}');
+      if (task.taskDescription.trim().isNotEmpty) {
+        buffer.writeln('  Description: ${task.taskDescription}');
+      }
+      if (task.itemDescriptions.isEmpty) {
+        buffer.writeln('  Items: none');
+      } else {
+        buffer.writeln('  Items: ${task.itemDescriptions.join('; ')}');
+      }
+    }
+    return buffer.toString();
   }
 
   String _normalizeContent(String content) {
@@ -191,6 +260,74 @@ class JobAssistApiClient {
     }
     return trimmed;
   }
+}
+
+List<TaskItemAssistSuggestion> filterTaskItemAssistSuggestions(
+  Iterable<TaskItemAssistSuggestion> suggestions, {
+  required Iterable<String> existingDescriptions,
+}) {
+  final seen = existingDescriptions
+      .map(_normalizeTaskItemDescription)
+      .where((description) => description.isNotEmpty)
+      .toSet();
+  final filtered = <TaskItemAssistSuggestion>[];
+
+  for (final suggestion in suggestions) {
+    final normalized = _normalizeTaskItemDescription(suggestion.description);
+    if (normalized.isEmpty || seen.contains(normalized)) {
+      continue;
+    }
+    if (_isStandardOwnedTool(suggestion)) {
+      continue;
+    }
+    seen.add(normalized);
+    filtered.add(suggestion);
+  }
+
+  return filtered;
+}
+
+String _normalizeTaskItemDescription(String value) => value
+    .toLowerCase()
+    .replaceAll(RegExp('[^a-z0-9]+'), ' ')
+    .trim()
+    .replaceAll(RegExp(' +'), ' ');
+
+bool _isStandardOwnedTool(TaskItemAssistSuggestion suggestion) {
+  if (suggestion.category.trim().toLowerCase() != 'tool') {
+    return false;
+  }
+
+  final text = _normalizeTaskItemDescription(
+    '${suggestion.description} ${suggestion.notes}',
+  );
+  if (RegExp(
+    r'\b(hire|hired|rental|rent|specialist|scaffold)\b',
+  ).hasMatch(text)) {
+    return false;
+  }
+
+  const standardTools = [
+    'drill',
+    'hammer',
+    'screwdriver',
+    'screwdrivers',
+    'tape measure',
+    'spirit level',
+    'level',
+    'ladder',
+    'saw',
+    'pliers',
+    'wrench',
+    'spanner',
+    'utility knife',
+    'caulking gun',
+    'paint brush',
+    'roller',
+    'clamps',
+  ];
+
+  return standardTools.any(text.contains);
 }
 
 List<String> normalizeJobAssistTasks(

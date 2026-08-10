@@ -18,6 +18,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/system.dart';
+import '../entity/system_credentials.dart';
 import '../util/dart/app_settings.dart';
 import '../util/dart/exceptions.dart' as hmb;
 import 'dao.dart';
@@ -29,18 +30,62 @@ class DaoSystem extends Dao<System> {
     20000,
     decimalDigits: 3,
   );
-  final _secretStore = SystemSecretStore();
-  DaoSystem() : super(tableName);
+  final SystemSecretStore _secretStore;
+
+  DaoSystem({SystemSecretStore? secretStore})
+    : _secretStore = secretStore ?? SystemSecretStore(),
+      super(tableName);
   Future<void> createTable(Database db, int version) async {}
 
   @override
   System fromMap(Map<String, dynamic> map) => System.fromMap(map);
 
-  Future<System> get([Transaction? transaction]) async {
-    final system = (await getById(1, transaction))!;
-    await _secretStore.hydrate(system);
-    return system;
-  }
+  /// Returns an immutable snapshot containing no integration secrets.
+  Future<SystemConfiguration> get([Transaction? transaction]) async =>
+      SystemConfiguration.fromSystem(await getForUpdate(transaction));
+
+  /// Loads a mutable system entity for a configuration update.
+  ///
+  /// The returned entity contains no integration secrets. Pass it to
+  /// [updateConfiguration], which never writes secure storage.
+  Future<System> getForUpdate([Transaction? transaction]) async =>
+      (await getById(1, transaction))!;
+
+  Future<XeroCredentials> getXeroCredentials() =>
+      _secretStore.readXeroCredentials();
+
+  Future<void> updateXeroCredentials(XeroCredentials credentials) =>
+      _secretStore.writeXeroCredentials(credentials);
+
+  Future<ChatGptCredentials> getChatGptCredentials() =>
+      _secretStore.readChatGptCredentials();
+
+  Future<void> updateChatGptCredentials(ChatGptCredentials credentials) =>
+      _secretStore.writeChatGptCredentials(credentials);
+
+  Future<OpenAiCredentials> getOpenAiCredentials() =>
+      _secretStore.readOpenAiCredentials();
+
+  Future<void> updateOpenAiCredentials(OpenAiCredentials credentials) =>
+      _secretStore.writeOpenAiCredentials(credentials);
+
+  Future<GoogleMapsCredentials> getGoogleMapsCredentials() =>
+      _secretStore.readGoogleMapsCredentials();
+
+  Future<void> updateGoogleMapsCredentials(GoogleMapsCredentials credentials) =>
+      _secretStore.writeGoogleMapsCredentials(credentials);
+
+  Future<IhserverCredentials> getIhserverCredentials() =>
+      _secretStore.readIhserverCredentials();
+
+  Future<void> updateIhserverCredentials(IhserverCredentials credentials) =>
+      _secretStore.writeIhserverCredentials(credentials);
+
+  Future<SmtpCredentials> getSmtpCredentials() =>
+      _secretStore.readSmtpCredentials();
+
+  Future<void> updateSmtpCredentials(SmtpCredentials credentials) =>
+      _secretStore.writeSmtpCredentials(credentials);
 
   @override
   Future<int> insert(System entity, [Transaction? transaction]) async {
@@ -59,8 +104,14 @@ class DaoSystem extends Dao<System> {
   }
 
   @override
-  Future<int> update(System entity, [Transaction? transaction]) async {
-    await _secretStore.persist(entity);
+  @Deprecated('Use updateConfiguration so secret handling remains explicit.')
+  Future<int> update(System entity, [Transaction? transaction]) =>
+      updateConfiguration(entity, transaction);
+
+  Future<int> updateConfiguration(
+    System entity, [
+    Transaction? transaction,
+  ]) async {
     final executor = withinTransaction(transaction);
 
     entity.modifiedDate = DateTime.now();
@@ -83,8 +134,10 @@ class DaoSystem extends Dao<System> {
     return system.defaultHourlyRate ?? Money.parse('100', isoCode: 'AUD');
   }
 
-  Future<Percentage> getDefaultProfitMargin() async {
-    final system = await get();
+  Future<Percentage> getDefaultProfitMargin({
+    SystemConfiguration? system,
+  }) async {
+    system ??= await get();
     if (system.defaultProfitMargin != null) {
       return system.defaultProfitMargin!;
     }

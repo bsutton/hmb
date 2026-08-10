@@ -55,6 +55,7 @@ class Wizard extends StatefulWidget {
   final Transition? onTransition;
   final List<WizardStep> initialSteps;
   final String cancelLabel;
+  final double bodyStart;
 
   Wizard({
     required this.initialSteps,
@@ -62,6 +63,7 @@ class Wizard extends StatefulWidget {
     this.onTransition,
     this.onFinished,
     this.cancelLabel = 'Cancel',
+    this.bodyStart = 30,
   }) : assert(initialSteps.isNotEmpty, 'Must have at least one step');
 
   @override
@@ -481,8 +483,7 @@ class WizardState extends State<Wizard> {
 
   Widget _buildVerticalBody(WizardStep step, int index) => LayoutBuilder(
     builder: (context, constraints) {
-      const bodyStart = 30.0;
-      final bodyWidth = (constraints.maxWidth - bodyStart).clamp(
+      final bodyWidth = (constraints.maxWidth - widget.bodyStart).clamp(
         0.0,
         double.infinity,
       );
@@ -511,7 +512,7 @@ class WizardState extends State<Wizard> {
             AnimatedCrossFade(
               firstChild: Container(height: 0),
               secondChild: Container(
-                margin: const EdgeInsetsDirectional.only(start: bodyStart),
+                margin: EdgeInsetsDirectional.only(start: widget.bodyStart),
                 child: buildStepBody(step, index, bodyWidth),
               ),
               firstCurve: const Interval(0, 0.1, curve: Curves.fastOutSlowIn),

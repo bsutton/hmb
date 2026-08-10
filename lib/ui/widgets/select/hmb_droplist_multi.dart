@@ -48,6 +48,11 @@ class HMBDroplistMultiSelect<T> extends StatefulWidget {
   /// Whether selection is required.
   final bool required;
 
+  /// Optional content displayed above the selectable items in the dialog.
+  /// Calling the supplied `onChange` callback reloads the available items.
+  final Widget Function(BuildContext context, VoidCallback onChange)?
+  headerBuilder;
+
   const HMBDroplistMultiSelect({
     required this.initialItems,
     required this.items,
@@ -56,6 +61,7 @@ class HMBDroplistMultiSelect<T> extends StatefulWidget {
     required this.title,
     this.onSaved,
     this.backgroundColor,
+    this.headerBuilder,
     this.required = true,
     super.key,
   });
@@ -70,17 +76,36 @@ class HMBDroplistMultiSelect<T> extends StatefulWidget {
 class HMBDroplistMultiSelectState<T>
     extends DeferredState<HMBDroplistMultiSelect<T>> {
   List<T> _selectedItems = [];
+  final _formFieldKey = GlobalKey<FormFieldState<List<T>>>();
 
   bool hasSelections() => _selectedItems.isNotEmpty;
+  List<T> get selectedItems => List.unmodifiable(_selectedItems);
 
   @override
   Future<void> asyncInitState() async {
     _selectedItems = await widget.initialItems();
   }
 
-  void clear() {
-    _selectedItems.clear();
+  void clear() => replaceSelections([]);
+
+  void replaceSelections(List<T> items) {
+    _selectedItems = List.of(items);
     setState(() {});
+    _formFieldKey.currentState?.didChange(_selectedItems);
+  }
+
+  @override
+  void didUpdateWidget(covariant HMBDroplistMultiSelect<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // ignore: discarded_futures
+    widget.initialItems().then((items) {
+      if (!mounted ||
+          items.length == _selectedItems.length &&
+              items.every(_selectedItems.contains)) {
+        return;
+      }
+      replaceSelections(items);
+    });
   }
 
   String _selectionSummary() {
@@ -97,6 +122,7 @@ class HMBDroplistMultiSelectState<T>
   Widget build(BuildContext context) => DeferredBuilder(
     this,
     builder: (context) => FormField<List<T>>(
+      key: _formFieldKey,
       onSaved: widget.onSaved,
       initialValue: _selectedItems,
       autovalidateMode: AutovalidateMode.always,
@@ -118,6 +144,7 @@ class HMBDroplistMultiSelectState<T>
                   formatItem: widget.format,
                   title: widget.title,
                   selectedItems: _selectedItems,
+                  headerBuilder: widget.headerBuilder,
                 ),
               );
               if (selected != null) {

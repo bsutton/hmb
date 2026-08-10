@@ -1,0 +1,2 @@
+ALTER TABLE mailing_recipient
+ADD COLUMN excluded INTEGER NOT NULL DEFAULT 0;

@@ -13,8 +13,8 @@ import '../database/management/db_utility_test_helper.dart';
 void main() {
   setUp(() async {
     await setupTestDb();
-    final system = await DaoSystem().get();
-    await DaoSystem().update(
+    final system = await DaoSystem().getForUpdate();
+    await DaoSystem().updateConfiguration(
       system.copyWith(
         invoiceLineRevenueAccountCode: '200',
         invoiceLineInventoryItemCode: 'ITEM-1',
@@ -203,10 +203,14 @@ Future<TaskItem> _insertMaterialTaskItem(Task task) async {
     description: 'Paint',
     purpose: '',
     itemType: TaskItemType.materialsBuy,
-    estimatedMaterialUnitCost: MoneyEx.fromInt(1125),
-    estimatedMaterialQuantity: Fixed.one,
-    actualMaterialUnitCost: MoneyEx.fromInt(1125),
-    actualMaterialQuantity: Fixed.one,
+    estimatedPrice: MaterialPrice.items(
+      quantity: Fixed.one,
+      unitCost: MoneyEx.fromInt(1125),
+    ),
+    actualPrice: MaterialPrice.items(
+      quantity: Fixed.one,
+      unitCost: MoneyEx.fromInt(1125),
+    ),
     chargeMode: ChargeMode.calculated,
     margin: Percentage.zero,
     completed: true,
@@ -223,7 +227,9 @@ Future<TaskItem> _insertMaterialTaskItem(Task task) async {
 }
 
 Future<TaskItem> _insertReturnTaskItem(TaskItem sourceItem) async {
-  final returnItem = sourceItem.forReturn(Fixed.one, MoneyEx.fromInt(1125));
+  final returnItem = sourceItem.forReturn(
+    MaterialPrice.items(quantity: Fixed.one, unitCost: MoneyEx.fromInt(1125)),
+  );
   await DaoTaskItem().insert(returnItem);
   return returnItem;
 }

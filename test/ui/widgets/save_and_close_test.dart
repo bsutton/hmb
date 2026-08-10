@@ -6,9 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/ui/widgets/save_and_close.dart';
 
 void main() {
-  testWidgets('new entities can use create label without closing', (
-    tester,
-  ) async {
+  testWidgets('new entities can use create label and close', (tester) async {
     bool? closeValue;
 
     await tester.pumpWidget(
@@ -31,7 +29,7 @@ void main() {
     await tester.tap(find.text('Create'));
     await tester.pump();
 
-    expect(closeValue, isFalse);
+    expect(closeValue, isTrue);
   });
 
   testWidgets('existing entities save and close', (tester) async {

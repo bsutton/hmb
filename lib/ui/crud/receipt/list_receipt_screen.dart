@@ -18,6 +18,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/flutter/flutter_util.g.dart';
+import '../../test_keys.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/photo_gallery.dart';
 import '../../widgets/select/select.g.dart';
@@ -148,6 +149,7 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
         _dateFrom != null ||
         _dateTo != null,
     onEdit: (receipt) => ReceiptEditScreen(receipt: receipt),
+    editButtonKey: (receipt) => TestKeys.receiptEditButton(receipt.id),
     listCardTitle: _getTitle,
     cardHeight: 640,
     listCard: (r) => HMBColumn(
@@ -187,7 +189,7 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
     final allocations = await DaoReceipt().getJobAllocations(receipt.id);
     if (allocations.isEmpty) {
       final job = await DaoJob().getById(receipt.jobId);
-      return 'Job: ${job?.summary ?? ''}';
+      return job == null ? 'Overhead' : 'Job: ${job.summary}';
     }
 
     final parts = <String>[];

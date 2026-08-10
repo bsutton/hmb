@@ -171,8 +171,8 @@ class _BookingRequestReviewDialogState
       return;
     }
 
-    final system = await DaoSystem().get();
-    final apiKey = system.openaiApiKey?.trim() ?? '';
+    final credentials = await DaoSystem().getOpenAiCredentials();
+    final apiKey = credentials.apiKey?.trim() ?? '';
     if (apiKey.isEmpty) {
       if (!initialOnly && mounted) {
         await _showChatGptConfigDialog(context);

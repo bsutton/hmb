@@ -13,18 +13,13 @@
 
 import 'dart:async';
 
-import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart' hide StatefulBuilder;
 import 'package:strings/strings.dart';
 
 import '../../dao/dao.g.dart';
-import '../../entity/job.dart';
 import '../../entity/supplier.dart';
-import '../../entity/task_item.dart';
 import '../../entity/task_item_type.dart';
-import '../../util/flutter/flutter_util.g.dart';
 import '../crud/tool/tool.g.dart';
-import '../widgets/fields/fields.g.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/widgets.g.dart';
@@ -34,39 +29,12 @@ Future<void> markAsCompleted(
   TaskItemContext itemContext,
   BuildContext context,
 ) async {
-  final costController = TextEditingController();
-  final quantityController = TextEditingController();
-  final packetSizeController = TextEditingController(text: '1');
   final taskItem = itemContext.taskItem;
   final itemType = taskItem.itemType;
-
-  switch (itemType) {
-    case TaskItemType.materialsBuy:
-    case TaskItemType.materialsStock:
-    case TaskItemType.toolsOwn:
-    case TaskItemType.toolsBuy:
-    case TaskItemType.toolsHire:
-    case TaskItemType.consumablesStock:
-    case TaskItemType.consumablesBuy:
-      costController.text =
-          (taskItem.actualMaterialUnitCost ??
-                  taskItem.estimatedMaterialUnitCost)
-              .toString();
-      quantityController.text =
-          (taskItem.actualMaterialQuantity ??
-                  taskItem.estimatedMaterialQuantity)
-              .toString();
-    case TaskItemType.labour:
-      if (taskItem.labourEntryMode == LabourEntryMode.hours) {
-        costController.text = itemContext.taskItem.estimatedLabourHours
-            .toString();
-        quantityController.text = '1.00';
-      } else {
-        costController.text = itemContext.taskItem.estimatedLabourCost
-            .toString();
-        quantityController.text = '1.00';
-      }
-  }
+  final isLabour = itemType == TaskItemType.labour;
+  final priceController = MaterialPriceEditingController(
+    price: taskItem.actualPrice ?? taskItem.estimatedPrice,
+  );
 
   // Load current supplier
   Supplier? selectedSupplier;
@@ -107,40 +75,25 @@ Future<void> markAsCompleted(
                 ),
               ],
 
-              // Supplier droplist
-              HMBDroplist<Supplier>(
-                title: 'Supplier',
-                items: (filter) => DaoSupplier().getByFilter(filter),
-                format: (sup) => sup.name,
-                selectedItem: () async => selectedSupplier,
-                required: false,
-                onChanged: (sup) {
-                  unawaited(DaoSupplier().recordAccess(sup?.id));
-                  setStateDialog(() {
-                    selectedSupplier = sup;
-                  });
-                },
-              ),
-
-              // Cost per item field
-              HMBTextField(
-                controller: costController,
-                labelText: 'Cost per packet',
-                keyboardType: TextInputType.number,
-              ),
-
-              HMBTextField(
-                controller: packetSizeController,
-                labelText: 'Items per packet',
-                keyboardType: TextInputType.number,
-              ),
-
-              // Quantity field
-              HMBTextField(
-                controller: quantityController,
-                labelText: 'Packets purchased',
-                keyboardType: TextInputType.number,
-              ),
+              if (!isLabour) ...[
+                HMBDroplist<Supplier>(
+                  title: 'Supplier',
+                  items: (filter) => DaoSupplier().getByFilter(filter),
+                  format: (sup) => sup.name,
+                  selectedItem: () async => selectedSupplier,
+                  required: false,
+                  onChanged: (sup) {
+                    unawaited(DaoSupplier().recordAccess(sup?.id));
+                    setStateDialog(() {
+                      selectedSupplier = sup;
+                    });
+                  },
+                ),
+                MaterialPriceEditor(
+                  controller: priceController,
+                  title: 'Actual pricing',
+                ),
+              ],
             ],
           ),
         ),
@@ -162,36 +115,18 @@ Future<void> markAsCompleted(
   );
 
   if (confirmed ?? false) {
-    final packetsPurchased =
-        Fixed.tryParse(quantityController.text) ?? Fixed.one;
-    final packetSize = FixedEx.tryParseOrElse(
-      packetSizeController.text,
-      Fixed.one,
-    );
-    final safePacketSize = packetSize.isZero ? Fixed.one : packetSize;
-    final packetCost = MoneyEx.tryParse(costController.text);
-    final quantity = packetsPurchased * safePacketSize;
-    final unitCost = packetCost.divideByFixed(safePacketSize);
-
-    // For fixed-price tasks, actuals are captured for P&L but should not
-    // force user-defined billing charges.
-    if (itemContext.billingType == BillingType.fixedPrice) {
-      taskItem
-        ..completed = true
-        ..actualMaterialUnitCost = unitCost
-        ..actualMaterialQuantity = quantity;
+    if (isLabour) {
+      taskItem.completed = true;
       await DaoTaskItem().update(taskItem);
     } else {
-      await DaoTaskItem().markAsCompleted(
-        item: taskItem,
-        materialUnitCost: unitCost,
-        materialQuantity: quantity,
-      );
-    }
+      final price = priceController.value;
+      if (price == null) {
+        priceController.dispose();
+        return;
+      }
+      await DaoTaskItem().markAsCompleted(item: taskItem, price: price);
 
-    // Persist supplier change if any
-    if (selectedSupplier?.id != null) {
-      taskItem.supplierId = selectedSupplier!.id;
+      taskItem.supplierId = selectedSupplier?.id;
       await DaoTaskItem().update(taskItem);
     }
 
@@ -228,7 +163,7 @@ Future<void> markAsCompleted(
             onFinish: (reason) async {
               Navigator.of(context).pop();
             },
-            cost: unitCost,
+            cost: priceController.value!.equivalentItemCost,
             name: taskItem.description,
             offerAnother: false,
           );
@@ -236,4 +171,5 @@ Future<void> markAsCompleted(
       }
     }
   }
+  priceController.dispose();
 }

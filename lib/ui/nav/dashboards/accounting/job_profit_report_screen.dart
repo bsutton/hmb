@@ -40,6 +40,7 @@ class _JobProfitReportScreenState extends State<JobProfitReportScreen> {
         children: [
           HMBSelectJob(
             selectedJob: _selectedJob,
+            showAdd: false,
             onSelected: (_) => setState(() {}),
           ),
           const SizedBox(height: 12),

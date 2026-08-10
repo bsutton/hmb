@@ -44,9 +44,11 @@ class JobListScreen extends StatefulWidget {
 
 class _JobListScreenState extends State<JobListScreen> {
   static const _kStorageOrderKey = 'job_list_filter_order';
+  static const _kStorageShowCurrentKey = 'job_list_filter_show_current';
   static const _kStorageShowOldKey = 'job_list_filter_show_old';
   static const _kStorageBillingTypesKey = 'job_list_filter_billing_types';
 
+  var _showCurrentJobs = true;
   var _showOldJobs = false;
   JobOrder _order = JobOrder.active;
   var _selectedBillingTypes = <BillingType>{
@@ -72,6 +74,7 @@ class _JobListScreenState extends State<JobListScreen> {
 
   Future<void> _restoreFilters() async {
     final savedOrder = await _storage.read(key: _kStorageOrderKey);
+    final savedShowCurrent = await _storage.read(key: _kStorageShowCurrentKey);
     final savedShowOld = await _storage.read(key: _kStorageShowOldKey);
     final savedBilling = await _storage.read(key: _kStorageBillingTypesKey);
 
@@ -87,6 +90,12 @@ class _JobListScreenState extends State<JobListScreen> {
         );
       }
       _showOldJobs = savedShowOld == 'true';
+      _showCurrentJobs = savedShowCurrent == null
+          ? !_showOldJobs
+          : savedShowCurrent == 'true';
+      if (!_showCurrentJobs && !_showOldJobs) {
+        _showCurrentJobs = true;
+      }
 
       if (savedBilling != null && savedBilling.trim().isNotEmpty) {
         final names = savedBilling.split(',').toSet();
@@ -104,6 +113,10 @@ class _JobListScreenState extends State<JobListScreen> {
 
   Future<void> _persistFilters() async {
     await _storage.write(key: _kStorageOrderKey, value: _order.name);
+    await _storage.write(
+      key: _kStorageShowCurrentKey,
+      value: _showCurrentJobs ? 'true' : 'false',
+    );
     await _storage.write(
       key: _kStorageShowOldKey,
       value: _showOldJobs ? 'true' : 'false',
@@ -144,10 +157,12 @@ class _JobListScreenState extends State<JobListScreen> {
               cardHeight: size.width < 456 ? 860 : 770,
               filterSheetBuilder: _buildFilterSheet,
               isFilterActive: () =>
+                  !_showCurrentJobs ||
                   _showOldJobs ||
                   _order != JobOrder.active ||
                   _selectedBillingTypes.length != BillingType.values.length,
               onFilterReset: () {
+                _showCurrentJobs = true;
                 _showOldJobs = false;
                 _order = JobOrder.active;
                 _selectedBillingTypes = {
@@ -162,8 +177,8 @@ class _JobListScreenState extends State<JobListScreen> {
               buildActionItems: _buildActionItems,
               canEdit: (job) => !job.isStock,
               canDelete: (job) => !job.isStock,
-              scrollToTopOnReturn: true,
               confirmDelete: _confirmJobDelete,
+              scrollToTopOnReturn: true,
             ),
           ),
         ],
@@ -179,16 +194,13 @@ class _JobListScreenState extends State<JobListScreen> {
         continue;
       }
       final stage = job.status.stage;
-      if (_showOldJobs) {
-        if (stage == JobStatusStage.onHold ||
-            stage == JobStatusStage.finalised) {
-          selected.add(job);
-        }
-      } else {
-        if (stage == JobStatusStage.preStart ||
-            stage == JobStatusStage.progressing) {
-          selected.add(job);
-        }
+      final isCurrent =
+          stage == JobStatusStage.preStart ||
+          stage == JobStatusStage.progressing;
+      final isOld =
+          stage == JobStatusStage.onHold || stage == JobStatusStage.finalised;
+      if (_showCurrentJobs && isCurrent || _showOldJobs && isOld) {
+        selected.add(job);
       }
     }
     return selected;
@@ -211,15 +223,34 @@ class _JobListScreenState extends State<JobListScreen> {
           await _setFiltersAndRefresh(() => _order = order, onChange);
         },
       ),
-      SwitchListTile(
-        title: const Text('Show only Old Jobs'),
-        value: _showOldJobs,
-        onChanged: (val) async {
-          await _setFiltersAndRefresh(() => _showOldJobs = val, onChange);
+      CheckboxListTile(
+        title: const Text('Show Current Jobs'),
+        value: _showCurrentJobs,
+        onChanged: (selected) async {
+          if (selected == null || !selected && !_showOldJobs) {
+            return;
+          }
+          await _setFiltersAndRefresh(
+            () => _showCurrentJobs = selected,
+            onChange,
+          );
         },
       ).help(
-        'Show only Old Jobs',
-        'Only show Jobs that are on hold or have been finalised.',
+        'Show Current Jobs',
+        'Show Jobs that are not started or are in progress.',
+      ),
+      CheckboxListTile(
+        title: const Text('Show Old Jobs'),
+        value: _showOldJobs,
+        onChanged: (selected) async {
+          if (selected == null || !selected && !_showCurrentJobs) {
+            return;
+          }
+          await _setFiltersAndRefresh(() => _showOldJobs = selected, onChange);
+        },
+      ).help(
+        'Show Old Jobs',
+        'Show Jobs that are on hold or have been finalised.',
       ),
       const HMBSpacer(height: true),
       const Align(

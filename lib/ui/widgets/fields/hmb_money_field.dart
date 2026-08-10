@@ -32,6 +32,7 @@ class HMBMoneyField extends HMBTextField {
     Key? key,
     Key? fieldKey,
     bool autofocus = false,
+    bool enabled = true,
   }) => HMBMoneyField._(
     controller: controller,
     labelText: labelText,
@@ -43,6 +44,7 @@ class HMBMoneyField extends HMBTextField {
     key: key,
     fieldKey: fieldKey,
     autofocus: autofocus,
+    enabled: enabled,
     validator: (value) => validation(value, nonZero, fieldName),
   );
 
@@ -57,6 +59,7 @@ class HMBMoneyField extends HMBTextField {
     super.key,
     super.fieldKey,
     super.autofocus = false,
+    super.enabled,
     super.validator,
   }) : super(keyboardType: TextInputType.number);
 

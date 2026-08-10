@@ -36,6 +36,8 @@ import '../../../util/dart/fixed_ex.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../../util/flutter/platform_ex.dart';
+import '../../task_items/material_price_editor.dart';
+import '../../widgets/blocking_ui.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/layout.g.dart';
@@ -74,11 +76,8 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   late TextEditingController _descriptionController;
   late TextEditingController _purposeController;
 
-  late TextEditingController _estimatedMaterialPackCostController;
-  late TextEditingController _estimatedMaterialUnitsPerPackController;
-  late TextEditingController _estimatedMaterialPacksController;
-  late TextEditingController _estimatedMaterialUnitCostController;
-  late TextEditingController _estimatedMaterialQuantityController;
+  late MaterialPriceEditingController _estimatedPriceController;
+  late MaterialPriceEditingController _actualPriceController;
   late TextEditingController _estimatedLabourHoursController;
   late TextEditingController _estimatedLabourCostController;
   late TextEditingController _chargeController;
@@ -109,14 +108,11 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     );
 
     _purposeController = TextEditingController(text: currentEntity?.purpose);
-    _estimatedMaterialPackCostController = TextEditingController();
-    _estimatedMaterialUnitsPerPackController = TextEditingController(text: '1');
-    _estimatedMaterialPacksController = TextEditingController(text: '1');
-    _estimatedMaterialUnitCostController = TextEditingController(
-      text: currentEntity?.estimatedMaterialUnitCost.toString(),
+    _estimatedPriceController = MaterialPriceEditingController(
+      price: currentEntity?.estimatedPrice,
     );
-    _estimatedMaterialQuantityController = TextEditingController(
-      text: (currentEntity?.estimatedMaterialQuantity ?? Fixed.one).toString(),
+    _actualPriceController = MaterialPriceEditingController(
+      price: currentEntity?.actualPrice ?? currentEntity?.estimatedPrice,
     );
     _estimatedLabourHoursController = TextEditingController(
       text: currentEntity?.estimatedLabourHours.toString(),
@@ -155,10 +151,15 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   }
 
   @override
-  Future<System> asyncInitState() async {
-    final system = await DaoSystem().get();
-    final defaultMarginText = (await DaoSystem().getDefaultProfitMargin())
-        .toString();
+  Future<SystemConfiguration> asyncInitState() =>
+      BlockingUI().runAndWait(_loadSystemDefaults, label: 'Loading task item');
+
+  Future<SystemConfiguration> _loadSystemDefaults() async {
+    final daoSystem = DaoSystem();
+    final system = await daoSystem.get();
+    final defaultMarginText = (await daoSystem.getDefaultProfitMargin(
+      system: system,
+    )).toString();
     var selectedUnits = June.getState(SelectedUnits.new).selected;
 
     June.getState(SelectedSupplier.new).selected = currentEntity?.supplierId;
@@ -191,11 +192,8 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   void dispose() {
     _descriptionController.dispose();
     _purposeController.dispose();
-    _estimatedMaterialPackCostController.dispose();
-    _estimatedMaterialUnitsPerPackController.dispose();
-    _estimatedMaterialPacksController.dispose();
-    _estimatedMaterialUnitCostController.dispose();
-    _estimatedMaterialQuantityController.dispose();
+    _estimatedPriceController.dispose();
+    _actualPriceController.dispose();
     _estimatedLabourHoursController.dispose();
     _estimatedLabourCostController.dispose();
     _marginController.dispose();
@@ -211,6 +209,8 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
+    // Loading feedback comes from the BlockingOverlay installed in main.dart.
+    waitingBuilder: (_) => const HMBEmpty(),
     builder: (context) => NestedEntityEditScreen<TaskItem, Task>(
       key: _globalKey,
       entityName: 'Task Item',
@@ -237,6 +237,13 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
             title: const Text('Completed'),
             value: _completed,
             onChanged: (value) => setState(() {
+              if (value &&
+                  _actualPriceController.value == null &&
+                  _estimatedPriceController.value != null) {
+                _actualPriceController.setPrice(
+                  _estimatedPriceController.value!,
+                );
+              }
               _completed = value;
             }),
           ),
@@ -366,10 +373,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     // Parse form values
     final estHours = FixedEx.tryParse(_estimatedLabourHoursController.text);
     final estLabourCost = MoneyEx.tryParse(_estimatedLabourCostController.text);
-    final estUnitCost = MoneyEx.tryParse(
-      _estimatedMaterialUnitCostController.text,
-    );
-    final estQty = FixedEx.tryParse(_estimatedMaterialQuantityController.text);
+    final estimatedPrice = _estimatedPriceController.value;
 
     final isUserDefined = _chargeMode == ChargeMode.userDefined;
     final userCharge = isUserDefined
@@ -393,8 +397,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       units: June.getState(SelectedUnits.new).selectedOrDefault,
       url: _urlController.text,
       labourEntryMode: _labourEntryMode,
-      estimatedMaterialUnitCost: estUnitCost,
-      estimatedMaterialQuantity: estQty,
+      estimatedPrice: estimatedPrice,
       estimatedLabourCost: estLabourCost,
       estimatedLabourHours: estHours,
       totalLineCharge: userCharge, // sets chargeMode when non-null
@@ -418,100 +421,24 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     _chargeController.text = lineTotal.toString();
   }
 
-  List<Widget> _buildBuyFields() => [
-    HMBTextField(
-      controller: _estimatedMaterialPackCostController,
-      labelText: 'Estimated Pack Cost',
-      keyboardType: TextInputType.number,
-      enabled: _chargeMode != ChargeMode.userDefined,
-      onChanged: (_) => _calculateEstimatedUnitCostFromPack(),
-    ),
-    HMBTextField(
-      controller: _estimatedMaterialUnitsPerPackController,
-      labelText: 'Units per Pack',
-      keyboardType: TextInputType.number,
-      enabled: _chargeMode != ChargeMode.userDefined,
-      onChanged: (_) => _calculateEstimatedUnitCostFromPack(),
-    ),
-    HMBTextField(
-      controller: _estimatedMaterialPacksController,
-      labelText: 'Packs',
-      keyboardType: TextInputType.number,
-      enabled: _chargeMode != ChargeMode.userDefined,
-      onChanged: (_) => _calculateEstimatedUnitCostFromPack(),
-    ),
-    HMBTextField(
-      controller: _estimatedMaterialUnitCostController,
-      labelText: 'Estimated Unit Cost (pre margin)',
-      keyboardType: TextInputType.number,
-      enabled: _chargeMode != ChargeMode.userDefined,
-      onChanged: (value) => _calculateChargeFromMargin(_marginController.text),
-    ),
-    HMBTextField(
-      controller: _estimatedMaterialQuantityController,
-      labelText: 'Quantity',
-      keyboardType: TextInputType.number,
-      enabled: _chargeMode != ChargeMode.userDefined,
-      onChanged: (value) => _calculateChargeFromMargin(_marginController.text),
-    ),
-    _buildMarginAndChargeFields(),
-  ];
-
-  void _calculateEstimatedUnitCostFromPack() {
-    if (_estimatedMaterialPackCostController.text.trim().isEmpty) {
-      return;
-    }
-
-    final packCost = MoneyEx.tryParse(
-      _estimatedMaterialPackCostController.text,
-    );
-    final unitsPerPack = FixedEx.tryParseOrElse(
-      _estimatedMaterialUnitsPerPackController.text,
-      Fixed.one,
-    );
-    final safeUnitsPerPack = unitsPerPack.isZero ? Fixed.one : unitsPerPack;
-    final packs = FixedEx.tryParseOrElse(
-      _estimatedMaterialPacksController.text,
-      Fixed.one,
-    );
-
-    _estimatedMaterialUnitCostController.text = packCost
-        .divideByFixed(safeUnitsPerPack)
-        .toString();
-    _estimatedMaterialQuantityController.text = (packs * safeUnitsPerPack)
-        .toString();
-    _calculateChargeFromMargin(_marginController.text);
-  }
+  List<Widget> _buildBuyFields() => _buildMaterialFields();
 
   /// Materials or tools that we have in stock,
   /// which we may optionally charge for.
-  List<Widget> _buildStockFields() => [
-    HMBTextField(
-      controller: _estimatedMaterialUnitCostController,
-      labelText: 'Unit Cost (pre margin)',
-      keyboardType: TextInputType.number,
-      enabled: _chargeMode != ChargeMode.userDefined,
-      onChanged: (value) => _calculateChargeFromMargin(_marginController.text),
+  List<Widget> _buildStockFields() => _buildMaterialFields();
+
+  List<Widget> _buildMaterialFields() => [
+    MaterialPriceEditor(
+      controller: _estimatedPriceController,
+      title: 'Estimated pricing',
+      onChanged: (_) => _calculateChargeFromMargin(_marginController.text),
     ),
-    HMBTextField(
-      controller: _estimatedMaterialQuantityController,
-      labelText: 'Quantity',
-      keyboardType: TextInputType.number,
-      enabled: _chargeMode != ChargeMode.userDefined,
-      onChanged: (value) => _calculateChargeFromMargin(_marginController.text),
-    ),
-    _buildDirectChargeField(),
-    HMBTextField(
-      controller: _chargeController,
-      labelText: 'Charge (line total)',
-      keyboardType: TextInputType.number,
-      enabled: _chargeMode == ChargeMode.userDefined,
-      onChanged: (value) {
-        if (_chargeMode != ChargeMode.userDefined) {
-          _calculateChargeFromMargin(_marginController.text);
-        }
-      },
-    ),
+    if (_completed)
+      MaterialPriceEditor(
+        controller: _actualPriceController,
+        title: 'Actual pricing',
+      ),
+    _buildMarginAndChargeFields(),
   ];
 
   Widget _buildMarginAndChargeFields() => HMBColumn(
@@ -563,12 +490,12 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     description: _descriptionController.text,
     purpose: _purposeController.text,
     itemType: June.getState(SelectedCheckListItemType.new).selected,
-    estimatedMaterialUnitCost: MoneyEx.tryParse(
-      _estimatedMaterialUnitCostController.text,
-    ),
-    estimatedMaterialQuantity: FixedEx.tryParse(
-      _estimatedMaterialQuantityController.text,
-    ),
+    estimatedPrice: _isMaterial ? _estimatedPriceController.value : null,
+    clearEstimatedPrice: !_isMaterial,
+    actualPrice: _isMaterial && _completed
+        ? _actualPriceController.value
+        : null,
+    clearActualPrice: !_isMaterial,
     estimatedLabourHours: FixedEx.tryParse(
       _estimatedLabourHoursController.text,
     ),
@@ -604,12 +531,10 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     description: _descriptionController.text,
     purpose: _purposeController.text,
     itemType: June.getState(SelectedCheckListItemType.new).selected!,
-    estimatedMaterialUnitCost: MoneyEx.tryParse(
-      _estimatedMaterialUnitCostController.text,
-    ),
-    estimatedMaterialQuantity: FixedEx.tryParse(
-      _estimatedMaterialQuantityController.text,
-    ),
+    estimatedPrice: _isMaterial ? _estimatedPriceController.value : null,
+    actualPrice: _isMaterial && _completed
+        ? _actualPriceController.value
+        : null,
     estimatedLabourHours: FixedEx.tryParse(
       _estimatedLabourHoursController.text,
     ),
@@ -638,6 +563,10 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     url: _urlController.text,
     supplierId: June.getState(SelectedSupplier.new).selected,
   );
+
+  bool get _isMaterial =>
+      June.getState(SelectedCheckListItemType.new).selected !=
+      TaskItemType.labour;
 
   @override
   void refresh() {

@@ -12,9 +12,11 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'package:meta/meta.dart';
 import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
+import '../util/dart/address_format.dart';
 import '../util/dart/local_date.dart';
 import '../util/dart/measurement_type.dart';
 import 'entity.dart';
@@ -73,6 +75,44 @@ enum LogoAspectRatio {
   }
 }
 
+enum SmtpProvider {
+  custom('Custom SMTP'),
+  gmail('Gmail'),
+  outlook('Microsoft 365/Outlook'),
+  icloud('iCloud Mail');
+
+  const SmtpProvider(this.label);
+
+  final String label;
+
+  static SmtpProvider fromName(String? name) {
+    for (final provider in values) {
+      if (provider.name == name) {
+        return provider;
+      }
+    }
+    return SmtpProvider.custom;
+  }
+}
+
+enum SmtpAuthMode {
+  password('Password/app password'),
+  googleOAuth('Google OAuth');
+
+  const SmtpAuthMode(this.label);
+
+  final String label;
+
+  static SmtpAuthMode fromName(String? name) {
+    for (final mode in values) {
+      if (mode.name == name) {
+        return mode;
+      }
+    }
+    return SmtpAuthMode.password;
+  }
+}
+
 class System extends Entity<System> {
   String? fromEmail;
   String? bsb;
@@ -126,10 +166,24 @@ class System extends Entity<System> {
   /// OpenAI API key for ChatGPT task/summary extraction.
   String? openaiApiKey;
 
+  /// Google Maps Platform API key for geocoding and route optimisation.
+  String? googleMapsApiKey;
+
   /// ihserver integration settings
   String? ihserverUrl;
   String? ihserverToken;
   bool enableIhserverIntegration;
+
+  /// SMTP email settings. The password is stored in secure storage.
+  SmtpProvider smtpProvider;
+  SmtpAuthMode smtpAuthMode;
+  String? smtpHost;
+  int smtpPort;
+  String? smtpUsername;
+  String? smtpPassword;
+  String? smtpFromEmail;
+  String? smtpGoogleOAuthClientId;
+  bool smtpUseSsl;
 
   /// Tracks removal of fleather rich-text fields using an ordinal enum.
   RichTextRemoved richTextRemoved;
@@ -179,9 +233,19 @@ class System extends Entity<System> {
     required this.chatgptRefreshToken,
     required this.chatgptTokenExpiry,
     required this.openaiApiKey,
+    required this.googleMapsApiKey,
     required this.ihserverUrl,
     required this.ihserverToken,
     required this.enableIhserverIntegration,
+    required this.smtpProvider,
+    required this.smtpAuthMode,
+    required this.smtpHost,
+    required this.smtpPort,
+    required this.smtpUsername,
+    required this.smtpPassword,
+    required this.smtpFromEmail,
+    required this.smtpGoogleOAuthClientId,
+    required this.smtpUseSsl,
     required super.createdDate,
     required super.modifiedDate,
     required this.richTextRemoved,
@@ -234,9 +298,19 @@ class System extends Entity<System> {
     this.chatgptRefreshToken,
     this.chatgptTokenExpiry,
     this.openaiApiKey,
+    this.googleMapsApiKey,
     this.ihserverUrl,
     this.ihserverToken,
     this.enableIhserverIntegration = false,
+    this.smtpProvider = SmtpProvider.custom,
+    this.smtpAuthMode = SmtpAuthMode.password,
+    this.smtpHost,
+    this.smtpPort = 587,
+    this.smtpUsername,
+    this.smtpPassword,
+    this.smtpFromEmail,
+    this.smtpGoogleOAuthClientId,
+    this.smtpUseSsl = false,
   }) : super.forInsert();
 
   System copyWith({
@@ -284,9 +358,19 @@ class System extends Entity<System> {
     String? chatgptRefreshToken,
     DateTime? chatgptTokenExpiry,
     String? openaiApiKey,
+    String? googleMapsApiKey,
     String? ihserverUrl,
     String? ihserverToken,
     bool? enableIhserverIntegration,
+    SmtpProvider? smtpProvider,
+    SmtpAuthMode? smtpAuthMode,
+    String? smtpHost,
+    int? smtpPort,
+    String? smtpUsername,
+    String? smtpPassword,
+    String? smtpFromEmail,
+    String? smtpGoogleOAuthClientId,
+    bool? smtpUseSsl,
     RichTextRemoved? richTextRemoved,
   }) => System._(
     id: id,
@@ -339,10 +423,21 @@ class System extends Entity<System> {
     chatgptRefreshToken: chatgptRefreshToken ?? this.chatgptRefreshToken,
     chatgptTokenExpiry: chatgptTokenExpiry ?? this.chatgptTokenExpiry,
     openaiApiKey: openaiApiKey ?? this.openaiApiKey,
+    googleMapsApiKey: googleMapsApiKey ?? this.googleMapsApiKey,
     ihserverUrl: ihserverUrl ?? this.ihserverUrl,
     ihserverToken: ihserverToken ?? this.ihserverToken,
     enableIhserverIntegration:
         enableIhserverIntegration ?? this.enableIhserverIntegration,
+    smtpProvider: smtpProvider ?? this.smtpProvider,
+    smtpAuthMode: smtpAuthMode ?? this.smtpAuthMode,
+    smtpHost: smtpHost ?? this.smtpHost,
+    smtpPort: smtpPort ?? this.smtpPort,
+    smtpUsername: smtpUsername ?? this.smtpUsername,
+    smtpPassword: smtpPassword ?? this.smtpPassword,
+    smtpFromEmail: smtpFromEmail ?? this.smtpFromEmail,
+    smtpGoogleOAuthClientId:
+        smtpGoogleOAuthClientId ?? this.smtpGoogleOAuthClientId,
+    smtpUseSsl: smtpUseSsl ?? this.smtpUseSsl,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
   );
@@ -421,10 +516,20 @@ class System extends Entity<System> {
         ? DateTime.parse(map['chatgpt_token_expiry'] as String)
         : null,
     openaiApiKey: null,
+    googleMapsApiKey: null,
     ihserverUrl: map['ihserver_url'] as String?,
     ihserverToken: null,
     enableIhserverIntegration:
         (map['enable_ihserver_integration'] as int? ?? 0) == 1,
+    smtpProvider: SmtpProvider.fromName(map['smtp_provider'] as String?),
+    smtpAuthMode: SmtpAuthMode.fromName(map['smtp_auth_mode'] as String?),
+    smtpHost: map['smtp_host'] as String?,
+    smtpPort: map['smtp_port'] as int? ?? 587,
+    smtpUsername: map['smtp_username'] as String?,
+    smtpPassword: null,
+    smtpFromEmail: map['smtp_from_email'] as String?,
+    smtpGoogleOAuthClientId: map['smtp_google_oauth_client_id'] as String?,
+    smtpUseSsl: (map['smtp_use_ssl'] as int? ?? 0) == 1,
     createdDate:
         DateTime.tryParse(map['created_date'] as String? ?? '') ??
         DateTime.now(),
@@ -449,11 +554,8 @@ class System extends Entity<System> {
     }
   }
 
-  String get address => Strings.join(
-    [addressLine1, addressLine2, suburb, state, postcode],
-    separator: ', ',
-    excludeEmpty: true,
-  );
+  String get address =>
+      joinAddressParts([addressLine1, addressLine2, suburb, state, postcode]);
 
   @override
   Map<String, dynamic> toMap() => {
@@ -506,12 +608,99 @@ class System extends Entity<System> {
     'chatgpt_token_expiry': chatgptTokenExpiry?.toIso8601String(),
     'ihserver_url': ihserverUrl,
     'enable_ihserver_integration': enableIhserverIntegration ? 1 : 0,
+    'smtp_provider': smtpProvider.name,
+    'smtp_auth_mode': smtpAuthMode.name,
+    'smtp_host': smtpHost,
+    'smtp_port': smtpPort,
+    'smtp_username': smtpUsername,
+    'smtp_from_email': smtpFromEmail,
+    'smtp_google_oauth_client_id': smtpGoogleOAuthClientId,
+    'smtp_use_ssl': smtpUseSsl ? 1 : 0,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
 
   bool isExternalAccountingEnabled() =>
       enableXeroIntegration && Strings.isNotBlank(xeroClientId);
+}
+
+/// An immutable snapshot of non-secret system configuration.
+///
+/// Integration credentials are deliberately absent. Retrieve them through the
+/// integration-specific methods on `DaoSystem`.
+@immutable
+class SystemConfiguration {
+  final System _system;
+
+  SystemConfiguration._(System system)
+    : _system = System.fromMap(system.toMap());
+
+  factory SystemConfiguration.fromSystem(System system) =>
+      SystemConfiguration._(system);
+
+  int get id => _system.id;
+  DateTime get createdDate => _system.createdDate;
+  DateTime get modifiedDate => _system.modifiedDate;
+  String? get fromEmail => _system.fromEmail;
+  String? get bsb => _system.bsb;
+  String? get accountNo => _system.accountNo;
+  String? get addressLine1 => _system.addressLine1;
+  String? get addressLine2 => _system.addressLine2;
+  String? get suburb => _system.suburb;
+  String? get state => _system.state;
+  String? get postcode => _system.postcode;
+  String? get mobileNumber => _system.mobileNumber;
+  String? get landLine => _system.landLine;
+  String? get officeNumber => _system.officeNumber;
+  String? get emailAddress => _system.emailAddress;
+  String? get webUrl => _system.webUrl;
+  Money? get defaultHourlyRate => _system.defaultHourlyRate;
+  String? get termsUrl => _system.termsUrl;
+  Money? get defaultBookingFee => _system.defaultBookingFee;
+  Percentage? get defaultProfitMargin => _system.defaultProfitMargin;
+  int? get simCardNo => _system.simCardNo;
+  String? get xeroClientId => _system.xeroClientId;
+  String? get invoiceLineRevenueAccountCode =>
+      _system.invoiceLineRevenueAccountCode;
+  String? get invoiceLineInventoryItemCode =>
+      _system.invoiceLineInventoryItemCode;
+  bool get enableXeroIntegration => _system.enableXeroIntegration;
+  String? get businessName => _system.businessName;
+  String? get businessNumber => _system.businessNumber;
+  String? get businessNumberLabel => _system.businessNumberLabel;
+  String? get countryCode => _system.countryCode;
+  String? get paymentLinkUrl => _system.paymentLinkUrl;
+  bool? get showBsbAccountOnInvoice => _system.showBsbAccountOnInvoice;
+  bool? get showPaymentLinkOnInvoice => _system.showPaymentLinkOnInvoice;
+  PreferredUnitSystem get preferredUnitSystem => _system.preferredUnitSystem;
+  String get logoPath => _system.logoPath;
+  LogoAspectRatio get logoAspectRatio => _system.logoAspectRatio;
+  int get billingColour => _system.billingColour;
+  int get photoCacheMaxMb => _system.photoCacheMaxMb;
+  int get paymentTermsInDays => _system.paymentTermsInDays;
+  String get paymentOptions => _system.paymentOptions;
+  String? get firstname => _system.firstname;
+  String? get surname => _system.surname;
+  String? get operatingHours => _system.operatingHours;
+  DateTime? get chatgptTokenExpiry => _system.chatgptTokenExpiry;
+  String? get ihserverUrl => _system.ihserverUrl;
+  bool get enableIhserverIntegration => _system.enableIhserverIntegration;
+  SmtpProvider get smtpProvider => _system.smtpProvider;
+  SmtpAuthMode get smtpAuthMode => _system.smtpAuthMode;
+  String? get smtpHost => _system.smtpHost;
+  int get smtpPort => _system.smtpPort;
+  String? get smtpUsername => _system.smtpUsername;
+  String? get smtpFromEmail => _system.smtpFromEmail;
+  String? get smtpGoogleOAuthClientId => _system.smtpGoogleOAuthClientId;
+  bool get smtpUseSsl => _system.smtpUseSsl;
+  RichTextRemoved get richTextRemoved => _system.richTextRemoved;
+
+  String? get bestPhone => _system.bestPhone;
+  String get address => _system.address;
+
+  OperatingHours getOperatingHours() => _system.getOperatingHours();
+
+  bool isExternalAccountingEnabled() => _system.isExternalAccountingEnabled();
 }
 
 enum DayName {

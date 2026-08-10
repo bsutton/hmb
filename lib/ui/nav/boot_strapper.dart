@@ -39,7 +39,7 @@ import '../../database/versions/implementations/asset_script_source.dart';
 import '../../database/versions/post_upgrade/post_upgrade_134.dart';
 import '../../installer/install.dart';
 import '../../util/dart/log.dart';
-import '../../util/flutter/notifications/local_notifs.dart';
+import '../../util/flutter/notifications/notification_reconciler.dart';
 import '../widgets/hmb_start_time_entry.dart';
 import '../widgets/media/desktop_camera_delegate.dart';
 import 'dashboards/sync_warnings.dart';
@@ -63,7 +63,7 @@ class BootStrapper {
       () => _initializeTimeEntryState(refresh: false),
     );
     unawaited(logAppStartup());
-    await _runStartupPhase('init scheduler', _initScheduler);
+    await _runStartupPhase('init scheduler', resyncNotifications);
     unawaited(_runStartupBookingSync());
 
     // camera & deep link init
@@ -72,7 +72,10 @@ class BootStrapper {
     await _runStartupPhase('init pdf renderer', initPdfrx);
     await _runStartupPhase('init image cache', initImageCache);
 
-    Dao.notifier = DaoJuneBuilder.notify;
+    Dao.notifier = (dao, [entityId]) {
+      DaoJuneBuilder.notify(dao, entityId);
+      NotificationReconciler().onDaoChanged(dao, entityId);
+    };
 
     /// initialise whatever accounting package the
     /// user is using.
@@ -173,23 +176,8 @@ class BootStrapper {
     await postv134Upgrade(DatabaseHelper().database);
   }
 
-  Future<void> _initScheduler() async {
-    final openTodos = await DaoToDo().getOpenWithReminders();
-    await LocalNotifs().resyncFromToDos(openTodos);
-
-    final activities = await DaoJobActivity().getStartingAfter(DateTime.now());
-    for (final activity in activities) {
-      final job = await DaoJob().getById(activity.jobId);
-      if (job != null) {
-        final counts = await DaoTaskItem().getReminderCounts(job);
-        await LocalNotifs().syncForJobActivity(
-          activity,
-          jobSummary: job.summary,
-          shoppingCount: counts.shopping,
-          packingCount: counts.packing,
-        );
-      }
-    }
+  Future<void> resyncNotifications() async {
+    await NotificationReconciler().reconcile();
   }
 
   Future<void> _initializeTimeEntryState({required bool refresh}) async {

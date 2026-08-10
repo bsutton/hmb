@@ -557,7 +557,7 @@ class _QuotePhotoRow {
 }
 
 /// Helper to load and size the business logo
-Future<pw.Widget?> _getLogo(System system) async {
+Future<pw.Widget?> _getLogo(SystemConfiguration system) async {
   final logoPath = system.logoPath;
   if (Strings.isBlank(logoPath)) {
     return null;

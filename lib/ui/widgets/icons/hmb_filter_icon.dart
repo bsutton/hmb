@@ -8,10 +8,12 @@ class HMBFilterIcon extends StatelessWidget {
   final String hint;
   final bool enabled;
   final bool small;
+  final bool active;
 
   const HMBFilterIcon({
     required this.onPressed,
     this.small = false,
+    this.active = false,
     super.key,
     this.hint = '''Filter and sort the list''',
     this.enabled = true,
@@ -19,7 +21,7 @@ class HMBFilterIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => HMBIconButton(
-    icon: const Icon(Icons.tune, size: 20),
+    icon: Icon(Icons.tune, size: 20, color: active ? Colors.blue : null),
     size: small ? HMBIconButtonSize.small : HMBIconButtonSize.standard,
     showBackground: false,
     hint: hint,

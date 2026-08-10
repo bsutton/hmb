@@ -6,6 +6,7 @@
 //
 export 'hmb_email_field.dart';
 export 'hmb_fixed_field.dart';
+export 'hmb_integer_field.dart';
 export 'hmb_money_editing_controller.dart';
 export 'hmb_money_field.dart';
 export 'hmb_name_field.dart';

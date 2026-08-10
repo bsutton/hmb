@@ -16,6 +16,7 @@ import 'package:money2/money2.dart';
 
 import '../util/dart/money_ex.dart';
 import 'entity.dart';
+import 'receipt_expense_category.dart';
 
 class ReceiptLineItem extends Entity<ReceiptLineItem> {
   final int receiptId;
@@ -27,6 +28,7 @@ class ReceiptLineItem extends Entity<ReceiptLineItem> {
   final int? taxCodeId;
   final Money lineTotalIncTax;
   final int? matchedTaskItemId;
+  final ReceiptExpenseCategory expenseCategory;
   final int confidence;
   final String source;
 
@@ -41,6 +43,7 @@ class ReceiptLineItem extends Entity<ReceiptLineItem> {
     required this.taxCodeId,
     required this.lineTotalIncTax,
     required this.matchedTaskItemId,
+    required this.expenseCategory,
     required this.confidence,
     required this.source,
     required super.createdDate,
@@ -58,6 +61,7 @@ class ReceiptLineItem extends Entity<ReceiptLineItem> {
     required this.matchedTaskItemId,
     required this.confidence,
     required this.source,
+    this.expenseCategory = ReceiptExpenseCategory.materials,
     this.taxCodeId,
   }) : super.forInsert();
 
@@ -72,6 +76,9 @@ class ReceiptLineItem extends Entity<ReceiptLineItem> {
     taxCodeId: map['tax_code_id'] as int?,
     lineTotalIncTax: MoneyEx.fromInt(map['line_total_inc_tax'] as int?),
     matchedTaskItemId: map['matched_task_item_id'] as int?,
+    expenseCategory: ReceiptExpenseCategory.fromCode(
+      map['expense_category'] as String?,
+    ),
     confidence: map['confidence'] as int? ?? 0,
     source: map['source'] as String? ?? 'manual',
     createdDate: DateTime.parse(map['created_date'] as String),
@@ -90,6 +97,7 @@ class ReceiptLineItem extends Entity<ReceiptLineItem> {
     'tax_code_id': taxCodeId,
     'line_total_inc_tax': lineTotalIncTax.minorUnits.toInt(),
     'matched_task_item_id': matchedTaskItemId,
+    'expense_category': expenseCategory.code,
     'confidence': confidence,
     'source': source,
     'created_date': createdDate.toIso8601String(),

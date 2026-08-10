@@ -13,6 +13,7 @@
 
 import '../entity/job_activity.dart';
 import '../entity/job_status.dart';
+import '../entity/job_status_stage.dart';
 import '../util/dart/local_date.dart';
 import 'dao.dart';
 
@@ -154,16 +155,21 @@ SELECT ja.*
 
   Future<List<JobActivity>> getStartingAfter(DateTime date) async {
     final db = withoutTransaction();
+    final finalisedStatuses = JobStatus.values
+        .where((status) => status.stage == JobStatusStage.finalised)
+        .map((status) => status.id)
+        .toList();
+    final placeholders = List.filled(finalisedStatuses.length, '?').join(',');
     final rows = await db.rawQuery(
       '''
 SELECT ja.*
   FROM $tableName ja
   JOIN job j ON ja.job_id = j.id
  WHERE ja.start_date > ?
-   AND j.status_id NOT IN (?, ?)
+   AND j.status_id NOT IN ($placeholders)
  ORDER BY ja.start_date ASC
 ''',
-      [date.toIso8601String(), JobStatus.rejected.id, JobStatus.completed.id],
+      [date.toIso8601String(), ...finalisedStatuses],
     );
     return rows.map(fromMap).toList();
   }

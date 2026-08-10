@@ -230,10 +230,12 @@ class XeroAuth2 {
 
   /// Loads the Xero client credentials from your database/system settings.
   Future<XeroSecretIdentity> _fetchSecretIdentity() async {
-    final system = await DaoSystem().get();
+    final daoSystem = DaoSystem();
+    final system = await daoSystem.get();
+    final credentials = await daoSystem.getXeroCredentials();
 
     if (Strings.isBlank(system.xeroClientId) ||
-        Strings.isBlank(system.xeroClientSecret)) {
+        Strings.isBlank(credentials.clientSecret)) {
       throw InvoiceException(
         '''
 The Xero credentials are not set. Navigate to the System | Integration screen and set them.''',
@@ -241,7 +243,7 @@ The Xero credentials are not set. Navigate to the System | Integration screen an
     }
     return XeroSecretIdentity(
       clientId: system.xeroClientId!,
-      clientSecret: system.xeroClientSecret!,
+      clientSecret: credentials.clientSecret!,
     );
   }
 

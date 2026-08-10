@@ -81,8 +81,10 @@ class PhotoSyncService {
   Timer? _retryTimer;
   var _autoRetryAttempts = 0;
   var _syncHadError = false;
-  var _retryOnFailure = true;
+  var _cancelRequested = false;
+  var _waitingForSignIn = false;
   var _wakeLockHeld = false;
+  var _retryOnFailure = true;
   String? _lastErrorSummary;
 
   final StreamController<ProgressUpdate> _controller =
@@ -91,12 +93,20 @@ class PhotoSyncService {
       StreamController.broadcast();
 
   factory PhotoSyncService() => _instance;
-  PhotoSyncService._();
+  PhotoSyncService._() {
+    GoogleDriveAuth.authStateChanges.listen((signedIn) {
+      if (signedIn && _waitingForSignIn && !isRunning) {
+        _waitingForSignIn = false;
+        unawaited(start());
+      }
+    });
+  }
 
   Stream<ProgressUpdate> get progressStream => _controller.stream;
   Stream<String> get errorStream => _errorController.stream;
 
   bool get isRunning => _isolate != null;
+  bool get isWaitingForSignIn => _waitingForSignIn;
   String? get lastErrorSummary => _lastErrorSummary;
 
   /// Kick off the sync and listen for both progress and payload messages.
@@ -111,6 +121,7 @@ class PhotoSyncService {
         )
         .toList();
     if (photos.isEmpty && deletes.isEmpty) {
+      _waitingForSignIn = false;
       _autoRetryAttempts = 0;
       _lastErrorSummary = null;
       await _releaseWakeLock();
@@ -121,12 +132,14 @@ class PhotoSyncService {
       final headers = await (await GoogleDriveAuth.instance())
           .authHeadersOrNull(allowAutomaticSignIn: false);
       if (headers == null) {
+        _waitingForSignIn = true;
         await _releaseWakeLock();
         _controller.add(
           ProgressUpdate('Photo sync waiting for Google sign-in.', 0, 0),
         );
         return;
       }
+      _waitingForSignIn = false;
       await _enableWakeLock();
       await _startSync(
         photos: photos,
@@ -157,6 +170,7 @@ class PhotoSyncService {
       return;
     }
     _retryTimer?.cancel();
+    _cancelRequested = false;
     _syncHadError = false;
     _retryOnFailure = retryOnFailure;
     _lastErrorSummary = null;
@@ -203,7 +217,14 @@ class PhotoSyncService {
     // Error and exit notifications arrive on separate ports. Yield once so a
     // terminal isolate error cannot be misclassified as a successful exit.
     await Future<void>.delayed(Duration.zero);
+    final wasCancelled = _cancelRequested;
     _cleanup();
+    if (wasCancelled) {
+      _cancelRequested = false;
+      _autoRetryAttempts = 0;
+      _lastErrorSummary = null;
+      return;
+    }
     if (_syncHadError) {
       if (retryOnFailure) {
         _scheduleRetry();
@@ -220,12 +241,22 @@ class PhotoSyncService {
 
   void cancelSync() {
     _retryTimer?.cancel();
-    _isolate?.kill(priority: Isolate.immediate);
-    _cleanup();
+    _retryTimer = null;
+    _autoRetryAttempts = 0;
+    _lastErrorSummary = null;
+    _waitingForSignIn = false;
     unawaited(_releaseWakeLock());
+    if (!isRunning) {
+      _controller.add(ProgressUpdate('Photo sync cancelled.', 0, 0));
+      return;
+    }
+    _cancelRequested = true;
+    _isolate?.kill(priority: Isolate.immediate);
+    _controller.add(ProgressUpdate('Photo sync cancelled.', 0, 0));
   }
 
   void _cleanup() {
+    final wasRunning = _isolate != null;
     _receivePort?.close();
     _errorPort?.close();
     _exitPort?.close();
@@ -233,6 +264,12 @@ class PhotoSyncService {
     _receivePort = null;
     _errorPort = null;
     _exitPort = null;
+    if (wasRunning) {
+      // Progress is emitted before the worker exits, while [isRunning] is
+      // still true. Publish the post-cleanup idle state so mounted screens do
+      // not retain a completed message or a full progress bar.
+      _controller.add(ProgressUpdate('', 0, 0));
+    }
   }
 
   void _onSyncError(dynamic error) {

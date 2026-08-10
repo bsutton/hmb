@@ -453,7 +453,7 @@ Future<File> _generateJobCompletionReportPdf(
 
 pw.Widget _buildReportHeader({
   required Job job,
-  required System system,
+  required SystemConfiguration system,
   required Customer? customer,
   required Contact? contact,
   required Site? site,

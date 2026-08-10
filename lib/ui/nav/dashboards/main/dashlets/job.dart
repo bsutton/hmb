@@ -31,18 +31,31 @@ class JobsDashlet extends StatelessWidget {
         'Value format is billable/non-billable active jobs.',
     icon: Icons.work,
     value: () async {
-      final jobs = await DaoJob().getActiveJobs(null);
-      var billable = 0;
-      var nonBillable = 0;
-      for (final job in jobs) {
-        if (job.billingType == BillingType.nonBillable) {
-          nonBillable++;
-        } else {
-          billable++;
-        }
-      }
-      return DashletValue('$billable/$nonBillable');
+      final jobs = await DaoJob().getByFilter(null);
+      return valueForJobs(jobs);
     },
     route: '/home/jobs',
   );
+
+  static DashletValue<String> valueForJobs(Iterable<Job> jobs) {
+    var billable = 0;
+    var nonBillable = 0;
+    for (final job in jobs) {
+      if (job.isStock || !_isCurrent(job)) {
+        continue;
+      }
+      if (job.billingType == BillingType.nonBillable) {
+        nonBillable++;
+      } else {
+        billable++;
+      }
+    }
+    return DashletValue('$billable/$nonBillable');
+  }
+
+  static bool _isCurrent(Job job) {
+    final stage = job.status.stage;
+    return stage == JobStatusStage.preStart ||
+        stage == JobStatusStage.progressing;
+  }
 }

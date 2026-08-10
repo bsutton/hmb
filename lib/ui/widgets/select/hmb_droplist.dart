@@ -32,6 +32,10 @@ class HMBDroplist<T> extends StatefulWidget {
   final void Function(T?) onChanged;
   final String title;
   final AsyncVoidCallback? onAdd;
+  final Widget Function(BuildContext context, VoidCallback onChange)?
+  filterSheetBuilder;
+  final VoidCallback? onFilterReset;
+  final bool Function()? isFilterActive;
   final Color? backgroundColor;
   final void Function(T?)? onSaved;
   final Future<void> Function(T item)? onAccessed;
@@ -47,6 +51,9 @@ class HMBDroplist<T> extends StatefulWidget {
     required this.onChanged,
     required this.title,
     this.onAdd,
+    this.filterSheetBuilder,
+    this.onFilterReset,
+    this.isFilterActive,
     this.backgroundColor,
     this.onSaved,
     this.onAccessed,
@@ -63,6 +70,7 @@ class HMBDroplist<T> extends StatefulWidget {
 
 class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
   T? _selectedItem;
+  final _formFieldKey = GlobalKey<FormFieldState<T>>();
 
   bool get hasSelection => _selectedItem != null;
 
@@ -95,6 +103,9 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
           setState(() {
             _selectedItem = newSelection;
           });
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _formFieldKey.currentState?.didChange(newSelection);
+          });
         }
       }
     });
@@ -104,6 +115,7 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
   Widget build(BuildContext context) => DeferredBuilder(
     this,
     builder: (aacontext) => FormField<T>(
+      key: _formFieldKey,
       onSaved: widget.onSaved,
       initialValue: _selectedItem,
       autovalidateMode: AutovalidateMode.always,
@@ -128,6 +140,9 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
                   selectedItem: _selectedItem,
                   allowClear: !widget.required,
                   onAdd: widget.onAdd != null ? _handleAdd : null,
+                  filterSheetBuilder: widget.filterSheetBuilder,
+                  onFilterReset: widget.onFilterReset,
+                  isFilterActive: widget.isFilterActive,
                   showSearch: widget.showSearch,
                 ),
               );

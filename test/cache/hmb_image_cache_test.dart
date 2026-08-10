@@ -20,15 +20,19 @@ import 'package:hmb/cache/hmb_image_cache.dart';
 // ImageVariant, CompressJob, CompressResult
 import 'package:hmb/cache/image_cache_config.dart';
 import 'package:hmb/dao/dao_image_cache_variant.dart';
+import 'package:hmb/database/factory/cli_database_factory.dart';
+import 'package:hmb/database/management/database_helper.dart';
+import 'package:hmb/database/versions/implementations/project_script_source.dart';
 import 'package:hmb/entity/image_cache_variant.dart';
-import 'package:hmb/entity/photo.dart'; // Photo entity (id, filename, etc.)
-import 'package:hmb/util/dart/paths.dart'; // getTemporaryDirectory()
+import 'package:hmb/entity/photo.dart';
+import 'package:hmb/util/dart/paths.dart';
 import 'package:hmb/util/dart/photo_meta.dart'; // PhotoMeta
 import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:test/test.dart';
 
+import '../database/management/backup_providers/test_backup_provider.dart';
 import '../database/management/db_utility_test_helper.dart';
 // ---------------------------------------------------------------
 
@@ -300,6 +304,28 @@ void main() {
       );
       expect(after.isAtSameMomentAs(before), isFalse);
     });
+
+    test('Cache remains usable after DB close and reopen', () async {
+      final original = await _makeOriginal(name: 'photo9.jpg');
+      final meta = await _metaFrom(id: 909, absolutePath: original.path);
+      final raw = ImageVariant(meta, ImageVariantType.raw);
+
+      final before = await cache.getVariantPath(
+        variant: raw,
+        fetch: fakeDownloader,
+      );
+      expect(File(before).existsSync(), isTrue);
+      await DatabaseHelper().closeDb();
+      await _reopenTestDb();
+
+      final after = await cache.getVariantPath(variant: raw);
+      expect(File(after).existsSync(), isTrue);
+      final row = await DaoImageCacheVariant().getByKey(
+        meta.photo.id,
+        raw.variant.name,
+      );
+      expect(row, isNotNull);
+    });
   });
 }
 
@@ -375,6 +401,16 @@ Future<ImageCacheVariant?> _getRow(int photoId, ImageVariantType variant) =>
 
 Future<List<ImageCacheVariant>> _getRowsForPhoto(int photoId) =>
     DaoImageCacheVariant().getByPhotoId(photoId);
+
+Future<void> _reopenTestDb() async {
+  await Future<void>.delayed(const Duration(milliseconds: 50));
+  await DatabaseHelper().openDb(
+    src: ProjectScriptSource(),
+    backupProvider: TestBackupProvider(CliDatabaseFactory(), testDbPath),
+    databaseFactory: CliDatabaseFactory(),
+    backup: false,
+  );
+}
 
 class _FakePathProvider
     with t.Fake, MockPlatformInterfaceMixin

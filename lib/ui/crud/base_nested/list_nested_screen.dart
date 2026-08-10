@@ -30,6 +30,23 @@ class Parent<P extends Entity<P>> {
   Parent(this.parent);
 }
 
+class ParentSaveScope extends InheritedWidget {
+  final Future<Entity?> Function() ensureSaved;
+
+  const ParentSaveScope({
+    required this.ensureSaved,
+    required super.child,
+    super.key,
+  });
+
+  static ParentSaveScope? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ParentSaveScope>();
+
+  @override
+  bool updateShouldNotify(ParentSaveScope oldWidget) =>
+      ensureSaved != oldWidget.ensureSaved;
+}
+
 enum CardDetail { full, summary }
 
 typedef Allowed<C> = bool Function(C entity);
@@ -51,6 +68,11 @@ class NestedEntityListScreen<C extends Entity<C>, P extends Entity<P>>
   final String entityNameSingular;
   final double cardHeight;
 
+  /// Whether [details] renders distinct summary and full card variants.
+  ///
+  /// Keep this false when [details] ignores its [CardDetail] argument.
+  final bool supportsDetailToggle;
+
   /// All cards are displayed on screen rather than in a listview.
   final bool extended;
 
@@ -68,6 +90,7 @@ class NestedEntityListScreen<C extends Entity<C>, P extends Entity<P>>
     this.filterBar,
     this.canEdit,
     this.canDelete,
+    this.supportsDetailToggle = false,
     this.extended = false,
     this.cardHeight = 212,
     super.key,
@@ -110,43 +133,71 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
   Widget build(BuildContext context) =>
       Column(children: [_buildTitle(), _buildBody()]);
 
-  Widget _buildAddButton(BuildContext context) => HMBButtonAdd(
-    enabled: widget.parent.parent != null,
-    onAdd: () async {
-      if (context.mounted) {
-        await Navigator.push(
-          context,
-          MaterialPageRoute<void>(builder: (context) => widget.onEdit(null)),
-        ).then((_) => _refreshEntityList());
-      }
-    },
-  );
+  Widget _buildAddButton(BuildContext context) {
+    final saveScope = ParentSaveScope.maybeOf(context);
+    return HMBButtonAdd(
+      enabled: widget.parent.parent != null || saveScope != null,
+      onAdd: () async {
+        if (!await _ensureParentSaved(context)) {
+          return;
+        }
+        if (context.mounted) {
+          await Navigator.push(
+            context,
+            MaterialPageRoute<void>(builder: (context) => widget.onEdit(null)),
+          ).then((_) => _refreshEntityList());
+        }
+      },
+    );
+  }
+
+  Future<bool> _ensureParentSaved(BuildContext context) async {
+    if (widget.parent.parent != null) {
+      return true;
+    }
+    final saveScope = ParentSaveScope.maybeOf(context);
+    if (saveScope == null) {
+      return false;
+    }
+    final savedParent = await saveScope.ensureSaved();
+    if (savedParent == null) {
+      return false;
+    }
+    widget.parent.parent = savedParent as P;
+    if (mounted) {
+      setState(() {});
+    }
+    return true;
+  }
 
   Widget _buildTitle() => HMBColumn(
-    crossAxisAlignment: CrossAxisAlignment.start,
+    crossAxisAlignment: CrossAxisAlignment.end,
     mainAxisSize: MainAxisSize.min,
     children: [
-      Row(children: [const Spacer(), _buildFilter(), _buildAddButton(context)]),
+      if (widget.supportsDetailToggle) _buildDetailToggle(),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.filterBar != null && widget.parent.parent != null)
+            Expanded(child: widget.filterBar!(widget.parent.parent!))
+          else
+            const Spacer(),
+          const SizedBox(width: 8),
+          _buildAddButton(context),
+        ],
+      ),
     ],
   );
 
-  Widget _buildFilter() => HMBColumn(
-    mainAxisAlignment: MainAxisAlignment.end,
-    crossAxisAlignment: CrossAxisAlignment.end,
-    children: [
-      HMBToggle(
-        label: 'Show details',
-        hint: 'Show/Hide full card details',
-        initialValue: cardDetail == CardDetail.full,
-        onToggled: (on) {
-          setState(() {
-            cardDetail = on ? CardDetail.full : CardDetail.summary;
-          });
-        },
-      ),
-      if (widget.filterBar != null && widget.parent.parent != null)
-        widget.filterBar!(widget.parent.parent!),
-    ],
+  Widget _buildDetailToggle() => HMBToggle(
+    label: 'Show details',
+    hint: 'Show/Hide full card details',
+    initialValue: cardDetail == CardDetail.full,
+    onToggled: (on) {
+      setState(() {
+        cardDetail = on ? CardDetail.full : CardDetail.summary;
+      });
+    },
   );
 
   Widget _buildBody() => DaoJuneBuilder.builder(
@@ -161,7 +212,8 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
           if (widget.parent.parent == null) {
             return Center(
               child: Text(
-                'Save the ${widget.parentTitle} first.',
+                'Click + to save the ${widget.parentTitle} and add '
+                'a ${widget.entityNameSingular}.',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,

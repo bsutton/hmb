@@ -8,7 +8,5 @@ Future<void> install() async {
     windowsInstalller();
   } else if (Platform.isLinux) {
     await linuxInstaller();
-  } else {
-    throw UnsupportedError('Unsupported platform');
   }
 }

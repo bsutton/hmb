@@ -419,7 +419,7 @@ Future<File> generateInvoicePdf(
   return file;
 }
 
-String paymentTerms(System system) {
+String paymentTerms(SystemConfiguration system) {
   if (system.paymentTermsInDays == 0) {
     return 'Payment Terms: immediate';
   } else {
@@ -478,7 +478,7 @@ class GroupedLine {
       .isNotEmpty;
 }
 
-Future<pw.Widget?> _getLogo(System system) async {
+Future<pw.Widget?> _getLogo(SystemConfiguration system) async {
   final logoPath = system.logoPath;
   if (logoPath.isEmpty) {
     return null;

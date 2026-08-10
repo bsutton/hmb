@@ -19,6 +19,146 @@ void main() {
     await tearDownTestDb();
   });
 
+  test('shopping history ranges calculate rolling cutoffs', () {
+    final reference = DateTime(2026, 7, 24, 12);
+
+    expect(
+      ShoppingHistoryRange.last7Days.cutoff(reference),
+      DateTime(2026, 7, 17, 12),
+    );
+    expect(
+      ShoppingHistoryRange.last30Days.cutoff(reference),
+      DateTime(2026, 6, 24, 12),
+    );
+    expect(
+      ShoppingHistoryRange.last90Days.cutoff(reference),
+      DateTime(2026, 4, 25, 12),
+    );
+    expect(
+      ShoppingHistoryRange.lastYear.cutoff(reference),
+      DateTime(2025, 7, 24, 12),
+    );
+    expect(ShoppingHistoryRange.all.cutoff(reference), isNull);
+  });
+
+  test(
+    'purchased history supports ranges, consumables, and inactive jobs',
+    () async {
+      final recent = await _insertTaskItemForJob(
+        jobStatus: JobStatus.inProgress,
+        taskStatus: TaskStatus.inProgress,
+        itemType: TaskItemType.materialsBuy,
+        completed: true,
+      );
+      final recentJob = await _jobForItem(recent);
+      final oldConsumable = await _insertTaskItemForExistingJob(
+        jobId: recentJob.id,
+        itemType: TaskItemType.consumablesBuy,
+        completed: true,
+      );
+      await _setModifiedDate(
+        oldConsumable,
+        DateTime.now().subtract(const Duration(days: 60)),
+      );
+
+      final inactive = await _insertTaskItemForJob(
+        jobStatus: JobStatus.completed,
+        taskStatus: TaskStatus.completed,
+        itemType: TaskItemType.toolsBuy,
+        completed: true,
+      );
+      final inactiveJob = await _jobForItem(inactive);
+
+      final recentOnly = await DaoTaskItem().getPurchasedItems(
+        historyRange: ShoppingHistoryRange.last30Days,
+        jobs: [recentJob, inactiveJob],
+      );
+      expect(recentOnly.map((item) => item.id), [recent.id]);
+
+      final activeHistory = await DaoTaskItem().getPurchasedItems(
+        historyRange: ShoppingHistoryRange.all,
+        jobs: [recentJob, inactiveJob],
+      );
+      expect(
+        activeHistory.map((item) => item.id),
+        containsAll([recent.id, oldConsumable.id]),
+      );
+      expect(
+        activeHistory.map((item) => item.id),
+        isNot(contains(inactive.id)),
+      );
+
+      final allHistory = await DaoTaskItem().getPurchasedItems(
+        historyRange: ShoppingHistoryRange.all,
+        jobs: [recentJob, inactiveJob],
+        includeInactiveJobs: true,
+      );
+      expect(
+        allHistory.map((item) => item.id),
+        containsAll([recent.id, oldConsumable.id, inactive.id]),
+      );
+    },
+  );
+
+  test('returned history supports ranges and inactive jobs', () async {
+    final recentPurchase = await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.inProgress,
+      itemType: TaskItemType.materialsBuy,
+      completed: true,
+    );
+    final recentJob = await _jobForItem(recentPurchase);
+    await DaoTaskItem().markAsReturned(
+      recentPurchase.id,
+      MaterialPrice.items(quantity: Fixed.one, unitCost: MoneyEx.fromInt(500)),
+    );
+    final recentReturn = (await DaoTaskItem().getByTask(
+      recentPurchase.taskId,
+    )).singleWhere((item) => item.isReturn);
+
+    final inactivePurchase = await _insertTaskItemForJob(
+      jobStatus: JobStatus.completed,
+      taskStatus: TaskStatus.completed,
+      itemType: TaskItemType.toolsBuy,
+      completed: true,
+    );
+    final inactiveJob = await _jobForItem(inactivePurchase);
+    await DaoTaskItem().markAsReturned(
+      inactivePurchase.id,
+      MaterialPrice.items(quantity: Fixed.one, unitCost: MoneyEx.fromInt(500)),
+    );
+    final inactiveReturn = (await DaoTaskItem().getByTask(
+      inactivePurchase.taskId,
+    )).singleWhere((item) => item.isReturn);
+    await _setModifiedDate(
+      inactiveReturn,
+      DateTime.now().subtract(const Duration(days: 60)),
+    );
+
+    final recentOnly = await DaoTaskItem().getReturnedItems(
+      historyRange: ShoppingHistoryRange.last30Days,
+      jobs: [recentJob, inactiveJob],
+      includeInactiveJobs: true,
+    );
+    expect(recentOnly.map((item) => item.id), [recentReturn.id]);
+
+    final activeHistory = await DaoTaskItem().getReturnedItems(
+      historyRange: ShoppingHistoryRange.all,
+      jobs: [recentJob, inactiveJob],
+    );
+    expect(activeHistory.map((item) => item.id), [recentReturn.id]);
+
+    final allHistory = await DaoTaskItem().getReturnedItems(
+      historyRange: ShoppingHistoryRange.all,
+      jobs: [recentJob, inactiveJob],
+      includeInactiveJobs: true,
+    );
+    expect(
+      allHistory.map((item) => item.id),
+      containsAll([recentReturn.id, inactiveReturn.id]),
+    );
+  });
+
   test('wasReturned is true only when a linked return row exists', () async {
     final item = await _insertMaterialTaskItem();
 
@@ -26,11 +166,40 @@ void main() {
 
     await DaoTaskItem().markAsReturned(
       item.id,
-      Fixed.one,
-      MoneyEx.fromInt(500),
+      MaterialPrice.items(quantity: Fixed.one, unitCost: MoneyEx.fromInt(500)),
     );
 
     expect(await DaoTaskItem().wasReturned(item.id), isTrue);
+  });
+
+  test('receipt return matching uses returned shopping items', () async {
+    final item = await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.inProgress,
+      itemType: TaskItemType.materialsBuy,
+      completed: true,
+    );
+    final task = (await DaoTask().getById(item.taskId))!;
+
+    await DaoTaskItem().markAsReturned(
+      item.id,
+      MaterialPrice.items(quantity: Fixed.one, unitCost: MoneyEx.fromInt(500)),
+    );
+
+    final returned = await DaoTaskItem().getReturnedItemsForReceiptLink(
+      jobId: task.jobId,
+    );
+    final purchased = await DaoTaskItem().getPurchasedItemsForReceiptLink(
+      jobId: task.jobId,
+    );
+
+    expect(returned, hasLength(1));
+    expect(returned.single.isReturn, isTrue);
+    expect(returned.single.sourceTaskItemId, item.id);
+    expect(
+      purchased.map((candidate) => candidate.id),
+      isNot(contains(returned.single.id)),
+    );
   });
 
   test('shopping excludes items from completed jobs', () async {
@@ -186,7 +355,7 @@ void main() {
   });
 
   test(
-    'marking shopping item complete keeps invoice charge calculated',
+    'marking shopping item complete keeps its direct customer charge',
     () async {
       final item = await _insertTaskItemForJob(
         jobStatus: JobStatus.inProgress,
@@ -204,16 +373,18 @@ void main() {
       final reloaded = (await DaoTaskItem().getById(item.id))!;
       await DaoTaskItem().markAsCompleted(
         item: reloaded,
-        materialUnitCost: MoneyEx.fromInt(200),
-        materialQuantity: Fixed.parse('3'),
+        price: MaterialPrice.items(
+          quantity: Fixed.parse('3'),
+          unitCost: MoneyEx.fromInt(200),
+        ),
       );
 
       final completed = (await DaoTaskItem().getById(item.id))!;
-      expect(completed.chargeMode, ChargeMode.calculated);
-      expect(completed.userDefinedCharge, isNull);
+      expect(completed.chargeMode, ChargeMode.userDefined);
+      expect(completed.userDefinedCharge, Money.fromInt(99999, isoCode: 'AUD'));
       expect(
         completed.getTotalLineCharge(BillingType.timeAndMaterial, MoneyEx.zero),
-        MoneyEx.fromInt(600),
+        Money.fromInt(99999, isoCode: 'AUD'),
       );
     },
   );
@@ -232,11 +403,39 @@ void main() {
 
     final reloaded = (await DaoTaskItem().getById(item.id))!;
     expect(reloaded.completed, isTrue);
-    expect(reloaded.actualMaterialUnitCost, MoneyEx.fromInt(500));
-    expect(reloaded.actualMaterialQuantity, Fixed.one);
-    expect(reloaded.actualCost, MoneyEx.fromInt(500));
+    expect(reloaded.actualPrice?.unitCost, MoneyEx.fromInt(500));
+    expect(reloaded.actualPrice?.quantity, Fixed.one);
+    expect(reloaded.actualPrice?.totalCost, MoneyEx.fromInt(500));
     expect(reloaded.chargeMode, ChargeMode.calculated);
   });
+
+  test(
+    'issue 552 completion copies the estimate without corrupting price',
+    () async {
+      final item = await _insertTaskItemForJob(
+        jobStatus: JobStatus.inProgress,
+        taskStatus: TaskStatus.inProgress,
+        itemType: TaskItemType.materialsBuy,
+        completed: false,
+        includeActuals: false,
+      );
+      final estimate = MaterialPrice.items(
+        quantity: Fixed.fromNum(2, decimalDigits: 3),
+        unitCost: MoneyEx.fromInt(150),
+      );
+
+      await DaoTaskItem().update(item.copyWith(estimatedPrice: estimate));
+      final incomplete = (await DaoTaskItem().getById(item.id))!;
+      expect(incomplete.actualPrice, isNull);
+
+      await DaoTaskItem().update(incomplete.copyWith(completed: true));
+      final completed = (await DaoTaskItem().getById(item.id))!;
+
+      expect(completed.actualPrice?.quantity, estimate.quantity);
+      expect(completed.actualPrice?.unitCost, MoneyEx.fromInt(150));
+      expect(completed.actualPrice?.totalCost, MoneyEx.fromInt(300));
+    },
+  );
 
   test('receipt can link to multiple task items', () async {
     final firstItem = await _insertTaskItemForJob(
@@ -342,10 +541,16 @@ Future<TaskItem> _insertTaskItemForJob({
     description: 'Paint',
     purpose: '',
     itemType: itemType,
-    estimatedMaterialUnitCost: MoneyEx.fromInt(500),
-    estimatedMaterialQuantity: Fixed.one,
-    actualMaterialUnitCost: includeActuals ? MoneyEx.fromInt(500) : null,
-    actualMaterialQuantity: includeActuals ? Fixed.one : null,
+    estimatedPrice: MaterialPrice.items(
+      quantity: Fixed.one,
+      unitCost: MoneyEx.fromInt(500),
+    ),
+    actualPrice: includeActuals
+        ? MaterialPrice.items(
+            quantity: Fixed.one,
+            unitCost: MoneyEx.fromInt(500),
+          )
+        : null,
     chargeMode: ChargeMode.calculated,
     margin: Percentage.zero,
     completed: completed,
@@ -379,10 +584,14 @@ Future<TaskItem> _insertTaskItemForExistingJob({
     description: 'Second item',
     purpose: '',
     itemType: itemType,
-    estimatedMaterialUnitCost: MoneyEx.fromInt(500),
-    estimatedMaterialQuantity: Fixed.one,
-    actualMaterialUnitCost: MoneyEx.fromInt(500),
-    actualMaterialQuantity: Fixed.one,
+    estimatedPrice: MaterialPrice.items(
+      quantity: Fixed.one,
+      unitCost: MoneyEx.fromInt(500),
+    ),
+    actualPrice: MaterialPrice.items(
+      quantity: Fixed.one,
+      unitCost: MoneyEx.fromInt(500),
+    ),
     chargeMode: ChargeMode.calculated,
     margin: Percentage.zero,
     completed: completed,
@@ -396,4 +605,18 @@ Future<TaskItem> _insertTaskItemForExistingJob({
   );
   await DaoTaskItem().insert(item);
   return item;
+}
+
+Future<Job> _jobForItem(TaskItem item) async {
+  final task = (await DaoTask().getById(item.taskId))!;
+  return (await DaoJob().getById(task.jobId))!;
+}
+
+Future<void> _setModifiedDate(TaskItem item, DateTime modifiedDate) async {
+  await testDb!.update(
+    DaoTaskItem.tableName,
+    {'modified_date': modifiedDate.toIso8601String()},
+    where: 'id = ?',
+    whereArgs: [item.id],
+  );
 }

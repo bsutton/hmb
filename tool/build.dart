@@ -48,6 +48,11 @@ void main(List<String> args) async {
       abbr: 'i',
       help: 'install the apk to a device connected via USB',
     )
+    ..addOption(
+      'device',
+      abbr: 'd',
+      help: 'Android device serial to install the apk onto',
+    )
     ..addFlag(
       'release',
       abbr: 'r',
@@ -69,6 +74,7 @@ Create a signed release appbundle suitable to upload to Google Play store.''',
   var install = results['install'] as bool;
   var assets = results['assets'] as bool;
   final release = results['release'] as bool;
+  final device = results['device'] as String?;
 
   if (!build && !install && !assets && !release) {
     /// no switches passed so do it all.
@@ -109,7 +115,7 @@ Create a signed release appbundle suitable to upload to Google Play store.''',
   }
 
   if (install) {
-    installApk();
+    installApk(device: device);
   }
 }
 
@@ -126,13 +132,83 @@ void _runPubGet() {
   'flutter pub get'.start(workingDirectory: DartProject.self.pathToProjectRoot);
 }
 
-void installApk() {
+void installApk({String? device}) {
   print(
-    orange('Make certain you have first run --build so you get the lastet apk'),
+    orange('Make certain you have first run --build so you get the latest apk'),
   );
-  // 'flutter install'.run;
 
-  'adb install -r build/app/outputs/flutter-apk/app-release.apk'.run;
+  final serial = _selectAndroidInstallTarget(device);
+  print(orange('Installing APK to Android device $serial'));
+  final args = [
+    '-s',
+    serial,
+    'install',
+    '-r',
+    'build/app/outputs/flutter-apk/app-release.apk',
+  ];
+  final result = Process.runSync('adb', args);
+  stdout.write(result.stdout);
+  stderr.write(result.stderr);
+  if (result.exitCode != 0) {
+    throw ProcessException(
+      'adb',
+      args,
+      result.stderr.toString(),
+      result.exitCode,
+    );
+  }
+}
+
+String _selectAndroidInstallTarget(String? requestedSerial) {
+  final result = Process.runSync('adb', ['devices', '-l']);
+  if (result.exitCode != 0) {
+    throw ProcessException(
+      'adb',
+      ['devices', '-l'],
+      result.stderr.toString(),
+      result.exitCode,
+    );
+  }
+
+  final devices = result.stdout
+      .toString()
+      .split('\n')
+      .map((line) => line.trim())
+      .where((line) => RegExp(r'^\S+\s+device(?:\s|$)').hasMatch(line))
+      .toList();
+
+  if (devices.isEmpty) {
+    throw StateError(
+      'No Android devices are attached. '
+      'Start an emulator or connect a device, then run adb devices -l.',
+    );
+  }
+
+  if (requestedSerial != null && requestedSerial.isNotEmpty) {
+    final isConnected = devices.any(
+      (line) => line.startsWith('$requestedSerial '),
+    );
+    if (!isConnected) {
+      throw StateError(
+        'Device $requestedSerial is not connected. '
+        'Connected devices:\n${devices.join('\n')}',
+      );
+    }
+    return requestedSerial;
+  }
+
+  final usbDevices = devices.where((line) => line.contains(' usb:')).toList();
+  if (usbDevices.length == 1) {
+    return usbDevices.single.split(RegExp(r'\s+')).first;
+  }
+  if (usbDevices.isEmpty && devices.length == 1) {
+    return devices.single.split(RegExp(r'\s+')).first;
+  }
+
+  throw StateError(
+    'Expected exactly one USB-connected Android device. '
+    'Use --device <serial> to choose a target.',
+  );
 }
 
 void buildApk() {

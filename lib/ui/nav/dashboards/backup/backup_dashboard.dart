@@ -43,6 +43,8 @@ class BackupDashboardPage extends StatefulWidget {
 class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   var _isDbOffline = false;
   var _photoStageDescription = '';
+  var _photoStageNo = 0;
+  var _photoStageCount = 0;
   var _syncRunning = false;
 
   GoogleDriveAuth? _auth;
@@ -51,17 +53,30 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   DateTime? _lastBackup;
   late final StreamSubscription<ProgressUpdate> _photoSub;
   late final StreamSubscription<String> _photoErrorSub;
+  late final StreamSubscription<bool> _authSub;
 
   @override
   void initState() {
     super.initState();
     // Listen for photo sync progress
     _photoSub = PhotoSyncService().progressStream.listen((update) {
-      setState(() => _photoStageDescription = update.stageDescription);
+      if (mounted) {
+        setState(() {
+          _photoStageDescription = update.stageDescription;
+          _photoStageNo = update.stageNo;
+          _photoStageCount = update.stageCount;
+          _syncRunning = PhotoSyncService().isRunning;
+        });
+      }
     });
     _photoErrorSub = PhotoSyncService().errorStream.listen((message) {
       if (mounted) {
         HMBToast.error('Photo sync failed: $message');
+      }
+    });
+    _authSub = GoogleDriveAuth.authStateChanges.listen((_) {
+      if (mounted) {
+        setState(() {});
       }
     });
   }
@@ -73,6 +88,8 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     authIsSupported = GoogleDriveAuth.isAuthSupported();
 
     if (authIsSupported) {
+      _auth = await GoogleDriveAuth.instance();
+      await _auth!.signInIfAutomatic();
       _lastBackup = await _refreshLastBackup();
     }
   }
@@ -81,6 +98,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   void dispose() {
     unawaited(_photoSub.cancel());
     unawaited(_photoErrorSub.cancel());
+    unawaited(_authSub.cancel());
     super.dispose();
   }
 
@@ -153,11 +171,13 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
       ),
 
       DashletCard<void>.onTap(
-        label: 'Signout',
-        hint: 'Sign out of your Google Drive Account',
-        icon: Icons.info,
+        label: _auth?.isSignedIn ?? false ? 'Sign Out' : 'Sign In',
+        hint: _auth?.isSignedIn ?? false
+            ? 'Sign out of your Google Drive Account'
+            : 'Sign in to your Google Drive Account',
+        icon: _auth?.isSignedIn ?? false ? Icons.logout : Icons.login,
         value: () => Future.value(const DashletValue(null)),
-        onTap: (_) => signout(),
+        onTap: (_) => _toggleSignIn(),
       ),
     ],
   );
@@ -248,12 +268,33 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   }
 
   Future<void> _syncPhotos() async {
+    final photoSync = PhotoSyncService();
+    if (_syncRunning || photoSync.isRunning) {
+      photoSync.cancelSync();
+      if (mounted) {
+        setState(() {
+          _syncRunning = false;
+          _photoStageDescription = '';
+          _photoStageNo = 0;
+          _photoStageCount = 0;
+        });
+        HMBToast.info('Photo sync cancelled.');
+      }
+      return;
+    }
     if (!await _ensureSignedInForAction()) {
       return;
     }
     try {
-      _syncRunning = true;
-      await _provider.syncPhotos();
+      if (mounted) {
+        setState(() {
+          _syncRunning = true;
+          _photoStageDescription = '';
+          _photoStageNo = 0;
+          _photoStageCount = 0;
+        });
+      }
+      await photoSync.start(retryOnFailure: false);
       await BackupHistoryStore.record(
         provider: _provider.name,
         operation: BackupHistoryStore.operationPhotoSync,
@@ -270,7 +311,16 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         HMBToast.error('Error during photo sync: $e');
       }
     } finally {
-      _syncRunning = false;
+      if (mounted) {
+        setState(() {
+          _syncRunning = false;
+          _photoStageDescription = '';
+          _photoStageNo = 0;
+          _photoStageCount = 0;
+        });
+      } else {
+        _syncRunning = false;
+      }
     }
   }
 
@@ -314,11 +364,35 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   }
 
   Future<void> signout() async {
-    final auth = _auth ??= await GoogleDriveAuth.instance();
-    await auth.signOut();
-    if (mounted) {
-      setState(() {});
+    if (_syncRunning || PhotoSyncService().isRunning) {
+      PhotoSyncService().cancelSync();
     }
+    final auth = _auth ??= await GoogleDriveAuth.instance();
+    try {
+      await auth.signOut();
+      if (mounted) {
+        setState(() {
+          _syncRunning = false;
+          _photoStageDescription = '';
+          _photoStageNo = 0;
+          _photoStageCount = 0;
+        });
+        HMBToast.info('Signed out of Google Drive.');
+      }
+    } catch (e) {
+      if (mounted) {
+        HMBToast.error('Sign-out failed: $e');
+      }
+    }
+  }
+
+  Future<void> _toggleSignIn() async {
+    final auth = _auth ??= await GoogleDriveAuth.instance();
+    if (auth.isSignedIn) {
+      await signout();
+      return;
+    }
+    await _ensureSignedInForAction();
   }
 
   Future<bool> _ensureSignedInForAction() async {
@@ -353,6 +427,12 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     children: [
       if (_photoStageDescription.isNotEmpty) ...[
         Text(_photoStageDescription, style: const TextStyle(fontSize: 16)),
+        if (_photoStageCount > 0) ...[
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: (_photoStageNo / _photoStageCount).clamp(0, 1).toDouble(),
+          ),
+        ],
       ],
       if (!_isDbOffline && !_syncRunning)
         FutureBuilderEx<List<PhotoPayload>>(
@@ -363,6 +443,12 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
                 : '${unsynced.length} photos to be synced ';
             return Text(text, style: const TextStyle(fontSize: 16));
           },
+        ),
+      if (_syncRunning)
+        const Text(
+          'Photo sync running. Tap Sync Photos to cancel.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 16),
         ),
     ],
   );

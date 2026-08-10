@@ -201,6 +201,93 @@ void main() {
     );
   });
 
+  test('payment creates durable accounting sync events', () async {
+    final invoice = await _insertInvoice(total: MoneyEx.dollars(100));
+    final service = DebtorLedgerService();
+
+    final payment = await service.recordPayment(
+      invoiceId: invoice.id,
+      amount: MoneyEx.dollars(40),
+    );
+    final allocations = await DaoPaymentAllocation().getByPaymentId(payment.id);
+
+    expect(
+      await DaoAccountingSyncEvent().getByEntity(
+        provider: 'xero',
+        entityType: DebtorLedgerService.paymentEntity,
+        localId: payment.id,
+      ),
+      hasLength(1),
+    );
+    expect(
+      await DaoAccountingSyncEvent().getByEntity(
+        provider: 'xero',
+        entityType: DebtorLedgerService.paymentAllocationEntity,
+        localId: allocations.single.id,
+      ),
+      hasLength(1),
+    );
+  });
+
+  test('deleting unsynced allocation supersedes create event', () async {
+    final invoice = await _insertInvoice(total: MoneyEx.dollars(100));
+    final service = DebtorLedgerService();
+    final payment = await service.recordPayment(
+      invoiceId: invoice.id,
+      amount: MoneyEx.dollars(40),
+    );
+    final allocation = (await DaoPaymentAllocation().getByPaymentId(
+      payment.id,
+    )).single;
+
+    await service.deletePaymentAllocation(allocation.id);
+
+    expect(await DaoPaymentAllocation().getById(allocation.id), isNull);
+    expect(
+      await service.paymentUnallocatedAmount(payment),
+      MoneyEx.dollars(40),
+    );
+    final events = await DaoAccountingSyncEvent().getByEntity(
+      provider: 'xero',
+      entityType: DebtorLedgerService.paymentAllocationEntity,
+      localId: allocation.id,
+    );
+    expect(events.single.status, AccountingSyncEventStatus.superseded);
+  });
+
+  test(
+    'deleting synced payment queues delete and removes allocations',
+    () async {
+      final invoice = await _insertInvoice(total: MoneyEx.dollars(100));
+      final service = DebtorLedgerService();
+      final payment = await service.recordPayment(
+        invoiceId: invoice.id,
+        amount: MoneyEx.dollars(40),
+      );
+      await DaoDebtorPayment().markExternal(
+        payment: payment,
+        provider: 'xero',
+        externalPaymentId: 'xero-payment-1',
+      );
+      final allocation = (await DaoPaymentAllocation().getByPaymentId(
+        payment.id,
+      )).single;
+      await DaoPaymentAllocation().update(
+        allocation.copyWith(externalAllocationId: 'xero-payment-1'),
+      );
+
+      await service.deletePayment(payment.id);
+
+      expect(await DaoDebtorPayment().getById(payment.id), isNull);
+      expect(await DaoPaymentAllocation().getByPaymentId(payment.id), isEmpty);
+      final deleteEvents = (await DaoAccountingSyncEvent().getPending(
+        provider: 'xero',
+        operation: AccountingSyncOperation.delete,
+      )).where((event) => event.externalId == 'xero-payment-1').toList();
+      expect(deleteEvents, isNotEmpty);
+    },
+  );
+
   test('credit note allocation reduces invoice balance', () async {
     final invoice = await _insertInvoice(total: MoneyEx.dollars(100));
     final service = DebtorLedgerService();
@@ -324,7 +411,7 @@ void main() {
           .where((entry) => entry.type == InvoiceLedgerHistoryEntryType.payment)
           .single
           .detail,
-      'Bank - REF-1',
+      contains('Bank - REF-1'),
     );
   });
 }

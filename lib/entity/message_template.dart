@@ -47,6 +47,9 @@ class MessageTemplate extends Entity<MessageTemplate> {
     this.ordinal = 0, // Default ordinal value
   }) : super.forInsert();
 
+  static String normalizeMessage(String message) =>
+      message.replaceAll(r'\n', '\n').replaceAll(r'\r', '\r');
+
   MessageTemplate copyWith({
     String? title,
     String? message,
@@ -57,7 +60,7 @@ class MessageTemplate extends Entity<MessageTemplate> {
   }) => MessageTemplate._(
     id: id,
     title: title ?? this.title,
-    message: message ?? this.message,
+    message: normalizeMessage(message ?? this.message),
     messageType: messageType ?? this.messageType,
     owner: owner ?? this.owner,
     enabled: enabled ?? this.enabled,
@@ -70,7 +73,7 @@ class MessageTemplate extends Entity<MessageTemplate> {
       MessageTemplate._(
         id: map['id'] as int,
         title: map['title'] as String,
-        message: map['message'] as String,
+        message: normalizeMessage(map['message'] as String),
         messageType: MessageType.values.byName(map['message_type'] as String),
         owner: MessageTemplateOwner.values[map['owner'] as int],
         enabled: map['enabled'] as int == 1,
@@ -83,7 +86,7 @@ class MessageTemplate extends Entity<MessageTemplate> {
   Map<String, dynamic> toMap() => {
     'id': id,
     'title': title,
-    'message': message,
+    'message': normalizeMessage(message),
     'message_type': messageType.name, // Store the enum as a string
     'owner': owner.index,
     'enabled': enabled ? 1 : 0,

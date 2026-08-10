@@ -17,6 +17,7 @@ import 'package:june/june.dart';
 import '../../../dao/dao_site.dart';
 import '../../../dao/join_adaptors/join_adaptor_customer_site.dart';
 import '../../../entity/customer.dart';
+import '../../../entity/job.dart';
 import '../../../entity/site.dart';
 import '../../crud/site/edit_site_screen.dart';
 import '../icons/hmb_add_button.dart';
@@ -29,11 +30,13 @@ class HMBSelectSite extends StatefulWidget {
   /// The customer that owns the site.
   final Customer? customer;
   final SelectedSite initialSite;
+  final Job? associatedJob;
   final void Function(Site? site)? onSelected;
 
   const HMBSelectSite({
     required this.initialSite,
     required this.customer,
+    this.associatedJob,
     super.key,
     this.onSelected,
   });
@@ -43,8 +46,27 @@ class HMBSelectSite extends StatefulWidget {
 }
 
 class HMBSelectSiteState extends State<HMBSelectSite> {
-  Future<Site?> _getInitialSite() =>
-      DaoSite().getById(widget.initialSite.siteId);
+  Future<Site?> _getInitialSite() async {
+    if (widget.initialSite.siteId != null) {
+      return DaoSite().getById(widget.initialSite.siteId);
+    }
+
+    final sites = await DaoSite().getByFilter(widget.customer?.id, null);
+    if (sites.length != 1) {
+      final site = await DaoSite().getByJob(widget.associatedJob);
+      if (site == null) {
+        return null;
+      }
+      widget.initialSite.siteId = site.id;
+      widget.onSelected?.call(site);
+      return site;
+    }
+
+    final site = sites.first;
+    widget.initialSite.siteId = site.id;
+    widget.onSelected?.call(site);
+    return site;
+  }
 
   Future<List<Site>> _getSites(String? filter) =>
       DaoSite().getByFilter(widget.customer?.id, filter);

@@ -100,7 +100,11 @@ class AppSettings {
     await settings.save();
   }
 
-  static Future<int> getFinancialYearStartMonth() async {
+  static Future<int> getFinancialYearStartMonth() async =>
+      await getConfiguredFinancialYearStartMonth() ??
+      financialYearStartMonthDefault;
+
+  static Future<int?> getConfiguredFinancialYearStartMonth() async {
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
     final value = settings[_financialYearStartMonthKey];
     if (value is int && value >= 1 && value <= 12) {
@@ -112,7 +116,7 @@ class AppSettings {
         return parsed;
       }
     }
-    return financialYearStartMonthDefault;
+    return null;
   }
 
   static Future<void> setFinancialYearStartMonth(int month) async {

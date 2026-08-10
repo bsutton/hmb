@@ -15,9 +15,28 @@ import 'package:money2/money2.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.g.dart';
-import '../util/dart/fixed_ex.dart';
 import '../util/dart/money_ex.dart';
 import 'dao.dart';
+
+enum ShoppingHistoryRange {
+  last7Days('Last 7 Days', 7),
+  last30Days('Last 30 Days', 30),
+  last90Days('Last 90 Days', 90),
+  lastYear('Last Year', 365),
+  all('All Dates', null);
+
+  const ShoppingHistoryRange(this.displayName, this.days);
+
+  final String displayName;
+  final int? days;
+
+  DateTime? cutoff(DateTime referenceTime) {
+    if (days == null) {
+      return null;
+    }
+    return referenceTime.subtract(Duration(days: days!));
+  }
+}
 
 class DaoTaskItem extends Dao<TaskItem> {
   static final _closedShoppingJobStatusIds = [
@@ -55,28 +74,7 @@ class DaoTaskItem extends Dao<TaskItem> {
       return;
     }
 
-    final estimatedUnitCost = item.estimatedMaterialUnitCost;
-    final estimatedQuantity = item.estimatedMaterialQuantity;
-    if (estimatedUnitCost == null || estimatedQuantity == null) {
-      return;
-    }
-
-    if (MoneyEx.isZeroOrNull(item.actualMaterialUnitCost)) {
-      item.actualMaterialUnitCost = estimatedUnitCost;
-    }
-    if (FixedEx.isZeroOrNull(item.actualMaterialQuantity)) {
-      item.actualMaterialQuantity = estimatedQuantity;
-    }
-
-    final actualUnitCost = item.actualMaterialUnitCost;
-    final actualQuantity = item.actualMaterialQuantity;
-    if (actualUnitCost == null || actualQuantity == null) {
-      return;
-    }
-
-    if (MoneyEx.isZeroOrNull(item.actualCost)) {
-      item.actualCost = actualUnitCost.multiplyByFixed(actualQuantity);
-    }
+    item.actualPrice ??= item.estimatedPrice;
   }
 
   Future<List<TaskItem>> getByTask(int? taskId) async {
@@ -111,15 +109,11 @@ WHERE task_id = ?
 
   Future<void> markAsCompleted({
     required TaskItem item,
-    required Money materialUnitCost,
-    required Fixed materialQuantity,
+    required MaterialPrice price,
   }) async {
     item
       ..completed = true
-      ..setActualCosts(
-        actualMaterialQuantity: materialQuantity,
-        actualMaterialUnitCost: materialUnitCost,
-      );
+      ..setActualPrice(price);
 
     await update(item);
   }
@@ -183,18 +177,20 @@ SELECT ti.*
   }
 
   Future<List<TaskItem>> getPurchasedItemsForReceiptLink({
-    required int jobId,
+    int? jobId,
     int? supplierId,
+    DateTime? since,
   }) async {
     final db = withoutTransaction();
+    final jobClause = jobId == null ? '' : 'AND t.job_id = ?';
     final supplierClause = supplierId == null ? '' : 'AND ti.supplier_id = ?';
+    final sinceClause = since == null ? '' : 'AND ti.modified_date >= ?';
     final rows = await db.rawQuery(
       '''
 SELECT ti.*
   FROM task_item ti
   JOIN task t ON ti.task_id = t.id
- WHERE t.job_id = ?
-   AND ti.item_type_id IN (
+ WHERE ti.item_type_id IN (
      ${TaskItemType.materialsBuy.id},
      ${TaskItemType.toolsBuy.id},
      ${TaskItemType.toolsHire.id},
@@ -202,10 +198,16 @@ SELECT ti.*
    )
    AND ti.completed = 1
    AND ti.is_return = 0
+   $jobClause
    $supplierClause
+   $sinceClause
  ORDER BY ti.modified_date DESC
 ''',
-      [jobId, if (supplierId != null) supplierId],
+      [
+        if (jobId != null) jobId,
+        if (supplierId != null) supplierId,
+        if (since != null) since.toIso8601String(),
+      ],
     );
     return toList(rows);
   }
@@ -352,9 +354,8 @@ SELECT ti.*
     required LabourEntryMode labourEntryMode,
     required Fixed estimatedLabourHours,
     required Money hourlyRate,
-    required Money estimatedMaterialUnitCost,
+    required MaterialPrice estimatedPrice,
     required Money estimatedLabourCost,
-    required Fixed estimatedMaterialQuantity,
     required Money charge,
   }) {
     Money? estimatedCost;
@@ -368,8 +369,7 @@ SELECT ti.*
       case TaskItemType.consumablesStock:
       case TaskItemType.consumablesBuy:
         {
-          final quantity = estimatedMaterialQuantity;
-          estimatedCost = estimatedMaterialUnitCost.multiplyByFixed(quantity);
+          estimatedCost = estimatedPrice.totalCost;
           charge = estimatedCost.plusPercentage(margin);
         }
       case TaskItemType.labour:
@@ -388,9 +388,10 @@ SELECT ti.*
 
   /// Items that have been purchased but not returned.
   Future<List<TaskItem>> getPurchasedItems({
-    required DateTime since,
+    required ShoppingHistoryRange historyRange,
     required List<Job> jobs,
     int? supplierId,
+    bool includeInactiveJobs = false,
   }) async {
     final db = withoutTransaction();
 
@@ -399,12 +400,17 @@ SELECT ti.*
   FROM task_item ti
   JOIN task t               ON ti.task_id       = t.id
   JOIN job j                ON t.job_id         = j.id
- WHERE (ti.item_type_id = 1 -- 'Materials - buy' 
- OR ti.item_type_id = 3 -- 'Tools - buy'
+ WHERE (ti.item_type_id = ${TaskItemType.materialsBuy.id}
+ OR ti.item_type_id = ${TaskItemType.toolsBuy.id}
  OR ti.item_type_id = ${TaskItemType.toolsHire.id} -- 'Tools - hire'
+ OR ti.item_type_id = ${TaskItemType.consumablesBuy.id} -- 'Consumables - buy'
  )
    AND ti.completed = 1
    AND ti.is_return = 0
+''');
+
+    if (!includeInactiveJobs) {
+      sql.write('''
    AND j.status_id NOT IN (
       '${JobStatus.rejected.id}',
       '${JobStatus.onHold.id}',
@@ -412,7 +418,17 @@ SELECT ti.*
       '${JobStatus.completed.id}',
       '${JobStatus.toBeBilled.id}'
     )
-   AND ti.modified_date >= ?
+''');
+    }
+
+    final params = <dynamic>[];
+    final cutoff = historyRange.cutoff(DateTime.now());
+    if (cutoff != null) {
+      sql.write(' AND ti.modified_date >= ?');
+      params.add(cutoff.toIso8601String());
+    }
+
+    sql.write('''
    -- exclude any purchase that has been returned
    AND NOT EXISTS (
      SELECT 1
@@ -420,8 +436,6 @@ SELECT ti.*
       WHERE r.source_task_item_id = ti.id
    )
 ''');
-
-    final params = <dynamic>[since.toIso8601String()];
 
     if (jobs.isNotEmpty) {
       final placeholders = List.filled(jobs.length, '?').join(',');
@@ -440,8 +454,10 @@ SELECT ti.*
 
   /// “Returned” tab (items that have already been returned)
   Future<List<TaskItem>> getReturnedItems({
+    required ShoppingHistoryRange historyRange,
     List<Job>? jobs,
     int? supplierId,
+    bool includeInactiveJobs = false,
   }) async {
     final db = withoutTransaction();
 
@@ -451,6 +467,10 @@ SELECT ti.*
   JOIN task t               ON ti.task_id       = t.id
   JOIN job j                ON t.job_id         = j.id
  WHERE ti.is_return = 1
+''');
+
+    if (!includeInactiveJobs) {
+      sql.write('''
    AND j.status_id NOT IN (
       '${JobStatus.rejected.id}',
       '${JobStatus.onHold.id}',
@@ -459,8 +479,14 @@ SELECT ti.*
       '${JobStatus.toBeBilled.id}'
     )
 ''');
+    }
 
     final params = <dynamic>[];
+    final cutoff = historyRange.cutoff(DateTime.now());
+    if (cutoff != null) {
+      sql.write(' AND ti.modified_date >= ?');
+      params.add(cutoff.toIso8601String());
+    }
 
     // Optional job filter
     if (jobs != null && jobs.isNotEmpty) {
@@ -482,6 +508,46 @@ SELECT ti.*
     return toList(rows);
   }
 
+  Future<List<TaskItem>> getReturnedItemsForReceiptLink({
+    int? jobId,
+    int? supplierId,
+    DateTime? since,
+  }) async {
+    final db = withoutTransaction();
+    final sql = StringBuffer('''
+SELECT ti.*
+ FROM task_item ti
+  JOIN task t               ON ti.task_id       = t.id
+  JOIN job j                ON t.job_id         = j.id
+ WHERE ti.is_return = 1
+   AND j.status_id NOT IN (
+      '${JobStatus.rejected.id}',
+      '${JobStatus.onHold.id}',
+      '${JobStatus.awaitingPayment.id}',
+      '${JobStatus.completed.id}',
+      '${JobStatus.toBeBilled.id}'
+    )
+''');
+
+    final params = <dynamic>[];
+    if (jobId != null) {
+      sql.write(' AND j.id = ?');
+      params.add(jobId);
+    }
+    if (supplierId != null) {
+      sql.write(' AND ti.supplier_id = ?');
+      params.add(supplierId);
+    }
+    if (since != null) {
+      sql.write(' AND ti.modified_date >= ?');
+      params.add(since.toIso8601String());
+    }
+
+    sql.write(' ORDER BY ti.modified_date DESC');
+    final rows = await db.rawQuery(sql.toString(), params);
+    return toList(rows);
+  }
+
   /// In DaoTaskItem (just below your other “mark…” methods)
 
   /// Marks a completed TaskItem as returned:
@@ -489,15 +555,11 @@ SELECT ti.*
   ///  - records how many units were returned
   ///  - records the refund per unit
   ///  - timestamps the return
-  Future<void> markAsReturned(
-    int originalId,
-    Fixed returnQuantity,
-    Money returnUnitPrice,
-  ) async {
+  Future<void> markAsReturned(int originalId, MaterialPrice returnPrice) async {
     final taskItem = await DaoTaskItem().getById(originalId);
 
     // 2. Build and insert the return row
-    final returnItem = taskItem!.forReturn(returnQuantity, returnUnitPrice);
+    final returnItem = taskItem!.forReturn(returnPrice);
     await insert(returnItem);
   }
 
@@ -514,5 +576,15 @@ SELECT 1
       [taskItemId],
     );
     return rows.isNotEmpty;
+  }
+
+  Future<List<TaskItem>> getReturnsFor(int taskItemId) async {
+    final rows = await withoutTransaction().query(
+      tableName,
+      where: 'source_task_item_id = ? AND is_return = 1',
+      whereArgs: [taskItemId],
+      orderBy: 'created_date ASC',
+    );
+    return toList(rows);
   }
 }

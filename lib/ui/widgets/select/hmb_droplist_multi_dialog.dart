@@ -27,12 +27,15 @@ class HMBDroplistMultiSelectDialog<T> extends StatefulWidget {
   final String Function(T) formatItem;
   final String title;
   final List<T> selectedItems;
+  final Widget Function(BuildContext context, VoidCallback onChange)?
+  headerBuilder;
 
   const HMBDroplistMultiSelectDialog({
     required this.getItems,
     required this.formatItem,
     required this.title,
     required this.selectedItems,
+    this.headerBuilder,
     super.key,
   });
 
@@ -47,7 +50,9 @@ class _HMBDroplistMultiSelectDialogState<T>
   List<T>? _items;
   var _loading = true;
   var _filter = '';
+  var _loadGeneration = 0;
   late List<T> _selectedItems;
+  Timer? _searchDebounce;
 
   final _searchController = TextEditingController();
 
@@ -59,18 +64,43 @@ class _HMBDroplistMultiSelectDialogState<T>
   }
 
   Future<void> _loadItems() async {
-    _items = await widget.getItems(_filter);
+    final generation = ++_loadGeneration;
+    final filter = _filter;
+    final items = await widget.getItems(filter);
+    if (!mounted || generation != _loadGeneration || filter != _filter) {
+      return;
+    }
     setState(() {
+      _items = items;
       _loading = false;
     });
   }
 
   void _onFilterChanged(String filter) {
+    _searchDebounce?.cancel();
     setState(() {
       _filter = filter;
       _loading = true;
     });
+    _searchDebounce = Timer(
+      const Duration(milliseconds: 250),
+      () => unawaited(_loadItems()),
+    );
+  }
+
+  void _reloadItems() {
+    _searchDebounce?.cancel();
+    setState(() {
+      _loading = true;
+    });
     unawaited(_loadItems());
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -105,12 +135,15 @@ class _HMBDroplistMultiSelectDialogState<T>
             ],
           ),
         ),
-        if (_loading)
+        if (widget.headerBuilder != null)
+          widget.headerBuilder!(context, _reloadItems),
+        if (_loading && _items == null)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 20),
             child: CircularProgressIndicator(),
           )
-        else if (_items != null)
+        else if (_items != null) ...[
+          if (_loading) const LinearProgressIndicator(minHeight: 2),
           Expanded(
             child: Container(
               constraints: BoxConstraints(
@@ -145,6 +178,7 @@ class _HMBDroplistMultiSelectDialogState<T>
               ),
             ),
           ),
+        ],
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: TextField(
@@ -156,12 +190,9 @@ class _HMBDroplistMultiSelectDialogState<T>
               ),
               suffixIcon: HMBClearIcon(
                 onPressed: () async {
-                  setState(() {
-                    _searchController.text = '';
-                    _filter = '';
-                    _loading = true;
-                  });
-                  unawaited(_loadItems());
+                  _searchController.clear();
+                  _filter = '';
+                  _reloadItems();
                 },
               ),
             ),

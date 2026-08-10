@@ -15,7 +15,6 @@
 
 import 'dart:async';
 
-import 'package:completer_ex/completer_ex.dart';
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -254,7 +253,7 @@ typedef BlockingWidgetBuilder<T> =
 class BlockingUITransitionState<T>
     extends DeferredState<BlockingUITransition<T>> {
   var _initialised = false;
-  late final CompleterEx<T> completer;
+  late final Completer<T> completer;
 
   Object? _error;
 
@@ -280,6 +279,9 @@ class BlockingUITransitionState<T>
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
+    // The global BlockingOverlay provides the waiting UI. Suppress the
+    // DeferredBuilder package's fallback "Loading..." text beneath it.
+    waitingBuilder: (context) => const HMBEmpty(),
     builder: (context) {
       if (completer.isCompleted) {
         if (_error == null) {
@@ -408,7 +410,7 @@ class BlockingUI {
   /// If [func] needs to return a null it must still return a future by using:
   /// Future.value(null);
   /// ```
-  CompleterEx<T> run<T>(Future<T> Function() slowAction, {String? label}) {
+  Completer<T> run<T>(Future<T> Function() slowAction, {String? label}) {
     final overlay = June.getState(BlockingOverlayState.new);
     final actionRunner = RunningSlowAction<T>(label, slowAction, overlay.end);
 
@@ -440,17 +442,18 @@ class RunningSlowAction<T> {
   final Future<T> Function() slowAction;
   void Function() end;
 
-  final CompleterEx<T> completer;
+  final Completer<T> completer;
 
   /// The stack trace of where the [BlockingUI.run] method was called from.
   StackTraceImpl stackTrace;
   final DateTime _createdAt;
+  late final Timer _blockReportTimer;
 
   RunningSlowAction(this.label, this.slowAction, this.end)
-    : completer = CompleterEx<T>(debugName: label),
+    : completer = Completer<T>(),
       stackTrace = StackTraceImpl(skipFrames: 2),
       _createdAt = DateTime.now() {
-    Future<void>.delayed(_initialBlockReportDelay, _reportIfStillBlocked);
+    _blockReportTimer = Timer(_initialBlockReportDelay, _reportIfStillBlocked);
   }
 
   void start() {
@@ -467,7 +470,10 @@ class RunningSlowAction<T> {
           }
         })
         // ignore: discarded_futures
-        .whenComplete(end);
+        .whenComplete(() {
+          _blockReportTimer.cancel();
+          end();
+        });
   }
 
   void _reportIfStillBlocked() {
@@ -486,6 +492,6 @@ class RunningSlowAction<T> {
       stackTrace: stackTrace,
     );
 
-    Future<void>.delayed(_blockReportInterval, _reportIfStillBlocked);
+    _blockReportTimer = Timer(_blockReportInterval, _reportIfStillBlocked);
   }
 }

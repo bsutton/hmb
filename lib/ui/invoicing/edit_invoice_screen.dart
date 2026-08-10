@@ -100,7 +100,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '''Invoice #${invoice.id} Issued: ${formatDate(invoice.createdDate)}''',
+                  '''Invoice #${invoice.id} - ${formatDate(invoice.createdDate)}''',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -108,19 +108,27 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                 ),
                 Text('Customer: ${customer?.name ?? "N/A"}'),
                 Text('Job: ${job.summary} #${job.id}'),
-                Text('Total: ${invoice.totalAmount}'),
-                Text('Sync: ${_syncStatusLabel(invoice.externalSyncStatus)}'),
                 if (Strings.isNotBlank(invoice.voidDescription))
                   Text('Void description: ${invoice.voidDescription}'),
-                Text(
-                  'Management: '
-                  '${_paymentManagementLabel(invoice)}',
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 8,
+                  children: [
+                    Text(
+                      'Payment tracking: '
+                      '${_paymentManagementLabel(invoice)}',
+                    ),
+                    Text(
+                      'Accounting sync: '
+                      '${_syncStatusLabel(invoice.externalSyncStatus)}',
+                    ),
+                  ],
                 ),
                 _buildLedgerSummary(details),
                 if (invoice.paymentSource == InvoicePaymentSource.unknown)
                   const Text(
-                    'This is a legacy invoice. Convert it to manual '
-                    'management if it is no longer managed in Xero.',
+                    'This invoice needs payment tracking review. Convert it '
+                    'to manual tracking if it is no longer managed in Xero.',
                   ),
                 if (!readOnlyInvoice)
                   FutureBuilderEx<bool>(
@@ -143,7 +151,8 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                           HMBButton(
                             label: 'Convert to Manual Tracking',
                             hint:
-                                'Switch this legacy invoice to manual tracking',
+                                'Switch this invoice to manual payment '
+                                'tracking',
                             onPressed: () async {
                               await _convertToManualTracking();
                             },
@@ -154,16 +163,6 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                             hint: 'Record a payment against this invoice',
                             onPressed: () async {
                               await _recordPayment(details);
-                            },
-                          ),
-                        if (_canApplyPayment(details))
-                          HMBButton(
-                            label: 'Apply Payment',
-                            hint:
-                                'Apply an existing customer payment to '
-                                'this invoice',
-                            onPressed: () async {
-                              await _applyPayment(details);
                             },
                           ),
                         if (_canRecordAdjustment(details))
@@ -294,14 +293,14 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Money owed',
+              'Payment summary',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             Wrap(
               spacing: 16,
               runSpacing: 8,
               children: [
-                Text('Total: ${ledger.total}'),
+                Text('Invoice total: ${ledger.total}'),
                 Text('Paid: ${ledger.paid}'),
                 Text('Credited: ${ledger.credited}'),
                 Text('Adjusted: ${ledger.adjusted}'),
@@ -309,6 +308,12 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                 Text('Status: ${_ledgerStatusLabel(ledger.status)}'),
               ],
             ),
+            if (_canApplyPayment(details))
+              HMBButton(
+                label: 'Allocate Payment',
+                hint: 'Allocate an existing customer payment to this invoice',
+                onPressed: () => _applyPayment(details),
+              ),
             if (details.ledgerHistory.isNotEmpty) ...[
               const SizedBox(height: 8),
               const Text(
@@ -360,6 +365,10 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
 
   String _ledgerHistoryLabel(InvoiceLedgerHistoryEntry entry) {
     final detail = Strings.isBlank(entry.detail) ? '' : ' - ${entry.detail}';
+    if (entry.type == InvoiceLedgerHistoryEntryType.payment) {
+      return '${entry.title}: ${entry.amount}$detail - Allocated: '
+          '${formatDate(entry.date, format: 'j M Y')}';
+    }
     return '${formatDate(entry.date)} ${entry.title}: ${entry.amount}$detail';
   }
 
@@ -368,7 +377,9 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       !details.invoice.isExternallyDeletedOrVoided &&
       details.ledger.balance.isPositive;
 
-  bool _canApplyPayment(InvoiceDetails details) => _canRecordPayment(details);
+  bool _canApplyPayment(InvoiceDetails details) =>
+      !details.invoice.isExternallyDeletedOrVoided &&
+      details.ledger.balance.isPositive;
 
   bool _canRecordAdjustment(InvoiceDetails details) =>
       details.invoice.isManagedLocally &&
@@ -452,17 +463,37 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       return;
     }
     try {
-      await ledgerService.applyPaymentToInvoice(
-        paymentId: request.paymentId,
-        invoiceId: details.invoice.id,
-        amount: request.amount,
-        allocatedDate: request.allocatedDate,
-      );
+      if (request.recordsNewPayment) {
+        final payment = await ledgerService.recordUnallocatedPayment(
+          customerId: customerId,
+          contactId: details.invoice.billingContactId,
+          amount: request.newPaymentAmount!,
+          paymentDate: request.allocatedDate,
+          paymentMethod: request.paymentMethod,
+          reference: request.reference,
+          notes: request.notes,
+        );
+        await ledgerService.applyPaymentToInvoice(
+          paymentId: payment.id,
+          invoiceId: details.invoice.id,
+          amount: request.amount,
+          allocatedDate: request.allocatedDate,
+        );
+      } else {
+        await ledgerService.applyPaymentToInvoice(
+          paymentId: request.paymentId!,
+          invoiceId: details.invoice.id,
+          amount: request.amount,
+          allocatedDate: request.allocatedDate,
+        );
+      }
       await _reloadInvoice();
       if (!mounted) {
         return;
       }
-      HMBToast.info('Payment applied');
+      HMBToast.info(
+        request.recordsNewPayment ? 'Payment recorded' : 'Payment applied',
+      );
       setState(() {});
     } catch (e) {
       HMBToast.error(

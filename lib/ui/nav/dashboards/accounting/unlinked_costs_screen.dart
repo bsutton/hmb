@@ -16,16 +16,36 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../../dao/dao.g.dart';
 import '../../../../util/dart/format.dart';
+import '../../../crud/receipt/edit_receipt_screen.dart';
 import '../../../widgets/layout/layout.g.dart';
 import '../../../widgets/widgets.g.dart';
 import 'report_csv_export.dart';
 
-class UnlinkedCostsScreen extends StatelessWidget {
+class UnlinkedCostsScreen extends StatefulWidget {
   const UnlinkedCostsScreen({super.key});
 
   @override
+  State<UnlinkedCostsScreen> createState() => _UnlinkedCostsScreenState();
+}
+
+class _UnlinkedCostsScreenState extends State<UnlinkedCostsScreen> {
+  late Future<UnlinkedCostReport> _reportFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _reportFuture = AccountingReportService().unlinkedCosts();
+  }
+
+  void _reload() {
+    setState(() {
+      _reportFuture = AccountingReportService().unlinkedCosts();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) => FutureBuilderEx<UnlinkedCostReport>(
-    future: AccountingReportService().unlinkedCosts(),
+    future: _reportFuture,
     waitingBuilder: (_) => const Center(child: CircularProgressIndicator()),
     builder: (context, report) {
       if (report == null) {
@@ -107,10 +127,29 @@ class UnlinkedCostsScreen extends StatelessWidget {
               Text(row.amount.toString()),
             ],
           ),
+          HMBButton.smallWithIcon(
+            label: 'Link',
+            hint: 'Open this receipt and link its cost to task items',
+            icon: const Icon(Icons.link),
+            onPressed: () => _openReceipt(context, row),
+          ),
         ],
       ),
     ),
   );
+
+  Future<void> _openReceipt(BuildContext context, UnlinkedCostRow row) async {
+    final receipt = await DaoReceipt().getById(row.receiptId);
+    if (!context.mounted) {
+      return;
+    }
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => ReceiptEditScreen(receipt: receipt)),
+    );
+    if (mounted) {
+      _reload();
+    }
+  }
 
   List<List<String>> _pdfRows(UnlinkedCostReport report) => [
     ['Receipt', 'Date', 'Supplier', 'Job', 'Amount'],

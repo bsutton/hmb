@@ -23,6 +23,7 @@ import '../../../../api/chat_gpt/job_assist_api_client.dart';
 import '../../../../dao/dao.g.dart';
 import '../../../../entity/helpers/charge_mode.dart';
 import '../../../../entity/job.dart';
+import '../../../../entity/material_price.dart';
 import '../../../../entity/task.dart';
 import '../../../../entity/task_item.dart';
 import '../../../../entity/task_item_type.dart';
@@ -76,6 +77,7 @@ class _JobEstimateBuilderScreenState
   var _showWithdrawn = false;
 
   var _filter = '';
+  final _aiExpandingTaskIds = <int>{};
 
   @override
   Future<void> asyncInitState() async {
@@ -440,11 +442,7 @@ class _JobEstimateBuilderScreenState
                 Wrap(
                   spacing: 4,
                   children: [
-                    IconButton(
-                      tooltip: 'Expand with AI',
-                      onPressed: () => unawaited(_expandTaskWithAi(task)),
-                      icon: const Icon(Icons.auto_awesome),
-                    ),
+                    _buildAiExpandButton(task),
                     HMBEditIcon(
                       onPressed: () => _editTask(task),
                       hint: 'Edit Task',
@@ -499,6 +497,20 @@ class _JobEstimateBuilderScreenState
       const HMBSpacer(height: true),
     ],
   );
+
+  Widget _buildAiExpandButton(Task task) {
+    final isExpanding = _aiExpandingTaskIds.contains(task.id);
+    return IconButton(
+      tooltip: isExpanding ? 'Expanding with AI' : 'Expand with AI',
+      onPressed: isExpanding ? null : () => unawaited(_expandTaskWithAi(task)),
+      icon: isExpanding
+          ? const SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.auto_awesome),
+    );
+  }
 
   Widget _buildTaskItems(Task task) {
     final itemAndRate = _itemsByTaskId[task.id];
@@ -617,12 +629,20 @@ class _JobEstimateBuilderScreenState
   }
 
   Future<void> _expandTaskWithAi(Task task) async {
+    if (_aiExpandingTaskIds.contains(task.id)) {
+      return;
+    }
+    setState(() => _aiExpandingTaskIds.add(task.id));
+
     try {
       final suggestions = await JobAssistApiClient().expandTaskToItems(
         jobSummary: widget.job.summary,
         jobDescription: widget.job.description,
+        jobAssumptions: widget.job.assumption,
+        jobInternalNotes: widget.job.internalNotes,
         taskName: task.name,
         taskDescription: task.description,
+        existingTasks: _taskItemAssistContext(),
       );
       if (suggestions == null) {
         HMBToast.error('ChatGPT is not configured.');
@@ -646,8 +666,24 @@ class _JobEstimateBuilderScreenState
       HMBToast.info('Added $inserted estimate item(s) from AI.');
     } catch (e) {
       HMBToast.error('AI task expansion failed: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _aiExpandingTaskIds.remove(task.id));
+      }
     }
   }
+
+  List<TaskItemAssistTaskContext> _taskItemAssistContext() => [
+    for (final task in _tasks)
+      TaskItemAssistTaskContext(
+        taskName: task.name,
+        taskDescription: task.description,
+        itemDescriptions: (_itemsByTaskId[task.id]?.items ?? const <TaskItem>[])
+            .map((item) => item.description)
+            .where((description) => description.trim().isNotEmpty)
+            .toList(),
+      ),
+  ];
 
   Future<TaskItem> _buildTaskItemFromSuggestion(
     Task task,
@@ -688,12 +724,14 @@ class _JobEstimateBuilderScreenState
       estimatedLabourCost: isLabour && unitCost > 0
           ? Money.fromNum(unitCost * qty, isoCode: 'AUD')
           : null,
-      estimatedMaterialUnitCost: isLabour || unitCost <= 0
+      estimatedPrice: isLabour
           ? null
-          : Money.fromNum(unitCost, isoCode: 'AUD'),
-      estimatedMaterialQuantity: isLabour
-          ? null
-          : Fixed.fromNum(qty, decimalDigits: 3),
+          : MaterialPrice.items(
+              quantity: Fixed.fromNum(qty, decimalDigits: 3),
+              unitCost: unitCost <= 0
+                  ? MoneyEx.zero
+                  : Money.fromNum(unitCost, isoCode: 'AUD'),
+            ),
       supplierId: supplierId,
     );
   }

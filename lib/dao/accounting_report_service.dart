@@ -13,7 +13,9 @@
 
 import 'package:money2/money2.dart';
 
+import '../api/external_accounting.dart';
 import '../entity/credit_note.dart';
+import '../entity/debtor_adjustment.dart';
 import '../entity/invoice.dart';
 import '../entity/tax_code.dart';
 import '../entity/tax_scheme.dart';
@@ -79,11 +81,32 @@ class AccountingPeriod {
   factory AccountingPeriod.forYear(DateTime date) =>
       AccountingPeriod.year(date.year);
 
-  static Future<AccountingPeriod> forFinancialYear(DateTime date) async =>
-      AccountingPeriod.financialYear(
-        date: date,
-        startMonth: await AppSettings.getFinancialYearStartMonth(),
-      );
+  static Future<AccountingPeriod> forFinancialYear(DateTime date) async {
+    final configuredStartMonth =
+        await AppSettings.getConfiguredFinancialYearStartMonth();
+    return AccountingPeriod.financialYear(
+      date: date,
+      startMonth:
+          configuredStartMonth ??
+          defaultFinancialYearStartMonthForCountry(
+            (await DaoSystem().get()).countryCode,
+          ),
+    );
+  }
+
+  static int defaultFinancialYearStartMonthForCountry(String? countryCode) {
+    switch (countryCode?.trim().toUpperCase()) {
+      case 'AU':
+        return 7;
+      case 'NZ':
+      case 'GB':
+      case 'UK':
+      case 'IN':
+        return 4;
+      default:
+        return AppSettings.financialYearStartMonthDefault;
+    }
+  }
 }
 
 class ProfitAndLossReport {
@@ -187,18 +210,20 @@ class DebtorStatementEntry {
   final DebtorStatementEntryType type;
   final int invoiceId;
   final String invoiceNumber;
+  final String customerName;
   final DateTime date;
   final String description;
   final Money amount;
 
-  DebtorStatementEntry({
+  const DebtorStatementEntry({
     required this.type,
     required this.invoiceId,
+    required this.invoiceNumber,
+    required this.customerName,
     required this.date,
     required this.description,
     required this.amount,
-    String? invoiceNumber,
-  }) : invoiceNumber = invoiceNumber ?? invoiceId.toString();
+  });
 }
 
 class DebtorStatementReport {
@@ -333,6 +358,13 @@ class UnlinkedCostReport {
       rows.fold(MoneyEx.zero, (total, row) => total + row.amount);
 }
 
+class _StatementInvoice {
+  final Invoice invoice;
+  final String customerName;
+
+  const _StatementInvoice({required this.invoice, required this.customerName});
+}
+
 class AccountingReportService {
   Future<ProfitAndLossReport> profitAndLoss(AccountingPeriod period) async {
     final invoiceIncome = await _invoiceIncome(period: period);
@@ -377,43 +409,79 @@ class AccountingReportService {
 
   Future<AgedReceivablesReport> agedReceivables({LocalDate? asOfDate}) async {
     final asOf = asOfDate ?? LocalDate.today();
-    final invoices = await DaoInvoice().getAll();
-    final ledgerService = DebtorLedgerService();
-    final rows = <AgedReceivablesRow>[];
+    final db = DaoInvoice().withoutTransaction();
+    final data = await db.rawQuery(
+      '''
+WITH invoice_balances AS (
+  SELECT
+    i.id AS invoice_id,
+    i.due_date,
+    c.id AS customer_id,
+    IFNULL(c.name, 'Unknown customer') AS customer_name,
+    (
+      i.total_amount
+      - IFNULL(pa.paid, 0)
+      - IFNULL(ca.credited, 0)
+      - IFNULL(da.adjusted, 0)
+    ) AS balance
+  FROM invoice i
+  LEFT JOIN job j ON j.id = i.job_id
+  LEFT JOIN customer c ON c.id = j.customer_id
+  LEFT JOIN (
+    SELECT invoice_id, SUM(amount) AS paid
+    FROM debtor_payment_allocation
+    GROUP BY invoice_id
+  ) pa ON pa.invoice_id = i.id
+  LEFT JOIN (
+    SELECT invoice_id, SUM(amount) AS credited
+    FROM credit_allocation
+    GROUP BY invoice_id
+  ) ca ON ca.invoice_id = i.id
+  LEFT JOIN (
+    SELECT invoice_id, SUM(amount) AS adjusted
+    FROM debtor_adjustment
+    GROUP BY invoice_id
+  ) da ON da.invoice_id = i.id
+  WHERE IFNULL(i.paid, 0) = 0
+    AND IFNULL(i.external_sync_status, 0) NOT IN (?, ?)
+)
+SELECT *
+FROM invoice_balances
+WHERE balance > 0
+ORDER BY due_date ASC, invoice_id ASC
+''',
+      [
+        InvoiceExternalSyncStatus.deleted.ordinal,
+        InvoiceExternalSyncStatus.voided.ordinal,
+      ],
+    );
 
-    for (final invoice in invoices) {
-      if (invoice.isExternallyDeletedOrVoided) {
-        continue;
-      }
-      final summary = await ledgerService.invoiceSummary(invoice.id);
-      if (!summary.isOutstanding) {
-        continue;
-      }
-      final job = await DaoJob().getById(invoice.jobId);
-      final customer = job?.customerId == null
-          ? null
-          : await DaoCustomer().getById(job!.customerId);
-      rows.add(
-        AgedReceivablesRow(
-          invoiceId: invoice.id,
-          customerId: customer?.id,
-          customerName: customer?.name ?? 'Unknown customer',
-          dueDate: invoice.dueDate,
-          balance: summary.balance,
-          daysOverdue: asOf.difference(invoice.dueDate).inDays,
-        ),
-      );
-    }
-
-    rows.sort((lhs, rhs) {
-      final dueDate = lhs.dueDate.date.compareTo(rhs.dueDate.date);
-      return dueDate == 0 ? lhs.invoiceId.compareTo(rhs.invoiceId) : dueDate;
-    });
+    final rows = [
+      for (final row in data) _agedReceivablesRow(row: row, asOf: asOf),
+    ];
 
     return AgedReceivablesReport(
       asOfDate: asOf,
       rows: rows,
       buckets: _agedReceivablesBuckets(rows),
+    );
+  }
+
+  AgedReceivablesRow _agedReceivablesRow({
+    required Map<String, Object?> row,
+    required LocalDate asOf,
+  }) {
+    final dueDateValue = row['due_date'] as String?;
+    final dueDate = dueDateValue == null
+        ? asOf
+        : const LocalDateConverter().fromJson(dueDateValue);
+    return AgedReceivablesRow(
+      invoiceId: row['invoice_id']! as int,
+      customerId: row['customer_id'] as int?,
+      customerName: (row['customer_name'] as String?) ?? 'Unknown customer',
+      dueDate: dueDate,
+      balance: MoneyEx.fromInt(row['balance'] as int? ?? 0),
+      daysOverdue: asOf.difference(dueDate).inDays,
     );
   }
 
@@ -423,15 +491,26 @@ class AccountingReportService {
     required DateTime endExclusive,
     int? jobId,
   }) async {
-    final invoices = await _invoicesForCustomer(customerId, jobId: jobId);
-    final ledgerService = DebtorLedgerService();
+    final invoices = await _statementInvoicesForCustomer(
+      customerId,
+      jobId: jobId,
+    );
+    final histories = await _statementHistoryForInvoices(
+      invoices.map((invoice) => invoice.invoice.id).toList(),
+    );
+    final externalAccountingEnabled = await ExternalAccounting().isEnabled();
     var openingBalance = MoneyEx.zero;
     final entries = <DebtorStatementEntry>[];
 
-    for (final invoice in invoices) {
+    for (final statementInvoice in invoices) {
+      final invoice = statementInvoice.invoice;
       if (invoice.isExternallyDeletedOrVoided) {
         continue;
       }
+      final invoiceNumber = invoice.displayNumber(
+        externalAccountingEnabled: externalAccountingEnabled,
+      );
+      final customerName = statementInvoice.customerName;
 
       if (invoice.createdDate.isBefore(startInclusive)) {
         openingBalance += invoice.totalAmount;
@@ -440,19 +519,22 @@ class AccountingReportService {
           DebtorStatementEntry(
             type: DebtorStatementEntryType.invoice,
             invoiceId: invoice.id,
-            invoiceNumber: invoice.bestNumber,
+            invoiceNumber: invoiceNumber,
+            customerName: customerName,
             date: invoice.createdDate,
-            description: 'Invoice #${invoice.bestNumber}',
+            description: 'Invoice issued',
             amount: invoice.totalAmount,
           ),
         );
       }
 
-      final historyEntries = await ledgerService.invoiceHistory(invoice.id);
+      final historyEntries = histories[invoice.id] ?? const [];
       if (invoice.paid && historyEntries.isEmpty) {
         _addPaidInvoiceEntry(
           entries: entries,
           invoice: invoice,
+          invoiceNumber: invoiceNumber,
+          customerName: customerName,
           openingBalance: (amount) => openingBalance += amount,
           startInclusive: startInclusive,
           endExclusive: endExclusive,
@@ -468,9 +550,10 @@ class AccountingReportService {
             DebtorStatementEntry(
               type: _statementEntryType(history.type),
               invoiceId: invoice.id,
-              invoiceNumber: invoice.bestNumber,
+              invoiceNumber: invoiceNumber,
+              customerName: customerName,
               date: history.date,
-              description: '${history.title} - Invoice #${invoice.bestNumber}',
+              description: history.title,
               amount: amount,
             ),
           );
@@ -505,6 +588,8 @@ class AccountingReportService {
   void _addPaidInvoiceEntry({
     required List<DebtorStatementEntry> entries,
     required Invoice invoice,
+    required String invoiceNumber,
+    required String customerName,
     required void Function(Money amount) openingBalance,
     required DateTime startInclusive,
     required DateTime endExclusive,
@@ -522,9 +607,10 @@ class AccountingReportService {
       DebtorStatementEntry(
         type: DebtorStatementEntryType.payment,
         invoiceId: invoice.id,
-        invoiceNumber: invoice.bestNumber,
+        invoiceNumber: invoiceNumber,
+        customerName: customerName,
         date: paymentDate,
-        description: 'Payment received - Invoice #${invoice.bestNumber}',
+        description: 'Payment received',
         amount: amount,
       ),
     );
@@ -647,6 +733,11 @@ WHERE NOT EXISTS (
   FROM receipt_task_item rti
   WHERE rti.receipt_id = r.id
 )
+AND EXISTS (
+  SELECT 1
+  FROM receipt_job_allocation rja
+  WHERE rja.receipt_id = r.id
+)
 ORDER BY r.receipt_date DESC, r.id DESC
 ''');
 
@@ -681,25 +772,36 @@ ${_jobClause(jobId, 'job_id')}
     ],
   );
 
-  Future<List<Invoice>> _invoicesForCustomer(
+  Future<List<_StatementInvoice>> _statementInvoicesForCustomer(
     int? customerId, {
     int? jobId,
   }) async {
-    final invoices = await DaoInvoice().getAll();
+    final where = <String>['1 = 1'];
+    final args = <Object?>[];
     if (jobId != null) {
-      return invoices.where((invoice) => invoice.jobId == jobId).toList();
+      where.add('i.job_id = ?');
+      args.add(jobId);
+    } else if (customerId != null) {
+      where.add('j.customer_id = ?');
+      args.add(customerId);
     }
-    if (customerId == null) {
-      return invoices;
-    }
-    final filtered = <Invoice>[];
-    for (final invoice in invoices) {
-      final job = await DaoJob().getById(invoice.jobId);
-      if (job?.customerId == customerId) {
-        filtered.add(invoice);
-      }
-    }
-    return filtered;
+    final db = DaoInvoice().withoutTransaction();
+    final rows = await db.rawQuery('''
+SELECT i.*, IFNULL(c.name, 'Unknown customer') AS statement_customer_name
+FROM invoice i
+LEFT JOIN job j ON j.id = i.job_id
+LEFT JOIN customer c ON c.id = j.customer_id
+WHERE ${where.join(' AND ')}
+ORDER BY i.created_date ASC, i.id ASC
+''', args);
+
+    return [
+      for (final row in rows)
+        _StatementInvoice(
+          invoice: Invoice.fromMap(row),
+          customerName: row['statement_customer_name']! as String,
+        ),
+    ];
   }
 
   Future<String> _customerName(int? customerId) async {
@@ -710,12 +812,125 @@ ${_jobClause(jobId, 'job_id')}
         'Customer #$customerId';
   }
 
+  Future<Map<int, List<InvoiceLedgerHistoryEntry>>>
+  _statementHistoryForInvoices(List<int> invoiceIds) async {
+    if (invoiceIds.isEmpty) {
+      return const {};
+    }
+    final db = DaoInvoice().withoutTransaction();
+    final placeholders = List.filled(invoiceIds.length, '?').join(', ');
+    final histories = <int, List<InvoiceLedgerHistoryEntry>>{};
+    void add(int invoiceId, InvoiceLedgerHistoryEntry entry) {
+      histories.putIfAbsent(invoiceId, () => []).add(entry);
+    }
+
+    final payments = await db.rawQuery('''
+SELECT
+  pa.invoice_id,
+  pa.allocated_date,
+  pa.amount,
+  p.payment_method,
+  p.reference,
+  p.notes
+FROM debtor_payment_allocation pa
+LEFT JOIN debtor_payment p ON p.id = pa.payment_id
+WHERE pa.invoice_id IN ($placeholders)
+ORDER BY pa.allocated_date ASC, pa.id ASC
+''', invoiceIds);
+    for (final row in payments) {
+      add(
+        row['invoice_id']! as int,
+        InvoiceLedgerHistoryEntry(
+          type: InvoiceLedgerHistoryEntryType.payment,
+          date: DateTime.parse(row['allocated_date']! as String),
+          amount: MoneyEx.fromInt(row['amount']! as int),
+          title: 'Payment received',
+          detail: _paymentDetail(row),
+        ),
+      );
+    }
+
+    final credits = await db.rawQuery('''
+SELECT
+  ca.invoice_id,
+  ca.allocated_date,
+  ca.amount,
+  cn.reason
+FROM credit_allocation ca
+LEFT JOIN credit_note cn ON cn.id = ca.credit_note_id
+WHERE ca.invoice_id IN ($placeholders)
+ORDER BY ca.allocated_date ASC, ca.id ASC
+''', invoiceIds);
+    for (final row in credits) {
+      add(
+        row['invoice_id']! as int,
+        InvoiceLedgerHistoryEntry(
+          type: InvoiceLedgerHistoryEntryType.credit,
+          date: DateTime.parse(row['allocated_date']! as String),
+          amount: MoneyEx.fromInt(row['amount']! as int),
+          title: 'Credit applied',
+          detail: row['reason'] as String?,
+        ),
+      );
+    }
+
+    final adjustments = await db.rawQuery('''
+SELECT
+  invoice_id,
+  adjustment_date,
+  amount,
+  adjustment_type,
+  reason
+FROM debtor_adjustment
+WHERE invoice_id IN ($placeholders)
+ORDER BY adjustment_date ASC, id ASC
+''', invoiceIds);
+    for (final row in adjustments) {
+      final type = DebtorAdjustmentType.fromOrdinal(
+        row['adjustment_type'] as int?,
+      );
+      add(
+        row['invoice_id']! as int,
+        InvoiceLedgerHistoryEntry(
+          type: InvoiceLedgerHistoryEntryType.adjustment,
+          date: DateTime.parse(row['adjustment_date']! as String),
+          amount: MoneyEx.fromInt(row['amount']! as int),
+          title: _adjustmentTitle(type),
+          detail: row['reason'] as String?,
+        ),
+      );
+    }
+
+    for (final entries in histories.values) {
+      entries.sort((lhs, rhs) => lhs.date.compareTo(rhs.date));
+    }
+    return histories;
+  }
+
   Future<String> _statementName({int? customerId, int? jobId}) async {
     if (jobId != null) {
       return (await DaoJob().getById(jobId))?.summary ?? 'Job #$jobId';
     }
     return _customerName(customerId);
   }
+
+  String? _paymentDetail(Map<String, Object?> row) {
+    final parts = [
+      row['payment_method'] as String?,
+      row['reference'] as String?,
+      row['notes'] as String?,
+    ].nonNulls.map((part) => part.trim()).where((part) => part.isNotEmpty);
+    return parts.isEmpty ? null : parts.join(' - ');
+  }
+
+  String _adjustmentTitle(DebtorAdjustmentType type) => switch (type) {
+    DebtorAdjustmentType.rounding => 'Rounding adjustment',
+    DebtorAdjustmentType.writeOff => 'Write-off',
+    DebtorAdjustmentType.badDebt => 'Bad debt write-off',
+    DebtorAdjustmentType.correction => 'Adjustment',
+    DebtorAdjustmentType.openingBalance => 'Opening balance',
+    DebtorAdjustmentType.other => 'Adjustment',
+  };
 
   DebtorStatementEntryType _statementEntryType(
     InvoiceLedgerHistoryEntryType type,
@@ -822,11 +1037,20 @@ ${_periodClause(period, 'cn.credit_date')}
 
   Future<Money> _unreceiptedActualCosts(int jobId) => _sum(
     '''
-SELECT IFNULL(SUM(ti.actual_cost), 0) AS total
+SELECT IFNULL(
+  SUM(
+    CAST(
+      ROUND(ti.actual_unit_cost * ti.actual_quantity / 1000.0)
+      AS INTEGER
+    )
+  ),
+  0
+) AS total
 FROM task_item ti
 JOIN task t ON t.id = ti.task_id
 WHERE t.job_id = ?
-AND ti.actual_cost IS NOT NULL
+AND ti.actual_unit_cost IS NOT NULL
+AND ti.actual_quantity IS NOT NULL
 AND NOT EXISTS (
   SELECT 1
   FROM receipt_task_item rti
@@ -987,18 +1211,54 @@ class AccountingReportCsvExporter {
 
   String debtorStatement(DebtorStatementReport report) => _csv([
     ['Customer', report.customerName],
-    ['Opening balance', report.openingBalance],
-    ['Closing balance', report.closingBalance],
+    ['Period', _statementPeriod(report)],
     [],
-    ['Date', 'Invoice', 'Description', 'Amount'],
-    for (final entry in report.entries)
-      [
-        entry.date.toIso8601String(),
-        entry.invoiceNumber,
-        entry.description,
-        entry.amount,
-      ],
+    if (report.customerId == null)
+      ['Date', 'Invoice', 'Customer', 'Description', 'Amount', 'Balance']
+    else
+      ['Date', 'Invoice', 'Description', 'Amount', 'Balance'],
+    ..._debtorStatementCsvRows(report),
   ]);
+
+  String _statementPeriod(DebtorStatementReport report) {
+    final endInclusive = report.endExclusive.subtract(const Duration(days: 1));
+    return '${report.startInclusive.toIso8601String()} to '
+        '${endInclusive.toIso8601String()}';
+  }
+
+  List<List<Object?>> _debtorStatementCsvRows(DebtorStatementReport report) {
+    var balance = report.openingBalance;
+    final rows = <List<Object?>>[];
+    if (report.customerId == null) {
+      rows.add(['', '', '', 'Opening balance', '', balance]);
+      for (final entry in report.entries) {
+        balance += entry.amount;
+        rows.add([
+          entry.date.toIso8601String(),
+          entry.invoiceNumber,
+          entry.customerName,
+          entry.description,
+          entry.amount,
+          balance,
+        ]);
+      }
+      rows.add(['', '', '', 'Closing balance', '', balance]);
+    } else {
+      rows.add(['', '', 'Opening balance', '', balance]);
+      for (final entry in report.entries) {
+        balance += entry.amount;
+        rows.add([
+          entry.date.toIso8601String(),
+          entry.invoiceNumber,
+          entry.description,
+          entry.amount,
+          balance,
+        ]);
+      }
+      rows.add(['', '', 'Closing balance', '', balance]);
+    }
+    return rows;
+  }
 
   String cashReceived(CashReceivedReport report) => _csv([
     ['Date', 'Payment', 'Invoice', 'Customer', 'Method', 'Reference', 'Amount'],

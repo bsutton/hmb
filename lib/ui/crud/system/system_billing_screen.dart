@@ -82,7 +82,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
   @override
   Future<void> asyncInitState() async {
     setAppTitle('Billing');
-    final system = await DaoSystem().get();
+    final system = await DaoSystem().getForUpdate();
     _defaultHourlyRateController.money = system.defaultHourlyRate;
     _defaultBookingFeeController.money = system.defaultBookingFee;
     _logoFile = system.logoPath;
@@ -94,8 +94,14 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
     _paymentOptionsController.text = system.paymentOptions;
     _defaultProfitMarginController.text =
         (await DaoSystem().getDefaultProfitMargin()).toString();
+    final configuredFinancialYearStartMonth =
+        await AppSettings.getConfiguredFinancialYearStartMonth();
     _financialYearStartMonthController.text =
-        (await AppSettings.getFinancialYearStartMonth()).toString();
+        (configuredFinancialYearStartMonth ??
+                AccountingPeriod.defaultFinancialYearStartMonthForCountry(
+                  system.countryCode,
+                ))
+            .toString();
     _taxDisplayMode = await AppSettings.getTaxDisplayMode();
     _taxRegistered = _taxDisplayMode != TaxDisplayMode.none;
     _taxScheme = await _loadSelectedTaxScheme(system);
@@ -144,7 +150,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
         return false;
       }
 
-      final system = await DaoSystem().get();
+      final system = await DaoSystem().getForUpdate();
       // Save the form data
       system
         ..defaultHourlyRate = MoneyEx.tryParse(
@@ -167,7 +173,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
         ..logoAspectRatio = _logoAspectRatio
         ..billingColour = _billingColour.toColorValue(); // Save billing color
 
-      await DaoSystem().update(system);
+      await DaoSystem().updateConfiguration(system);
       await AppSettings.setTaxSchemeCode(_taxScheme?.code ?? '');
       await AppSettings.setTaxDisplayMode(
         _taxRegistered ? _taxDisplayMode : TaxDisplayMode.none,

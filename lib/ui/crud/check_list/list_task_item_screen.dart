@@ -23,9 +23,11 @@ import '../../../dao/dao_task.dart';
 import '../../../dao/dao_task_item.dart';
 import '../../../entity/entity.dart';
 import '../../../entity/job.dart';
+import '../../../entity/material_price.dart';
 import '../../../entity/task.dart';
 import '../../../entity/task_item.dart';
 import '../../../entity/task_item_type.dart';
+import '../../../util/dart/fixed_ex.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../task_items/task_items.g.dart';
 import '../../widgets/hmb_search.dart';
@@ -68,7 +70,22 @@ Future<TaskAndRate> getTaskAndRate(Task? task) async {
 
 class _TaskItemListScreenState<P extends Entity<P>>
     extends State<TaskItemListScreen> {
+  late final Parent<Task> _parent;
   String? _filterText;
+
+  @override
+  void initState() {
+    super.initState();
+    _parent = Parent(widget.task);
+  }
+
+  @override
+  void didUpdateWidget(covariant TaskItemListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.task != widget.task) {
+      _parent.parent = widget.task;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +97,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
       future: getTaskAndRate(widget.task),
       builder: (context, taskAndRate) => NestedEntityListScreen<TaskItem, Task>(
         key: ValueKey(showCompleted),
-        parent: Parent(widget.task), // widget.parent,
+        parent: _parent,
         parentTitle: 'Task',
         entityNameSingular: 'Task Item',
         entityNamePlural: 'Task Items',
@@ -89,12 +106,12 @@ class _TaskItemListScreenState<P extends Entity<P>>
         fetchList: () => _fetchItems(showCompleted),
         title: (taskItem) => Text(taskItem.description) as Widget,
         onEdit: (taskItem) => TaskItemEditScreen(
-          parent: widget.task,
+          parent: _parent.parent,
           taskItem: taskItem,
           billingType: taskAndRate?.billingType ?? BillingType.timeAndMaterial,
           hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
         ),
-        cardHeight: 220,
+        extended: true,
         details: (entity, details) {
           final taskItem = entity;
           return HMBColumn(
@@ -113,7 +130,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
                 HMBCompleteIcon(
                   onPressed: () => markAsCompleted(
                     TaskItemContext(
-                      task: widget.task!,
+                      task: _parent.parent!,
                       taskItem: taskItem,
                       billingType: taskAndRate.billingType,
                       wasReturned: false,
@@ -159,7 +176,11 @@ class _TaskItemListScreenState<P extends Entity<P>>
   }
 
   Future<List<TaskItem>> _fetchItems(bool showCompleted) async {
-    final items = await DaoTaskItem().getByTask(widget.task!.id);
+    final task = _parent.parent;
+    if (task == null) {
+      return const [];
+    }
+    final items = await DaoTaskItem().getByTask(task.id);
     final search = _filterText;
 
     return items.where((item) {
@@ -218,10 +239,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
     BillingType billingType,
     Money hourlyRate,
   ) => [
-    HMBText(
-      'Est: Unit Cost: ${checkListItem.estimatedMaterialUnitCost} '
-      'Qty: ${checkListItem.estimatedMaterialQuantity} ',
-    ),
+    TaskItemMaterialCostSummary(taskItem: checkListItem),
     HMBText(
       'Margin (%): ${checkListItem.margin} '
       'Charge: ${checkListItem.getTotalLineCharge(billingType, hourlyRate)}',
@@ -233,15 +251,41 @@ class _TaskItemListScreenState<P extends Entity<P>>
     BillingType billingType,
     Money hourlyRate,
   ) => [
-    HMBText(
-      'Unit Charge: ${checkListItem.estimatedMaterialUnitCost} '
-      'Qty: ${checkListItem.estimatedMaterialQuantity} ',
-    ),
+    TaskItemMaterialCostSummary(taskItem: checkListItem),
     HMBText(
       'Margin (%): ${checkListItem.margin} '
       'Charge: ${checkListItem.getTotalLineCharge(billingType, hourlyRate)}',
     ),
   ];
+}
+
+class TaskItemMaterialCostSummary extends StatelessWidget {
+  final TaskItem taskItem;
+
+  const TaskItemMaterialCostSummary({required this.taskItem, super.key});
+
+  @override
+  Widget build(BuildContext context) => HMBColumn(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      HMBText(_priceLine('Est', taskItem.estimatedPrice)),
+      if (taskItem.completed)
+        HMBText(_priceLine('Actual', taskItem.actualPrice)),
+    ],
+  );
+
+  String _priceLine(String label, MaterialPrice? price) {
+    if (price == null) {
+      return '$label: —';
+    }
+    if (price.isPackagePrice) {
+      return '$label: Package Cost: ${price.unitCost} '
+          'Packages: ${price.quantity.toInt()}';
+    }
+    return '$label: Unit Cost: ${price.unitCost} '
+        'Qty: ${price.quantity.compact()}';
+  }
 }
 
 class ShowCompltedItems extends JuneState {

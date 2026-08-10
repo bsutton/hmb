@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:strings/strings.dart';
 
 import '../../../entity/site.dart';
+import '../../../util/dart/address_format.dart';
 import '../../../util/flutter/clip_board.dart';
 import '../../../util/flutter/google_maps.dart';
 
@@ -29,17 +30,13 @@ class HMBMapIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final address = Strings.join(
-      [
-        site?.addressLine1,
-        site?.addressLine2,
-        site?.suburb,
-        site?.state,
-        site?.postcode,
-      ],
-      separator: ', ',
-      excludeEmpty: true,
-    );
+    final address = joinAddressParts([
+      site?.addressLine1,
+      site?.addressLine2,
+      site?.suburb,
+      site?.state,
+      site?.postcode,
+    ]);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween, // added line
       mainAxisSize: MainAxisSize.min, // added

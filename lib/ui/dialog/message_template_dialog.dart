@@ -28,6 +28,33 @@ import 'message_placeholders/placeholder_manager.dart';
 import 'message_placeholders/source.dart';
 import 'source_context.dart';
 
+final _messagePlaceholderRegExp = RegExp(
+  r'\{\{([a-zA-Z]\w*(?:\.[a-zA-Z]\w*)*)\}\}',
+);
+
+List<String> extractMessagePlaceholderNames(String message) {
+  final names = <String>[];
+  final seen = <String>{};
+
+  for (final match in _messagePlaceholderRegExp.allMatches(message)) {
+    final name = match.group(1)!;
+    if (seen.add(name)) {
+      names.add(name);
+    }
+  }
+
+  return names;
+}
+
+bool isBlankMessageTemplate(MessageTemplate template) {
+  if (template.messageType != MessageType.sms) {
+    return false;
+  }
+
+  return template.title.trim().toLowerCase() == 'blank' ||
+      template.message.trim().isEmpty;
+}
+
 class MessageTemplateDialog extends StatefulWidget {
   final SourceContext sourceContext;
   final MessageType? messageType;
@@ -76,6 +103,10 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
   Future<void> _loadTemplates() async {
     final templates = await DaoMessageTemplate().getByFilter(null);
     final filtered = await _filterTemplates(templates);
+    _selectedTemplate = _selectInitialTemplate(filtered);
+    _messageController.text = _selectedTemplate?.message ?? '';
+    await _initializePlaceholders(resetExisting: true);
+
     if (!mounted) {
       return;
     }
@@ -90,11 +121,11 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
     final filtered = <MessageTemplate>[];
     for (final template in templates) {
       if (!template.enabled ||
-          (widget.messageType != null &&
-              template.messageType != widget.messageType)) {
+          template.messageType != (widget.messageType ?? MessageType.sms)) {
         continue;
       }
-      final names = _extractPlaceholderNames(template.message);
+
+      final names = extractMessagePlaceholderNames(template.message);
       var canUse = true;
       for (final name in names) {
         final placeholder = await PlaceHolderManager().resolvePlaceholder(
@@ -117,13 +148,19 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
     return filtered;
   }
 
-  Set<String> _extractPlaceholderNames(String message) {
-    final regExp = RegExp(r'\{\{(\w+(?:\.\w+)?)\}\}');
-    return regExp.allMatches(message).map((m) => m.group(1)!).toSet();
+  MessageTemplate? _selectInitialTemplate(List<MessageTemplate> templates) {
+    for (final template in templates) {
+      if (isBlankMessageTemplate(template)) {
+        return template;
+      }
+    }
+
+    return templates.isEmpty ? null : templates.first;
   }
 
   bool _isBaseAvailable(String base) {
     switch (base) {
+      case 'text':
       case 'signature':
       case 'delay_period':
       case 'invoice.due_date':
@@ -146,39 +183,80 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
     }
   }
 
-  Future<void> _selectTemplate(MessageTemplate template) async {
-    final generation = ++_selectionGeneration;
-    _selectedTemplate = template;
-    _messageController.text = template.message;
-    placeholders.clear();
-    setState(() {});
+  Future<void> _initializePlaceholders({
+    bool resetExisting = false,
+    int? generation,
+  }) async {
+    final selectedTemplate = _selectedTemplate;
+    if (selectedTemplate == null) {
+      placeholders.clear();
+      return;
+    }
 
-    final resolved = <String, PlaceHolder<dynamic>>{};
-    for (final name in _extractPlaceholderNames(template.message)) {
+    final names = extractMessagePlaceholderNames(selectedTemplate.message);
+    final nextPlaceholders = <String, PlaceHolder<dynamic>>{};
+
+    for (final name in names) {
+      final existing = resetExisting ? null : placeholders[name];
+      if (existing != null) {
+        nextPlaceholders[name] = existing;
+        continue;
+      }
+
       final placeholder = await PlaceHolderManager().resolvePlaceholder(
         name,
         widget.sourceContext,
       );
-      if (!mounted || generation != _selectionGeneration) {
+      if (!mounted ||
+          generation != null && generation != _selectionGeneration) {
         return;
       }
-      if (placeholder == null) {
-        continue;
-      }
 
-      placeholder.source.dependencyChanged(NoopSource(), widget.sourceContext);
-      placeholder.listen = (value, reset) {
-        placeholder.source.revise(widget.sourceContext);
-        _reset(placeholder.source, reset);
-        _refreshPreview();
-      };
-      resolved[placeholder.name] = placeholder;
+      if (placeholder != null) {
+        /// provide each source with an initial value
+        placeholder.source.dependencyChanged(
+          NoopSource(),
+          widget.sourceContext,
+        );
+
+        // Listen to source changes and propagate them to
+        // other sources and the preview window.
+        placeholder.listen = (value, reset) {
+          placeholder.source.revise(widget.sourceContext);
+          _reset(placeholder.source, reset);
+          _refreshPreview();
+        };
+        nextPlaceholders[name] = placeholder;
+      }
     }
 
     placeholders
       ..clear()
-      ..addAll(resolved);
+      ..addAll(nextPlaceholders);
+  }
+
+  Future<void> _selectTemplate(MessageTemplate? template) async {
+    final generation = ++_selectionGeneration;
+    _selectedTemplate = template;
+    _messageController.text = _selectedTemplate?.message ?? '';
+    await _initializePlaceholders(resetExisting: true, generation: generation);
+    if (!mounted || generation != _selectionGeneration) {
+      return;
+    }
     setState(() {});
+  }
+
+  Future<void> _updateEditedMessage(String value) async {
+    final selectedTemplate = _selectedTemplate;
+    if (selectedTemplate == null) {
+      return;
+    }
+
+    _selectedTemplate = selectedTemplate.copyWith(message: value);
+    await _initializePlaceholders();
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -228,8 +306,6 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
   }
 
   @override
-  @override
-  @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Message Template')),
     body: HMBColumn(
@@ -251,10 +327,8 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
                             )
                             .toList(),
                   format: (template) => template.title,
-                  onChanged: (template) {
-                    if (template != null) {
-                      unawaited(_selectTemplate(template));
-                    }
+                  onChanged: (template) async {
+                    await _selectTemplate(template);
                   },
                 ),
                 if (_selectedTemplate != null) _buildSourceWidgets(),
@@ -287,11 +361,7 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
                     labelText: 'Edit Message',
                   ),
                   onChanged: (value) {
-                    setState(() {
-                      _selectedTemplate = _selectedTemplate?.copyWith(
-                        message: value,
-                      );
-                    });
+                    unawaited(_updateEditedMessage(value));
                   },
                 ),
               ),
@@ -352,9 +422,12 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
     final uniqueWidgets = <String, Widget>{};
 
     for (final placeholder in placeholders.values) {
+      if (uniqueWidgets.containsKey(placeholder.base)) {
+        continue;
+      }
+
       final widget = placeholder.source.widget();
       if (widget != null) {
-        // Use the placeholder base name as a unique key
         uniqueWidgets[placeholder.base] = widget;
       }
     }

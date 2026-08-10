@@ -223,8 +223,8 @@ Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
                       item.dimension3,
                     ])
                   : '';
-              final quantity = item.estimatedMaterialQuantity?.toString() ?? '';
-              final cost = item.estimatedMaterialUnitCost?.toString() ?? '';
+              final quantity = item.estimatedPrice?.quantity.toString() ?? '';
+              final cost = item.estimatedPrice?.unitCost.toString() ?? '';
 
               content.add(
                 pw.Bullet(

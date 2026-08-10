@@ -30,7 +30,9 @@ class HMBToast {
     toastification.show(
       type: ToastificationType.error,
       style: ToastificationStyle.minimal,
-      // acknowledgmentRequired ? null : const Duration(seconds: 6),
+      autoCloseDuration: acknowledgmentRequired
+          ? null
+          : const Duration(seconds: 6),
       description: Text(
         text,
         maxLines: 6,

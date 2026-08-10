@@ -133,33 +133,54 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
             borderRadius: BorderRadius.circular(12),
           ),
           elevation: 4,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                widget.icon,
-                size: iconSize,
-                color: theme.colorScheme.primary,
-              ),
-              SizedBox(height: spacing1),
-              Text(
-                widget.label,
-                textAlign: TextAlign.center,
-                style: labelStyle,
-                maxLines: widget.compact ? 1 : 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              SizedBox(height: spacing2),
-              JuneBuilder(
-                DashboardReloaded.new,
-                builder: (_) => FutureBuilderEx<DashletValue<T>>(
-                  future: widget.value(),
-                  builder: (ctx, dv) => widget.valueBuilder != null
-                      ? widget.valueBuilder!(ctx, dv!)
-                      : _buildDashletValue(dv, valueStyle, spacing2, theme),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              const padding = 8.0;
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(padding),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: SizedBox(
+                      width: constraints.maxWidth - (padding * 2),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            widget.icon,
+                            size: iconSize,
+                            color: theme.colorScheme.primary,
+                          ),
+                          SizedBox(height: spacing1),
+                          Text(
+                            widget.label,
+                            textAlign: TextAlign.center,
+                            style: labelStyle,
+                            maxLines: widget.compact ? 1 : 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: spacing2),
+                          JuneBuilder(
+                            DashboardReloaded.new,
+                            builder: (_) => FutureBuilderEx<DashletValue<T>>(
+                              future: widget.value(),
+                              builder: (ctx, dv) => widget.valueBuilder != null
+                                  ? widget.valueBuilder!(ctx, dv!)
+                                  : _buildDashletValue(
+                                      dv,
+                                      valueStyle,
+                                      spacing2,
+                                      theme,
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),

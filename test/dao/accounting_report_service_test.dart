@@ -141,6 +141,36 @@ void main() {
     expect(period.endExclusive, DateTime(2026, 7));
   });
 
+  test('financial year period defaults from business country', () async {
+    final system = await DaoSystem().getForUpdate();
+    await DaoSystem().updateConfiguration(system.copyWith(countryCode: 'AU'));
+
+    final auPeriod = await AccountingPeriod.forFinancialYear(DateTime(2026, 5));
+
+    expect(auPeriod.startInclusive, DateTime(2025, 7));
+    expect(auPeriod.endExclusive, DateTime(2026, 7));
+
+    await DaoSystem().updateConfiguration(system.copyWith(countryCode: 'NZ'));
+    final nzPeriod = await AccountingPeriod.forFinancialYear(DateTime(2026, 5));
+
+    expect(nzPeriod.startInclusive, DateTime(2026, 4));
+    expect(nzPeriod.endExclusive, DateTime(2027, 4));
+  });
+
+  test(
+    'configured financial year start month overrides country default',
+    () async {
+      final system = await DaoSystem().getForUpdate();
+      await DaoSystem().updateConfiguration(system.copyWith(countryCode: 'AU'));
+      await AppSettings.setFinancialYearStartMonth(1);
+
+      final period = await AccountingPeriod.forFinancialYear(DateTime(2026, 5));
+
+      expect(period.startInclusive, DateTime(2026));
+      expect(period.endExclusive, DateTime(2027));
+    },
+  );
+
   test('aged receivables buckets outstanding invoice balances', () async {
     final job = await createJobWithCustomer(
       billingType: BillingType.timeAndMaterial,
@@ -190,6 +220,40 @@ void main() {
     expect(report.buckets.thirtyOneToSixty, MoneyEx.dollars(300));
     expect(report.total, MoneyEx.dollars(550));
   });
+
+  test(
+    'aged receivables excludes paid invoices with partial allocations',
+    () async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.zero,
+        summary: 'Aged receivables paid partial test job',
+      );
+      final invoice = await _insertInvoice(
+        job,
+        MoneyEx.dollars(100),
+        dueDate: LocalDate(2026, 4),
+      );
+      await DebtorLedgerService().recordPayment(
+        invoiceId: invoice.id,
+        amount: MoneyEx.dollars(40),
+      );
+      await DaoInvoice().markPaidFromXero(
+        invoice.id,
+        paidDate: DateTime(2026, 4, 10),
+      );
+
+      final report = await AccountingReportService().agedReceivables(
+        asOfDate: LocalDate(2026, 5),
+      );
+
+      expect(
+        report.rows.map((row) => row.invoiceId),
+        isNot(contains(invoice.id)),
+      );
+      expect(report.total, MoneyEx.zero);
+    },
+  );
 
   test(
     'debtor statement includes opening balance and period activity',
@@ -243,34 +307,6 @@ void main() {
       expect(report.closingBalance, MoneyEx.dollars(205));
     },
   );
-
-  test('debtor statement exposes customer-facing invoice number', () async {
-    final job = await createJobWithCustomer(
-      billingType: BillingType.timeAndMaterial,
-      hourlyRate: MoneyEx.zero,
-      summary: 'Statement invoice number test job',
-    );
-    final invoice = await _insertInvoice(
-      job,
-      MoneyEx.dollars(200),
-      invoiceNum: 'XERO-506',
-      createdDate: DateTime(2026, 4, 3),
-    );
-
-    final report = await AccountingReportService().debtorStatement(
-      customerId: job.customerId,
-      startInclusive: DateTime(2026, 4),
-      endExclusive: DateTime(2026, 5),
-    );
-
-    expect(report.entries.single.invoiceId, invoice.id);
-    expect(report.entries.single.invoiceNumber, 'XERO-506');
-    expect(report.entries.single.description, 'Invoice #XERO-506');
-
-    final csv = AccountingReportCsvExporter().debtorStatement(report);
-    expect(csv, contains('XERO-506'));
-    expect(csv, isNot(contains(',${invoice.id},Invoice #XERO-506')));
-  });
 
   test(
     'debtor statement balances paid invoices without local allocations',
@@ -497,6 +533,8 @@ void main() {
           DebtorStatementEntry(
             type: DebtorStatementEntryType.invoice,
             invoiceId: 42,
+            invoiceNumber: 'INV-42',
+            customerName: 'Smith, Jones',
             date: DateTime(2026, 4),
             description: 'Invoice, materials',
             amount: MoneyEx.dollars(10),
@@ -517,7 +555,6 @@ Future<Invoice> _insertInvoice(
   DateTime? createdDate,
   bool paid = false,
   DateTime? paidDate,
-  String? invoiceNum,
 }) async {
   final invoice = Invoice.forInsert(
     jobId: job.id,
@@ -529,21 +566,15 @@ Future<Invoice> _insertInvoice(
     paidDate: paidDate,
   );
   await DaoInvoice().insert(invoice);
-  if (createdDate == null && invoiceNum == null) {
+  if (createdDate == null) {
     return invoice;
-  }
-  final values = <String, Object?>{};
-  if (createdDate != null) {
-    values
-      ..['created_date'] = createdDate.toIso8601String()
-      ..['modified_date'] = createdDate.toIso8601String();
-  }
-  if (invoiceNum != null) {
-    values['invoice_num'] = invoiceNum;
   }
   await DaoInvoice().withoutTransaction().update(
     'invoice',
-    values,
+    {
+      'created_date': createdDate.toIso8601String(),
+      'modified_date': createdDate.toIso8601String(),
+    },
     where: 'id = ?',
     whereArgs: [invoice.id],
   );

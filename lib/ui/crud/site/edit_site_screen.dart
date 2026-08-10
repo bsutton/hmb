@@ -50,6 +50,7 @@ class SiteEditScreen<P extends Entity<P>> extends StatefulWidget {
 
 class _SiteEditScreenState extends State<SiteEditScreen>
     implements NestedEntityState<Site> {
+  late TextEditingController _nameController;
   late TextEditingController _addressLine1Controller;
   late TextEditingController _addressLine2Controller;
   late TextEditingController _suburbController;
@@ -65,6 +66,7 @@ class _SiteEditScreenState extends State<SiteEditScreen>
     super.initState();
 
     currentEntity ??= widget.site;
+    _nameController = TextEditingController(text: currentEntity?.name);
     _addressLine1Controller = TextEditingController(
       text: currentEntity?.addressLine1,
     );
@@ -80,6 +82,18 @@ class _SiteEditScreenState extends State<SiteEditScreen>
   }
 
   @override
+  void dispose() {
+    _nameController.dispose();
+    _addressLine1Controller.dispose();
+    _addressLine2Controller.dispose();
+    _suburbController.dispose();
+    _stateController.dispose();
+    _postcodeController.dispose();
+    _accessDetailsController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) => NestedEntityEditScreen<Site, Customer>(
     entityName: 'Site',
     dao: DaoSite(),
@@ -91,6 +105,11 @@ class _SiteEditScreenState extends State<SiteEditScreen>
       children: [
         if (site == null) CustomerPastePanel(onExtract: _onExtract),
         // Add other form fields for the new fields
+        HMBTextField(
+          controller: _nameController,
+          labelText: 'Site Name',
+          textCapitalization: TextCapitalization.words,
+        ),
         HMBTextField(
           controller: _addressLine1Controller,
           labelText: 'Address Line 1',
@@ -137,17 +156,37 @@ class _SiteEditScreenState extends State<SiteEditScreen>
   }
 
   @override
-  Future<Site> forUpdate(Site site) async => site.copyWith(
-    addressLine1: _addressLine1Controller.text,
-    addressLine2: _addressLine2Controller.text,
-    suburb: _suburbController.text,
-    state: _stateController.text,
-    postcode: _postcodeController.text,
-    accessDetails: _accessDetailsController.text,
-  ); // New field
+  Future<Site> forUpdate(Site site) async {
+    final addressLine1 = _addressLine1Controller.text;
+    final addressLine2 = _addressLine2Controller.text;
+    final suburb = _suburbController.text;
+    final state = _stateController.text;
+    final postcode = _postcodeController.text;
+    final addressChanged =
+        _changed(site.addressLine1, addressLine1) ||
+        _changed(site.addressLine2, addressLine2) ||
+        _changed(site.suburb, suburb) ||
+        _changed(site.state, state) ||
+        _changed(site.postcode, postcode);
+
+    return site.copyWith(
+      name: _nameController.text,
+      addressLine1: addressLine1,
+      addressLine2: addressLine2,
+      suburb: suburb,
+      state: state,
+      postcode: postcode,
+      accessDetails: _accessDetailsController.text,
+      clearGeocode: addressChanged,
+      geocodeStatus: addressChanged ? 'invalidated' : null,
+    );
+  }
+
+  bool _changed(String current, String next) => current.trim() != next.trim();
 
   @override
   Future<Site> forInsert() async => Site.forInsert(
+    name: _nameController.text,
     addressLine1: _addressLine1Controller.text,
     addressLine2: _addressLine2Controller.text,
     suburb: _suburbController.text,

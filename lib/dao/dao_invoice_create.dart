@@ -125,28 +125,30 @@ Future<Money> _createInvoiceLinesForSelectedTasks(
     totalAmount += await _emitFixedPriceTaskSummary(invoiceId, job, task);
   }
 
-  if (timeAndMaterialsTasks.isEmpty) {
-    return totalAmount;
-  }
-
-  if (groupByTask) {
-    for (final task in timeAndMaterialsTasks) {
-      totalAmount += await _emitTimeAndMaterialsLabourByTask(
+  if (timeAndMaterialsTasks.isNotEmpty) {
+    if (groupByTask) {
+      for (final task in timeAndMaterialsTasks) {
+        totalAmount += await _emitTimeAndMaterialsLabourByTask(
+          invoiceId,
+          job,
+          task,
+        );
+      }
+    } else {
+      totalAmount += await _emitTimeAndMaterialsLabourByDate(
         invoiceId,
         job,
-        task,
+        timeAndMaterialsTasks,
       );
     }
-  } else {
-    totalAmount += await _emitTimeAndMaterialsLabourByDate(
-      invoiceId,
-      job,
-      timeAndMaterialsTasks,
-    );
   }
 
   return totalAmount +
-      await _emitTimeAndMaterialsMaterials(invoiceId, timeAndMaterialsTasks);
+      await _emitTimeAndMaterialsMaterials(
+        invoiceId,
+        job,
+        timeAndMaterialsTasks,
+      );
 }
 
 Future<Money> _emitFixedPriceTaskSummary(
@@ -318,6 +320,7 @@ Future<Money> _emitTimeAndMaterialsLabourByDate(
 
 Future<Money> _emitTimeAndMaterialsMaterials(
   int invoiceId,
+  Job job,
   List<Task> tasks,
 ) async {
   final daoTaskItem = DaoTaskItem();

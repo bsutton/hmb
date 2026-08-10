@@ -240,7 +240,7 @@ class MiniJobDashboard extends StatelessWidget {
   }
 
   Future<DashletValue<int>> _milestoneDashletValue() async {
-    final quotes = await DaoQuote().getByJobId(job.id);
+    final quotes = await DaoQuote().getMilestoneEligibleByJobId(job.id);
     var outstandingMilestones = 0;
     for (final quote in quotes) {
       final milestones = await DaoMilestone().getByQuoteId(quote.id);
@@ -252,7 +252,7 @@ class MiniJobDashboard extends StatelessWidget {
   }
 
   Future<void> _openMilestones(BuildContext context) async {
-    final quotes = await DaoQuote().getByJobId(job.id);
+    final quotes = await DaoQuote().getMilestoneEligibleByJobId(job.id);
     if (!context.mounted) {
       return;
     }

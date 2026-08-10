@@ -19,7 +19,7 @@ import 'entity.dart';
 
 class Receipt extends Entity<Receipt> {
   final DateTime receiptDate;
-  final int jobId;
+  final int? jobId;
   final int supplierId;
   final Money totalExcludingTax; // stored as cents
   final Money tax; // stored as cents
@@ -49,6 +49,7 @@ class Receipt extends Entity<Receipt> {
   Receipt copyWith({
     DateTime? receiptDate,
     int? jobId,
+    bool clearJob = false,
     int? supplierId,
     Money? totalExcludingTax,
     Money? tax,
@@ -56,7 +57,7 @@ class Receipt extends Entity<Receipt> {
   }) => Receipt(
     id: id,
     receiptDate: receiptDate ?? this.receiptDate,
-    jobId: jobId ?? this.jobId,
+    jobId: clearJob ? null : jobId ?? this.jobId,
     supplierId: supplierId ?? this.supplierId,
     totalExcludingTax: totalExcludingTax ?? this.totalExcludingTax,
     tax: tax ?? this.tax,
@@ -68,7 +69,7 @@ class Receipt extends Entity<Receipt> {
   factory Receipt.fromMap(Map<String, dynamic> map) => Receipt(
     id: map['id'] as int,
     receiptDate: DateTime.parse(map['receipt_date'] as String),
-    jobId: map['job_id'] as int,
+    jobId: map['job_id'] as int?,
     supplierId: map['supplier_id'] as int,
     totalExcludingTax: Money.fromInt(
       map['total_excluding_tax'] as int,

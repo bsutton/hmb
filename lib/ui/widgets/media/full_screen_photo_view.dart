@@ -54,50 +54,59 @@ class FullScreenPhotoViewer extends StatelessWidget {
           top: 40,
           left: 20,
           right: 20,
-          child: HMBColumn(
-            children: [
-              /// title
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              /// comment
-              if (Strings.isNotBlank(comment))
-                Text(
-                  comment!,
-                  style: const TextStyle(color: Colors.white70, fontSize: 16),
-                  textAlign: TextAlign.center,
-                ),
-            ],
-          ),
-        ),
-
-        /// action icons (copy and close)
-        Positioned(
-          top: 40,
-          right: 20,
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              HMBCopyIcon(
-                onPressed: () async {
-                  try {
-                    await copyImageToClipboard(imagePath);
-                    HMBToast.info('Image copied to clipboard');
-                    // ignore: avoid_catches_without_on_clauses
-                  } catch (e) {
-                    HMBToast.error('Failed to copy image to clipboard');
-                  }
-                },
-                hint: 'Copy the photo to the clipboard',
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: HMBColumn(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (Strings.isNotBlank(comment))
+                        Text(
+                          comment!,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 16,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
-              HMBCloseIcon(onPressed: () async => Navigator.of(context).pop()),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  HMBCopyIcon(
+                    onPressed: () async {
+                      try {
+                        await copyImageToClipboard(imagePath);
+                        HMBToast.info('Image copied to clipboard');
+                        // ignore: avoid_catches_without_on_clauses
+                      } catch (e) {
+                        HMBToast.error('Failed to copy image to clipboard');
+                      }
+                    },
+                    hint: 'Copy the photo to the clipboard',
+                  ),
+                  HMBCloseIcon(
+                    onPressed: () async => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

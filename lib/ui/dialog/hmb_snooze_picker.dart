@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/hmb_button.dart';
 import '../widgets/hmb_date_time_picker.dart'; // HMBDateTimeField + enums
-import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/text/hmb_text.dart';
 
 class HMBSnoozePicker {
@@ -41,12 +41,12 @@ class HMBSnoozePicker {
           ),
         ),
         actions: [
-          TextButton(
+          HMBButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            label: 'Cancel',
+            hint: "Don't change the reminder",
           ),
-          const HMBSpacer(width: true),
-          FilledButton(
+          HMBButton(
             onPressed: () {
               final err = validator(selected);
               if (err != null) {
@@ -55,7 +55,8 @@ class HMBSnoozePicker {
               final by = selected.difference(base);
               Navigator.of(ctx).pop(by);
             },
-            child: const Text('OK'),
+            label: 'OK',
+            hint: 'Set this reminder',
           ),
         ],
       ),

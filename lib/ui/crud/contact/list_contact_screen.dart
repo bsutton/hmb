@@ -56,6 +56,8 @@ class ContactListScreen<P extends Entity<P>> extends StatelessWidget {
       return HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (contact.roleDescription.trim().isNotEmpty)
+            Text(contact.roleDescription),
           HMBPhoneText(
             label: '',
             phoneNo: contact.bestPhone,

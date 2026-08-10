@@ -19,36 +19,38 @@ class XeroInvoicePaymentSyncService {
   static const _minInterval = Duration(hours: 6);
 
   late XeroInvoicePaymentClient _xeroClient;
-  final DaoInvoice _daoInvoice;
-  final DebtorLedgerService _ledgerService;
+  final DaoInvoice? _daoInvoice;
 
   XeroInvoicePaymentSyncService({
     XeroInvoicePaymentClient? xeroClient,
     DaoInvoice? daoInvoice,
-    DebtorLedgerService? ledgerService,
     XeroLogin? login,
     XeroGetInvoice? getInvoice,
     XeroCreatePayment? createPayment,
+    XeroDeletePayment? deletePayment,
     XeroCreateCreditNote? createCreditNote,
     XeroAllocateCreditNote? allocateCreditNote,
-  }) : _daoInvoice = daoInvoice ?? DaoInvoice(),
-       _ledgerService = ledgerService ?? DebtorLedgerService() {
+  }) : _daoInvoice = daoInvoice {
     _xeroClient = xeroClient ?? createDefaultXeroInvoicePaymentClient();
     if (login != null ||
         getInvoice != null ||
         createPayment != null ||
+        deletePayment != null ||
         createCreditNote != null ||
         allocateCreditNote != null) {
       _xeroClient = XeroInvoicePaymentClient(
         login: login ?? _xeroClient.login,
         getInvoice: getInvoice ?? _xeroClient.getInvoice,
         createPayment: createPayment ?? _xeroClient.createPayment,
+        deletePayment: deletePayment ?? _xeroClient.deletePayment,
         createCreditNote: createCreditNote ?? _xeroClient.createCreditNote,
         allocateCreditNote:
             allocateCreditNote ?? _xeroClient.allocateCreditNote,
       );
     }
   }
+
+  DaoInvoice _daoInvoiceForSync() => _daoInvoice ?? DaoInvoice();
 
   Future<int> sync({
     bool force = false,
@@ -73,19 +75,26 @@ class XeroInvoicePaymentSyncService {
         return 0;
       }
 
-      final pending = await _daoInvoice.getUploadedUnpaid();
+      final pending = await _daoInvoiceForSync().getUploadedUnpaid();
+      final missingInvoiceNumbers = await _daoInvoiceForSync()
+          .getUploadedMissingInvoiceNumber();
       final unsyncedPayments = await DaoDebtorPayment().getUnsyncedForProvider(
         'xero',
       );
       final unsyncedCredits = await DaoCreditNote().getUnsyncedForProvider(
         'xero',
       );
+      final pendingEvents = await DaoAccountingSyncEvent().getPending(
+        provider: 'xero',
+      );
       if (pending.isEmpty) {
         Log.i('No unpaid Xero invoices need import syncing.');
       }
       if (pending.isEmpty &&
+          missingInvoiceNumbers.isEmpty &&
           unsyncedPayments.isEmpty &&
-          unsyncedCredits.isEmpty) {
+          unsyncedCredits.isEmpty &&
+          pendingEvents.isEmpty) {
         Log.i('Skipping Xero payment sync because nothing needs syncing.');
         return 0;
       }
@@ -98,34 +107,68 @@ class XeroInvoicePaymentSyncService {
         return 0;
       }
       var updated = 0;
-      for (final invoice in pending) {
+      updated += await _pushPendingDeletes();
+      final pendingIds = pending.map((invoice) => invoice.id).toSet();
+      final invoicesById = <int, Invoice>{
+        for (final invoice in pending) invoice.id: invoice,
+        for (final invoice in missingInvoiceNumbers) invoice.id: invoice,
+      };
+      for (final invoice in invoicesById.values) {
         try {
           final remoteState = await _loadRemoteState(invoice);
           if (remoteState == null) {
             continue;
           }
-          if (invoice.externalSyncStatus != remoteState.externalSyncStatus) {
-            await _daoInvoice.updateExternalSyncStatus(
-              invoice.id,
+          var currentInvoice = invoice;
+          if (_needsInvoiceNumberUpdate(
+            currentInvoice,
+            remoteState.invoiceNumber,
+          )) {
+            currentInvoice = currentInvoice.copyWith(
+              invoiceNum: remoteState.invoiceNumber,
+            );
+            await _daoInvoiceForSync().update(currentInvoice);
+            updated += 1;
+          }
+          if (currentInvoice.externalSyncStatus !=
+              remoteState.externalSyncStatus) {
+            await _daoInvoiceForSync().updateExternalSyncStatus(
+              currentInvoice.id,
               remoteState.externalSyncStatus,
             );
+            currentInvoice = currentInvoice.copyWith(
+              externalSyncStatus: remoteState.externalSyncStatus,
+            );
+          }
+          if (!pendingIds.contains(currentInvoice.id)) {
+            continue;
           }
           if (remoteState.paidDate != null &&
-              _needsPaidUpdate(invoice, remoteState.paidDate!)) {
-            await _daoInvoice.markPaidFromXero(
-              invoice.id,
+              _needsPaidUpdate(currentInvoice, remoteState.paidDate!)) {
+            await _daoInvoiceForSync().markPaidFromXero(
+              currentInvoice.id,
               paidDate: remoteState.paidDate,
             );
             updated += 1;
           }
-          updated += await _importPayments(invoice, remoteState.payments);
-          updated += await _importCreditNotes(invoice, remoteState.creditNotes);
+          updated += await _importPayments(
+            currentInvoice,
+            remoteState.payments,
+          );
+          updated += await _reconcileRemotePaymentDeletions(
+            currentInvoice,
+            remoteState.payments,
+          );
+          updated += await _importCreditNotes(
+            currentInvoice,
+            remoteState.creditNotes,
+          );
           if (remoteState.paidDate != null &&
               remoteState.payments.isEmpty &&
               remoteState.creditNotes.isEmpty) {
             Log.i(
-              'Xero invoice ${invoice.id} is paid but returned no payment '
-              'rows. Keeping it eligible for a later payment sync.',
+              'Xero invoice ${currentInvoice.id} is paid but returned no '
+              'payment rows. Keeping it eligible for a later payment sync.',
             );
           }
         } catch (e, st) {
@@ -159,7 +202,9 @@ class XeroInvoicePaymentSyncService {
         if (allocation.externalAllocationId != null) {
           continue;
         }
-        final invoice = await _daoInvoice.getById(allocation.invoiceId);
+        final invoice = await _daoInvoiceForSync().getById(
+          allocation.invoiceId,
+        );
         if (invoice?.externalInvoiceId == null) {
           continue;
         }
@@ -178,11 +223,19 @@ class XeroInvoicePaymentSyncService {
         await DaoPaymentAllocation().update(
           allocation.copyWith(externalAllocationId: externalId ?? 'xero'),
         );
+        await _markEntityCreateSynced(
+          DebtorLedgerService.paymentAllocationEntity,
+          allocation.id,
+        );
         if (externalId != null) {
           await DaoDebtorPayment().markExternal(
             payment: payment,
             provider: 'xero',
             externalPaymentId: externalId,
+          );
+          await _markEntityCreateSynced(
+            DebtorLedgerService.paymentEntity,
+            payment.id,
           );
         }
         pushed += 1;
@@ -198,7 +251,7 @@ class XeroInvoicePaymentSyncService {
       final invoiceId = creditNote.relatedInvoiceId;
       final invoice = invoiceId == null
           ? null
-          : await _daoInvoice.getById(invoiceId);
+          : await _daoInvoiceForSync().getById(invoiceId);
       if (invoice?.externalInvoiceId == null) {
         continue;
       }
@@ -234,7 +287,7 @@ class XeroInvoicePaymentSyncService {
         if (allocation.externalAllocationId != null) {
           continue;
         }
-        final allocatedInvoice = await _daoInvoice.getById(
+        final allocatedInvoice = await _daoInvoiceForSync().getById(
           allocation.invoiceId,
         );
         if (allocatedInvoice?.externalInvoiceId == null) {
@@ -292,11 +345,15 @@ class XeroInvoicePaymentSyncService {
     }
 
     final status = ((remote['Status'] as String?) ?? '').trim().toUpperCase();
+    final invoiceNumber = (remote['InvoiceNumber'] as String?)?.trim();
     final amountDue = _toDouble(remote['AmountDue']);
     final amountPaid = _toDouble(remote['AmountPaid']);
     final isPaid = status == 'PAID' || (amountDue <= 0 && amountPaid > 0);
 
     return _RemoteInvoiceState(
+      invoiceNumber: invoiceNumber == null || invoiceNumber.isEmpty
+          ? null
+          : invoiceNumber,
       externalSyncStatus: switch (status) {
         'DELETED' => InvoiceExternalSyncStatus.deleted,
         'VOIDED' => InvoiceExternalSyncStatus.voided,
@@ -315,6 +372,14 @@ class XeroInvoicePaymentSyncService {
       invoice.paymentSource != InvoicePaymentSource.xero ||
       invoice.paidDate?.toIso8601String() != paidDate.toIso8601String();
 
+  bool _needsInvoiceNumberUpdate(Invoice invoice, String? invoiceNumber) {
+    final remote = invoiceNumber?.trim();
+    if (remote == null || remote.isEmpty) {
+      return false;
+    }
+    return invoice.invoiceNum?.trim() != remote;
+  }
+
   Future<int> _importPayments(
     Invoice invoice,
     List<_RemotePayment> payments,
@@ -328,7 +393,7 @@ class XeroInvoicePaymentSyncService {
       if (existing != null) {
         continue;
       }
-      final debtorPayment = await _ledgerService.recordPayment(
+      final debtorPayment = await DebtorLedgerService().recordPayment(
         invoiceId: invoice.id,
         amount: payment.amount,
         paymentDate: payment.date,
@@ -352,9 +417,107 @@ class XeroInvoicePaymentSyncService {
           modifiedDate: debtorPayment.modifiedDate,
         ),
       );
+      final allocations = await DaoPaymentAllocation().getByPaymentId(
+        debtorPayment.id,
+      );
+      for (final allocation in allocations) {
+        await DaoPaymentAllocation().update(
+          allocation.copyWith(externalAllocationId: payment.externalId),
+        );
+        await _markEntityCreateSynced(
+          DebtorLedgerService.paymentAllocationEntity,
+          allocation.id,
+        );
+      }
+      await _markEntityCreateSynced(
+        DebtorLedgerService.paymentEntity,
+        debtorPayment.id,
+      );
       imported += 1;
     }
     return imported;
+  }
+
+  Future<int> _pushPendingDeletes() async {
+    final events = await DaoAccountingSyncEvent().getPending(
+      provider: 'xero',
+      operation: AccountingSyncOperation.delete,
+    );
+    var deleted = 0;
+    for (final event in events) {
+      if (event.entityType != DebtorLedgerService.paymentEntity &&
+          event.entityType != DebtorLedgerService.paymentAllocationEntity) {
+        continue;
+      }
+      final externalId = event.externalId;
+      if (externalId == null || externalId.isEmpty || externalId == 'xero') {
+        await DaoAccountingSyncEvent().markSynced(event);
+        deleted += 1;
+        continue;
+      }
+      try {
+        final response = await _xeroClient.deletePayment(externalId);
+        if ((response.statusCode >= 200 && response.statusCode < 300) ||
+            response.statusCode == 404) {
+          await DaoAccountingSyncEvent().markSynced(event);
+          deleted += 1;
+        } else {
+          await DaoAccountingSyncEvent().markFailed(
+            event,
+            'Xero delete payment failed: ${response.statusCode} '
+            '${response.body}',
+          );
+        }
+      } catch (e) {
+        await DaoAccountingSyncEvent().markFailed(event, e);
+      }
+    }
+    return deleted;
+  }
+
+  Future<int> _reconcileRemotePaymentDeletions(
+    Invoice invoice,
+    List<_RemotePayment> remotePayments,
+  ) async {
+    final remoteIds = remotePayments
+        .map((payment) => payment.externalId)
+        .toSet();
+    final allocations = await DaoPaymentAllocation().getByInvoiceId(invoice.id);
+    var conflicts = 0;
+    for (final allocation in allocations) {
+      final externalId = allocation.externalAllocationId;
+      if (externalId == null || externalId.isEmpty || externalId == 'xero') {
+        continue;
+      }
+      if (remoteIds.contains(externalId)) {
+        continue;
+      }
+      await DaoAccountingSyncEvent().markConflict(
+        provider: 'xero',
+        entityType: DebtorLedgerService.paymentAllocationEntity,
+        localId: allocation.id,
+        externalId: externalId,
+        reason:
+            'Linked payment allocation no longer appears on Xero invoice '
+            '${invoice.externalInvoiceId}.',
+      );
+      conflicts += 1;
+    }
+    return conflicts;
+  }
+
+  Future<void> _markEntityCreateSynced(String entityType, int localId) async {
+    final events = await DaoAccountingSyncEvent().getByEntity(
+      provider: 'xero',
+      entityType: entityType,
+      localId: localId,
+    );
+    for (final event in events) {
+      if (event.operation == AccountingSyncOperation.create &&
+          event.status == AccountingSyncEventStatus.pending) {
+        await DaoAccountingSyncEvent().markSynced(event);
+      }
+    }
   }
 
   Future<int> _importCreditNotes(
@@ -369,7 +532,7 @@ class XeroInvoicePaymentSyncService {
       if (existing != null) {
         continue;
       }
-      final created = await _ledgerService.createCreditNote(
+      final created = await DebtorLedgerService().createCreditNote(
         invoiceId: invoice.id,
         amount: creditNote.amount,
         reason: creditNote.reference ?? 'Xero credit note',
@@ -506,12 +669,14 @@ class XeroInvoicePaymentSyncService {
 }
 
 class _RemoteInvoiceState {
+  final String? invoiceNumber;
   final InvoiceExternalSyncStatus externalSyncStatus;
   final DateTime? paidDate;
   final List<_RemotePayment> payments;
   final List<_RemoteCreditNote> creditNotes;
 
   const _RemoteInvoiceState({
+    required this.invoiceNumber,
     required this.externalSyncStatus,
     required this.paidDate,
     required this.payments,

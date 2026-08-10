@@ -16,6 +16,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 import '../entity/invoice_line.dart';
 import 'dao.dart';
 import 'dao_job.dart';
+import 'dao_receipt.dart';
 import 'dao_task_item.dart';
 import 'dao_time_entry.dart';
 
@@ -68,6 +69,7 @@ class DaoInvoiceLine extends Dao<InvoiceLine> {
       /// not billed.
       await DaoTimeEntry().markAsNotbilled(line.id);
       await DaoTaskItem().markNotBilled(line.id);
+      await DaoReceipt().markJobAllocationsNotBilled(line.id);
     }
     await db.delete(tableName, where: 'invoice_id =?', whereArgs: [invoiceId]);
   }

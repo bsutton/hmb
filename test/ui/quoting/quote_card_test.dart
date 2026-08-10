@@ -191,4 +191,48 @@ void main() {
 
     expect(find.text('Withdraw Quote'), findsNothing);
   });
+
+  testWidgets('rejected quote shows status without reject action or overflow', (
+    tester,
+  ) async {
+    final quote = await tester.runAsync(() async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.fixedPrice,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+      );
+      final quoteId = await DaoQuote().insert(
+        Quote.forInsert(
+          jobId: job.id,
+          summary: 'Rejected quote',
+          description: 'Quote description',
+          totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
+          state: QuoteState.rejected,
+        ),
+      );
+      return (await DaoQuote().getById(quoteId))!;
+    });
+
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: QuoteCard(quote: quote!, onStateChanged: (_) {}),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await waitForText(tester, 'Status: Rejected');
+
+    expect(find.text('Status: Rejected'), findsOneWidget);
+    expect(find.text('Reject'), findsNothing);
+    expect(find.text('Approve'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }

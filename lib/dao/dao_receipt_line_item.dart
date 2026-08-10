@@ -11,6 +11,8 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'package:sqflite_common/sqlite_api.dart';
+
 import '../entity/receipt_line_item.dart';
 import 'dao.dart';
 
@@ -35,9 +37,10 @@ class DaoReceiptLineItem extends Dao<ReceiptLineItem> {
 
   Future<void> replaceForReceipt(
     int receiptId,
-    Iterable<ReceiptLineItem> items,
-  ) async {
-    await db.transaction((txn) async {
+    Iterable<ReceiptLineItem> items, [
+    Transaction? transaction,
+  ]) async {
+    Future<void> replace(Transaction txn) async {
       await txn.delete(
         tableName,
         where: 'receipt_id = ?',
@@ -54,11 +57,18 @@ class DaoReceiptLineItem extends Dao<ReceiptLineItem> {
           taxCodeId: item.taxCodeId,
           lineTotalIncTax: item.lineTotalIncTax,
           matchedTaskItemId: item.matchedTaskItemId,
+          expenseCategory: item.expenseCategory,
           confidence: item.confidence,
           source: item.source,
         ).toMap()..remove('id');
         await txn.insert(tableName, values);
       }
-    });
+    }
+
+    if (transaction != null) {
+      await replace(transaction);
+    } else {
+      await db.transaction(replace);
+    }
   }
 }

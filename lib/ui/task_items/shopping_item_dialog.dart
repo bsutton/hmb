@@ -22,10 +22,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../dao/dao_supplier.dart';
 import '../../dao/dao_task_item.dart';
 import '../../entity/supplier.dart';
-import '../../util/dart/fixed_ex.dart';
-import '../../util/dart/money_ex.dart';
 import '../../util/dart/types.dart';
 import '../widgets/fields/fields.g.dart';
+import '../widgets/hmb_button.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'task_items.g.dart';
@@ -40,17 +39,10 @@ Future<void> showShoppingItemDialog(
   final item = ctx.taskItem;
   final descriptionController = TextEditingController(text: item.description);
   final purposeController = TextEditingController(text: item.purpose);
-  final costController = TextEditingController(
-    text:
-        (item.actualMaterialUnitCost ?? item.estimatedMaterialUnitCost)
-            ?.toString() ??
-        '',
-  );
-  final quantityController = TextEditingController(
-    text:
-        (item.actualMaterialQuantity ?? item.estimatedMaterialQuantity)
-            ?.toString() ??
-        '',
+  final priceController = MaterialPriceEditingController(
+    price: item.completed
+        ? item.actualPrice ?? item.estimatedPrice
+        : item.estimatedPrice,
   );
   Supplier? selectedSupplier;
   if (item.supplierId != null) {
@@ -69,108 +61,118 @@ Future<void> showShoppingItemDialog(
   final targetWidth = screenWidth * 0.8;
   final dialogWidth = targetWidth > 600 ? 600.0 : targetWidth;
 
-  await showDialog<void>(
-    context: context,
-    builder: (dialogCtx) => StatefulBuilder(
-      builder: (dialogCtx, setState) => AlertDialog(
-        title: const Text('Item Details'),
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        content: SizedBox(
-          width: dialogWidth,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(dialogCtx).size.height * 0.8,
-            ),
-            child: SingleChildScrollView(
-              child: HMBColumn(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (item.hasDimensions) ...[
-                    Text(
-                      'Dimensions: ${item.dimensions}',
-                      style: Theme.of(dialogCtx).textTheme.bodyMedium,
+  try {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (dialogCtx, setState) => AlertDialog(
+          title: const Text('Item Details'),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
+          content: SizedBox(
+            width: dialogWidth,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(dialogCtx).size.height * 0.8,
+              ),
+              child: SingleChildScrollView(
+                child: HMBColumn(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (item.hasDimensions) ...[
+                      Text(
+                        'Dimensions: ${item.dimensions}',
+                        style: Theme.of(dialogCtx).textTheme.bodyMedium,
+                      ),
+                    ],
+                    HMBTextField(
+                      controller: descriptionController,
+                      labelText: 'Description',
                     ),
-                  ],
-                  HMBTextField(
-                    controller: descriptionController,
-                    labelText: 'Description',
-                  ),
-                  HMBTextArea(
-                    controller: purposeController,
-                    labelText: 'Purpose',
-                    maxLines: 2,
-                  ),
-                  if (Strings.isNotBlank(url)) ...[
-                    InkWell(
-                      onTap: () async {
-                        final uri = Uri.tryParse(url);
-                        if (uri != null && await canLaunchUrl(uri)) {
-                          await launchUrl(uri);
-                        }
-                      },
-                      child: Text(
-                        url,
-                        style: const TextStyle(
-                          color: Colors.blue,
-                          decoration: TextDecoration.underline,
+                    HMBTextArea(
+                      controller: purposeController,
+                      labelText: 'Purpose',
+                      maxLines: 2,
+                    ),
+                    if (Strings.isNotBlank(url)) ...[
+                      InkWell(
+                        onTap: () async {
+                          final uri = Uri.tryParse(url);
+                          if (uri != null && await canLaunchUrl(uri)) {
+                            await launchUrl(uri);
+                          }
+                        },
+                        child: Text(
+                          url,
+                          style: const TextStyle(
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                          ),
                         ),
                       ),
+                    ],
+                    HMBDroplist<Supplier>(
+                      title: 'Supplier',
+                      items: (filter) => DaoSupplier().getByFilter(filter),
+                      format: (sup) => sup.name,
+                      selectedItem: () async => selectedSupplier,
+                      required: false,
+                      onChanged: (sup) {
+                        unawaited(DaoSupplier().recordAccess(sup?.id));
+                        setState(() => selectedSupplier = sup);
+                      },
+                    ),
+                    MaterialPriceEditor(
+                      controller: priceController,
+                      title: item.completed
+                          ? 'Actual pricing'
+                          : 'Estimated pricing',
                     ),
                   ],
-                  HMBDroplist<Supplier>(
-                    title: 'Supplier',
-                    items: (filter) => DaoSupplier().getByFilter(filter),
-                    format: (sup) => sup.name,
-                    selectedItem: () async => selectedSupplier,
-                    required: false,
-                    onChanged: (sup) {
-                      unawaited(DaoSupplier().recordAccess(sup?.id));
-                      setState(() => selectedSupplier = sup);
-                    },
-                  ),
-                  HMBTextField(
-                    controller: costController,
-                    labelText: 'Unit Cost',
-                    keyboardType: TextInputType.number,
-                  ),
-                  HMBTextField(
-                    controller: quantityController,
-                    labelText: 'Quantity',
-                    keyboardType: TextInputType.number,
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              // update fields
-              final unitCost = MoneyEx.tryParse(costController.text);
-              final quantity = FixedEx.tryParse(quantityController.text);
-              item
-                ..description = descriptionController.text
-                ..purpose = purposeController.text
-                ..supplierId = selectedSupplier?.id
-                ..setActualCosts(
-                  actualMaterialUnitCost: unitCost,
-                  actualMaterialQuantity: quantity,
+          actions: [
+            HMBButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(),
+              label: 'Cancel',
+              hint: "Don't save changes to this item",
+            ),
+            HMBButton(
+              onPressed: () async {
+                final price = priceController.value;
+                if (price == null) {
+                  return;
+                }
+                final updated = item.copyWith(
+                  description: descriptionController.text,
+                  purpose: purposeController.text,
+                  supplierId: selectedSupplier?.id,
+                  estimatedPrice: item.completed ? null : price,
+                  actualPrice: item.completed ? price : null,
                 );
-              await DaoTaskItem().update(item);
-              if (dialogCtx.mounted) {
-                Navigator.of(dialogCtx).pop();
-              }
-              await onReload();
-            },
-            child: const Text('Save'),
-          ),
-        ],
+                if (item.completed) {
+                  updated.setActualPrice(price);
+                }
+                await DaoTaskItem().update(updated);
+                if (dialogCtx.mounted) {
+                  Navigator.of(dialogCtx).pop();
+                }
+                await onReload();
+              },
+              label: 'Save',
+              hint: 'Save changes to this item',
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  } finally {
+    descriptionController.dispose();
+    purposeController.dispose();
+    priceController.dispose();
+  }
 }

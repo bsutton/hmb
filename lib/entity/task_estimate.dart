@@ -21,6 +21,7 @@ import '../util/dart/units.dart';
 import 'entity.dart';
 import 'helpers/charge_mode.dart';
 import 'job.dart';
+import 'material_price.dart';
 import 'task.dart';
 import 'task_item.dart';
 import 'task_item_type.dart';
@@ -326,8 +327,13 @@ class TaskEstimate extends Entity<TaskEstimate> {
       url: url,
       purpose: '',
       labourEntryMode: labourEntryMode,
-      estimatedMaterialUnitCost: estimatedMaterialUnitCost,
-      estimatedMaterialQuantity: estimatedMaterialQuantity,
+      estimatedPrice:
+          estimatedMaterialUnitCost != null && estimatedMaterialQuantity != null
+          ? MaterialPrice.items(
+              quantity: estimatedMaterialQuantity!,
+              unitCost: estimatedMaterialUnitCost!,
+            )
+          : null,
       estimatedLabourCost: estimatedLabourCost,
       estimatedLabourHours: estimatedLabourHours,
       supplierId: supplierId,

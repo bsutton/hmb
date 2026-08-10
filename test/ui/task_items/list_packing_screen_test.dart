@@ -78,8 +78,10 @@ void main() {
           url: '',
           labourEntryMode: LabourEntryMode.hours,
           chargeMode: ChargeMode.calculated,
-          estimatedMaterialUnitCost: Money.fromInt(1000, isoCode: 'AUD'),
-          estimatedMaterialQuantity: Fixed.fromNum(1, decimalDigits: 3),
+          estimatedPrice: MaterialPrice.items(
+            quantity: Fixed.fromNum(1, decimalDigits: 3),
+            unitCost: Money.fromInt(1000, isoCode: 'AUD'),
+          ),
         ),
       );
     });

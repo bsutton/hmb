@@ -40,12 +40,14 @@ class PhotoCrud<E extends Entity<E>> extends StatefulWidget {
   final ParentType parentType;
   final PhotoController<E> controller;
   final bool allowPendingPhotos;
+  final bool showCommentField;
 
   const PhotoCrud({
     required this.parentName,
     required this.parentType,
     required this.controller,
     this.allowPendingPhotos = false,
+    this.showCommentField = true,
     super.key,
   });
 
@@ -119,7 +121,7 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
             mainAxisSize: MainAxisSize.min,
             children: [
               _showPhoto(photoMeta),
-              _buildCommentField(photoMeta),
+              if (widget.showCommentField) _buildCommentField(photoMeta),
               _buildDeleteButton(photoMeta),
             ],
           ),

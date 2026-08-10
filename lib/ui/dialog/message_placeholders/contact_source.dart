@@ -45,6 +45,10 @@ class ContactSource extends Source<Contact> {
       format: (contact) => contact.fullname,
       onChanged: (contact) {
         this.contact = contact;
+        customerNotifier.value = CustomerContact(
+          customerNotifier.value.customer,
+          contact,
+        );
         // Reset site and contact when customer changes
         onChanged.call(contact, ResetFields(site: true, contact: true));
       },

@@ -11,8 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'dart:io';
-
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
@@ -23,6 +21,8 @@ import '../../entity/system.dart';
 import '../../ui/widgets/hmb_toast.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/select/hmb_droplist.dart';
+import 'email_self_warning.dart';
+import 'hmb_email_sender.dart';
 
 class EmailDialog extends StatefulWidget {
   final String subject;
@@ -46,7 +46,7 @@ class EmailDialog extends StatefulWidget {
 }
 
 class _EmailDialogState extends DeferredState<EmailDialog> {
-  late final System system;
+  late final SystemConfiguration system;
   late TextEditingController _subjectController;
   late TextEditingController _bodyController;
   String? _selectedRecipient;
@@ -56,7 +56,11 @@ class _EmailDialogState extends DeferredState<EmailDialog> {
   void initState() {
     super.initState();
 
-    emailRecipients = [...widget.emailRecipients];
+    emailRecipients = [];
+    for (final recipient in widget.emailRecipients) {
+      _addEmailRecipient(recipient);
+    }
+    _addEmailRecipient(widget.preferredRecipient);
     _subjectController = TextEditingController(text: widget.subject);
   }
 
@@ -65,7 +69,7 @@ class _EmailDialogState extends DeferredState<EmailDialog> {
     system = await DaoSystem().get();
 
     if (Strings.isNotBlank(system.emailAddress)) {
-      emailRecipients.add(system.emailAddress!);
+      _addEmailRecipient(system.emailAddress);
     }
 
     final businessDetails = StringBuffer();
@@ -102,7 +106,7 @@ $businessDetails
         child: ListBody(
           children: <Widget>[
             HMBDroplist<String>(
-              title: 'Recepients',
+              title: 'Recipients',
               selectedItem: () async => _selectedRecipient,
               onChanged: (newValue) {
                 setState(() {
@@ -116,6 +120,12 @@ $businessDetails
                         Strings.isBlank(filter) || email.contains(filter!),
                   )
                   .toList(),
+            ),
+            EmailSelfWarning(
+              ownEmail: system.emailAddress,
+              recipients: _selectedRecipient == null
+                  ? const []
+                  : [_selectedRecipient!],
             ),
             TextField(
               controller: _subjectController,
@@ -142,12 +152,12 @@ $businessDetails
           hint:
               '''Send the email using your devices email app. You will have another opportunity to cancel the send.''',
           onPressed: () async {
-            if (!(Platform.isAndroid || Platform.isIOS)) {
-              HMBToast.error('This platform does not support sending emails');
-              return;
-            }
             if (_selectedRecipient != null) {
-              if (!await _confirmSendingToSelf([_selectedRecipient!])) {
+              if (!await confirmSendingToSelf(
+                context: context,
+                ownEmail: system.emailAddress,
+                recipients: [_selectedRecipient!],
+              )) {
                 return;
               }
               final email = Email(
@@ -157,10 +167,14 @@ $businessDetails
                 attachmentPaths: widget.attachmentPaths,
               );
 
-              await FlutterEmailSender.send(email);
-              HMBToast.info('Email sent successfully');
-              if (context.mounted) {
-                Navigator.of(context).pop(true);
+              try {
+                await HMBEmailSender().send(email);
+                HMBToast.info('Email sent successfully');
+                if (context.mounted) {
+                  Navigator.of(context).pop(true);
+                }
+              } catch (e) {
+                HMBToast.error(e.toString(), acknowledgmentRequired: true);
               }
             } else {
               HMBToast.info('Please select a recipient');
@@ -171,39 +185,17 @@ $businessDetails
     ),
   );
 
-  Future<bool> _confirmSendingToSelf(List<String> recipients) async {
-    final systemEmail = system.emailAddress?.trim().toLowerCase();
-    if (Strings.isBlank(systemEmail)) {
-      return true;
+  void _addEmailRecipient(String? email) {
+    if (Strings.isBlank(email)) {
+      return;
     }
-    final sendingToSelf = recipients
-        .map((email) => email.trim().toLowerCase())
-        .contains(systemEmail);
-    if (!sendingToSelf) {
-      return true;
-    }
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sending to yourself'),
-        content: Text(
-          'The selected recipient is your own email address '
-          '(${system.emailAddress}). Continue?',
-        ),
-        actions: [
-          HMBButton(
-            label: 'Cancel',
-            hint: "Don't send this email",
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-          HMBButton(
-            label: 'Continue',
-            hint: 'Continue sending this email',
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      ),
+    final trimmed = email!.trim();
+    final key = trimmed.toLowerCase();
+    final exists = emailRecipients.any(
+      (recipient) => recipient.trim().toLowerCase() == key,
     );
-    return confirmed ?? false;
+    if (!exists) {
+      emailRecipients.add(trimmed);
+    }
   }
 }

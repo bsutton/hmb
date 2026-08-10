@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../dao/dao_system.dart';
+import '../../../entity/system_credentials.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
@@ -44,8 +45,8 @@ class ChatGptIntegrationScreenState extends State<ChatGptIntegrationScreen> {
 
   void _initializeControllers() {
     unawaited(
-      DaoSystem().get().then((system) {
-        _apiKeyController.text = system.openaiApiKey ?? '';
+      DaoSystem().getOpenAiCredentials().then((credentials) {
+        _apiKeyController.text = credentials.apiKey ?? '';
         setState(() {});
       }),
     );
@@ -63,9 +64,9 @@ class ChatGptIntegrationScreenState extends State<ChatGptIntegrationScreen> {
       return false;
     }
 
-    final system = await DaoSystem().get();
-    system.openaiApiKey = _apiKeyController.text.trim();
-    await DaoSystem().update(system);
+    await DaoSystem().updateOpenAiCredentials(
+      OpenAiCredentials(apiKey: _apiKeyController.text.trim()),
+    );
 
     if (mounted) {
       if (widget.showButtons) {

@@ -7,6 +7,7 @@ XeroInvoicePaymentClient createXeroInvoicePaymentClient() {
     login: xeroApi.login,
     getInvoice: xeroApi.getInvoice,
     createPayment: xeroApi.createPayment,
+    deletePayment: xeroApi.deletePayment,
     createCreditNote: xeroApi.createCreditNote,
     allocateCreditNote: xeroApi.allocateCreditNote,
   );

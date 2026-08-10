@@ -152,7 +152,18 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
         FutureBuilder<List<Task>>(
           future: DaoTask().getTasksByJob(widget.job.id),
           builder: (c, snap) {
-            final tasks = snap.data ?? [];
+            final tasks = _assignableTasks(snap.data ?? []);
+            final selectableTaskIds = tasks.map((task) => task.id).toSet();
+            final selectedVisibleCount = selectableTaskIds
+                .where(_selectedTasks.contains)
+                .length;
+            final allVisibleSelected =
+                tasks.isNotEmpty && selectedVisibleCount == tasks.length;
+            final selectAllValue = selectedVisibleCount == 0
+                ? false
+                : allVisibleSelected
+                ? true
+                : null;
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -160,31 +171,40 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
                   'Tasks to assign',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                ...tasks
-                    .
-                    /// exclude tasks that are cancelled or on hold.
-                    where(
-                      (task) =>
-                          !(task.status == TaskStatus.cancelled ||
-                              task.status == TaskStatus.onHold),
-                    )
-                    .map(
-                      (t) => CheckboxListTile(
-                        value: _selectedTasks.contains(t.id),
-                        title: Text(
-                          t.name,
-                          style: const TextStyle(color: Colors.blue),
-                        ),
-                        subtitle: Text(t.assumption),
-                        onChanged: (on) => setState(() {
-                          if (on ?? false) {
-                            _selectedTasks.add(t.id);
+                CheckboxListTile(
+                  value: selectAllValue,
+                  tristate: true,
+                  title: const Text(
+                    'Select all',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  onChanged: tasks.isEmpty
+                      ? null
+                      : (on) => setState(() {
+                          if (allVisibleSelected) {
+                            _selectedTasks.removeAll(selectableTaskIds);
                           } else {
-                            _selectedTasks.remove(t.id);
+                            _selectedTasks.addAll(selectableTaskIds);
                           }
                         }),
-                      ),
+                ),
+                ...tasks.map(
+                  (t) => CheckboxListTile(
+                    value: _selectedTasks.contains(t.id),
+                    title: Text(
+                      t.name,
+                      style: const TextStyle(color: Colors.blue),
                     ),
+                    subtitle: Text(t.assumption),
+                    onChanged: (on) => setState(() {
+                      if (on ?? false) {
+                        _selectedTasks.add(t.id);
+                      } else {
+                        _selectedTasks.remove(t.id);
+                      }
+                    }),
+                  ),
+                ),
               ],
             );
           },
@@ -192,6 +212,14 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
       ],
     ),
   );
+
+  List<Task> _assignableTasks(List<Task> tasks) => tasks
+      .where(
+        (task) =>
+            task.status != TaskStatus.cancelled &&
+            task.status != TaskStatus.onHold,
+      )
+      .toList();
 
   @override
   void refresh() {

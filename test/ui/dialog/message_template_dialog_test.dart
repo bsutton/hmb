@@ -7,6 +7,7 @@ import 'package:hmb/dao/dao_message_template.dart';
 import 'package:hmb/entity/message_template.dart';
 import 'package:hmb/ui/dialog/message_template_dialog.dart';
 import 'package:hmb/ui/dialog/source_context.dart';
+import 'package:hmb/ui/widgets/select/hmb_droplist.dart';
 
 import '../../database/management/db_utility_test_helper.dart';
 
@@ -59,7 +60,7 @@ void main() {
     );
     await settleAsync(tester);
 
-    await tester.tap(find.text('Select a Choose a template'));
+    await tester.tap(find.byType(HMBDroplist<MessageTemplate>));
     await settleAsync(tester);
 
     expect(find.text('Email-only test template'), findsNothing);

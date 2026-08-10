@@ -62,13 +62,14 @@ class SystemContactInformationScreenState
 
   late String _selectedCountryCode;
   late List<CountryCode> _countryCodes;
+  int? _selectedSimSlot;
 
   late final System system;
 
   @override
   Future<void> asyncInitState() async {
     setAppTitle('Business Contacts');
-    system = await DaoSystem().get();
+    system = await DaoSystem().getForUpdate();
 
     _addressLine1Controller = TextEditingController(text: system.addressLine1);
     _addressLine2Controller = TextEditingController(text: system.addressLine2);
@@ -84,6 +85,7 @@ class SystemContactInformationScreenState
     _surnameController = TextEditingController(text: system.surname);
 
     _selectedCountryCode = system.countryCode ?? 'AU';
+    _selectedSimSlot = _validSimSlot(system.simCardNo);
     _countryCodes = CountryCode.values;
   }
 
@@ -106,7 +108,7 @@ class SystemContactInformationScreenState
 
   Future<bool> save({required bool close}) async {
     if (_formKey.currentState!.validate()) {
-      final system = await DaoSystem().get();
+      final system = await DaoSystem().getForUpdate();
       // Save the form data
       system
         ..firstname = _firstNameController
@@ -119,13 +121,14 @@ class SystemContactInformationScreenState
         ..state = _stateController?.text
         ..postcode = _postcodeController?.text
         ..countryCode = _selectedCountryCode
+        ..simCardNo = _selectedSimSlot
         ..mobileNumber = _mobileNumberController?.text
         ..landLine = _landLineController?.text
         ..officeNumber = _officeNumberController?.text
         ..fromEmail = _fromEmailController?.text
         ..emailAddress = _emailAddressController?.text.toLowerCase();
 
-      await DaoSystem().update(system);
+      await DaoSystem().updateConfiguration(system);
       if (mounted) {
         if (widget.showButtons) {
           HMBToast.info('saved');
@@ -279,33 +282,26 @@ The email address used to send you notices such as a successful backup.'''),
               return null;
             },
           ),
-          // FutureBuilderEx(
-          //   // ignore: discarded_futures
-          //   future: getSimCards(),
-          //   builder: (context, cards) {
-          //     if (cards == null || cards.isEmpty) {
-          //       return const Text('No sim cards found');
-          //     } else {
-          //       return HMBDroplist<SimCard>(
-          //         title: 'Sim Card',
-          //         selectedItem: () async {
-          //           final cards = await getSimCards();
-          //           if (cards.isNotEmpty) {
-          //             return cards[system.simCardNo ?? 0];
-          //           } else {
-          //             return null;
-          //           }
-          //         },
-          //         items: (filter) async => getSimCards(),
-          //         format: (card) => card.displayName ?? 'Unnamed',
-          //         onChanged: (card) =>
-          //             system.simCardNo = card?.slotIndex,
-          //       );
-          //     }
-          //   },
-          // ),
+          DropdownButtonFormField<int?>(
+            isExpanded: true,
+            initialValue: _selectedSimSlot,
+            decoration: const InputDecoration(labelText: 'Default SIM'),
+            items: const [
+              DropdownMenuItem<int?>(child: Text('Phone default')),
+              DropdownMenuItem<int?>(value: 1, child: Text('SIM 1')),
+              DropdownMenuItem<int?>(value: 2, child: Text('SIM 2')),
+            ],
+            onChanged: (newValue) {
+              _selectedSimSlot = newValue;
+            },
+          ),
         ],
       ),
     ),
   );
+
+  int? _validSimSlot(int? value) => switch (value) {
+    1 || 2 => value,
+    _ => null,
+  };
 }

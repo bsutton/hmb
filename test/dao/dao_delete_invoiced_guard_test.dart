@@ -28,10 +28,14 @@ void main() {
       description: 'Item',
       purpose: '',
       itemType: TaskItemType.materialsBuy,
-      estimatedMaterialUnitCost: MoneyEx.fromInt(1000),
-      estimatedMaterialQuantity: Fixed.one,
-      actualMaterialUnitCost: MoneyEx.fromInt(1000),
-      actualMaterialQuantity: Fixed.one,
+      estimatedPrice: MaterialPrice.items(
+        quantity: Fixed.one,
+        unitCost: MoneyEx.fromInt(1000),
+      ),
+      actualPrice: MaterialPrice.items(
+        quantity: Fixed.one,
+        unitCost: MoneyEx.fromInt(1000),
+      ),
       billed: true,
       chargeMode: ChargeMode.calculated,
       margin: Percentage.zero,

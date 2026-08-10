@@ -93,8 +93,7 @@ Future<TaskItem> insertMaterials(
     description: 'Completed Material Item',
     purpose: '',
     itemType: checkListItemType,
-    estimatedMaterialUnitCost: unitCost,
-    estimatedMaterialQuantity: quantity,
+    estimatedPrice: MaterialPrice.items(quantity: quantity, unitCost: unitCost),
     chargeMode: ChargeMode.calculated,
     margin: margin,
     completed: true,
@@ -131,10 +130,18 @@ Future<TaskItem> insertMaterialItem(
     description: description,
     purpose: '',
     itemType: itemType,
-    estimatedMaterialUnitCost: estimatedUnitCost,
-    estimatedMaterialQuantity: estimatedQuantity,
-    actualMaterialUnitCost: actualUnitCost,
-    actualMaterialQuantity: actualQuantity,
+    estimatedPrice: estimatedQuantity != null && estimatedUnitCost != null
+        ? MaterialPrice.items(
+            quantity: estimatedQuantity,
+            unitCost: estimatedUnitCost,
+          )
+        : null,
+    actualPrice: actualQuantity != null && actualUnitCost != null
+        ? MaterialPrice.items(
+            quantity: actualQuantity,
+            unitCost: actualUnitCost,
+          )
+        : null,
     chargeMode: chargeMode,
     margin: resolvedMargin,
     completed: completed,

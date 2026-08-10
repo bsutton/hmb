@@ -64,8 +64,8 @@ class ReceiptLineExtraction {
 
 class ReceiptApiClient {
   Future<ReceiptExtractionResult?> extractData(String filePath) async {
-    final system = await DaoSystem().get();
-    final apiKey = system.openaiApiKey?.trim();
+    final credentials = await DaoSystem().getOpenAiCredentials();
+    final apiKey = credentials.apiKey?.trim();
     if (apiKey == null || apiKey.isEmpty) {
       return null;
     }

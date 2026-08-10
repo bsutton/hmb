@@ -90,12 +90,12 @@ class _JobCreatorState extends State<JobCreator> {
   }
 
   Future<void> _loadAiConfigured() async {
-    final system = await DaoSystem().get();
+    final credentials = await DaoSystem().getOpenAiCredentials();
     if (!mounted) {
       return;
     }
     setState(() {
-      _aiConfigured = (system.openaiApiKey?.trim() ?? '').isNotEmpty;
+      _aiConfigured = (credentials.apiKey?.trim() ?? '').isNotEmpty;
     });
   }
 
@@ -483,8 +483,8 @@ class _JobCreatorState extends State<JobCreator> {
       return false;
     }
 
-    final system = await DaoSystem().get();
-    final apiKey = system.openaiApiKey?.trim() ?? '';
+    final credentials = await DaoSystem().getOpenAiCredentials();
+    final apiKey = credentials.apiKey?.trim() ?? '';
     if (apiKey.isEmpty) {
       _showAiRequiredMessage();
       return false;

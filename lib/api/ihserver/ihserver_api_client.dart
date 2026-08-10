@@ -16,11 +16,13 @@ class IhServerApiClient {
        _configProvider = configProvider ?? _loadConfig;
 
   static Future<IhServerApiConfig> _loadConfig() async {
-    final system = await DaoSystem().get();
+    final daoSystem = DaoSystem();
+    final system = await daoSystem.get();
+    final credentials = await daoSystem.getIhserverCredentials();
     return IhServerApiConfig(
       enabled: system.enableIhserverIntegration,
       baseUrl: system.ihserverUrl,
-      token: system.ihserverToken,
+      token: credentials.token,
     );
   }
 

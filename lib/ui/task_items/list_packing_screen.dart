@@ -296,7 +296,7 @@ Packing items are taken from Task items that are marked as "${TaskItemType.mater
     BuildContext context,
     TaskItemContext itemContext,
   ) => SurfaceCardWithActions(
-    height: 276,
+    height: 288,
     title: itemContext.taskItem.description,
     // tap no longer auto-completes; actions are explicit like the shopping card
     body: Row(

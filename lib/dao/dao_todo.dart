@@ -1,6 +1,7 @@
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/job_status.dart';
+import '../entity/job_status_stage.dart';
 import '../entity/todo.dart';
 import '../util/dart/local_date.dart';
 import 'dao.g.dart';
@@ -181,19 +182,43 @@ SELECT td.*
   }
 
   /// Get a list of open todo's that have reminders set
-  Future<List<ToDo>> getOpenWithReminders() async {
+  Future<List<ToDo>> getOpenWithReminders({bool includePast = false}) async {
     final db = withoutTransaction();
 
     // Include slightly past reminders so near-now saves aren’t missed.
-    final cutoffIso = DateTime.now()
+    final cutoff = DateTime.now()
         .subtract(const Duration(seconds: 60))
         .toIso8601String();
 
-    final rows = await db.query(
-      tableName, // e.g. 'to_do'
-      where: 'status = ? AND remind_at IS NOT NULL AND remind_at > ?',
-      whereArgs: [ToDoStatus.open.name, cutoffIso],
-      orderBy: 'remind_at ASC, created_date ASC',
+    final finalisedStatuses = JobStatus.values
+        .where((status) => status.stage == JobStatusStage.finalised)
+        .map((status) => status.id)
+        .toList();
+    final placeholders = List.filled(finalisedStatuses.length, '?').join(',');
+
+    final rows = await db.rawQuery(
+      '''
+SELECT td.*
+  FROM $tableName td
+  LEFT JOIN job j
+    ON td.parent_type = ? AND td.parent_id = j.id
+ WHERE td.status = ?
+   AND td.remind_at IS NOT NULL
+   ${includePast ? '' : 'AND td.remind_at > ?'}
+   AND (
+        td.parent_type != ?
+        OR j.id IS NULL
+        OR j.status_id NOT IN ($placeholders)
+   )
+ ORDER BY td.remind_at ASC, td.created_date ASC
+''',
+      [
+        ToDoParentType.job.name,
+        ToDoStatus.open.name,
+        if (!includePast) cutoff,
+        ToDoParentType.job.name,
+        ...finalisedStatuses,
+      ],
     );
 
     return rows.map(ToDo.fromMap).toList();

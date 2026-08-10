@@ -21,6 +21,8 @@ import 'package:go_router/go_router.dart';
 import 'package:strings/strings.dart';
 
 import '../../../dao/dao_system.dart';
+import '../../../entity/system.dart';
+import '../../../entity/system_credentials.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/layout.g.dart';
@@ -52,9 +54,14 @@ class IhServerIntegrationScreenState extends State<IhServerIntegrationScreen> {
 
   void _initializeControllers() {
     unawaited(
-      DaoSystem().get().then((system) {
+      Future.wait([
+        DaoSystem().get(),
+        DaoSystem().getIhserverCredentials(),
+      ]).then((results) {
+        final system = results[0] as SystemConfiguration;
+        final credentials = results[1] as IhserverCredentials;
         _urlController.text = system.ihserverUrl ?? '';
-        _tokenController.text = system.ihserverToken ?? '';
+        _tokenController.text = credentials.token ?? '';
         _enabled = system.enableIhserverIntegration;
         setState(() {});
       }),
@@ -93,12 +100,15 @@ class IhServerIntegrationScreenState extends State<IhServerIntegrationScreen> {
       }
     }
 
-    final system = await DaoSystem().get();
+    final daoSystem = DaoSystem();
+    final system = await daoSystem.getForUpdate();
     system
       ..ihserverUrl = _urlController.text.trim()
-      ..ihserverToken = _tokenController.text.trim()
       ..enableIhserverIntegration = _enabled;
-    await DaoSystem().update(system);
+    await daoSystem.updateConfiguration(system);
+    await daoSystem.updateIhserverCredentials(
+      IhserverCredentials(token: _tokenController.text.trim()),
+    );
 
     if (mounted) {
       if (widget.showButtons) {

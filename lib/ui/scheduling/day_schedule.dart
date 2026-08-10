@@ -62,7 +62,7 @@ class DaySchedule extends StatefulWidget with ScheduleHelper {
 
 class _DayScheduleState extends DeferredState<DaySchedule> {
   late final EventController<JobActivityEx> _dayController;
-  late final System system;
+  late final SystemConfiguration system;
   late final OperatingHours operatingHours;
   var _hasActivitiesInExtendedHours = false;
   // New state variables to hold the computed bounds when there are

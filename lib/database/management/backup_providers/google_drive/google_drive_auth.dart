@@ -24,6 +24,8 @@ import '../../../../util/flutter/paths_flutter.dart';
 import 'google_drive_folder_store.dart';
 
 class GoogleDriveAuth {
+  static const _automaticSignInTimeout = Duration(seconds: 10);
+
   /// OAuth Client in Google Play Console: HMB-Production-Signed-By-Google
   static const _clientId =
       '''704526923643-ot7i0jpo27urkkibm1gsqpji7f2nigt3.apps.googleusercontent.com''';
@@ -35,6 +37,11 @@ class GoogleDriveAuth {
 
   static var _initialised = false;
   static late GoogleDriveAuth _instance;
+  static final _authStateController = StreamController<bool>.broadcast(
+    sync: true,
+  );
+
+  static Stream<bool> get authStateChanges => _authStateController.stream;
 
   final List<String> scopes = [drive.DriveApi.driveFileScope];
 
@@ -120,9 +127,29 @@ class GoogleDriveAuth {
 
   /// triggers and automatic signin
   Future<void> signInIfAutomatic() async {
-    if ((await hasSignedIn()) && !isSignedIn) {
-      // this should trigger a silent signin.
-      await signIn();
+    if (!(await hasSignedIn()) || isSignedIn) {
+      return;
+    }
+
+    final signIn = GoogleSignIn.instance;
+    _awaitingAuth = Completer<GoogleAuthResult>();
+
+    try {
+      final attempt = signIn.attemptLightweightAuthentication(
+        reportAllExceptions: true,
+      );
+      final account = attempt == null
+          ? null
+          : await attempt.timeout(_automaticSignInTimeout);
+      if (account == null) {
+        await _markSignedOut();
+        return;
+      }
+      await _awaitingAuth.future;
+    } catch (_) {
+      // A remembered sign-in is only a hint. If Android cannot restore the
+      // credential, leave the screen usable so the user can sign in again.
+      await _markSignedOut();
     }
   }
 
@@ -132,21 +159,20 @@ class GoogleDriveAuth {
     final signIn = GoogleSignIn.instance;
 
     _awaitingAuth = Completer<GoogleAuthResult>();
-    if (await hasSignedIn()) {
-      unawaited(signIn.attemptLightweightAuthentication());
-    } else {
-      /// testing on android show that a call to
-      /// attemptLightweightAuthentication is always sufficient
-      /// but it may be different on other platforms so as
-      /// an act of caution.
-      unawaited(signIn.authenticate());
+    try {
+      // This method is called from an explicit user action. Always allow the
+      // platform to show account selection instead of relying on stale local
+      // state left behind by a previous sign-in.
+      await signIn.authenticate();
+    } catch (error) {
+      await _handleAuthenticationError(error);
     }
 
     await _awaitingAuth.future;
   }
 
   Future<void> signOut() async {
-    await GoogleSignIn.instance.signOut();
+    await GoogleSignIn.instance.disconnect();
     await _markSignedOut();
   }
 
@@ -155,32 +181,22 @@ class GoogleDriveAuth {
   ) async {
     final account = event.user;
 
-    final authorization = await account.authorizationClient
-        .authorizationForScopes(scopes);
+    try {
+      final authorization =
+          await account.authorizationClient.authorizationForScopes(scopes) ??
+          await account.authorizationClient.authorizeScopes(scopes);
 
-    if (authorization != null) {
+      _authHeaders = {
+        'Authorization': 'Bearer ${authorization.accessToken}',
+        'X-Goog-AuthUser': '0',
+      };
       await _markSignedIn();
-      await _buildAuthHeaders(account);
       if (!_awaitingAuth.isCompleted) {
         _awaitingAuth.complete(GoogleAuthResult.success());
       }
-      return;
+    } catch (error) {
+      await _handleAuthenticationError(error);
     }
-    await _markSignedOut();
-    if (!_awaitingAuth.isCompleted) {
-      _awaitingAuth.completeError(
-        GoogleAuthResult.failure(
-          'Google sign-in completed without Drive authorization.',
-        ),
-      );
-    }
-  }
-
-  Future<void> _buildAuthHeaders(GoogleSignInAccount user) async {
-    /// Get the access token for the driveFileScope.
-    final client = await user.authorizationClient.authorizeScopes(scopes);
-
-    _authHeaders = {'Authorization': 'Bearer ${client.accessToken}'};
   }
 
   Future<void> _handleAuthenticationError(Object e) async {
@@ -241,6 +257,7 @@ class GoogleDriveAuth {
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
     settings['GoogleSignedIn'] = true;
     await settings.save();
+    _authStateController.add(true);
   }
 
   Future<void> _markSignedOut() async {
@@ -251,6 +268,7 @@ class GoogleDriveAuth {
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
     settings['GoogleSignedIn'] = false;
     await settings.save();
+    _authStateController.add(false);
   }
 }
 

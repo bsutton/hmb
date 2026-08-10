@@ -21,6 +21,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../dao/dao_system.dart';
 import '../../../util/flutter/clip_board.dart';
 import '../../dialog/message_template_dialog.dart';
 import '../../dialog/source_context.dart';
@@ -113,23 +114,38 @@ class HMBPhoneIcon extends StatelessWidget {
   }
 
   Future<void> _call(BuildContext context, String phoneNo) async {
-    if (!Platform.isAndroid) {
-      HMBToast.info('Dialing is only available on Android');
+    if (Platform.isAndroid && await _directCall(phoneNo)) {
       return;
     }
 
+    final launched = await launchUrl(Uri(scheme: 'tel', path: phoneNo));
+    if (!launched && context.mounted) {
+      HMBToast.error('Unable to open the phone dialer.');
+    }
+  }
+
+  Future<bool> _directCall(String phoneNo) async {
     final status = await Permission.phone.status;
     if (status.isDenied) {
       final result = await Permission.phone.request();
       if (result.isDenied) {
-        if (context.mounted) {
-          HMBToast.info('Phone permission is required to make calls');
-        }
-        return;
+        return false;
       }
     }
 
-    DirectCaller().makePhoneCall(phoneNo);
+    try {
+      final simSlot = _validSimSlot((await DaoSystem().get()).simCardNo);
+      final caller = DirectCaller();
+      if (simSlot == null) {
+        return caller.makePhoneCall(phoneNo);
+      }
+      return caller.makePhoneCall(phoneNo, simSlot: simSlot);
+      // The caller plugin can throw for unsupported SIM slot values or
+      // platform-specific intent failures. Fall back to the dialer.
+      // ignore: avoid_catches_without_on_clauses
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> _sendText(
@@ -145,4 +161,9 @@ class HMBPhoneIcon extends StatelessWidget {
 
     await launchUrl(smsLaunchUri);
   }
+
+  int? _validSimSlot(int? value) => switch (value) {
+    1 || 2 => value,
+    _ => null,
+  };
 }

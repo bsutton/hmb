@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// lib/src/ui/dashboard/settings_dashboard_page.dart
 import 'package:flutter/material.dart';
 
 import '../dashboard.dart';
@@ -39,11 +38,25 @@ class IntegrationDashboardPage extends StatelessWidget {
         route: '/home/settings/integrations/chatgpt',
       ),
       DashletCard<void>.route(
+        label: 'Google Maps',
+        hint: 'Enable mailing geocoding and route optimisation',
+        icon: Icons.map,
+        value: () => Future.value(const DashletValue(null)),
+        route: '/home/settings/integrations/google_maps',
+      ),
+      DashletCard<void>.route(
         label: 'Xero',
         hint: 'Configure integration with Xero to upload Invoices',
         icon: Icons.extension,
         value: () => Future.value(const DashletValue(null)),
         route: '/home/settings/integrations/xero',
+      ),
+      DashletCard<void>.route(
+        label: 'SMTP Email',
+        hint: 'Configure email delivery with attachments',
+        icon: Icons.email,
+        value: () => Future.value(const DashletValue(null)),
+        route: '/home/settings/integrations/smtp',
       ),
     ],
   );

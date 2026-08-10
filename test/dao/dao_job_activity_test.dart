@@ -39,4 +39,42 @@ void main() {
 
     expect(activities.map((activity) => activity.start), [future.start]);
   });
+
+  test('excludes activities for every finalised job status', () async {
+    final now = DateTime.now();
+    final activeJob = await createJob(
+      now,
+      BillingType.timeAndMaterial,
+      hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+    );
+    final activeActivity = JobActivity.forInsert(
+      jobId: activeJob.id,
+      start: now.add(const Duration(hours: 2)),
+      end: now.add(const Duration(hours: 3)),
+    );
+    await DaoJobActivity().insert(activeActivity);
+
+    for (final status in JobStatus.values.where(
+      (status) => status.stage == JobStatusStage.finalised,
+    )) {
+      final job = await createJob(
+        now,
+        BillingType.timeAndMaterial,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+      );
+      job.status = status;
+      await DaoJob().update(job);
+      await DaoJobActivity().insert(
+        JobActivity.forInsert(
+          jobId: job.id,
+          start: now.add(const Duration(hours: 2)),
+          end: now.add(const Duration(hours: 3)),
+        ),
+      );
+    }
+
+    final activities = await DaoJobActivity().getStartingAfter(now);
+
+    expect(activities.map((activity) => activity.id), [activeActivity.id]);
+  });
 }

@@ -16,10 +16,12 @@ import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../../dao/dao.dart';
 import '../../../entity/entity.dart';
+import '../../widgets/form_validation.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/layout.g.dart' show HMBColumn;
 import '../../widgets/save_and_close.dart';
 import '../base_full_screen/edit_entity_screen.dart';
+import 'list_nested_screen.dart';
 
 abstract class NestedEntityState<E extends Entity<E>> {
   Future<E> forInsert();
@@ -93,7 +95,10 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
                     padding: const EdgeInsets.all(4),
 
                     /// Inject the entity specific editor.
-                    child: widget.editor(widget.entityState.currentEntity),
+                    child: ParentSaveScope(
+                      ensureSaved: _ensureSavedForChildAction,
+                      child: widget.editor(widget.entityState.currentEntity),
+                    ),
                   ),
                 ),
               ],
@@ -114,7 +119,28 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
   );
 
   Future<void> _save({bool close = false}) async {
-    if (_formKey.currentState!.validate() && await widget.crossValidator()) {
+    final didSave = await _saveEntity();
+    if (didSave && close && mounted) {
+      widget.entityState.refresh();
+      Navigator.of(context).pop(widget.entityState.currentEntity);
+    }
+  }
+
+  Future<C?> _ensureSavedForChildAction() async {
+    if (await _saveEntity()) {
+      return widget.entityState.currentEntity;
+    }
+    return null;
+  }
+
+  Future<bool> _saveEntity() async {
+    if (validateFormAndRevealErrors(
+          _formKey,
+          message:
+              'Fix the highlighted ${widget.entityName.toLowerCase()} fields '
+              'before continuing.',
+        ) &&
+        await widget.crossValidator()) {
       final savedEntity = widget.entityState.currentEntity;
       try {
         if (widget.entityState.currentEntity != null) {
@@ -132,8 +158,6 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
             widget.entityState.currentEntity = savedEntity;
             rethrow;
           }
-
-          setState(() {});
         } else {
           final newEntity = await widget.entityState.forInsert();
           widget.entityState.currentEntity = newEntity;
@@ -147,15 +171,12 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
             widget.entityState.currentEntity = savedEntity;
             rethrow;
           }
-          setState(() {});
         }
 
-        if (close && mounted) {
-          widget.entityState.refresh();
-          Navigator.of(context).pop(widget.entityState.currentEntity);
-        } else {
+        if (mounted) {
           setState(() {});
         }
+        return true;
       } catch (error) {
         // Check if the error indicates a duplicate name (unique
         //constraint violation)
@@ -168,5 +189,6 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
         }
       }
     }
+    return false;
   }
 }

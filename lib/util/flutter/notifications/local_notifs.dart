@@ -83,47 +83,7 @@ class LocalNotifs {
       },
     );
 
-    // ---- permissions ----
     if (!kIsWeb) {
-      if (Platform.isAndroid) {
-        final android = _fln
-            .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >();
-        final granted = await android?.requestNotificationsPermission();
-        if (granted == false) {
-          _permissionGranted = false;
-        }
-        // NOTE: If you later require exact alarms, add the manifest permission
-        // and deep-link users to the exact-alarm settings screen.
-      } else if (Platform.isIOS) {
-        final ios = _fln
-            .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin
-            >();
-        final granted = await ios?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-        if (granted == false) {
-          _permissionGranted = false;
-        }
-      } else if (Platform.isMacOS) {
-        final macos = _fln
-            .resolvePlatformSpecificImplementation<
-              MacOSFlutterLocalNotificationsPlugin
-            >();
-        final granted = await macos?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-        if (granted == false) {
-          _permissionGranted = false;
-        }
-      }
-
       // ---- desktop in-app scheduler (Windows/Linux only) ----
       if (Platform.isWindows || Platform.isLinux) {
         _desktop = DesktopNotifScheduler(fln: _fln, buildDetails: _buildDetails)
@@ -133,6 +93,44 @@ class LocalNotifs {
 
     _inited = true;
     debugPrint('LocalNotifs init complete. tz=$_iana');
+  }
+
+  Future<bool> requestPermissions() async {
+    await init();
+    if (kIsWeb) {
+      return true;
+    }
+
+    bool? granted;
+    if (Platform.isAndroid) {
+      final android = _fln
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      granted = await android?.requestNotificationsPermission();
+    } else if (Platform.isIOS) {
+      final ios = _fln
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
+      granted = await ios?.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    } else if (Platform.isMacOS) {
+      final macos = _fln
+          .resolvePlatformSpecificImplementation<
+            MacOSFlutterLocalNotificationsPlugin
+          >();
+      granted = await macos?.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    }
+
+    return _permissionGranted = granted ?? true;
   }
 
   // Build per-platform details in one place (reused by desktop scheduler).
@@ -236,6 +234,48 @@ class LocalNotifs {
     await _fln.cancelAll();
   }
 
+  /// Makes the platform scheduler exactly match HMB's current reminders.
+  ///
+  /// This removes both pending and already-visible notifications whose
+  /// backing To-Do or job activity is no longer eligible.
+  Future<void> reconcile(
+    Iterable<Notif> notifications, {
+    Iterable<int>? validIds,
+  }) async {
+    await init();
+    final desired = {for (final notification in notifications) notification.id};
+    final valid = validIds?.toSet() ?? desired;
+
+    if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+      _desktop?.resync(notifications);
+    }
+
+    final pendingIds = {
+      for (final pending in await _fln.pendingNotificationRequests())
+        pending.id,
+    };
+    for (final id in pendingIds) {
+      if (Notif.isManagedId(id) && !desired.contains(id)) {
+        await cancel(id);
+      }
+    }
+
+    if (!kIsWeb && !Platform.isLinux) {
+      final activeIds = (await _fln.getActiveNotifications())
+          .map((notification) => notification.id)
+          .whereType<int>();
+      for (final id in activeIds) {
+        if (Notif.isManagedId(id) && !valid.contains(id)) {
+          await cancel(id);
+        }
+      }
+    }
+
+    for (final notification in notifications) {
+      await schedule(notification);
+    }
+  }
+
   /// Schedule from ToDo (store LOCAL → schedule in LOCAL tz).
   Future<bool> scheduleForToDo(ToDo todo) async {
     final when = todo.remindAt;
@@ -312,7 +352,9 @@ class LocalNotifs {
   Future<void> resyncFromToDos(Iterable<ToDo> todos) async {
     await init();
     final pendingTodos = todos
-        .where((t) => t.remindAt != null && t.status == ToDoStatus.open)
+        .where(
+          (todo) => todo.remindAt != null && todo.status == ToDoStatus.open,
+        )
         .toList();
 
     if (Platform.isWindows || Platform.isLinux) {
@@ -335,8 +377,8 @@ class LocalNotifs {
 
   // ---- Helpers -------------------------------------------------------------
 
-  int _idForToDo(int todoId) => 20_000_000 + todoId;
-  int _idForJobActivity(int activityId) => 30_000_000 + activityId;
+  int _idForToDo(int todoId) => Notif.idForToDo(todoId);
+  int _idForJobActivity(int activityId) => Notif.idForJobActivity(activityId);
 
   String? _encodePayload(Map<String, String>? p) {
     if (p == null || p.isEmpty) {

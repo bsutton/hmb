@@ -27,8 +27,10 @@ import '../crud/milestone/list_milestone_screen.dart';
 import '../crud/receipt/list_receipt_screen.dart';
 import '../crud/supplier/list_supplier_screen.dart';
 import '../crud/system/chatgpt_integration_screen.dart';
+import '../crud/system/google_maps_integration_screen.dart';
 import '../crud/system/ihserver_integration_screen.dart';
 import '../crud/system/plasterboard_layout_settings_screen.dart';
+import '../crud/system/smtp_integration_screen.dart';
 import '../crud/system/system_billing_screen.dart';
 import '../crud/system/system_business_screen.dart';
 import '../crud/system/system_contact_screen.dart';
@@ -46,12 +48,15 @@ import '../scheduling/schedule_page.dart';
 import '../scheduling/today/today_page.dart';
 import '../task_items/list_packing_screen.dart';
 import '../task_items/list_shopping_screen.dart';
+import '../tools/mailings/mailing_list_screen.dart';
 import '../tools/plasterboard/plaster_project_list_screen.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/media/full_screen_photo_view.dart';
 import '../widgets/splash_screen.dart';
 import '../wizard/setup_wizard.dart';
+import 'dashboards/accounting/accountant_tax_pack_screen.dart';
 import 'dashboards/accounting/accounting_dashboard.dart';
+import 'dashboards/accounting/accounting_reports_dashboard.dart';
 import 'dashboards/accounting/aged_receivables_screen.dart';
 import 'dashboards/accounting/cash_received_screen.dart';
 import 'dashboards/accounting/debtor_statement_screen.dart';
@@ -202,6 +207,10 @@ List<GoRoute> dashboardRoutes() => [
         const HomeScaffold(initialScreen: PlasterProjectListScreen()),
   ),
   GoRoute(
+    path: 'tools/mailings',
+    builder: (_, _) => const HomeScaffold(initialScreen: MailingListScreen()),
+  ),
+  GoRoute(
     path: 'manufacturers',
     builder: (_, _) =>
         const HomeScaffold(initialScreen: ManufacturerListScreen()),
@@ -280,6 +289,18 @@ List<GoRoute> accountingRoutes() => [
   GoRoute(
     path: 'payments',
     builder: (_, _) => const HomeScaffold(initialScreen: PaymentListScreen()),
+  ),
+  GoRoute(
+    path: 'reports',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: AccountingReportsDashboardPage()),
+    routes: [
+      GoRoute(
+        path: 'tax_pack',
+        builder: (_, _) =>
+            const HomeScaffold(initialScreen: AccountantTaxPackScreen()),
+      ),
+    ],
   ),
 
   GoRoute(
@@ -377,9 +398,19 @@ List<GoRoute> settingRoutes() => [
             const HomeScaffold(initialScreen: ChatGptIntegrationScreen()),
       ),
       GoRoute(
+        path: 'google_maps',
+        builder: (_, _) =>
+            const HomeScaffold(initialScreen: GoogleMapsIntegrationScreen()),
+      ),
+      GoRoute(
         path: 'xero',
         builder: (_, _) =>
             const HomeScaffold(initialScreen: XeroIntegrationScreen()),
+      ),
+      GoRoute(
+        path: 'smtp',
+        builder: (_, _) =>
+            const HomeScaffold(initialScreen: SmtpIntegrationScreen()),
       ),
     ],
   ),

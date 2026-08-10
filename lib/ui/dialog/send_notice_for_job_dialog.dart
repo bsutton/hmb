@@ -27,6 +27,8 @@ import '../widgets/hmb_toast.dart';
 import '../widgets/icons/help_button.dart';
 import '../widgets/select/hmb_select_email_multi.dart';
 import '../widgets/select/hmb_select_mobile_multi.dart';
+import 'email_self_warning.dart';
+import 'hmb_email_sender.dart';
 import 'message_template_dialog.dart';
 import 'source_context.dart';
 
@@ -96,7 +98,7 @@ class SendNoticeForJobDialog extends StatefulWidget {
 
 class _SendNoticeForJobDialogState
     extends DeferredState<SendNoticeForJobDialog> {
-  late final System _system;
+  late final SystemConfiguration _system;
   late TextEditingController _subjectCtl;
   late TextEditingController _bodyCtl;
   late TextEditingController _smsBodyCtl;
@@ -224,6 +226,10 @@ ${Strings.isNotBlank(_system.businessNumber) ? '${Strings.orElseOnBlank(_system.
                   });
                 },
               ),
+              EmailSelfWarning(
+                ownEmail: _system.emailAddress,
+                recipients: _toEmails,
+              ),
               const SizedBox(height: 8),
               // Optional CC
               HMBSelectEmailMulti(
@@ -236,6 +242,10 @@ ${Strings.isNotBlank(_system.businessNumber) ? '${Strings.orElseOnBlank(_system.
                 },
               ).help('CC (optional)', '''
 Add additional recipients who should receive a copy of the email.'''),
+              EmailSelfWarning(
+                ownEmail: _system.emailAddress,
+                recipients: _ccEmails,
+              ),
               TextField(
                 controller: _subjectCtl,
                 decoration: const InputDecoration(labelText: 'Subject'),
@@ -320,12 +330,15 @@ Add additional recipients who should receive a copy of the email.'''),
   }
 
   Future<void> _sendEmail(BuildContext context) async {
-    if (!(Platform.isAndroid || Platform.isIOS)) {
-      HMBToast.error('Email sending is only supported on mobile');
-      return;
-    }
     if (_toEmails.isEmpty) {
       HMBToast.info('Please select at least one email address');
+      return;
+    }
+    if (!await confirmSendingToSelf(
+      context: context,
+      ownEmail: _system.emailAddress,
+      recipients: [..._toEmails, ..._ccEmails],
+    )) {
       return;
     }
 
@@ -337,7 +350,12 @@ Add additional recipients who should receive a copy of the email.'''),
       // Attachments can be added by the caller in a future enhancement.
     );
 
-    await FlutterEmailSender.send(email);
+    try {
+      await HMBEmailSender().send(email);
+    } catch (e) {
+      HMBToast.error(e.toString(), acknowledgmentRequired: true);
+      return;
+    }
 
     HMBToast.info('Email send initiated');
     await _stampNoticeSent();
