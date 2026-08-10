@@ -162,6 +162,7 @@ class _JobListScreenState extends State<JobListScreen> {
               buildActionItems: _buildActionItems,
               canEdit: (job) => !job.isStock,
               canDelete: (job) => !job.isStock,
+              scrollToTopOnReturn: true,
               confirmDelete: _confirmJobDelete,
             ),
           ),
