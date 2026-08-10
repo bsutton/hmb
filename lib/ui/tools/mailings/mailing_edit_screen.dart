@@ -992,7 +992,44 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
     if (updated == null) {
       return;
     }
-    await _refreshRecipientFromSite(recipient, updated);
+    await _validateEditedSite(recipient, updated);
+  }
+
+  Future<void> _validateEditedSite(
+    MailingRecipient recipient,
+    Site updated,
+  ) async {
+    final current =
+        _recipients
+            .where((existing) => existing.id == recipient.id)
+            .firstOrNull ??
+        await _recipientDao.getById(recipient.id) ??
+        recipient;
+    _pushUndo([current]);
+    final refreshed = await _recipientDao.refreshFromSite(
+      current,
+      updated,
+      preserveRecipientState: true,
+    );
+    var issues = <MailingAddressValidationIssue>[];
+    await BlockingUI().runAndWait(() async {
+      issues = await GoogleMapsRouteService().validateRecipients(
+        recipients: [refreshed],
+      );
+    }, label: 'Validating Address');
+
+    final validated = recipientAfterAddressValidation(refreshed, issues);
+    await _recipientDao.update(validated);
+    await _refreshValidationAttentionState();
+    _replaceRecipient(validated);
+    if (issues.isEmpty) {
+      HMBToast.info('Address validated and recipient selected.');
+      return;
+    }
+    await _showAddressValidationIssues(
+      issues,
+      title: 'Address still needs attention',
+    );
   }
 
   Future<void> _refreshRecipientFromSite(
@@ -1438,6 +1475,7 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
                   await _refreshValidationAttentionState();
                   _replaceRecipient(updated);
                 },
+                onSiteEdited: _validateEditedSite,
               ),
             ),
           ),
@@ -1817,6 +1855,8 @@ class _RecipientTile extends StatefulWidget {
   onExcludeFromFutureMailings;
   final Future<void> Function(MailingRecipient recipient, Site? site)
   onSiteChanged;
+  final Future<void> Function(MailingRecipient recipient, Site site)
+  onSiteEdited;
 
   const _RecipientTile({
     required this.recipient,
@@ -1825,6 +1865,7 @@ class _RecipientTile extends StatefulWidget {
     required this.onExcludedChanged,
     required this.onExcludeFromFutureMailings,
     required this.onSiteChanged,
+    required this.onSiteEdited,
     super.key,
   });
 
@@ -2231,6 +2272,14 @@ class _RecipientTileState extends State<_RecipientTile> {
       return;
     }
     await _loadSites();
-    await widget.onSiteChanged(recipient, updated);
+    await widget.onSiteEdited(recipient, updated);
   }
 }
+
+MailingRecipient recipientAfterAddressValidation(
+  MailingRecipient recipient,
+  List<MailingAddressValidationIssue> issues,
+) => recipient.copyWith(
+  selected: issues.isEmpty && !recipient.excluded,
+  clearRoute: true,
+);
