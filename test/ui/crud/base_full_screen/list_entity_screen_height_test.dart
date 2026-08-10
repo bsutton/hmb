@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/crud/base_full_screen/list_entity_screen.dart';
+import 'package:hmb/ui/widgets/widgets.g.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 
 import '../../../database/management/db_utility_test_helper.dart';
@@ -26,6 +27,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final now = DateTime.now();
+    var actionPressed = false;
     final customer = Customer(
       id: 1,
       name: 'Variable height customer',
@@ -46,11 +48,15 @@ void main() {
           dao: DaoCustomer(),
           fetchList: (_) async => [customer],
           listCardTitle: (_) => const Text('Variable card'),
-          listCard: (_) => const SizedBox(
+          listCard: (_) => SizedBox(
             height: 520,
             child: Align(
               alignment: Alignment.bottomCenter,
-              child: Text('Variable height action'),
+              child: HMBButton(
+                label: 'Variable height action',
+                hint: 'Exercise the final card action',
+                onPressed: () => actionPressed = true,
+              ),
             ),
           ),
           onEdit: (_) => const SizedBox.shrink(),
@@ -67,5 +73,9 @@ void main() {
     expect(list.itemExtent, isNull);
     expect(find.text('Variable height action'), findsOneWidget);
     expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Variable height action'));
+    await tester.pump();
+    expect(actionPressed, isTrue);
   });
 }
