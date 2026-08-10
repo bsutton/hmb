@@ -18,6 +18,7 @@ class CustomerPastePanel extends StatefulWidget {
   final bool extractAvailable;
   final String? helperText;
   final String extractLabel;
+  final String skipLabel;
 
   const CustomerPastePanel({
     required this.onExtract,
@@ -30,6 +31,7 @@ class CustomerPastePanel extends StatefulWidget {
     this.extractAvailable = true,
     this.helperText,
     this.extractLabel = 'Extract',
+    this.skipLabel = 'Skip extraction',
   });
 
   @override
@@ -118,7 +120,7 @@ class _CustomerPastePanelState extends DeferredState<CustomerPastePanel> {
           if (widget.onSkip != null)
             HMBButton(
               onPressed: widget.onSkip!,
-              label: 'Skip extraction',
+              label: widget.skipLabel,
               hint: 'Continue without extracting details from a message',
               enabled: !widget.isExtracting,
             ),
