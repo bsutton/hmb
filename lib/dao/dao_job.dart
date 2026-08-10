@@ -177,6 +177,14 @@ class DaoJob extends Dao<Job> {
     return job;
   }
 
+  @override
+  Future<void> recordAccess(int? entityId, [Transaction? transaction]) async {
+    if (entityId == null) {
+      return;
+    }
+    await markLastActive(entityId);
+  }
+
   /// Marks the job as the most recently accessed job without changing status.
   Future<void> markLastActive(int jobId) async {
     final lastActive = await getLastActiveJob();

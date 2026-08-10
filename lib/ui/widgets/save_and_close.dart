@@ -23,6 +23,7 @@ class SaveAndClose extends StatelessWidget {
   final Future<void> Function({required bool close}) onSave;
   final AsyncVoidCallback onCancel;
   final bool showSaveOnly;
+  final String saveLabel;
 
   /// Retained for older call sites. Save now always closes when validation
   /// passes; child add flows use the edit screen's ensure-saved hook.
@@ -30,6 +31,7 @@ class SaveAndClose extends StatelessWidget {
     required this.onSave,
     required this.showSaveOnly,
     required this.onCancel,
+    this.saveLabel = 'Save',
     super.key,
   });
 
@@ -40,7 +42,7 @@ class SaveAndClose extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         HMBButton(
-          label: 'Save',
+          label: saveLabel,
           hint: 'Save your changes',
           onPressed: () => unawaited(onSave(close: true)),
         ),

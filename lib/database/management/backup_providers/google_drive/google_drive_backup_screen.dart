@@ -304,7 +304,6 @@ class _GoogleDriveBackupScreenState
           }
           return;
         }
-        await WakelockPlus.enable();
         try {
           if (mounted) {
             setState(() {
@@ -341,7 +340,6 @@ class _GoogleDriveBackupScreenState
           } else {
             _syncRunning = false;
           }
-          await WakelockPlus.disable();
         }
       },
     ),

@@ -245,6 +245,27 @@ void main() {
     expect(packing.length, 1);
   });
 
+  test('job reminder counts outstanding shopping and packing items', () async {
+    final shoppingItem = await _insertTaskItemForJob(
+      jobStatus: JobStatus.scheduled,
+      taskStatus: TaskStatus.inProgress,
+      itemType: TaskItemType.materialsBuy,
+      completed: false,
+    );
+    final task = (await DaoTask().getById(shoppingItem.taskId))!;
+    final job = (await DaoJob().getById(task.jobId))!;
+    await _insertTaskItemForExistingJob(
+      jobId: job.id,
+      itemType: TaskItemType.materialsStock,
+      completed: false,
+    );
+
+    final counts = await DaoTaskItem().getReminderCounts(job);
+
+    expect(counts.shopping, 1);
+    expect(counts.packing, 1);
+  });
+
   test('shopping excludes items for inactive task statuses', () async {
     final active = await _insertTaskItemForJob(
       jobStatus: JobStatus.inProgress,

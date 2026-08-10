@@ -110,14 +110,14 @@ class MiniJobDashboard extends StatelessWidget {
               size: dashletSize,
             ),
             _dashlet(
-              child: DashletCard<String>.onTap(
+              child: DashletCard<String>.builder(
                 label: 'Estimate',
                 hint: "Build an Estimate of a Job's cost",
                 icon: Icons.calculate,
                 compact: true,
                 onBeforeOpen: _markJobAccessed,
                 value: () async => const DashletValue(''),
-                onTap: _openEstimateBuilder,
+                builder: (_, _) => JobEstimateBuilderScreen(job: job),
               ),
               size: dashletSize,
             ),
@@ -206,10 +206,7 @@ class MiniJobDashboard extends StatelessWidget {
                 icon: Icons.attach_money,
                 compact: true,
                 onBeforeOpen: _markJobAccessed,
-                value: () async {
-                  final list = await DaoInvoice().getByJobId(job.id);
-                  return DashletValue<int>(list.length);
-                },
+                value: () => jobInvoiceDashletValue(job),
                 builder: (_, _) => HMBFullPageChildScreen(
                   title: 'Invoices',
                   child: InvoiceListScreen(jobRestriction: job),
@@ -252,52 +249,6 @@ class MiniJobDashboard extends StatelessWidget {
           .length;
     }
     return DashletValue<int>(outstandingMilestones);
-  }
-
-  Future<void> _openEstimateBuilder(BuildContext context) async {
-    if (job.billingType == BillingType.timeAndMaterial) {
-      final switchToFixed = await showDialog<bool>(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Estimates Require Fixed Price'),
-          content: const Text(
-            'You cannot create estimates for Time and Materials jobs. '
-            'Switch this job to Fixed Price to continue?',
-          ),
-          actions: [
-            HMBButton(
-              label: 'Cancel',
-              hint: "Don't switch the job billing type",
-              onPressed: () => Navigator.pop(context, false),
-            ),
-            HMBButton(
-              label: 'Switch to Fixed Price',
-              hint: 'Update the job to Fixed Price billing',
-              onPressed: () => Navigator.pop(context, true),
-            ),
-          ],
-        ),
-      );
-
-      if (switchToFixed != true) {
-        return;
-      }
-
-      final updated = job.copyWith(billingType: BillingType.fixedPrice);
-      await DaoJob().update(updated);
-      job.billingType = updated.billingType;
-    }
-
-    if (!context.mounted) {
-      return;
-    }
-
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => JobEstimateBuilderScreen(job: job),
-        fullscreenDialog: true,
-      ),
-    );
   }
 
   Future<void> _openMilestones(BuildContext context) async {
@@ -361,4 +312,10 @@ DashletValue<String> taskDashletValue(List<Task> tasks) {
   final open = tasks.where((task) => !task.status.isInActive()).length;
   final completed = tasks.where((task) => task.status.isComplete()).length;
   return DashletValue<String>('$open/$completed');
+}
+
+Future<DashletValue<int>> jobInvoiceDashletValue(Job job) async {
+  final invoices = await DaoInvoice().getByFilter(null, includePaid: true);
+  final count = invoices.where((invoice) => invoice.jobId == job.id).length;
+  return DashletValue<int>(count);
 }

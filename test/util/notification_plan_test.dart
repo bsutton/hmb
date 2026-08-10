@@ -27,6 +27,8 @@ void main() {
       activityId: 7,
       jobId: 12,
       jobSummary: 'Repair leaking tap',
+      shoppingCount: 2,
+      packingCount: 3,
       startsAt: startsAt,
     );
 
@@ -37,6 +39,10 @@ void main() {
     );
     expect(notification.payload?['jobId'], '12');
     expect(notification.channel.id, 'HMB_NOTIF_JOB');
+    expect(
+      notification.body,
+      'Repair leaking tap starts soon\nShopping: 2 • Packing: 3',
+    );
   });
 
   test('only Todo and job activity ids are managed', () {

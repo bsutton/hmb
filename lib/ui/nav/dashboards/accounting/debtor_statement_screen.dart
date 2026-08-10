@@ -29,7 +29,7 @@ import '../../../widgets/select/hmb_select_job.dart';
 import '../../../widgets/widgets.g.dart' hide StatefulBuilder;
 import 'accounting_period_selector.dart';
 import 'debtor_statement_pdf.dart';
-import 'report_csv_export.dart';
+import 'report_csv_export.dart' as report_export;
 
 class DebtorStatementScreen extends StatefulWidget {
   const DebtorStatementScreen({super.key});
@@ -405,7 +405,7 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
     if (!mounted) {
       return;
     }
-    await sendReportCsv(
+    await report_export.sendReportCsv(
       context: context,
       fileName: _exportFileName(report, 'csv'),
       csv: AccountingReportCsvExporter().debtorStatement(report),
@@ -426,7 +426,7 @@ Closing balance: ${report.closingBalance}
       report.endExclusive.subtract(const Duration(days: 1));
 
   String _exportFileName(DebtorStatementReport report, String extension) =>
-      accountingReportExportFileName(
+      report_export.accountingReportExportFileName(
         reportName: 'customer_statement',
         extension: extension,
         entityName: report.customerName,

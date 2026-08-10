@@ -206,79 +206,8 @@ class _JobListScreenState extends State<JobListScreen> {
     return selected;
   }
 
-  Future<bool> _confirmJobDelete(Job job, BuildContext context) async {
-    final invoiceCount = await DaoInvoice().count(
-      where: 'job_id = ?',
-      whereArgs: [job.id],
-    );
-    if (invoiceCount > 0) {
-      if (context.mounted) {
-        HMBToast.error(
-          'Job "${job.summary}" cannot be deleted because it has '
-          '$invoiceCount invoice${invoiceCount == 1 ? '' : 's'}.',
-        );
-      }
-      return false;
-    }
-
-    final customer = await DaoCustomer().getByJob(job.id);
-    if (!context.mounted) {
-      return false;
-    }
-    final firstConfirmed = await _showDeleteConfirmation(
-      context,
-      title: 'Delete Job',
-      message:
-          'Delete "${job.summary}" for '
-          '"${customer?.name ?? 'Unknown customer'}"?',
-    );
-    if (!firstConfirmed) {
-      return false;
-    }
-
-    final entries = await DaoTimeEntry().getByJob(job.id);
-    if (entries.isEmpty || !context.mounted) {
-      return entries.isEmpty;
-    }
-    final total = entries.fold(
-      Duration.zero,
-      (duration, entry) => duration + entry.duration,
-    );
-    return _showDeleteConfirmation(
-      context,
-      title: 'Delete Logged Time?',
-      message:
-          'This job has ${formatDuration(total)} logged across '
-          '${entries.length} time entr${entries.length == 1 ? 'y' : 'ies'}. '
-          'Delete the job and this time?',
-    );
-  }
-
-  Future<bool> _showDeleteConfirmation(
-    BuildContext context, {
-    required String title,
-    required String message,
-  }) async =>
-      await showDialog<bool>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text(title),
-          content: Text(message),
-          actions: [
-            HMBButton(
-              label: 'Cancel',
-              hint: "Don't delete this job",
-              onPressed: () => Navigator.pop(dialogContext, false),
-            ),
-            HMBButton(
-              label: 'Delete',
-              hint: 'Delete this job',
-              onPressed: () => Navigator.pop(dialogContext, true),
-            ),
-          ],
-        ),
-      ) ??
-      false;
+  Future<bool> _confirmJobDelete(Job job, BuildContext context) =>
+      confirmJobDelete(job, context);
 
   Widget _buildFilterSheet(void Function() onChange) => HMBColumn(
     children: [
@@ -386,6 +315,80 @@ class _JobListScreenState extends State<JobListScreen> {
     }
   }
 }
+
+Future<bool> confirmJobDelete(Job job, BuildContext context) async {
+  final invoiceCount = await DaoInvoice().count(
+    where: 'job_id = ?',
+    whereArgs: [job.id],
+  );
+  if (invoiceCount > 0) {
+    if (context.mounted) {
+      HMBToast.error(
+        'Job "${job.summary}" cannot be deleted because it has '
+        '$invoiceCount invoice${invoiceCount == 1 ? '' : 's'}.',
+      );
+    }
+    return false;
+  }
+
+  final customer = await DaoCustomer().getByJob(job.id);
+  if (!context.mounted) {
+    return false;
+  }
+  final firstConfirmed = await _showJobDeleteConfirmation(
+    context,
+    title: 'Delete Job',
+    message:
+        'Delete "${job.summary}" for '
+        '"${customer?.name ?? 'Unknown customer'}"?',
+  );
+  if (!firstConfirmed) {
+    return false;
+  }
+
+  final entries = await DaoTimeEntry().getByJob(job.id);
+  if (entries.isEmpty || !context.mounted) {
+    return entries.isEmpty;
+  }
+  final total = entries.fold(
+    Duration.zero,
+    (duration, entry) => duration + entry.duration,
+  );
+  return _showJobDeleteConfirmation(
+    context,
+    title: 'Delete Logged Time?',
+    message:
+        'This job has ${formatDuration(total)} logged across '
+        '${entries.length} time entr${entries.length == 1 ? 'y' : 'ies'}. '
+        'Delete the job and this time?',
+  );
+}
+
+Future<bool> _showJobDeleteConfirmation(
+  BuildContext context, {
+  required String title,
+  required String message,
+}) async =>
+    await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          HMBButton(
+            label: 'Cancel',
+            hint: "Don't delete this job",
+            onPressed: () => Navigator.pop(dialogContext, false),
+          ),
+          HMBButton(
+            label: 'Delete',
+            hint: 'Delete this job',
+            onPressed: () => Navigator.pop(dialogContext, true),
+          ),
+        ],
+      ),
+    ) ??
+    false;
 
 // class FilterState extends JuneState {
 //   var _showOnHoldAndFinalised = false;

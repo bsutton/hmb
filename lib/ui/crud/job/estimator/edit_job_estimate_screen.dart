@@ -32,6 +32,8 @@ import '../../../../util/dart/money_ex.dart';
 import '../../../../util/dart/units.dart';
 import '../../../dialog/hmb_comfirm_delete_dialog.dart';
 import '../../../dialog/hmb_dialog.dart';
+import '../../../invoicing/dialog_select_tasks.dart';
+import '../../../widgets/blocking_ui.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_search.dart';
 import '../../../widgets/hmb_toast.dart';
@@ -79,6 +81,11 @@ class _JobEstimateBuilderScreenState
 
   @override
   Future<void> asyncInitState() async {
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) {
+      return;
+    }
+
     final canProceed = await _ensureFixedPrice();
     if (!canProceed) {
       if (mounted) {
@@ -324,7 +331,20 @@ class _JobEstimateBuilderScreenState
       child: HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Estimate Complete: ${_estimateComplete ? 'Yes' : 'No'}'),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Estimate Complete: ${_estimateComplete ? 'Yes' : 'No'}',
+                ),
+              ),
+              HMBButton.small(
+                label: 'Raise Quote',
+                hint: 'Create a fixed price quote from this estimate',
+                onPressed: () => unawaited(_raiseQuote()),
+              ),
+            ],
+          ),
           Text('Labour: $_totalLabourCost'),
           Text('Materials: $_totalMaterialsCost'),
           Row(
@@ -341,6 +361,45 @@ class _JobEstimateBuilderScreenState
         ],
       ),
     );
+  }
+
+  Future<void> _raiseQuote() async {
+    if (!_estimateComplete) {
+      HMBToast.error(
+        'Mark every task estimate as complete before raising a quote.',
+        acknowledgmentRequired: true,
+      );
+      return;
+    }
+
+    final options = await selectTaskToQuote(
+      context: context,
+      job: widget.job,
+      title: 'Tasks for Quote',
+    );
+    if (options == null) {
+      return;
+    }
+    if (!options.billBookingFee && options.selectedTaskIds.isEmpty) {
+      HMBToast.error(
+        'You must select a task or the booking fee',
+        acknowledgmentRequired: true,
+      );
+      return;
+    }
+
+    try {
+      await BlockingUI().runAndWait(
+        label: 'Creating Quote',
+        () => DaoQuote().create(widget.job, options),
+      );
+      HMBToast.info('Quote created successfully.');
+    } catch (e) {
+      HMBToast.error(
+        'Failed to create quote: $e',
+        acknowledgmentRequired: true,
+      );
+    }
   }
 
   Future<void> _saveEstimateMargin(Percentage parsed) async {

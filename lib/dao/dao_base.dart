@@ -82,6 +82,15 @@ class DaoBase<T extends Entity<T>> {
     return entity;
   }
 
+  /// Marks an entity as accessed so recent-first selectors can surface it.
+  Future<void> recordAccess(int? entityId, [Transaction? transaction]) async {
+    final entity = await getById(entityId, transaction);
+    if (entity == null) {
+      return;
+    }
+    await update(entity, transaction);
+  }
+
   Future<int> update(covariant T entity, [Transaction? transaction]) async {
     final executor = transaction ?? db;
     entity.modifiedDate = DateTime.now();

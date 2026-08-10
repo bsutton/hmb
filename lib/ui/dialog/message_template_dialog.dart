@@ -57,8 +57,13 @@ bool isBlankMessageTemplate(MessageTemplate template) {
 
 class MessageTemplateDialog extends StatefulWidget {
   final SourceContext sourceContext;
+  final MessageType? messageType;
 
-  const MessageTemplateDialog({required this.sourceContext, super.key});
+  const MessageTemplateDialog({
+    required this.sourceContext,
+    this.messageType,
+    super.key,
+  });
 
   @override
   _MessageTemplateDialogState createState() => _MessageTemplateDialogState();
@@ -67,9 +72,13 @@ class MessageTemplateDialog extends StatefulWidget {
 Future<SelectedMessageTemplate?> showMessageTemplateDialog(
   BuildContext context, {
   required SourceContext sourceContext,
+  MessageType? messageType,
 }) => Navigator.of(context).push(
   MaterialPageRoute(
-    builder: (context) => MessageTemplateDialog(sourceContext: sourceContext),
+    builder: (context) => MessageTemplateDialog(
+      sourceContext: sourceContext,
+      messageType: messageType,
+    ),
   ),
 );
 
@@ -82,6 +91,7 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
 
   late TabController _tabController;
   final _messageController = TextEditingController();
+  var _selectionGeneration = 0;
 
   @override
   Future<void> asyncInitState() async {
@@ -97,6 +107,9 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
     _messageController.text = _selectedTemplate?.message ?? '';
     await _initializePlaceholders(resetExisting: true);
 
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _templates = filtered;
     });
@@ -107,7 +120,8 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
   ) async {
     final filtered = <MessageTemplate>[];
     for (final template in templates) {
-      if (!template.enabled || template.messageType != MessageType.sms) {
+      if (!template.enabled ||
+          template.messageType != (widget.messageType ?? MessageType.sms)) {
         continue;
       }
 
@@ -169,7 +183,10 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
     }
   }
 
-  Future<void> _initializePlaceholders({bool resetExisting = false}) async {
+  Future<void> _initializePlaceholders({
+    bool resetExisting = false,
+    int? generation,
+  }) async {
     final selectedTemplate = _selectedTemplate;
     if (selectedTemplate == null) {
       placeholders.clear();
@@ -190,6 +207,10 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
         name,
         widget.sourceContext,
       );
+      if (!mounted ||
+          generation != null && generation != _selectionGeneration) {
+        return;
+      }
 
       if (placeholder != null) {
         /// provide each source with an initial value
@@ -215,9 +236,13 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
   }
 
   Future<void> _selectTemplate(MessageTemplate? template) async {
+    final generation = ++_selectionGeneration;
     _selectedTemplate = template;
     _messageController.text = _selectedTemplate?.message ?? '';
-    await _initializePlaceholders(resetExisting: true);
+    await _initializePlaceholders(resetExisting: true, generation: generation);
+    if (!mounted || generation != _selectionGeneration) {
+      return;
+    }
     setState(() {});
   }
 
@@ -232,6 +257,14 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
     if (mounted) {
       setState(() {});
     }
+  }
+
+  @override
+  void dispose() {
+    _selectionGeneration++;
+    _messageController.dispose();
+    _tabController.dispose();
+    super.dispose();
   }
 
   /// Preview window
@@ -403,7 +436,9 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
   }
 
   void _refreshPreview() {
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _reset(Source<dynamic> source, ResetFields reset) {

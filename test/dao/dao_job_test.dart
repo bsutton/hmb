@@ -177,6 +177,35 @@ void main() {
       expect(activeJobs.first.id, equals(activeJob.id));
     });
 
+    test('record access moves selected job to top of active jobs', () async {
+      final now = DateTime.now();
+      final olderJob = await createJob(
+        now,
+        BillingType.timeAndMaterial,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+        summary: 'Recent access older',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      final newerJob = await createJob(
+        now,
+        BillingType.fixedPrice,
+        hourlyRate: Money.fromInt(7000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(15000, isoCode: 'AUD'),
+        summary: 'Recent access newer',
+      );
+
+      var activeJobs = await DaoJob().getActiveJobs('Recent access');
+      expect(activeJobs.first.id, newerJob.id);
+
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      await DaoJob().recordAccess(olderJob.id);
+
+      activeJobs = await DaoJob().getActiveJobs('Recent access');
+      expect(activeJobs.first.id, olderJob.id);
+      expect((await DaoJob().getById(olderJob.id))!.status, olderJob.status);
+    });
+
     test('should set job as inactive', () async {
       final now = DateTime.now();
       final job = await createJob(

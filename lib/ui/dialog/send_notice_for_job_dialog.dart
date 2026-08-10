@@ -29,6 +29,8 @@ import '../widgets/select/hmb_select_email_multi.dart';
 import '../widgets/select/hmb_select_mobile_multi.dart';
 import 'email_self_warning.dart';
 import 'hmb_email_sender.dart';
+import 'message_template_dialog.dart';
+import 'source_context.dart';
 
 enum NoticeChannel { email, sms }
 
@@ -191,6 +193,15 @@ ${Strings.isNotBlank(_system.businessNumber) ? '${Strings.orElseOnBlank(_system.
             const SizedBox(height: 12),
 
             if (_channel == NoticeChannel.sms) ...[
+              Align(
+                alignment: Alignment.centerRight,
+                child: HMBButtonSecondary(
+                  label: 'Use Template',
+                  hint: 'Pick an SMS template and apply placeholders.',
+                  onPressed: _applySmsTemplate,
+                ),
+              ),
+              const SizedBox(height: 8),
               HMBSelectMobileMulti(
                 job: widget.job,
                 initialMobiles: _toMobiles,
@@ -271,6 +282,21 @@ Add additional recipients who should receive a copy of the email.'''),
     ),
   );
 
+  Future<void> _applySmsTemplate() async {
+    final selected = await showMessageTemplateDialog(
+      context,
+      sourceContext: SourceContext(
+        job: widget.job,
+        jobActivity: widget.jobActivity,
+      ),
+      messageType: MessageType.sms,
+    );
+    if (!mounted || selected == null) {
+      return;
+    }
+    _smsBodyCtl.text = selected.getFormattedMessage();
+  }
+
   Future<void> _sendSms(BuildContext context) async {
     if (_toMobiles.isEmpty) {
       HMBToast.info('Please select at least one mobile number');
@@ -339,6 +365,9 @@ Add additional recipients who should receive a copy of the email.'''),
   }
 
   Future<void> _stampNoticeSent() async {
+    if (widget.jobActivity.id <= 0) {
+      return;
+    }
     final updated = widget.jobActivity.copyWith(noticeSentDate: DateTime.now());
     await DaoJobActivity().update(updated);
   }

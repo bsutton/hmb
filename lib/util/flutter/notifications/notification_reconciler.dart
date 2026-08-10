@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../../dao/dao_base.dart';
 import '../../../dao/dao_job.dart';
 import '../../../dao/dao_job_activity.dart';
+import '../../../dao/dao_task_item.dart';
 import '../../../dao/dao_todo.dart';
 import 'local_notifs.dart';
 import 'notif.dart';
@@ -67,11 +68,14 @@ class NotificationReconciler {
     for (final activity in activities) {
       final job = await DaoJob().getById(activity.jobId);
       if (job != null) {
+        final counts = await DaoTaskItem().getReminderCounts(job);
         notifications.add(
           Notif.forJobActivity(
             activityId: activity.id,
             jobId: activity.jobId,
             jobSummary: job.summary,
+            shoppingCount: counts.shopping,
+            packingCount: counts.packing,
             startsAt: activity.start,
           ),
         );

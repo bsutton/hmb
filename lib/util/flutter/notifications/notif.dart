@@ -79,11 +79,15 @@ class Notif {
     required int activityId,
     required int jobId,
     required String jobSummary,
+    required int shoppingCount,
+    required int packingCount,
     required DateTime startsAt,
   }) => Notif(
     id: jobActivityIdBase + activityId,
     title: 'Upcoming job',
-    body: '$jobSummary starts soon',
+    body:
+        '$jobSummary starts soon\n'
+        'Shopping: $shoppingCount • Packing: $packingCount',
     scheduledAtMillis: startsAt
         .subtract(jobActivityReminderLead)
         .millisecondsSinceEpoch,

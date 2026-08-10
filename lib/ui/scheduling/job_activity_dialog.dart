@@ -543,6 +543,18 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
   }
 
   Future<void> _showContactOptions() async {
+    final job = await DaoJob().getById(_selectedJob.jobId);
+    if (job == null) {
+      HMBToast.error('Please select a valid job first');
+      return;
+    }
+
+    final jobActivity = _buildCurrentJobActivityForNotice();
+    if (jobActivity == null) {
+      HMBToast.error('Please complete schedule start/end first');
+      return;
+    }
+
     // Fetch customer contacts
     final contacts = await _getCustomerContacts();
 
@@ -581,11 +593,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
                 ),
                 onTap: () async {
                   Navigator.of(context).pop();
-                  await _sendNotice(
-                    contact,
-                    widget.event!.event!.job,
-                    widget.event!.event!.jobActivity,
-                  );
+                  await _sendNotice(contact, job, jobActivity);
                 },
               );
             },
@@ -665,7 +673,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
           ? NoticeChannel.email
           : NoticeChannel.sms,
     );
-    if (!sent) {
+    if (!sent || !mounted) {
       return;
     }
 
@@ -673,6 +681,35 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     setState(() {
       _noticeSentDate = DateTime.now();
     });
+  }
+
+  JobActivity? _buildCurrentJobActivityForNotice() {
+    final jobId = _selectedJob.jobId;
+    if (jobId == null) {
+      return null;
+    }
+    final start = _startTime.atDate(_eventDate);
+    final end = _endTime.atDate(_eventDate);
+    if (!start.isBefore(end)) {
+      return null;
+    }
+
+    return widget.event?.event?.jobActivity.copyWith(
+          jobId: jobId,
+          start: start,
+          end: end,
+          status: _status,
+          notes: _notes,
+          noticeSentDate: _noticeSentDate,
+        ) ??
+        JobActivity.forInsert(
+          jobId: jobId,
+          start: start,
+          end: end,
+          status: _status,
+          notes: _notes,
+          noticeSentDate: _noticeSentDate,
+        );
   }
 
   List<Widget> _buildStartEndDates(bool isSmallScreen) {

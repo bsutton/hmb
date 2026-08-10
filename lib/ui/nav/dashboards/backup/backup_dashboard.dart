@@ -285,8 +285,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     if (!await _ensureSignedInForAction()) {
       return;
     }
-    // Sync Photos Button
-    await WakelockPlus.enable();
     try {
       if (mounted) {
         setState(() {
@@ -323,7 +321,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
       } else {
         _syncRunning = false;
       }
-      await WakelockPlus.disable();
     }
   }
 

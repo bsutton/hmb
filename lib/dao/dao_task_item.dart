@@ -336,6 +336,17 @@ SELECT ti.*
     return toList(await db.rawQuery(sql, params));
   }
 
+  /// Counts the outstanding items shown for a scheduled job reminder.
+  Future<({int shopping, int packing})> getReminderCounts(Job job) async {
+    final shopping = await getShoppingItems(jobs: [job]);
+    final packing = await getPackingItems(
+      jobs: [job],
+      showPreScheduledJobs: false,
+      showPreApprovedTask: false,
+    );
+    return (shopping: shopping.length, packing: packing.length);
+  }
+
   /// Calculate charge
   Money calculateCharge({
     required TaskItemType itemType,

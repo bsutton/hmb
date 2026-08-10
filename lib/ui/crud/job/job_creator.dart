@@ -889,9 +889,9 @@ class _ExtractAndMatchStep extends WizardStep {
             initialMessage: state._pasteMessage,
             onChanged: (value) => state._pasteMessage = value,
             helperText:
-                'Paste a customer message to fill the wizard using AI, or skip '
-                'extraction and enter the details manually.',
-            extractLabel: 'Extract using AI',
+                'Paste a customer message to extract the job details using AI, '
+                'or skip extraction and enter the job details manually',
+            skipLabel: 'Skip',
             extractAvailable: state._aiConfigured,
             onExtractUnavailable: state._showAiRequiredMessage,
             onSkip: () async {
