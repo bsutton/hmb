@@ -45,7 +45,10 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   final Future<bool> Function(T entity, BuildContext context)? confirmDelete;
   final Widget Function(T? entity) onEdit;
   final Future<Color> Function(T entity)? background;
-  final double cardHeight;
+
+  /// A fixed extent for uniformly sized cards. Leave null when card content
+  /// can grow, wrap, or expose a varying set of actions.
+  final double? cardHeight;
 
   /// Widgets to place in the cards action menu
   /// which also contains the delete button.
