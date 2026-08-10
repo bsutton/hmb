@@ -42,6 +42,7 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   final Widget Function(T entity) listCard;
   final Future<T?> Function()? onAdd;
   final Future<bool> Function(T entity)? onDelete;
+  final Future<bool> Function(T entity, BuildContext context)? confirmDelete;
   final Widget Function(T? entity) onEdit;
   final Future<Color> Function(T entity)? background;
   final double cardHeight;
@@ -93,6 +94,7 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     /// deleting the entity.
     /// Return true if the delete occurred
     this.onDelete,
+    this.confirmDelete,
     this.cardHeight = 300,
     this.background,
     Future<List<T>> Function(String? filter)? fetchList,
@@ -384,6 +386,13 @@ class EntityListScreenState<T extends Entity<T>>
   );
 
   Future<void> _confirmDelete(T entity) async {
+    if (widget.confirmDelete != null) {
+      final confirmed = await widget.confirmDelete!(entity, context);
+      if (confirmed) {
+        await _delete(entity);
+      }
+      return;
+    }
     await showConfirmDeleteDialog(
       context: context,
       question:
