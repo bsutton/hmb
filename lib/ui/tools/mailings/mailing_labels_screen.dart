@@ -15,6 +15,7 @@ import '../../../dao/dao_system.dart';
 import '../../../entity/mailing.dart';
 import '../../../entity/mailing_recipient.dart';
 import '../../../util/dart/measurement_type.dart';
+import '../../dialog/email_dialog.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_chip.dart';
 import '../../widgets/hmb_toast.dart';
@@ -241,6 +242,38 @@ class _MailingLabelsScreenState extends State<MailingLabelsScreen> {
     );
   }
 
+  Future<void> _emailLabels() async {
+    final mailing = _mailing!;
+    final layout = _layout!;
+    final ready = _readyRecipients;
+    if (ready.isEmpty) {
+      HMBToast.error('No selected recipients have a complete address.');
+      return;
+    }
+
+    final system = await DaoSystem().get();
+    final file = await generateMailingLabelPdf(
+      mailing: mailing,
+      recipients: ready,
+      layout: layout,
+      skipLabels: _usedLabels,
+    );
+    if (!mounted) {
+      return;
+    }
+
+    await showDialog<bool>(
+      context: context,
+      builder: (context) => EmailDialog(
+        preferredRecipient: system.emailAddress ?? '',
+        emailRecipients: const [],
+        subject: '${mailing.name} mailing labels',
+        body: 'Please find the mailing labels PDF attached.',
+        attachmentPaths: [file.path],
+      ),
+    );
+  }
+
   Future<void> _manageCustomLabels() async {
     await Navigator.push<void>(
       context,
@@ -374,6 +407,12 @@ class _MailingLabelsScreenState extends State<MailingLabelsScreen> {
                 icon: const Icon(Icons.print),
                 hint: 'Print mailing labels',
                 onPressed: () => unawaited(_printLabels()),
+              ),
+              HMBButton.withIcon(
+                label: 'Email PDF',
+                icon: const Icon(Icons.email_outlined),
+                hint: 'Email the mailing labels for printing elsewhere',
+                onPressed: () => unawaited(_emailLabels()),
               ),
             ],
           ),
