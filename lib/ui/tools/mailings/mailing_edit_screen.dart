@@ -554,9 +554,11 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(title),
-          content: SizedBox(
-            width: 760,
-            height: 520,
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 760,
+              maxHeight: MediaQuery.sizeOf(context).height * 0.65,
+            ),
             child: remaining.isEmpty
                 ? const Center(child: Text('All validation issues fixed.'))
                 : ListView.separated(
@@ -565,7 +567,7 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
                     itemBuilder: (context, index) {
                       final issue = remaining[index];
                       final recipient = issue.recipient;
-                      return _AddressValidationIssueTile(
+                      return MailingAddressValidationIssueTile(
                         issue: issue,
                         onApplySuggestion:
                             recipient == null || issue.suggestion == null
@@ -633,9 +635,11 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
                   ),
           ),
           actions: [
-            TextButton(
+            HMBButton.small(
+              label: 'Undo',
+              hint: 'Undo the last validation action',
               onPressed: applied.isEmpty
-                  ? null
+                  ? () {}
                   : () async {
                       final action = applied.removeLast();
                       await action.undo();
@@ -646,11 +650,12 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
                         );
                       });
                     },
-              child: const Text('Undo'),
+              enabled: applied.isNotEmpty,
             ),
-            TextButton(
+            HMBButton.small(
+              label: 'Close',
+              hint: 'Close address validation',
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
             ),
           ],
         ),
@@ -1597,7 +1602,7 @@ class _ValidationDialogAction {
   });
 }
 
-class _AddressValidationIssueTile extends StatefulWidget {
+class MailingAddressValidationIssueTile extends StatefulWidget {
   final MailingAddressValidationIssue issue;
   final Future<void> Function(SuggestedSiteAddress suggestion)?
   onApplySuggestion;
@@ -1605,21 +1610,22 @@ class _AddressValidationIssueTile extends StatefulWidget {
   final Future<void> Function()? onExclude;
   final Future<void> Function()? onNoMail;
 
-  const _AddressValidationIssueTile({
+  const MailingAddressValidationIssueTile({
     required this.issue,
     required this.onApplySuggestion,
     required this.onEditManually,
     required this.onExclude,
     required this.onNoMail,
+    super.key,
   });
 
   @override
-  State<_AddressValidationIssueTile> createState() =>
-      _AddressValidationIssueTileState();
+  State<MailingAddressValidationIssueTile> createState() =>
+      _MailingAddressValidationIssueTileState();
 }
 
-class _AddressValidationIssueTileState
-    extends State<_AddressValidationIssueTile> {
+class _MailingAddressValidationIssueTileState
+    extends State<MailingAddressValidationIssueTile> {
   var _selectedSuggestionIndex = 0;
 
   @override
@@ -1633,81 +1639,97 @@ class _AddressValidationIssueTileState
             0,
             suggestions.length - 1,
           )];
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    final details = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          recipient?.contactName ?? 'Address validation failed',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 4),
+        Text(issue.message),
+        const SizedBox(height: 8),
+        if (suggestion == null)
+          Text(
+            issue.suggestionFailure ??
+                'No address suggestion was returned. Check the '
+                    'address manually, or confirm the Google '
+                    'Address Validation API and Places API (New) are '
+                    'enabled.',
+            style: Theme.of(context).textTheme.bodySmall,
+          )
+        else ...[
+          Text('Suggested', style: Theme.of(context).textTheme.labelLarge),
+          if (suggestions.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Column(
               children: [
-                Text(
-                  recipient?.contactName ?? 'Address validation failed',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                const SizedBox(height: 4),
-                Text(issue.message),
-                const SizedBox(height: 8),
-                if (suggestion == null)
-                  Text(
-                    issue.suggestionFailure ??
-                        'No address suggestion was returned. Check the '
-                            'address manually, or confirm the Google '
-                            'Address Validation API and Places API (New) are '
-                            'enabled.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  )
-                else ...[
-                  Text(
-                    'Suggested',
-                    style: Theme.of(context).textTheme.labelLarge,
+                for (var i = 0; i < suggestions.length; i++)
+                  _AddressSuggestionChoice(
+                    suggestion: suggestions[i],
+                    selected: i == _selectedSuggestionIndex,
+                    onTap: () => setState(() => _selectedSuggestionIndex = i),
                   ),
-                  if (suggestions.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Column(
-                      children: [
-                        for (var i = 0; i < suggestions.length; i++)
-                          _AddressSuggestionChoice(
-                            suggestion: suggestions[i],
-                            selected: i == _selectedSuggestionIndex,
-                            onTap: () =>
-                                setState(() => _selectedSuggestionIndex = i),
-                          ),
-                      ],
-                    ),
-                  ],
-                ],
               ],
             ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.onApplySuggestion != null && suggestion != null)
-                TextButton(
-                  onPressed: () => widget.onApplySuggestion!(suggestion),
-                  child: const Text('Apply Suggestion'),
-                ),
-              if (widget.onEditManually != null)
-                TextButton(
-                  onPressed: () => widget.onEditManually!(),
-                  child: const Text('Edit Manually'),
-                ),
-              if (widget.onExclude != null)
-                TextButton(
-                  onPressed: () => widget.onExclude!(),
-                  child: const Text('Exclude'),
-                ),
-              if (widget.onNoMail != null)
-                TextButton(
-                  onPressed: () => widget.onNoMail!(),
-                  child: const Text('No Mail'),
-                ),
-            ],
-          ),
+          ],
         ],
+      ],
+    );
+    final actions = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      alignment: WrapAlignment.end,
+      children: [
+        if (widget.onApplySuggestion != null && suggestion != null)
+          HMBButton.small(
+            label: 'Apply Suggestion',
+            hint: 'Use this suggested address',
+            onPressed: () => widget.onApplySuggestion!(suggestion),
+          ),
+        if (widget.onEditManually != null)
+          HMBButton.small(
+            label: 'Edit Manually',
+            hint: 'Edit this address manually',
+            onPressed: () => widget.onEditManually!(),
+          ),
+        if (widget.onExclude != null)
+          HMBButton.small(
+            label: 'Exclude',
+            hint: 'Exclude this recipient from this mailing',
+            onPressed: () => widget.onExclude!(),
+          ),
+        if (widget.onNoMail != null)
+          HMBButton.small(
+            label: 'No Mail',
+            hint: 'Exclude this customer from future mailings',
+            onPressed: () => widget.onNoMail!(),
+          ),
+      ],
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 600) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                details,
+                const SizedBox(height: 12),
+                Align(alignment: Alignment.centerRight, child: actions),
+              ],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: details),
+              const SizedBox(width: 12),
+              Flexible(child: actions),
+            ],
+          );
+        },
       ),
     );
   }
