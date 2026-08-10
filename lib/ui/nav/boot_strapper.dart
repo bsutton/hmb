@@ -181,9 +181,12 @@ class BootStrapper {
     for (final activity in activities) {
       final job = await DaoJob().getById(activity.jobId);
       if (job != null) {
+        final counts = await DaoTaskItem().getReminderCounts(job);
         await LocalNotifs().syncForJobActivity(
           activity,
           jobSummary: job.summary,
+          shoppingCount: counts.shopping,
+          packingCount: counts.packing,
         );
       }
     }
