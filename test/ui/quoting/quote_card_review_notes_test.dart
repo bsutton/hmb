@@ -91,7 +91,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: Column(
+          body: ListView(
             children: [
               QuoteCard(quote: sentQuote, onStateChanged: (_) {}),
               QuoteCard(quote: reviewingQuote, onStateChanged: (_) {}),
