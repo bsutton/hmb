@@ -153,6 +153,22 @@ SELECT ja.*
     return fromMap(data.first);
   }
 
+  Future<bool> hasActivityAt(int jobId, DateTime when) async {
+    final db = withoutTransaction();
+    final rows = await db.rawQuery(
+      '''
+SELECT 1
+  FROM $tableName
+ WHERE job_id = ?
+   AND start_date <= ?
+   AND end_date >= ?
+ LIMIT 1
+''',
+      [jobId, when.toIso8601String(), when.toIso8601String()],
+    );
+    return rows.isNotEmpty;
+  }
+
   Future<List<JobActivity>> getStartingAfter(DateTime date) async {
     final db = withoutTransaction();
     final finalisedStatuses = JobStatus.values

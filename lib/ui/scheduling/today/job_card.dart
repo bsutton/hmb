@@ -91,6 +91,7 @@ class JobCard extends StatelessWidget {
                 children: [
                   HMBMapIcon(
                     jobAndActivity.jobAndCustomer.site,
+                    job: jobAndActivity.jobAndCustomer.job,
                     onMapClicked: () async {
                       final job = jobAndActivity.jobAndCustomer.job;
                       await DaoJob().markActive(job.id);

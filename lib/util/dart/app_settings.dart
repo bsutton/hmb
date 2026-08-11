@@ -32,6 +32,8 @@ enum TaxDisplayMode {
 }
 
 class AppSettings {
+  static const googleCalendarSyncEnabledDefault = true;
+  static const _googleCalendarSyncEnabledKey = 'googleCalendarSyncEnabled';
   static const photoCacheMaxMbDefault = 100;
   static const _photoCacheMaxMbKey = 'photoCacheMaxMb';
   static const defaultProfitMarginTextDefault = '20';
@@ -51,6 +53,26 @@ class AppSettings {
   static const _plasterFragmentationWeightKey = 'plasterFragmentationWeight';
   static const _plasterVerticalWallPenaltyWeightKey =
       'plasterVerticalWallPenaltyWeight';
+
+  static Future<bool> getGoogleCalendarSyncEnabled() async {
+    final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
+    final value = settings[_googleCalendarSyncEnabledKey];
+    if (value is bool) {
+      return value;
+    }
+    if (value is String) {
+      return bool.tryParse(value) ?? googleCalendarSyncEnabledDefault;
+    }
+    return googleCalendarSyncEnabledDefault;
+  }
+
+  static Future<void> setGoogleCalendarSyncEnabled({
+    required bool enabled,
+  }) async {
+    final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
+    settings[_googleCalendarSyncEnabledKey] = enabled;
+    await settings.save();
+  }
 
   static Future<int> getPhotoCacheMaxMb() async {
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
