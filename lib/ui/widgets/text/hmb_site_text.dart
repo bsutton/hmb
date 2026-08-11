@@ -26,12 +26,14 @@ import '../layout/hmb_placeholder.dart';
 class HMBSiteText extends StatelessWidget {
   final String label;
   final Site? site;
+  final Job? job;
 
-  final void Function()? onMapClicked;
+  final Future<void> Function()? onMapClicked;
 
   const HMBSiteText({
     required this.label,
     required this.site,
+    this.job,
     this.onMapClicked,
     super.key,
   });
@@ -61,7 +63,7 @@ class HMBSiteText extends StatelessWidget {
           style: const TextStyle(color: HMBColors.textPrimary),
         ),
       ),
-      if (site != null) HMBMapIcon(site, onMapClicked: onMapClicked),
+      if (site != null) HMBMapIcon(site, job: job, onMapClicked: onMapClicked),
     ],
   );
 }
@@ -69,7 +71,7 @@ class HMBSiteText extends StatelessWidget {
 class HMBJobSiteText extends StatelessWidget {
   final String label;
   final Job? job;
-  final void Function()? onMapClicked;
+  final Future<void> Function()? onMapClicked;
 
   const HMBJobSiteText({
     required this.label,
@@ -83,7 +85,11 @@ class HMBJobSiteText extends StatelessWidget {
   Widget build(BuildContext context) => FutureBuilderEx(
     waitingBuilder: (_) => const HMBPlaceHolder(height: 32),
     future: DaoSite().getByJob(job),
-    builder: (context, site) =>
-        HMBSiteText(label: label, site: site, onMapClicked: onMapClicked),
+    builder: (context, site) => HMBSiteText(
+      label: label,
+      site: site,
+      job: job,
+      onMapClicked: onMapClicked,
+    ),
   );
 }

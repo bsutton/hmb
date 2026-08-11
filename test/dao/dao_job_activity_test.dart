@@ -77,4 +77,35 @@ void main() {
 
     expect(activities.map((activity) => activity.id), [activeActivity.id]);
   });
+
+  test('detects whether a job is scheduled at a given time', () async {
+    final now = DateTime(2026, 8, 11, 10);
+    final job = await createJob(
+      now,
+      BillingType.timeAndMaterial,
+      hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+    );
+    await DaoJobActivity().insert(
+      JobActivity.forInsert(
+        jobId: job.id,
+        start: now,
+        end: now.add(const Duration(hours: 2)),
+      ),
+    );
+
+    expect(
+      await DaoJobActivity().hasActivityAt(
+        job.id,
+        now.add(const Duration(hours: 1)),
+      ),
+      isTrue,
+    );
+    expect(
+      await DaoJobActivity().hasActivityAt(
+        job.id,
+        now.subtract(const Duration(minutes: 1)),
+      ),
+      isFalse,
+    );
+  });
 }

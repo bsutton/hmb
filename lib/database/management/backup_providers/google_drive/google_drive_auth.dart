@@ -16,6 +16,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:googleapis/calendar/v3.dart' as calendar;
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:settings_yaml/settings_yaml.dart';
@@ -43,7 +44,10 @@ class GoogleDriveAuth {
 
   static Stream<bool> get authStateChanges => _authStateController.stream;
 
-  final List<String> scopes = [drive.DriveApi.driveFileScope];
+  final List<String> scopes = [
+    drive.DriveApi.driveFileScope,
+    calendar.CalendarApi.calendarEventsScope,
+  ];
 
   var _signedIn = false;
 
@@ -281,6 +285,9 @@ class GoogleAuthClient extends http.BaseClient {
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) =>
       _client.send(request..headers.addAll(_headers));
+
+  @override
+  void close() => _client.close();
 }
 
 class GoogleAuthResult {

@@ -27,6 +27,7 @@ import '../crud/milestone/list_milestone_screen.dart';
 import '../crud/receipt/list_receipt_screen.dart';
 import '../crud/supplier/list_supplier_screen.dart';
 import '../crud/system/chatgpt_integration_screen.dart';
+import '../crud/system/google_calendar_integration_screen.dart';
 import '../crud/system/google_maps_integration_screen.dart';
 import '../crud/system/ihserver_integration_screen.dart';
 import '../crud/system/plasterboard_layout_settings_screen.dart';
@@ -401,6 +402,12 @@ List<GoRoute> settingRoutes() => [
         path: 'google_maps',
         builder: (_, _) =>
             const HomeScaffold(initialScreen: GoogleMapsIntegrationScreen()),
+      ),
+      GoRoute(
+        path: 'google_calendar',
+        builder: (_, _) => const HomeScaffold(
+          initialScreen: GoogleCalendarIntegrationScreen(),
+        ),
       ),
       GoRoute(
         path: 'xero',

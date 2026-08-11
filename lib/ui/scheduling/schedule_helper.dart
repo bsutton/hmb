@@ -15,10 +15,12 @@ import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 
 import '../../dao/dao.g.dart';
+import '../../integrations/google_calendar/google_calendar_sync.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
 import '../../util/flutter/notifications/local_notifs.dart';
 import '../dialog/send_notice_for_job_dialog.dart';
+import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_toast.dart';
 import 'job_activity_dialog.dart';
 import 'job_activity_ex.dart';
@@ -66,6 +68,12 @@ mixin ScheduleHelper {
         );
         jobActivityAction.jobActivity!.jobActivity.id = newId;
         await _syncActivityReminder(jobActivityAction.jobActivity!);
+        await _syncExternalCalendar(
+          () => GoogleCalendarSyncService().upsertActivity(
+            activity: jobActivityAction.jobActivity!.jobActivity,
+            job: jobActivityAction.jobActivity!.job,
+          ),
+        );
         if (!context.mounted) {
           return;
         }
@@ -124,6 +132,12 @@ mixin ScheduleHelper {
     // 1) Update DB
     await dao.update(updated.jobActivity);
     await _syncActivityReminder(updated);
+    await _syncExternalCalendar(
+      () => GoogleCalendarSyncService().upsertActivity(
+        activity: updated.jobActivity,
+        job: updated.job,
+      ),
+    );
   }
 
   /// Delete an existing activity from the DB
@@ -131,6 +145,25 @@ mixin ScheduleHelper {
     final dao = DaoJobActivity();
     await dao.delete(activity.jobActivity.id);
     await LocalNotifs().cancelForJobActivity(activity.jobActivity.id);
+    await _syncExternalCalendar(
+      () => GoogleCalendarSyncService().deleteActivity(activity.jobActivity),
+    );
+  }
+
+  Future<void> _syncExternalCalendar(
+    Future<ExternalCalendarSyncResult> Function() operation,
+  ) async {
+    try {
+      final result = await BlockingUI().runAndWait(
+        operation,
+        label: 'Syncing Google Calendar',
+      );
+      if (result == ExternalCalendarSyncResult.unavailable) {
+        HMBToast.info('Schedule saved, but Google Calendar is not signed in.');
+      }
+    } catch (error) {
+      HMBToast.error('Schedule saved, but Google Calendar sync failed: $error');
+    }
   }
 
   Future<void> _syncActivityReminder(JobActivityEx activity) async {

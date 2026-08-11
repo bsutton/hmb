@@ -402,6 +402,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
               children: [
                 HMBMapIcon(
                   jobAndCustomer.site,
+                  job: jobAndCustomer.job,
                   onMapClicked: () async {
                     final job = jobAndCustomer.job;
                     await DaoJob().markActive(job.id);

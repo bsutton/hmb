@@ -45,6 +45,13 @@ class IntegrationDashboardPage extends StatelessWidget {
         route: '/home/settings/integrations/google_maps',
       ),
       DashletCard<void>.route(
+        label: 'Google Calendar',
+        hint: 'Copy schedules and safety locations to Google Calendar',
+        icon: Icons.event_available,
+        value: () => Future.value(const DashletValue(null)),
+        route: '/home/settings/integrations/google_calendar',
+      ),
+      DashletCard<void>.route(
         label: 'Xero',
         hint: 'Configure integration with Xero to upload Invoices',
         icon: Icons.extension,

@@ -16,17 +16,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:strings/strings.dart';
 
+import '../../../entity/job.dart';
 import '../../../entity/site.dart';
+import '../../../integrations/google_calendar/google_calendar_sync.dart';
 import '../../../util/dart/address_format.dart';
 import '../../../util/flutter/clip_board.dart';
 import '../../../util/flutter/google_maps.dart';
+import '../hmb_toast.dart';
 
 class HMBMapIcon extends StatelessWidget {
   final Site? site;
+  final Job? job;
 
-  final void Function()? onMapClicked;
+  final Future<void> Function()? onMapClicked;
 
-  const HMBMapIcon(this.site, {super.key, this.onMapClicked});
+  const HMBMapIcon(this.site, {this.job, super.key, this.onMapClicked});
 
   @override
   Widget build(BuildContext context) {
@@ -49,8 +53,7 @@ class HMBMapIcon extends StatelessWidget {
           icon: const Icon(Icons.map),
           onPressed: () {
             if (site != null) {
-              unawaited(GoogleMaps.openMap(context, site!));
-              onMapClicked?.call();
+              unawaited(_openMap(context, site!));
             }
           },
           color: site != null && !site!.isEmpty() ? Colors.blue : Colors.grey,
@@ -62,7 +65,10 @@ class HMBMapIcon extends StatelessWidget {
           onPressed: () {
             if (Strings.isNotEmpty(address)) {
               unawaited(clipboardCopyTo(address));
-              onMapClicked?.call();
+              final callback = onMapClicked;
+              if (callback != null) {
+                unawaited(callback());
+              }
             }
           },
           color: Strings.isEmpty(address) ? Colors.grey : Colors.blue,
@@ -70,5 +76,32 @@ class HMBMapIcon extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _openMap(BuildContext context, Site site) async {
+    await GoogleMaps.openMap(context, site);
+    final callback = onMapClicked;
+    if (callback != null) {
+      await callback();
+    }
+    final selectedJob = job;
+    if (selectedJob == null) {
+      return;
+    }
+    try {
+      final result = await GoogleCalendarSyncService().recordNavigation(
+        job: selectedJob,
+        site: site,
+      );
+      if (result == ExternalCalendarSyncResult.unavailable) {
+        HMBToast.info(
+          'Directions opened, but Google Calendar is not signed in.',
+        );
+      }
+    } catch (error) {
+      HMBToast.error(
+        'Directions opened, but the safety calendar event failed: $error',
+      );
+    }
   }
 }
