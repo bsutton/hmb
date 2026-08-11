@@ -42,4 +42,37 @@ void main() {
 
     expect(find.text('Please enter a Description'), findsOneWidget);
   });
+
+  testWidgets('shopping item cost defaults to zero', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: ElevatedButton(
+              onPressed: () => showAddItemDialog(context, AddType.shopping),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    final quantity = tester.widget<TextFormField>(
+      find.widgetWithText(TextFormField, 'Quantity'),
+    );
+    final cost = tester.widget<TextFormField>(
+      find.widgetWithText(TextFormField, 'Cost per item'),
+    );
+
+    expect(quantity.controller!.text, '1');
+    expect(cost.controller!.text, r'$0.00');
+
+    await tester.tap(find.text('Add'));
+    await tester.pump();
+
+    expect(find.text('Enter a valid cost'), findsNothing);
+  });
 }

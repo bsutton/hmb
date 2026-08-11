@@ -36,7 +36,14 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
   TaskItemType? selectedItemType;
   final descriptionController = TextEditingController();
   final purposeController = TextEditingController();
-  final priceController = MaterialPriceEditingController();
+  final priceController = MaterialPriceEditingController(
+    price: addType == AddType.shopping
+        ? MaterialPrice.items(
+            quantity: Fixed.one,
+            unitCost: Money.fromInt(0, isoCode: 'AUD'),
+          )
+        : null,
+  );
   final formKey = GlobalKey<FormState>();
 
   await showDialog<void>(
