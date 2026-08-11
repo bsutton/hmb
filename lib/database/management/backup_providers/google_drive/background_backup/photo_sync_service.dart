@@ -69,6 +69,19 @@ class PhotoSyncException implements Exception {
   String toString() => message;
 }
 
+StreamSubscription<bool> listenForPhotoSyncSignIn({
+  required Stream<bool> authStateChanges,
+  required bool Function() isWaitingForSignIn,
+  required bool Function() isRunning,
+  required void Function() clearWaitingForSignIn,
+  required Future<void> Function() start,
+}) => authStateChanges.listen((signedIn) {
+  if (signedIn && isWaitingForSignIn() && !isRunning()) {
+    clearWaitingForSignIn();
+    unawaited(start());
+  }
+});
+
 class PhotoSyncService {
   static final _instance = PhotoSyncService._();
   static const _maxAutoRetries = 3;
@@ -94,12 +107,13 @@ class PhotoSyncService {
 
   factory PhotoSyncService() => _instance;
   PhotoSyncService._() {
-    GoogleDriveAuth.authStateChanges.listen((signedIn) {
-      if (signedIn && _waitingForSignIn && !isRunning) {
-        _waitingForSignIn = false;
-        unawaited(start());
-      }
-    });
+    listenForPhotoSyncSignIn(
+      authStateChanges: GoogleDriveAuth.authStateChanges,
+      isWaitingForSignIn: () => _waitingForSignIn,
+      isRunning: () => isRunning,
+      clearWaitingForSignIn: () => _waitingForSignIn = false,
+      start: start,
+    );
   }
 
   Stream<ProgressUpdate> get progressStream => _controller.stream;
