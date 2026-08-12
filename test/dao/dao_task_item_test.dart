@@ -202,6 +202,39 @@ void main() {
     );
   });
 
+  test(
+    'receipt candidates include every active job and exclude closed jobs',
+    () async {
+      final firstActive = await _insertTaskItemForJob(
+        jobStatus: JobStatus.inProgress,
+        taskStatus: TaskStatus.inProgress,
+        itemType: TaskItemType.materialsBuy,
+        completed: true,
+      );
+      final secondActive = await _insertTaskItemForJob(
+        jobStatus: JobStatus.scheduled,
+        taskStatus: TaskStatus.inProgress,
+        itemType: TaskItemType.toolsBuy,
+        completed: true,
+      );
+      final closed = await _insertTaskItemForJob(
+        jobStatus: JobStatus.completed,
+        taskStatus: TaskStatus.completed,
+        itemType: TaskItemType.materialsBuy,
+        completed: true,
+      );
+
+      final candidates = await DaoTaskItem().getPurchasedItemsForReceiptLink();
+      final candidateIds = candidates.map((item) => item.id);
+      final jobIds = await DaoTaskItem().getJobIdsForTaskItems(candidateIds);
+
+      expect(candidateIds, containsAll([firstActive.id, secondActive.id]));
+      expect(candidateIds, isNot(contains(closed.id)));
+      expect(jobIds.keys, containsAll([firstActive.id, secondActive.id]));
+      expect(jobIds[firstActive.id], isNot(jobIds[secondActive.id]));
+    },
+  );
+
   test('shopping excludes items from completed jobs', () async {
     final active = await _insertTaskItemForJob(
       jobStatus: JobStatus.inProgress,

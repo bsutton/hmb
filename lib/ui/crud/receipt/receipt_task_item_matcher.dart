@@ -38,12 +38,19 @@ class ReceiptTaskItemMatcher {
 
   static List<TaskItem> sortForLine(
     Iterable<TaskItem> candidates,
-    ReceiptLineMatchInput line,
-  ) {
+    ReceiptLineMatchInput line, {
+    Set<int> preferredJobIds = const {},
+    Map<int, int> jobIdByTaskItemId = const {},
+  }) {
     final scored =
         [
           for (final item in candidates)
-            _ScoredTaskItem(item: item, score: scoreLine(item, line)),
+            _ScoredTaskItem(
+              item: item,
+              score:
+                  scoreLine(item, line) +
+                  _preferredJobScore(item, preferredJobIds, jobIdByTaskItemId),
+            ),
         ]..sort((lhs, rhs) {
           final byScore = rhs.score.compareTo(lhs.score);
           if (byScore != 0) {
@@ -58,17 +65,23 @@ class ReceiptTaskItemMatcher {
   static List<TaskItem> sortForReceipt(
     Iterable<TaskItem> candidates,
     Iterable<ReceiptLineMatchInput> lines,
-    DateTime receiptDate,
-  ) {
+    DateTime receiptDate, {
+    Set<int> preferredJobIds = const {},
+    Map<int, int> jobIdByTaskItemId = const {},
+  }) {
     final lineList = lines.toList();
     final scored =
         [
           for (final item in candidates)
             _ScoredTaskItem(
               item: item,
-              score: lineList.isEmpty
-                  ? _scoreDate(item.modifiedDate, receiptDate)
-                  : lineList.map((line) => scoreLine(item, line)).reduce(max),
+              score:
+                  (lineList.isEmpty
+                      ? _scoreDate(item.modifiedDate, receiptDate)
+                      : lineList
+                            .map((line) => scoreLine(item, line))
+                            .reduce(max)) +
+                  _preferredJobScore(item, preferredJobIds, jobIdByTaskItemId),
             ),
         ]..sort((lhs, rhs) {
           final byScore = rhs.score.compareTo(lhs.score);
@@ -94,6 +107,12 @@ class ReceiptTaskItemMatcher {
 
     return score;
   }
+
+  static int _preferredJobScore(
+    TaskItem item,
+    Set<int> preferredJobIds,
+    Map<int, int> jobIdByTaskItemId,
+  ) => preferredJobIds.contains(jobIdByTaskItemId[item.id]) ? 500 : 0;
 
   /// Converts a receipt line total into the matched item's actual price while
   /// preserving package mode and package size.

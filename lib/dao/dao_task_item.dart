@@ -190,6 +190,7 @@ SELECT ti.*
 SELECT ti.*
   FROM task_item ti
   JOIN task t ON ti.task_id = t.id
+  JOIN job j ON t.job_id = j.id
  WHERE ti.item_type_id IN (
      ${TaskItemType.materialsBuy.id},
      ${TaskItemType.toolsBuy.id},
@@ -198,6 +199,13 @@ SELECT ti.*
    )
    AND ti.completed = 1
    AND ti.is_return = 0
+   AND j.status_id NOT IN (
+      '${JobStatus.rejected.id}',
+      '${JobStatus.onHold.id}',
+      '${JobStatus.awaitingPayment.id}',
+      '${JobStatus.completed.id}',
+      '${JobStatus.toBeBilled.id}'
+   )
    $jobClause
    $supplierClause
    $sinceClause
@@ -210,6 +218,25 @@ SELECT ti.*
       ],
     );
     return toList(rows);
+  }
+
+  Future<Map<int, int>> getJobIdsForTaskItems(Iterable<int> taskItemIds) async {
+    final ids = taskItemIds.toSet();
+    if (ids.isEmpty) {
+      return {};
+    }
+    final db = withoutTransaction();
+    final placeholders = List.filled(ids.length, '?').join(',');
+    final rows = await db.rawQuery('''
+SELECT ti.id AS task_item_id, t.job_id
+  FROM task_item ti
+  JOIN task t ON ti.task_id = t.id
+ WHERE ti.id IN ($placeholders)
+''', ids.toList());
+    return {
+      for (final row in rows)
+        (row['task_item_id'] as int?)!: (row['job_id'] as int?)!,
+    };
   }
 
   /// Get items that need to be packed.
