@@ -67,8 +67,9 @@ class LocalServerRedirectHandler extends RedirectHandler {
   }
 
   @override
-  Uri get redirectUri =>
-      Uri.parse('http://localhost:${config.port}/${config.redirectPath}');
+  Uri get redirectUri => Uri.parse(
+    'http://${config.loopbackHost}:${config.port}/${config.redirectPath}',
+  );
 
   // Close the stream controller when no longer needed
   @override
@@ -80,6 +81,9 @@ class LocalServerRedirectHandler extends RedirectHandler {
     /// last response is sent before we close down.
     await server?.close();
     server = null;
+    if (!_authStreamController.isClosed) {
+      await _authStreamController.close();
+    }
   }
 
   @override
@@ -96,7 +100,7 @@ String authCompletePage() => '''
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Xero Auth Complete</title>
+  <title>HMB Authentication Complete</title>
   <style>
     body {
       margin: 0;
@@ -143,7 +147,7 @@ String authCompletePage() => '''
 </head>
 <body>
   <div class="container">
-    <h2>Xero Authentication Complete</h2>
+    <h2>Authentication Complete</h2>
     <p>You can return to HMB now.</p>
     <!-- 
       Optional "Go Back" button if you'd like 

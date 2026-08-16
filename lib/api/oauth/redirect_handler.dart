@@ -51,4 +51,7 @@ abstract class RedirectHandlerConfig {
   int get port;
   Uri get redirectUri;
   String get redirectPath;
+
+  /// Host used by the desktop loopback OAuth listener.
+  String get loopbackHost => 'localhost';
 }

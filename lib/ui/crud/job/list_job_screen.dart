@@ -29,6 +29,7 @@ import '../../widgets/widgets.g.dart';
 import '../base_full_screen/list_entity_screen.dart';
 import 'copy_job.dart';
 import 'edit_job_screen.dart';
+import 'gmail_job_import_screen.dart';
 import 'job_creator.dart';
 import 'list_job_card.dart';
 
@@ -65,6 +66,42 @@ class _JobListScreenState extends State<JobListScreen> {
   ];
 
   final _entityListKey = GlobalKey<EntityListScreenState<Job>>();
+
+  Future<Job?> _addJob() async {
+    final source = await showDialog<_NewJobSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Create job'),
+        content: const Text(
+          'Enter a job manually or choose an email from Gmail.',
+        ),
+        actions: [
+          HMBButton(
+            label: 'Cancel',
+            hint: 'Close without creating a job',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          HMBButton(
+            label: 'Enter manually',
+            hint: 'Open the Create Job Wizard',
+            onPressed: () => Navigator.of(context).pop(_NewJobSource.manual),
+          ),
+          HMBButton(
+            label: 'Import from Gmail',
+            hint: 'Search Gmail and create a job from an email',
+            onPressed: () => Navigator.of(context).pop(_NewJobSource.gmail),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || source == null) {
+      return null;
+    }
+    return switch (source) {
+      _NewJobSource.manual => JobCreator.show(context),
+      _NewJobSource.gmail => GmailJobImportScreen.show(context),
+    };
+  }
 
   @override
   void initState() {
@@ -153,7 +190,7 @@ class _JobListScreenState extends State<JobListScreen> {
               onEdit: (job) => JobEditScreen(job: job),
               fetchList: _fetchJobs,
               listCardTitle: (job) => HMBCardTitle(job.summary),
-              onAdd: () => JobCreator.show(context),
+              onAdd: _addJob,
               cardHeight: size.width < 456 ? 860 : 770,
               filterSheetBuilder: _buildFilterSheet,
               isFilterActive: () =>
@@ -315,6 +352,8 @@ class _JobListScreenState extends State<JobListScreen> {
     }
   }
 }
+
+enum _NewJobSource { manual, gmail }
 
 Future<bool> confirmJobDelete(Job job, BuildContext context) async {
   final invoiceCount = await DaoInvoice().count(

@@ -24,6 +24,7 @@ typedef Path = String;
 
 Path? _tempDirectory;
 Path? _settingsPath;
+Path? _jobAttachmentsRootPath;
 
 /// Device specific to where all photos are stored for HMB.
 Future<Path> getPhotosRootPath() async => throw UnimplementedError();
@@ -33,3 +34,6 @@ Future<Path> getTemporaryDirectory() async =>
 
 Future<Path> getSettingsPath() async =>
     _settingsPath ??= p.join(await getTemporaryDirectory(), 'settings');
+
+Future<Path> getJobAttachmentsRootPath() async => _jobAttachmentsRootPath ??= p
+    .join(await getTemporaryDirectory(), 'attachments', 'jobs');

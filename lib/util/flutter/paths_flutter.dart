@@ -25,6 +25,7 @@ typedef Path = String;
 Path? _photosRootPath;
 Path? _settingsPath;
 Path? _tempDirectory;
+Path? _jobAttachmentsRootPath;
 
 /// Device specific to where all photos are stored for HMB.
 Future<String> getPhotosRootPath() async =>
@@ -40,3 +41,10 @@ Future<String> getSettingsPath() async => _settingsPath ??= join(
 /// reboots
 Future<Path> getTemporaryDirectory() async =>
     _tempDirectory ??= (await pp.getTemporaryDirectory()).path;
+
+Future<Path> getJobAttachmentsRootPath() async =>
+    _jobAttachmentsRootPath ??= join(
+      (await pp.getApplicationDocumentsDirectory()).path,
+      'attachments',
+      'jobs',
+    );

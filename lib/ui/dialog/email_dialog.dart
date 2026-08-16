@@ -21,8 +21,8 @@ import '../../entity/system.dart';
 import '../../ui/widgets/hmb_toast.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/select/hmb_droplist.dart';
+import 'email_delivery.dart';
 import 'email_self_warning.dart';
-import 'hmb_email_sender.dart';
 
 class EmailDialog extends StatefulWidget {
   final String subject;
@@ -148,9 +148,8 @@ $businessDetails
           },
         ),
         HMBButton(
-          label: 'Send...',
-          hint:
-              '''Send the email using your devices email app. You will have another opportunity to cancel the send.''',
+          label: 'Continue...',
+          hint: 'Choose how to send this email',
           onPressed: () async {
             if (_selectedRecipient != null) {
               if (!await confirmSendingToSelf(
@@ -158,6 +157,9 @@ $businessDetails
                 ownEmail: system.emailAddress,
                 recipients: [_selectedRecipient!],
               )) {
+                return;
+              }
+              if (!context.mounted) {
                 return;
               }
               final email = Email(
@@ -168,8 +170,14 @@ $businessDetails
               );
 
               try {
-                await HMBEmailSender().send(email);
-                HMBToast.info('Email sent successfully');
+                final outcome = await deliverEmail(
+                  context: context,
+                  email: email,
+                );
+                if (outcome == EmailDeliveryOutcome.cancelled) {
+                  return;
+                }
+                HMBToast.info(emailDeliveryMessage(outcome));
                 if (context.mounted) {
                   Navigator.of(context).pop(true);
                 }

@@ -585,6 +585,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.1"
+  flat_buffers:
+    dependency: transitive
+    description:
+      name: flat_buffers
+      sha256: "7c1de2d6eb5f3e61e5c50040841109f509deaaf2b12ec0d57b92456d9ea50345"
+      url: "https://pub.dev"
+    source: hosted
+    version: "25.9.23"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -1653,6 +1661,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.3"
+  revault_api:
+    dependency: "direct main"
+    description:
+      name: revault_api
+      sha256: f700646159c80c076a35cf46cfa180ed3e1cba0ac13eb0aa8aacf77eea519fc6
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.2"
   room_editor:
     dependency: "direct main"
     description:

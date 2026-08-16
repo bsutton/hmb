@@ -95,6 +95,7 @@ dependencies:
     path: packages/plasterboard_explorer
   printing: ^5.13.1
   provider: ^6.1.2
+  revault_api: ^0.3.2
   room_editor:
     path: packages/room_editor
   scope: ^5.1.0

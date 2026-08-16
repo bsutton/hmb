@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
@@ -20,18 +21,27 @@ import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/select.g.dart';
 import '../../widgets/widgets.g.dart';
+import 'job_creation_email_source.dart';
 import 'post_job_todo_prompt.dart';
 
 class JobCreator extends StatefulWidget {
-  const JobCreator({super.key});
+  final String? initialMessage;
+  final JobCreationEmailSource? emailSource;
 
-  static Future<Job?> show(BuildContext context) async {
+  const JobCreator({super.key, this.initialMessage, this.emailSource});
+
+  static Future<Job?> show(
+    BuildContext context, {
+    String? initialMessage,
+    JobCreationEmailSource? emailSource,
+  }) async {
     if (!context.mounted) {
       return null;
     }
     return showDialog<Job>(
       context: context,
-      builder: (context) => const JobCreator(),
+      builder: (context) =>
+          JobCreator(initialMessage: initialMessage, emailSource: emailSource),
     );
   }
 
@@ -55,7 +65,7 @@ class _JobCreatorState extends State<JobCreator> {
   final _existingContactFilter = TextEditingController();
   final _existingSiteFilter = TextEditingController();
   final _taskControllers = <TextEditingController>[];
-  var _pasteMessage = '';
+  late String _pasteMessage;
   BillingType _selectedBillingType = BillingType.timeAndMaterial;
 
   var _creating = false;
@@ -78,7 +88,11 @@ class _JobCreatorState extends State<JobCreator> {
   @override
   void initState() {
     super.initState();
+    _pasteMessage = widget.emailSource?.aiText ?? widget.initialMessage ?? '';
     unawaited(_loadAiConfigured());
+    if (widget.emailSource != null) {
+      unawaited(_seedFromEmail(widget.emailSource!));
+    }
     _customerStep = _CustomerStep(this);
     _steps = [
       _ExtractAndMatchStep(this),
@@ -97,6 +111,37 @@ class _JobCreatorState extends State<JobCreator> {
     setState(() {
       _aiConfigured = (credentials.apiKey?.trim() ?? '').isNotEmpty;
     });
+  }
+
+  Future<void> _seedFromEmail(JobCreationEmailSource source) async {
+    final parsed = await ParsedCustomer.parse(source.aiText);
+    final nameParts = source.senderName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (source.senderEmail.isNotEmpty) {
+      parsed.email = source.senderEmail;
+    }
+    if (nameParts.isNotEmpty) {
+      parsed
+        ..firstname = nameParts.first
+        ..surname = nameParts.skip(1).join(' ')
+        ..customerName = source.senderName.trim();
+    }
+    if (!mounted) {
+      return;
+    }
+    _email.text = parsed.email;
+    _mobileNo.text = parsed.mobile;
+    _firstName.text = parsed.firstname;
+    _surname.text = parsed.surname;
+    _customerName.text = parsed.customerName;
+    _addressLine1.text = parsed.address.street;
+    _suburb.text = parsed.address.city;
+    _state.text = parsed.address.state;
+    _postcode.text = parsed.address.postalCode;
+    await _loadMatches(parsed);
   }
 
   @override
@@ -130,7 +175,18 @@ class _JobCreatorState extends State<JobCreator> {
     return AlertDialog(
       insetPadding: const EdgeInsets.all(10),
       contentPadding: const EdgeInsets.all(8),
-      title: const Text('Create Job Wizard'),
+      title: Row(
+        children: [
+          const Expanded(child: Text('Create Job Wizard')),
+          if (widget.emailSource != null)
+            HMBButton.smallWithIcon(
+              label: 'Source email',
+              hint: 'View and copy details from the source email',
+              icon: const Icon(Icons.email_outlined),
+              onPressed: _showSourceEmail,
+            ),
+        ],
+      ),
       content: Theme(
         data: theme.copyWith(
           canvasColor: surface,
@@ -199,6 +255,79 @@ class _JobCreatorState extends State<JobCreator> {
       ),
     ],
   );
+
+  void _showSourceEmail() {
+    final source = widget.emailSource;
+    if (source == null) {
+      return;
+    }
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(source.subject.isEmpty ? 'Source email' : source.subject),
+          content: SizedBox(
+            width: 720,
+            child: SingleChildScrollView(child: SelectableText(source.aiText)),
+          ),
+          actions: [
+            HMBButton(
+              label: 'Copy subject',
+              hint: 'Copy the email subject',
+              onPressed: () {
+                unawaited(
+                  Clipboard.setData(ClipboardData(text: source.subject)),
+                );
+                HMBToast.info('Email subject copied');
+              },
+            ),
+            HMBButton(
+              label: 'Copy body',
+              hint: 'Copy the email body',
+              onPressed: () {
+                unawaited(Clipboard.setData(ClipboardData(text: source.body)));
+                HMBToast.info('Email body copied');
+              },
+            ),
+            HMBButton(
+              label: 'Use subject',
+              hint: 'Use the email subject as the job summary',
+              onPressed: () {
+                setState(() => _jobSummary.text = source.subject);
+                HMBToast.info('Job summary updated');
+              },
+            ),
+            HMBButton(
+              label: 'Replace description',
+              hint: 'Replace the job description with the email body',
+              onPressed: () {
+                setState(() => _jobDescription.text = source.body);
+                HMBToast.info('Job description updated');
+              },
+            ),
+            HMBButton(
+              label: 'Append description',
+              hint: 'Append the email body to the job description',
+              onPressed: () {
+                final current = _jobDescription.text.trim();
+                setState(() {
+                  _jobDescription.text = current.isEmpty
+                      ? source.body
+                      : '$current\n\n${source.body}';
+                });
+                HMBToast.info('Email body appended');
+              },
+            ),
+            HMBButton(
+              label: 'Close',
+              hint: 'Return to job creation',
+              onPressed: () => Navigator.of(dialogContext).pop(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildExistingCustomerPicker() => RadioGroup<Customer?>(
     groupValue: _selectedCustomer,
@@ -830,6 +959,22 @@ class _JobCreatorState extends State<JobCreator> {
           referrerContactId: _selectedReferrerContact?.id,
         );
         await daoJob.insert(job, transaction);
+
+        final emailSource = widget.emailSource;
+        if (emailSource != null) {
+          await DaoJobSourceEmail().insert(
+            JobSourceEmail.forInsert(
+              jobId: job.id,
+              accountEmail: emailSource.accountEmail,
+              messageId: emailSource.messageId,
+              threadId: emailSource.threadId,
+              senderEmail: emailSource.senderEmail,
+              subject: emailSource.subject,
+              receivedAt: emailSource.receivedAt,
+            ),
+            transaction,
+          );
+        }
 
         for (final controller in _taskControllers) {
           final title = controller.text.trim();

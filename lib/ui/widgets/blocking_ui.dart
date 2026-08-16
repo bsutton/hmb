@@ -18,7 +18,6 @@ import 'dart:async';
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 import 'package:stacktrace_impl/stacktrace_impl.dart';
 
@@ -94,12 +93,9 @@ class BlockingOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) => JuneBuilder(
     BlockingOverlayState.new,
-    builder: (blockingOverlayState) => FutureBuilderEx<void>(
-      debugLabel: 'BlockingOverlayState',
-      future: blockingOverlayState.waitForAllActions,
-      waitingBuilder: (context) => _BlockingOverlayWidget(blockingOverlayState),
-      builder: (context, _) => const HMBEmpty(),
-    ),
+    builder: (blockingOverlayState) => blockingOverlayState.blocked
+        ? _BlockingOverlayWidget(blockingOverlayState)
+        : const HMBEmpty(),
   );
 }
 
@@ -161,6 +157,7 @@ class _BlockingOverlayWidgetState extends State<_BlockingOverlayWidget> {
         limit: 100,
         interval: const Duration(milliseconds: 100),
         builder: (context, index) {
+          final action = widget.blockingOverlayState.topAction;
           final elapsed = DateTime.now().difference(
             widget.blockingOverlayState.startTime!,
           );
@@ -193,14 +190,29 @@ class _BlockingOverlayWidgetState extends State<_BlockingOverlayWidget> {
                   left: 0,
                   right: 0,
                   child: Center(
-                    child: Chip(
-                      label: widget.blockingOverlayState.topAction.label == null
-                          ? HMBTextChip('Just a moment...')
-                          : HMBTextChip(
-                              '''Just a moment: ${widget.blockingOverlayState.topAction.label}''',
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Chip(
+                          label: action.label == null
+                              ? HMBTextChip('Just a moment...')
+                              : HMBTextChip(
+                                  'Just a moment: '
+                                  '${action.label}',
+                                ),
+                          backgroundColor: Colors.yellow,
+                          elevation: 7,
+                        ),
+                        if (action.canCancel)
+                          Semantics(
+                            button: true,
+                            label: 'Cancel this operation',
+                            child: TextButton(
+                              onPressed: cancelRun,
+                              child: const Text('Cancel'),
                             ),
-                      backgroundColor: Colors.yellow,
-                      elevation: 7,
+                          ),
+                      ],
                     ),
                   ),
                 ),
@@ -212,7 +224,7 @@ class _BlockingOverlayWidgetState extends State<_BlockingOverlayWidget> {
   }
 
   void cancelRun() {
-    // Log.d('cancel');
+    unawaited(widget.blockingOverlayState.topAction.cancel());
   }
 }
 
@@ -410,9 +422,18 @@ class BlockingUI {
   /// If [func] needs to return a null it must still return a future by using:
   /// Future.value(null);
   /// ```
-  Completer<T> run<T>(Future<T> Function() slowAction, {String? label}) {
+  Completer<T> run<T>(
+    Future<T> Function() slowAction, {
+    String? label,
+    Future<void> Function()? onCancel,
+  }) {
     final overlay = June.getState(BlockingOverlayState.new);
-    final actionRunner = RunningSlowAction<T>(label, slowAction, overlay.end);
+    final actionRunner = RunningSlowAction<T>(
+      label,
+      slowAction,
+      overlay.end,
+      onCancel: onCancel,
+    );
 
     overlay.begin(actionRunner);
 
@@ -421,8 +442,11 @@ class BlockingUI {
 
   /// Convience method for [run] that allows you to wait for the
   /// long running [slowAction] to complete.
-  Future<T> runAndWait<T>(Future<T> Function() slowAction, {String? label}) =>
-      run(slowAction, label: label).future;
+  Future<T> runAndWait<T>(
+    Future<T> Function() slowAction, {
+    String? label,
+    Future<void> Function()? onCancel,
+  }) => run(slowAction, label: label, onCancel: onCancel).future;
 }
 
 /// [BlockingUI] supports nested calls to its [BlockingUI.run]
@@ -434,12 +458,13 @@ class BlockingUI {
 /// so that we can dump call site stack traces for debugging
 /// purposes.
 class RunningSlowAction<T> {
-  static const _initialBlockReportDelay = Duration(seconds: 2);
+  static const _initialBlockReportDelay = Duration(seconds: 5);
   static const _blockReportInterval = Duration(seconds: 5);
 
   final String? label;
 
   final Future<T> Function() slowAction;
+  final Future<void> Function()? onCancel;
   void Function() end;
 
   final Completer<T> completer;
@@ -449,31 +474,40 @@ class RunningSlowAction<T> {
   final DateTime _createdAt;
   late final Timer _blockReportTimer;
 
-  RunningSlowAction(this.label, this.slowAction, this.end)
+  RunningSlowAction(this.label, this.slowAction, this.end, {this.onCancel})
     : completer = Completer<T>(),
       stackTrace = StackTraceImpl(skipFrames: 2),
       _createdAt = DateTime.now() {
     _blockReportTimer = Timer(_initialBlockReportDelay, _reportIfStillBlocked);
   }
 
+  bool get canCancel => onCancel != null && !completer.isCompleted;
+
+  Future<void> cancel() async {
+    if (!canCancel) {
+      return;
+    }
+    await onCancel!();
+  }
+
   void start() {
-    Future.sync(slowAction)
-        .then((value) {
-          if (!completer.isCompleted) {
-            completer.complete(value);
-          }
-        })
-        // ignore: invalid_return_type_for_catch_error
-        .catchError((Object error, StackTrace stackTrace) {
-          if (!completer.isCompleted) {
-            completer.completeError(error, stackTrace);
-          }
-        })
-        // ignore: discarded_futures
-        .whenComplete(() {
-          _blockReportTimer.cancel();
-          end();
-        });
+    unawaited(_start());
+  }
+
+  Future<void> _start() async {
+    try {
+      final value = await slowAction();
+      if (!completer.isCompleted) {
+        completer.complete(value);
+      }
+    } catch (error, stackTrace) {
+      if (!completer.isCompleted) {
+        completer.completeError(error, stackTrace);
+      }
+    } finally {
+      _blockReportTimer.cancel();
+      end();
+    }
   }
 
   void _reportIfStillBlocked() {

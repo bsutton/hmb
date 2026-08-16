@@ -34,6 +34,7 @@ export 'dao_invoice_line_group.dart';
 export 'dao_job.dart';
 export 'dao_job_activity.dart';
 export 'dao_job_attachment.dart';
+export 'dao_job_source_email.dart';
 export 'dao_mailing.dart';
 export 'dao_mailing_recipient.dart';
 export 'dao_manufacturer.dart';

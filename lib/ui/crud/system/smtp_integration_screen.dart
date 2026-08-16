@@ -41,16 +41,17 @@ class _SmtpIntegrationScreenState extends State<SmtpIntegrationScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _fromEmailController = TextEditingController();
-  final _googleOAuthClientIdController = TextEditingController();
   var _provider = SmtpProvider.custom;
   var _authMode = SmtpAuthMode.password;
   var _useSsl = false;
   var _testing = false;
   var _googleConnected = false;
+  late final GoogleMailAuth _googleMailAuth;
 
   @override
   void initState() {
     super.initState();
+    _googleMailAuth = GoogleMailAuth();
     setAppTitle('SMTP Email');
     _initializeControllers();
   }
@@ -66,15 +67,13 @@ class _SmtpIntegrationScreenState extends State<SmtpIntegrationScreen> {
             _usernameController.text = system.smtpUsername ?? '';
             _passwordController.text = credentials.password ?? '';
             _fromEmailController.text = system.smtpFromEmail ?? '';
-            _googleOAuthClientIdController.text =
-                system.smtpGoogleOAuthClientId ?? '';
             _provider = system.smtpProvider;
             _authMode =
                 _availableAuthModes(_provider).contains(system.smtpAuthMode)
                 ? system.smtpAuthMode
                 : _defaultAuthModeForProvider(_provider);
             _useSsl = system.smtpUseSsl;
-            return GoogleMailAuth().isConnected();
+            return _googleMailAuth.isConnected();
           })
           .then((connected) {
             _googleConnected = connected;
@@ -92,7 +91,6 @@ class _SmtpIntegrationScreenState extends State<SmtpIntegrationScreen> {
     _usernameController.dispose();
     _passwordController.dispose();
     _fromEmailController.dispose();
-    _googleOAuthClientIdController.dispose();
     super.dispose();
   }
 
@@ -115,9 +113,6 @@ class _SmtpIntegrationScreenState extends State<SmtpIntegrationScreen> {
       ..smtpPort = port
       ..smtpUsername = _blankToNull(_usernameController.text)
       ..smtpFromEmail = _blankToNull(_fromEmailController.text)
-      ..smtpGoogleOAuthClientId = _blankToNull(
-        _googleOAuthClientIdController.text,
-      )
       ..smtpUseSsl = _useSsl;
     await daoSystem.updateConfiguration(system);
     await daoSystem.updateSmtpCredentials(
@@ -138,7 +133,7 @@ class _SmtpIntegrationScreenState extends State<SmtpIntegrationScreen> {
     }
     setState(() => _testing = true);
     try {
-      await HMBEmailSender().checkSettings();
+      await HMBEmailSender(googleMailAuth: _googleMailAuth).checkSettings();
       if (mounted) {
         HMBToast.info('SMTP settings verified');
       }
@@ -159,7 +154,7 @@ class _SmtpIntegrationScreenState extends State<SmtpIntegrationScreen> {
     }
     setState(() => _testing = true);
     try {
-      await GoogleMailAuth().connect();
+      await _googleMailAuth.connect();
       if (mounted) {
         setState(() => _googleConnected = true);
         HMBToast.info('Gmail connected');
@@ -176,7 +171,7 @@ class _SmtpIntegrationScreenState extends State<SmtpIntegrationScreen> {
   }
 
   Future<void> _disconnectGmail() async {
-    await GoogleMailAuth().disconnect();
+    await _googleMailAuth.disconnect();
     if (mounted) {
       setState(() => _googleConnected = false);
       HMBToast.info('Gmail disconnected');
@@ -322,15 +317,17 @@ class _SmtpIntegrationScreenState extends State<SmtpIntegrationScreen> {
   }
 
   List<Widget> _buildGoogleOAuthFields() => [
-    HMBTextField(
-      controller: _googleOAuthClientIdController,
-      labelText: 'Google Desktop OAuth Client ID',
-    ),
     Text(
-      _googleConnected
-          ? 'Gmail OAuth is connected.'
-          : 'Gmail OAuth opens Google in your browser and stores the '
-                'refresh token securely.',
+      GoogleMailAuth.requiresDesktopOAuthClient
+          ? _googleConnected
+                ? 'Gmail OAuth is connected.'
+                : 'Desktop Gmail OAuth is available in development builds '
+                      'only. Its client secret is read from an open reVault '
+                      'lockbox and is never included in a production build.'
+          : _googleConnected
+          ? "Gmail OAuth is connected using this device's Google account."
+          : 'Gmail OAuth reuses the Google account connection used by '
+                'Google Drive.',
     ),
     Wrap(
       spacing: 8,
