@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 class JobCreationEmailSource {
   final String accountEmail;
   final String messageId;
@@ -34,6 +36,26 @@ class JobCreationEmailSource {
       body,
     ].join('\n').trim();
   }
+
+  JobCreationEmailSource withAttachmentData(
+    Map<String, Uint8List> attachmentData,
+  ) => JobCreationEmailSource(
+    accountEmail: accountEmail,
+    messageId: messageId,
+    threadId: threadId,
+    senderName: senderName,
+    senderEmail: senderEmail,
+    subject: subject,
+    body: body,
+    receivedAt: receivedAt,
+    hasAttachments: hasAttachments,
+    attachments: attachments
+        .map(
+          (attachment) =>
+              attachment.copyWith(data: attachmentData[attachment.key]),
+        )
+        .toList(),
+  );
 }
 
 class JobCreationEmailAttachment {
@@ -43,6 +65,7 @@ class JobCreationEmailAttachment {
   final int size;
   final String? remoteId;
   final String? inlineData;
+  final Uint8List? data;
 
   const JobCreationEmailAttachment({
     required this.key,
@@ -51,5 +74,17 @@ class JobCreationEmailAttachment {
     required this.size,
     required this.remoteId,
     required this.inlineData,
+    this.data,
   });
+
+  JobCreationEmailAttachment copyWith({Uint8List? data}) =>
+      JobCreationEmailAttachment(
+        key: key,
+        filename: filename,
+        mimeType: mimeType,
+        size: size,
+        remoteId: remoteId,
+        inlineData: inlineData,
+        data: data ?? this.data,
+      );
 }

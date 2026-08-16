@@ -623,7 +623,27 @@ class _JobCreatorState extends State<JobCreator> {
     setState(() => _extracting = true);
     try {
       await BlockingUI().runAndWait(() async {
-        final parsedCustomer = await CustomerExtractApiClient().extract(text);
+        final attachments =
+            widget.emailSource?.attachments
+                .where(
+                  (attachment) =>
+                      attachment.data != null &&
+                      attachment.data!.length <=
+                          CustomerExtractApiClient.maxAttachmentBytes,
+                )
+                .map(
+                  (attachment) => CustomerExtractAttachment(
+                    filename: attachment.filename,
+                    mimeType: attachment.mimeType,
+                    data: attachment.data!,
+                  ),
+                )
+                .toList() ??
+            const <CustomerExtractAttachment>[];
+        final parsedCustomer = await CustomerExtractApiClient().extract(
+          text,
+          attachments: attachments,
+        );
         if (parsedCustomer == null) {
           HMBToast.error('AI extraction failed. Check ChatGPT settings.');
           return;

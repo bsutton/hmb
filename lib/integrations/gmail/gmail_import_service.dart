@@ -96,7 +96,6 @@ class GmailImportService {
   }) async {
     final previousSearch = _activeSearch;
     previousSearch?.cancel();
-    _activeClient?.close();
 
     final operation = _GmailSearchOperation();
     _activeSearch = operation;

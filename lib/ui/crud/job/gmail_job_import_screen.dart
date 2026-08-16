@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
+import '../../../api/chat_gpt/customer_extract_api_client.dart';
 import '../../../dao/dao_job_attachment.dart';
 import '../../../dao/dao_job_source_email.dart';
 import '../../../entity/job.dart';
@@ -185,7 +187,8 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
       return;
     }
 
-    final job = await JobCreator.show(context, emailSource: source);
+    final sourceForAi = await _loadAiAttachments(source, selectedAttachments);
+    final job = await JobCreator.show(context, emailSource: sourceForAi);
     if (job != null && mounted) {
       if (selectedAttachments.isNotEmpty) {
         try {
@@ -206,6 +209,55 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
       }
       Navigator.of(context).pop(job);
     }
+  }
+
+  Future<JobCreationEmailSource> _loadAiAttachments(
+    JobCreationEmailSource source,
+    Set<String> selected,
+  ) async {
+    final eligible = source.attachments.where(
+      (attachment) =>
+          selected.contains(attachment.key) &&
+          attachment.size <= CustomerExtractApiClient.maxAttachmentBytes &&
+          _isUsefulForAi(attachment),
+    );
+    if (eligible.isEmpty) {
+      return source;
+    }
+    final data = <String, Uint8List>{};
+    await BlockingUI().runAndWait(() async {
+      for (final attachment in eligible) {
+        try {
+          final bytes = await _service.loadAttachment(
+            messageId: source.messageId,
+            attachment: attachment,
+          );
+          if (bytes.isNotEmpty &&
+              bytes.length <= CustomerExtractApiClient.maxAttachmentBytes) {
+            data[attachment.key] = Uint8List.fromList(bytes);
+          }
+        } catch (_) {
+          // AI enrichment is optional. The attachment will still be
+          // downloaded when the job is created.
+        }
+      }
+    }, label: 'Preparing attachments for AI');
+    return source.withAttachmentData(data);
+  }
+
+  bool _isUsefulForAi(JobCreationEmailAttachment attachment) {
+    final name = attachment.filename.toLowerCase();
+    final type = attachment.mimeType.toLowerCase();
+    return type == 'application/pdf' ||
+        type == 'application/msword' ||
+        type ==
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        type.startsWith('text/') ||
+        name.endsWith('.pdf') ||
+        name.endsWith('.doc') ||
+        name.endsWith('.docx') ||
+        name.endsWith('.txt') ||
+        name.endsWith('.csv');
   }
 
   Future<Set<String>?> _preview(JobCreationEmailSource source) {
@@ -424,7 +476,10 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
     final generation = ++_searchGeneration;
     _nextPageToken = null;
     _importedJobIds.clear();
-    await _guard(() => _search(showOverlay: true, generation: generation));
+    await _guard(
+      () => _search(showOverlay: true, generation: generation),
+      generation: generation,
+    );
   }
 
   Future<void> _onSearchChanged(String? value) async {
@@ -500,11 +555,11 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
   void _runOpenMessage(GmailMessageSummary message) =>
       unawaited(_guard(() => _openMessage(message)));
 
-  Future<void> _guard(Future<void> Function() action) async {
+  Future<void> _guard(Future<void> Function() action, {int? generation}) async {
     try {
       await action();
     } on GmailImportCancelled {
-      if (mounted) {
+      if (mounted && (generation == null || generation == _searchGeneration)) {
         HMBToast.info('Gmail search cancelled.');
       }
     } catch (error) {

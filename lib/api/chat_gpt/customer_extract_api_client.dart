@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -6,40 +7,34 @@ import '../../dao/dao_system.dart';
 import '../../util/dart/parse/parse_address.dart';
 import '../../util/dart/parse/parse_customer.dart';
 
+class CustomerExtractAttachment {
+  final String filename;
+  final String mimeType;
+  final Uint8List data;
+
+  const CustomerExtractAttachment({
+    required this.filename,
+    required this.mimeType,
+    required this.data,
+  });
+}
+
 class CustomerExtractApiClient {
-  Future<ParsedCustomer?> extract(String text) async {
+  static const int maxAttachmentBytes = 10 * 1024 * 1024;
+
+  Future<ParsedCustomer?> extract(
+    String text, {
+    List<CustomerExtractAttachment> attachments = const [],
+  }) async {
     final credentials = await DaoSystem().getOpenAiCredentials();
     final apiKey = credentials.apiKey?.trim();
     if (apiKey == null || apiKey.isEmpty) {
       return null;
     }
 
-    final response = await http.post(
-      Uri.parse('https://api.openai.com/v1/chat/completions'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $apiKey',
-      },
-      body: jsonEncode({
-        'model': 'gpt-4o-mini',
-        'response_format': {'type': 'json_object'},
-        'messages': [
-          {
-            'role': 'system',
-            'content':
-                'Extract customer details from the message. Return JSON only '
-                'with keys: customerName, companyName, firstName, surname, '
-                'email, mobile, '
-                'addressLine1, addressLine2, suburb, state, postcode. '
-                'If a company is clearly associated with the customer, set '
-                'companyName and prefer customerName to be the company name. '
-                'Use empty strings for unknown fields.',
-          },
-          {'role': 'user', 'content': text},
-        ],
-        'temperature': 0.1,
-      }),
-    );
+    final response = attachments.isEmpty
+        ? await _textRequest(apiKey, text)
+        : await _fileRequest(apiKey, text, attachments);
 
     if (response.statusCode != 200) {
       throw Exception(
@@ -48,10 +43,9 @@ class CustomerExtractApiClient {
     }
 
     final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
-    final choice =
-        (jsonResponse['choices'] as List).first as Map<String, dynamic>;
-    final rawContent =
-        (choice['message'] as Map<String, dynamic>)['content'] as String;
+    final rawContent = attachments.isEmpty
+        ? _chatContent(jsonResponse)
+        : _responseContent(jsonResponse);
     final content = _normalizeContent(rawContent);
     final parsed = jsonDecode(content) as Map<String, dynamic>;
 
@@ -83,6 +77,95 @@ class CustomerExtractApiClient {
       surname: surname,
       address: address,
     );
+  }
+
+  Future<http.Response> _textRequest(String apiKey, String text) => http.post(
+    Uri.parse('https://api.openai.com/v1/chat/completions'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $apiKey',
+    },
+    body: jsonEncode({
+      'model': 'gpt-4o-mini',
+      'response_format': {'type': 'json_object'},
+      'messages': [
+        {'role': 'system', 'content': _systemPrompt},
+        {'role': 'user', 'content': text},
+      ],
+      'temperature': 0.1,
+    }),
+  );
+
+  Future<http.Response> _fileRequest(
+    String apiKey,
+    String text,
+    List<CustomerExtractAttachment> attachments,
+  ) {
+    final content = <Map<String, dynamic>>[
+      {'type': 'input_text', 'text': text},
+      ...attachments
+          .where((attachment) => attachment.data.length <= maxAttachmentBytes)
+          .map(
+            (attachment) => {
+              'type': 'input_file',
+              'filename': attachment.filename,
+              'file_data':
+                  'data:${attachment.mimeType};base64,'
+                  '${base64Encode(attachment.data)}',
+            },
+          ),
+    ];
+    return http.post(
+      Uri.parse('https://api.openai.com/v1/responses'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiKey',
+      },
+      body: jsonEncode({
+        'model': 'gpt-4o-mini',
+        'input': [
+          {
+            'role': 'system',
+            'content': [
+              {'type': 'input_text', 'text': _systemPrompt},
+            ],
+          },
+          {'role': 'user', 'content': content},
+        ],
+        'text': {
+          'format': {'type': 'json_object'},
+        },
+        'temperature': 0.1,
+      }),
+    );
+  }
+
+  static const _systemPrompt =
+      'Extract customer details from the message and any attached documents. '
+      'Return JSON only with keys: customerName, companyName, firstName, '
+      'surname, email, mobile, addressLine1, addressLine2, suburb, state, '
+      'postcode. If a company is clearly associated with the customer, set '
+      'companyName and prefer customerName to be the company name. Use empty '
+      'strings for unknown fields.';
+
+  String _chatContent(Map<String, dynamic> response) {
+    final choice = (response['choices'] as List).first as Map<String, dynamic>;
+    return (choice['message'] as Map<String, dynamic>)['content'] as String;
+  }
+
+  String _responseContent(Map<String, dynamic> response) {
+    final output = response['output'] as List<dynamic>? ?? const [];
+    for (final item in output) {
+      final content =
+          (item as Map<String, dynamic>)['content'] as List<dynamic>?;
+      for (final part in content ?? const []) {
+        final text = (part as Map<String, dynamic>)['text'];
+        if (text is String && text.trim().isNotEmpty) {
+          return text;
+        }
+      }
+    }
+    throw const FormatException('OpenAI returned no extraction content.');
   }
 
   String _normalizeContent(String content) {
