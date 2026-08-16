@@ -109,7 +109,7 @@ class _MessageTemplateListScreenState extends State<MessageTemplateListScreen> {
 
     return ReorderableListView.builder(
       itemCount: templates.length,
-      onReorder: _onReorder,
+      onReorderItem: _onReorder,
       buildDefaultDragHandles: false,
       itemBuilder: (context, index) =>
           _buildTemplateCard(context, templates[index], index),
@@ -122,9 +122,9 @@ class _MessageTemplateListScreenState extends State<MessageTemplateListScreen> {
       return;
     }
 
-    final reordered = [...templates]..removeAt(oldIndex);
-    final targetIndex = newIndex > oldIndex ? newIndex - 1 : newIndex;
-    reordered.insert(targetIndex, movedTemplate);
+    final reordered = [...templates]
+      ..removeAt(oldIndex)
+      ..insert(newIndex, movedTemplate);
 
     setState(() {
       templates = reordered;
@@ -231,8 +231,7 @@ class _MessageTemplateListScreenState extends State<MessageTemplateListScreen> {
               templates.removeWhere((item) => item.id == template.id);
             });
           }
-        } // ignore: avoid_catches_without_on_clauses
-        catch (error) {
+        } catch (error) {
           HMBToast.error(error.toString());
         }
       },

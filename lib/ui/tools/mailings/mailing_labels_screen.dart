@@ -53,7 +53,7 @@ class _MailingLabelsScreenState extends State<MailingLabelsScreen> {
   List<LabelLayout> _layouts = [];
   List<MailingRecipient> _recipients = [];
   LabelLayout? _layout;
-  var _printOrder = _MailingLabelPrintOrder.contact;
+  _MailingLabelPrintOrder _printOrder = _MailingLabelPrintOrder.contact;
   var _printOrderInitialised = false;
   var _loading = true;
 

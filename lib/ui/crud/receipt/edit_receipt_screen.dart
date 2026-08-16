@@ -103,8 +103,8 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
 
   var _taxLabel = 'Tax';
   var _taxRateBasisPoints = 1000;
-  var _taxMode = _ReceiptTaxMode.defaultRate;
-  var _totalBasis = ReceiptTotalBasis.includingTax;
+  _ReceiptTaxMode _taxMode = _ReceiptTaxMode.defaultRate;
+  ReceiptTotalBasis _totalBasis = ReceiptTotalBasis.includingTax;
   final _customTaxRateController = TextEditingController();
 
   final _taxExFocus = FocusNode();
@@ -1778,7 +1778,7 @@ class _ReceiptLineItemEditor {
   int? matchedTaskItemId;
   var matchReviewed = true;
   _ReceiptTaxMode taxMode;
-  var totalBasis = ReceiptTotalBasis.includingTax;
+  ReceiptTotalBasis totalBasis = ReceiptTotalBasis.includingTax;
   ReceiptExpenseCategory expenseCategory;
   final int confidence;
   final String source;

@@ -31,7 +31,7 @@ class PlasterConstraintSolver {
   // Room geometry is persisted as integer minor units, so the final snapped
   // result needs to tolerate a one-unit residual after rounding.
 
-  static const _angleToleranceRadians = pi / 1800;
+  static const double _angleToleranceRadians = pi / 1800;
 
   static const jointAngleUnitsPerDegree = 1000;
 

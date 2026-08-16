@@ -36,7 +36,7 @@ class AccountingPeriodSelector extends StatefulWidget {
 }
 
 class _AccountingPeriodSelectorState extends State<AccountingPeriodSelector> {
-  var _preset = AccountingPeriodPreset.month;
+  AccountingPeriodPreset _preset = AccountingPeriodPreset.month;
   late DateTime _anchor;
   late AccountingPeriod _period;
 

@@ -337,12 +337,9 @@ class RoomEditorSelection {
     this.selectedOpeningIndex,
     this.selectedConstraintKey,
     this.selectedOpeningDimensionKey,
-  }) : selectedLineIndices = {
-         if (selectedLineIndex != null) selectedLineIndex,
-         ...selectedLineIndices,
-       },
+  }) : selectedLineIndices = {?selectedLineIndex, ...selectedLineIndices},
        selectedIntersectionIndices = {
-         if (selectedIntersectionIndex != null) selectedIntersectionIndex,
+         ?selectedIntersectionIndex,
          ...selectedIntersectionIndices,
        };
 
@@ -473,9 +470,11 @@ bool canApplyRoomEditorCustomTool({
 }
 
 class RoomEditorSelectionController extends ValueNotifier<RoomEditorSelection> {
+  // ValueNotifier's positional constructor parameter is private.
+  // ignore: use_super_parameters
   RoomEditorSelectionController([
-    super.value = const RoomEditorSelection.empty(),
-  ]);
+    RoomEditorSelection value = const RoomEditorSelection.empty(),
+  ]) : super(value);
 }
 
 class RoomEditorHistory {
@@ -497,7 +496,11 @@ class RoomEditorHistory {
 }
 
 class RoomEditorHistoryController extends ValueNotifier<RoomEditorHistory> {
-  RoomEditorHistoryController([super.value = const RoomEditorHistory()]);
+  // ValueNotifier's positional constructor parameter is private.
+  // ignore: use_super_parameters
+  RoomEditorHistoryController([
+    RoomEditorHistory value = const RoomEditorHistory(),
+  ]) : super(value);
 }
 
 class RoomEditorCanvasCallbacks {

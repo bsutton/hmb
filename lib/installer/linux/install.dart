@@ -15,9 +15,7 @@ import 'dart:io';
 
 import 'package:dcli/dcli.dart';
 import 'package:flutter/services.dart';
-import 'package:halfpipe/halfpipe.dart';
 import 'package:path/path.dart';
-
 
 Future<void> linuxInstaller() async {
   await _installDeepLinkHander();
@@ -49,10 +47,25 @@ Future<void> _installDeepLinkHander() async {
 
   /// Force an update the of the desktop database so the hmb.desktop
   /// config is registered.
-  await HalfPipe()
-      .command('update-desktop-database ${dirname(pathTo)}')
-      // creates an entry in ~/.config/mimeapps.list
-      .command('xdg-mime default hmb.desktop x-scheme-handler/hmb')
-      // required by oidc for the secure storage pacakge.
-      .exitCode();
+  await _runCommand('update-desktop-database', [dirname(pathTo)]);
+
+  // Creates an entry in ~/.config/mimeapps.list. This is required by OIDC
+  // for the secure storage package.
+  await _runCommand('xdg-mime', [
+    'default',
+    'hmb.desktop',
+    'x-scheme-handler/hmb',
+  ]);
+}
+
+Future<void> _runCommand(String executable, List<String> arguments) async {
+  final result = await Process.run(executable, arguments);
+  if (result.exitCode != 0) {
+    throw ProcessException(
+      executable,
+      arguments,
+      result.stderr.toString(),
+      result.exitCode,
+    );
+  }
 }

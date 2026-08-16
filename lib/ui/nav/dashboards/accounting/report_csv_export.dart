@@ -22,6 +22,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../../../../dao/dao_system.dart';
 import '../../../dialog/email_dialog.dart';
+import '../../../pdf/pdf_page_band_layout.dart';
 import '../../../widgets/hmb_toast.dart';
 import '../../../widgets/media/pdf_preview.dart';
 
@@ -51,7 +52,7 @@ String accountingReportExportFileName({
 }
 
 Future<void> exportCsv({required String fileName, required String csv}) async {
-  final path = await FilePicker.platform.saveFile(
+  final path = await FilePicker.saveFile(
     dialogTitle: 'Export CSV',
     fileName: fileName,
     bytes: Uint8List.fromList(utf8.encode(csv)),
@@ -69,7 +70,7 @@ Future<void> exportReportPdf({
 }) async {
   final bytes = await buildReportPdfBytes(title: title, rows: rows);
 
-  final path = await FilePicker.platform.saveFile(
+  final path = await FilePicker.saveFile(
     dialogTitle: 'Export PDF',
     fileName: fileName,
     bytes: bytes,
@@ -164,17 +165,17 @@ Future<Uint8List> buildReportPdfBytes({
           businessName: businessName,
           generatedAt: generatedAt,
         ),
+        header: (context) => context.pageNumber == 1
+            ? pw.SizedBox()
+            : PdfPageBandLayout.continuationPageHeader(),
+        footer: (_) => PdfPageBandLayout.pageFooter(),
         build: (_) => [
           _reportHeader(title: title, businessName: businessName),
           pw.Padding(
             padding: const pw.EdgeInsets.fromLTRB(20, 0, 20, 44),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                if (rows.isEmpty)
-                  pw.Text('No report data.')
-                else
-                  pw.TableHelper.fromTextArray(
+            child: rows.isEmpty
+                ? pw.Text('No report data.')
+                : pw.TableHelper.fromTextArray(
                     data: rows,
                     headerStyle: pw.TextStyle(
                       color: PdfColors.white,
@@ -194,8 +195,6 @@ Future<Uint8List> buildReportPdfBytes({
                       width: 0.4,
                     ),
                   ),
-              ],
-            ),
           ),
         ],
       ),
@@ -238,6 +237,10 @@ Future<Uint8List> buildDebtorStatementPdfBytes({
           businessName: businessName,
           generatedAt: generatedAt,
         ),
+        header: (context) => context.pageNumber == 1
+            ? pw.SizedBox()
+            : PdfPageBandLayout.continuationPageHeader(),
+        footer: (_) => PdfPageBandLayout.pageFooter(),
         build: (_) => [
           _reportHeader(title: title, businessName: businessName),
           _statementSummaryTable(
@@ -318,7 +321,7 @@ pw.PageTheme _reportPageTheme({
         left: 0,
         right: 0,
         child: pw.Container(
-          height: 28,
+          height: PdfPageBandLayout.bandHeight,
           color: systemColor,
           padding: const pw.EdgeInsets.symmetric(horizontal: 8),
           alignment: pw.Alignment.centerLeft,
@@ -337,7 +340,7 @@ pw.PageTheme _reportPageTheme({
         left: 0,
         right: 0,
         child: pw.Container(
-          height: 28,
+          height: PdfPageBandLayout.bandHeight,
           color: systemColor,
           padding: const pw.EdgeInsets.symmetric(horizontal: 10),
           child: pw.Row(

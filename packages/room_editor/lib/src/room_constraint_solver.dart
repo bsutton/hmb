@@ -8,7 +8,7 @@ import 'mutable_point.dart';
 class RoomEditorConstraintSolver {
   static const _maxIterations = 80;
   static const _solverPositionTolerance = 0.75;
-  static const _angleToleranceRadians = pi / 1800;
+  static const double _angleToleranceRadians = pi / 1800;
   static const _stagnationIterations = 6;
   static const _stagnationErrorEpsilon = 0.01;
   static const _stagnationMovementEpsilon = 0.01;

@@ -14,7 +14,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:direct_caller_sim_choice/direct_caller_sim_choice.dart';
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 // import 'package:sms_advanced/sms_advanced.dart';
@@ -135,11 +135,17 @@ class HMBPhoneIcon extends StatelessWidget {
 
     try {
       final simSlot = _validSimSlot((await DaoSystem().get()).simCardNo);
-      final caller = DirectCaller();
-      if (simSlot == null) {
-        return caller.makePhoneCall(phoneNo);
-      }
-      return caller.makePhoneCall(phoneNo, simSlot: simSlot);
+      final selectedSimSlot = simSlot ?? 1;
+      final intent = AndroidIntent(
+        action: 'android.intent.action.CALL',
+        data: 'tel:$phoneNo',
+        arguments: {
+          'com.android.phone.force.slot': true,
+          'com.android.phone.extra.slot': selectedSimSlot - 1,
+        },
+      );
+      await intent.launch();
+      return true;
       // The caller plugin can throw for unsupported SIM slot values or
       // platform-specific intent failures. Fall back to the dialer.
       // ignore: avoid_catches_without_on_clauses

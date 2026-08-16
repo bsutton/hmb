@@ -303,7 +303,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         if (!mounted) {
           return false;
         }
-        return promptAndVoidInvoice(
+        return await promptAndVoidInvoice(
           context: context,
           invoice: invoiceDetails.invoice,
         );

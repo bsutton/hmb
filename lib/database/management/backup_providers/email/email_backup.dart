@@ -134,10 +134,10 @@ class EmailBackupProvider extends BackupProvider {
         /// The FilePicker package does a really bad job on linux.
         selectedFilePath = await HMBFilePickerDialog().show(context);
       } else {
-        final result = await FilePicker.platform.pickFiles();
+        final result = await FilePicker.pickFiles();
 
-        if (result != null && result.files.single.path != null) {
-          selectedFilePath = result.files.single.path;
+        if (result.isNotEmpty && result.single.path != null) {
+          selectedFilePath = result.single.path;
         }
       }
     } catch (e) {

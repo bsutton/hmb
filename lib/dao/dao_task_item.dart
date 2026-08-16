@@ -39,14 +39,14 @@ enum ShoppingHistoryRange {
 }
 
 class DaoTaskItem extends Dao<TaskItem> {
-  static final _closedShoppingJobStatusIds = [
+  static final List<String> _closedShoppingJobStatusIds = [
     JobStatus.rejected.id,
     JobStatus.onHold.id,
     JobStatus.awaitingPayment.id,
     JobStatus.completed.id,
     JobStatus.toBeBilled.id,
   ];
-  static final _inactiveTaskStatusIds = [
+  static final List<int> _inactiveTaskStatusIds = [
     TaskStatus.onHold.id,
     TaskStatus.completed.id,
     TaskStatus.cancelled.id,
@@ -211,11 +211,7 @@ SELECT ti.*
    $sinceClause
  ORDER BY ti.modified_date DESC
 ''',
-      [
-        if (jobId != null) jobId,
-        if (supplierId != null) supplierId,
-        if (since != null) since.toIso8601String(),
-      ],
+      [?jobId, ?supplierId, if (since != null) since.toIso8601String()],
     );
     return toList(rows);
   }

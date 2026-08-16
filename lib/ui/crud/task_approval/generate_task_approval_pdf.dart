@@ -143,7 +143,6 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
                                 pw.Text('Summary: ${job.summary}'),
                               if (job.description.trim().isNotEmpty)
                                 pw.Text(
-                                  // ignore: lines_longer_than_80_chars
                                   '''
 Description: ${job.description.replaceAll('\n', ' ')}''',
                                 ),

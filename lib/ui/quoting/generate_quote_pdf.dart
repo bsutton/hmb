@@ -33,6 +33,7 @@ import '../../util/dart/format.dart';
 import '../../util/dart/money_ex.dart';
 import '../../util/dart/photo_meta.dart';
 import '../../util/dart/tax_display_text.dart';
+import '../pdf/pdf_page_band_layout.dart';
 import 'quote_details.dart';
 
 Future<File> generateQuotePdf(
@@ -82,7 +83,10 @@ Future<File> generateQuotePdf(
               top: 0,
               left: 0,
               right: 0,
-              child: pw.Container(height: 28, color: systemColor),
+              child: pw.Container(
+                height: PdfPageBandLayout.bandHeight,
+                color: systemColor,
+              ),
             ),
             // Bottom band with T&C
             pw.Positioned(
@@ -90,7 +94,7 @@ Future<File> generateQuotePdf(
               left: 0,
               right: 0,
               child: pw.Container(
-                height: 28,
+                height: PdfPageBandLayout.bandHeight,
                 color: systemColor,
                 child: pw.Padding(
                   padding: const pw.EdgeInsets.symmetric(horizontal: 10),
@@ -149,7 +153,12 @@ Future<File> generateQuotePdf(
       header: (context) {
         if (context.pageNumber == 1) {
           return pw.Padding(
-            padding: const pw.EdgeInsets.fromLTRB(0, 10, 0, 10),
+            padding: const pw.EdgeInsets.fromLTRB(
+              0,
+              PdfPageBandLayout.bandHeight + 10,
+              0,
+              10,
+            ),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
@@ -228,8 +237,9 @@ Future<File> generateQuotePdf(
             ),
           );
         }
-        return pw.SizedBox();
+        return PdfPageBandLayout.continuationPageHeader();
       },
+      footer: (_) => PdfPageBandLayout.pageFooter(),
 
       build: (context) {
         final content = <pw.Widget>[];

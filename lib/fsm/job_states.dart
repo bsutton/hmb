@@ -22,22 +22,10 @@ JobStatus statusFromType(JobState s) => s.status;
 Type stateTypeFromStatus(JobStatus s) =>
     _allStates.firstWhere((st) => st.status == s).runtimeType;
 
-JobState stateFromType(Type t) => switch (t) {
-  // const so we match on the Type rather than an instance of the
-  const (Prospecting) => const Prospecting(),
-  const (Quoting) => const Quoting(),
-  const (AwaitingApproval) => const AwaitingApproval(),
-  const (AwaitingPayment) => const AwaitingPayment(),
-  const (ToBeScheduled) => const ToBeScheduled(),
-  const (Scheduled) => const Scheduled(),
-  const (InProgress) => const InProgress(),
-  const (OnHold) => const OnHold(),
-  const (AwaitingMaterials) => const AwaitingMaterials(),
-  const (Completed) => const Completed(),
-  const (ToBeBilled) => const ToBeBilled(),
-  const (Rejected) => const Rejected(),
-  _ => throw ArgumentError('Unknown JobState type: $t'),
-};
+JobState stateFromType(Type t) => _allStates.firstWhere(
+  (state) => state.runtimeType == t,
+  orElse: () => throw ArgumentError('Unknown JobState type: $t'),
+);
 
 /// Find the currently-active leaf state Type (simple non-nested machine).
 Future<Type> currentState(StateMachine m) async {

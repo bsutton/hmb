@@ -46,7 +46,7 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
   var _searchText = '';
   var _unreadOnly = false;
   var _hasAttachments = false;
-  var _age = _GmailAge.last30Days;
+  _GmailAge _age = _GmailAge.last30Days;
   var _searchGeneration = 0;
   String? _nextPageToken;
 

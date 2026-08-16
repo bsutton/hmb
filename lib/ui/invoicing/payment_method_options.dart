@@ -26,7 +26,7 @@ Future<List<String>> loadPaymentMethodOptions() async {
   final integrationPaymentMethod = await ExternalAccounting().displayName();
   return [
     ...standardPaymentMethods,
-    if (integrationPaymentMethod != null) integrationPaymentMethod,
+    ?integrationPaymentMethod,
     otherPaymentMethod,
   ];
 }

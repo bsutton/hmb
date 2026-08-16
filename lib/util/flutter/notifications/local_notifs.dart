@@ -322,7 +322,7 @@ class LocalNotifs {
       if (todo.status != ToDoStatus.open || todo.remindAt == null) {
         await cancelForToDo(todo.id);
       } else {
-        return scheduleForToDo(todo);
+        return await scheduleForToDo(todo);
       }
       return true;
     } catch (e, st) {
@@ -339,7 +339,7 @@ class LocalNotifs {
   }) async {
     try {
       await cancelForJobActivity(activity.id);
-      return scheduleForJobActivity(
+      return await scheduleForJobActivity(
         activity,
         jobSummary: jobSummary,
         shoppingCount: shoppingCount,

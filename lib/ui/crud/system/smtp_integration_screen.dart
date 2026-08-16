@@ -41,8 +41,8 @@ class _SmtpIntegrationScreenState extends State<SmtpIntegrationScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _fromEmailController = TextEditingController();
-  var _provider = SmtpProvider.custom;
-  var _authMode = SmtpAuthMode.password;
+  SmtpProvider _provider = SmtpProvider.custom;
+  SmtpAuthMode _authMode = SmtpAuthMode.password;
   var _useSsl = false;
   var _testing = false;
   var _googleConnected = false;

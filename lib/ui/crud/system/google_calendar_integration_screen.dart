@@ -30,7 +30,7 @@ class GoogleCalendarIntegrationScreen extends StatefulWidget {
 
 class _GoogleCalendarIntegrationScreenState
     extends DeferredState<GoogleCalendarIntegrationScreen> {
-  var _enabled = AppSettings.googleCalendarSyncEnabledDefault;
+  bool _enabled = AppSettings.googleCalendarSyncEnabledDefault;
 
   @override
   Future<void> asyncInitState() async {

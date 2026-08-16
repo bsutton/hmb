@@ -84,8 +84,8 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
   Set<int> _validationAttentionSiteIds = {};
   var _loading = true;
   var _showExcluded = false;
-  var _issueFilter = _MailingIssueFilter.all;
-  var _sortOrder = _MailingSortOrder.name;
+  _MailingIssueFilter _issueFilter = _MailingIssueFilter.all;
+  _MailingSortOrder _sortOrder = _MailingSortOrder.name;
 
   @override
   void initState() {
@@ -152,9 +152,10 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
     setState(() {
       _recipients = [
         for (final recipient in _recipients)
-          recipient.hasAddress && !recipient.excluded
-              ? recipient.copyWith(selected: selected, clearRoute: true)
-              : recipient,
+          if (recipient.hasAddress && !recipient.excluded)
+            recipient.copyWith(selected: selected, clearRoute: true)
+          else
+            recipient,
       ];
     });
   }

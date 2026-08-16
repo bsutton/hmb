@@ -61,7 +61,7 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
   var _period = AccountingPeriod.forMonth(DateTime.now());
   var _includeFullyAllocated = true;
   var _search = '';
-  var _sortOrder = _PaymentSortOrder.newest;
+  _PaymentSortOrder _sortOrder = _PaymentSortOrder.newest;
   late Future<List<_PaymentRow>> _rows;
 
   @override

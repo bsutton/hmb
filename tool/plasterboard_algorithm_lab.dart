@@ -1,5 +1,3 @@
-// ignore_for_file: do_not_use_environment
-
 import 'package:flutter/material.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/measurement_type.dart';
@@ -39,7 +37,7 @@ class _PlasterboardAlgorithmLabScreenState
   late final SolverBenchmarkCorpus _corpus;
   late final List<PlasterMaterialSize> _materials;
   late String _scenarioId;
-  var _leftAlgorithmId = _algorithms.first.id;
+  String _leftAlgorithmId = _algorithms.first.id;
   var _rightAlgorithmId = 'genetic_waste';
   final _runs = <String, _AlgorithmRun>{};
 

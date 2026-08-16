@@ -1935,13 +1935,11 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   }
 
   void _openLayoutViewer(PlasterSurfaceLayout layout) {
-    unawaited(
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => _SurfaceLayoutViewerScreen(
-            layout: layout,
-            unitSystem: _unitSystemForLayout(layout),
-          ),
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => _SurfaceLayoutViewerScreen(
+          layout: layout,
+          unitSystem: _unitSystemForLayout(layout),
         ),
       ),
     );
@@ -1962,12 +1960,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _roomShapesForLayouts(),
       layouts,
     );
-    unawaited(
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) =>
-              _ProjectSheetExplorerScreen(sheets: sheets, layouts: layouts),
-        ),
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            _ProjectSheetExplorerScreen(sheets: sheets, layouts: layouts),
       ),
     );
   }
@@ -3465,14 +3461,12 @@ class _SurfaceSheetExplorerSection extends StatelessWidget {
   });
 
   void _openZoom(BuildContext context) {
-    unawaited(
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => _SurfaceLayoutViewerScreen(
-            layout: layout,
-            unitSystem: layout.material.unitSystem,
-            sheetNumbers: placementLabels,
-          ),
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => _SurfaceLayoutViewerScreen(
+          layout: layout,
+          unitSystem: layout.material.unitSystem,
+          sheetNumbers: placementLabels,
         ),
       ),
     );

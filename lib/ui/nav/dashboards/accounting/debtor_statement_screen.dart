@@ -41,7 +41,7 @@ class DebtorStatementScreen extends StatefulWidget {
 class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
   final _selectedCustomer = SelectedCustomer();
   final _selectedJob = SelectedJob();
-  var _periodPreset = AccountingPeriodPreset.month;
+  AccountingPeriodPreset _periodPreset = AccountingPeriodPreset.month;
   late DateTime _startInclusive;
   late DateTime _endExclusive;
   late DateTime _periodAnchor;

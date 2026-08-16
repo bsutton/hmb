@@ -31,80 +31,82 @@ void windowsInstalller() {
   final defaultIconValue = text('"$appPath",0');
 
   // Open the registry key for the protocol
-  final hKey = calloc<HKEY>();
+  final hKeyPointer = calloc<Pointer>();
   final result = RegCreateKeyEx(
     HKEY_CURRENT_USER,
     protocolKey,
-    0,
-    nullptr,
-    0, // REG_OPTION_NON_VOLATILE is 0
+    null,
+    REG_OPTION_NON_VOLATILE,
     KEY_WRITE,
-    nullptr,
-    hKey,
-    nullptr,
+    null,
+    hKeyPointer,
+    null,
   );
 
   if (result == ERROR_SUCCESS) {
+    final hKey = HKEY(hKeyPointer.value);
+
     // Set the default value for the protocol key
     RegSetValueEx(
-      hKey.value,
-      nullptr,
-      0,
+      hKey,
+      null,
       REG_SZ,
-      protocolValue.cast<BYTE>(),
+      protocolValue.cast<Uint8>(),
       (protocolValue.length + 1) * sizeOf<Uint16>(),
     );
 
     // Set the URL Protocol value
-    RegSetValueEx(hKey.value, text('URL Protocol'), 0, REG_SZ, nullptr, 0);
+    final urlProtocol = text('URL Protocol');
+    RegSetValueEx(hKey, urlProtocol, REG_SZ, null, 0);
+    free(urlProtocol);
 
     // Set the DefaultIcon value
-    final hDefaultIconKey = calloc<HKEY>();
+    final hDefaultIconKeyPointer = calloc<Pointer>();
     RegCreateKeyEx(
-      hKey.value,
+      hKey,
       defaultIconKey,
-      0,
-      nullptr,
-      0,
+      null,
+      REG_OPTION_NON_VOLATILE,
       KEY_WRITE,
-      nullptr,
-      hDefaultIconKey,
-      nullptr,
+      null,
+      hDefaultIconKeyPointer,
+      null,
     );
+    final hDefaultIconKey = HKEY(hDefaultIconKeyPointer.value);
     RegSetValueEx(
-      hDefaultIconKey.value,
-      nullptr,
-      0,
+      hDefaultIconKey,
+      null,
       REG_SZ,
-      defaultIconValue.cast<BYTE>(),
+      defaultIconValue.cast<Uint8>(),
       (defaultIconValue.length + 1) * sizeOf<Uint16>(),
     );
-    RegCloseKey(hDefaultIconKey.value);
+    hDefaultIconKey.close();
+    free(hDefaultIconKeyPointer);
 
     // Set the command value
-    final hCommandKey = calloc<HKEY>();
+    final hCommandKeyPointer = calloc<Pointer>();
     RegCreateKeyEx(
-      hKey.value,
+      hKey,
       commandKey,
-      0,
-      nullptr,
-      0,
+      null,
+      REG_OPTION_NON_VOLATILE,
       KEY_WRITE,
-      nullptr,
-      hCommandKey,
-      nullptr,
+      null,
+      hCommandKeyPointer,
+      null,
     );
+    final hCommandKey = HKEY(hCommandKeyPointer.value);
     RegSetValueEx(
-      hCommandKey.value,
-      nullptr,
-      0,
+      hCommandKey,
+      null,
       REG_SZ,
-      commandValue.cast<BYTE>(),
+      commandValue.cast<Uint8>(),
       (commandValue.length + 1) * sizeOf<Uint16>(),
     );
-    RegCloseKey(hCommandKey.value);
+    hCommandKey.close();
+    free(hCommandKeyPointer);
 
-    RegCloseKey(hKey.value);
+    hKey.close();
   } else {
     print('Failed to create registry key. Error code: $result');
   }
@@ -116,7 +118,7 @@ void windowsInstalller() {
   free(protocolValue);
   free(commandValue);
   free(defaultIconValue);
-  free(hKey);
+  free(hKeyPointer);
 }
 
-Pointer<Utf16> text(String text) => text.toNativeUtf16();
+PCWSTR text(String text) => text.toPcwstr();

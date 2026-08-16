@@ -70,7 +70,7 @@ class GoogleDriveBackupProvider extends BackupProvider {
                 downloadOptions: drive.DownloadOptions.fullMedia,
               ))
               as drive.Media;
-      return saveStreamToFile(media.stream, createTempFile());
+      return await saveStreamToFile(media.stream, createTempFile());
     } catch (e) {
       throw BackupException('Error downloading backup from Google Drive: $e');
     }

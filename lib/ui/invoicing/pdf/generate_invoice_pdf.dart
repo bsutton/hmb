@@ -24,6 +24,7 @@ import '../../../entity/entity.g.dart';
 import '../../../util/dart/format.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../../util/dart/tax_display_text.dart';
+import '../../pdf/pdf_page_band_layout.dart';
 
 Future<File> generateInvoicePdf(
   Invoice invoice, {
@@ -76,7 +77,7 @@ Future<File> generateInvoicePdf(
               left: 0,
               right: 0,
               child: pw.Container(
-                height: 28,
+                height: PdfPageBandLayout.bandHeight,
                 color: systemColor,
                 child: pw.Padding(
                   padding: const pw.EdgeInsets.symmetric(horizontal: 8),
@@ -102,7 +103,7 @@ Future<File> generateInvoicePdf(
               left: 0,
               right: 0,
               child: pw.Container(
-                height: 28,
+                height: PdfPageBandLayout.bandHeight,
                 color: systemColor,
                 child: pw.Padding(
                   padding: const pw.EdgeInsets.symmetric(horizontal: 10),
@@ -292,7 +293,9 @@ Future<File> generateInvoicePdf(
             ),
           );
         }
-        return pw.SizedBox();
+        // The top band is part of the page background, so it does not reserve
+        // any layout space. Keep continuation-page content below the band.
+        return PdfPageBandLayout.continuationPageHeader();
       },
       build: (context) {
         final content = <pw.Widget>[];

@@ -978,8 +978,8 @@ You can set a default booking fee from System | Billing screen''');
     if (Platform.isLinux) {
       selectedFilePath = await HMBFilePickerDialog().show(context);
     } else {
-      final result = await FilePicker.platform.pickFiles();
-      selectedFilePath = result?.files.single.path;
+      final result = await FilePicker.pickFiles();
+      selectedFilePath = result.isEmpty ? null : result.single.path;
     }
 
     if (selectedFilePath == null) {

@@ -37,13 +37,13 @@ class GoogleMailAuth {
       '704526923643-klt8djil7tdulg1ab4v70qdd3ff4515p.'
       'apps.googleusercontent.com';
   static const mailScope = 'https://mail.google.com/';
-  static const readScope = gmail.GmailApi.gmailReadonlyScope;
+  static const String readScope = gmail.GmailApi.gmailReadonlyScope;
   static const _credentialsKey = 'system.smtp_gmail_oauth_credentials';
   static const _readCredentialsKey = 'system.gmail_read_oauth_credentials';
-  static final _authorizationEndpoint = Uri.parse(
+  static final Uri _authorizationEndpoint = Uri.parse(
     'https://accounts.google.com/o/oauth2/v2/auth',
   );
-  static final _tokenEndpoint = Uri.parse(
+  static final Uri _tokenEndpoint = Uri.parse(
     'https://oauth2.googleapis.com/token',
   );
 

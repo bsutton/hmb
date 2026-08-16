@@ -41,21 +41,28 @@ Future<File> buildDebtorStatementPdfFile({
           buildBackground: (context) =>
               _background(context, system, systemColor, generatedAt),
         ),
+        header: (context) => context.pageNumber == 1
+            ? pw.Padding(
+                padding: const pw.EdgeInsets.fromLTRB(22, 48, 22, 0),
+                child: _header(system, phone, logo, report),
+              )
+            : pw.SizedBox(height: 48),
+        footer: (_) => pw.SizedBox(height: 48),
         build: (context) => [
+          pw.SizedBox(height: 34),
           pw.Padding(
-            padding: const pw.EdgeInsets.fromLTRB(22, 48, 22, 48),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                _header(system, phone, logo, report),
-                pw.SizedBox(height: 34),
-                _statementTable(rows, systemColor),
-                pw.SizedBox(height: 12),
-                _balanceDue(report.closingBalance),
-                pw.SizedBox(height: 16),
-                _howToPay(system),
-              ],
-            ),
+            padding: const pw.EdgeInsets.symmetric(horizontal: 22),
+            child: _statementTable(rows, systemColor),
+          ),
+          pw.SizedBox(height: 12),
+          pw.Padding(
+            padding: const pw.EdgeInsets.symmetric(horizontal: 22),
+            child: _balanceDue(report.closingBalance),
+          ),
+          pw.SizedBox(height: 16),
+          pw.Padding(
+            padding: const pw.EdgeInsets.symmetric(horizontal: 22),
+            child: _howToPay(system),
           ),
         ],
       ),
@@ -164,7 +171,7 @@ pw.Widget _header(
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.end,
         children: [
-          if (logo != null) logo,
+          ?logo,
           pw.SizedBox(height: 8),
           pw.Text(
             system.businessName ?? '',

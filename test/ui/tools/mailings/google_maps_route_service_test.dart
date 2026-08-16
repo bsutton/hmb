@@ -1038,25 +1038,29 @@ Future<void> _markSiteValid(
   );
 }
 
-const _addressValidationSuccess = {
-  'result': {
-    'verdict': {'validationGranularity': 'PREMISE', 'addressComplete': true},
-    'address': {
-      'postalAddress': {
-        'regionCode': 'AU',
-        'addressLines': ['126 Beverley Road'],
-        'locality': 'Rosanna',
-        'administrativeArea': 'VIC',
-        'postalCode': '3084',
+const Map<String, Map<String, Map<String, Object>>> _addressValidationSuccess =
+    {
+      'result': {
+        'verdict': {
+          'validationGranularity': 'PREMISE',
+          'addressComplete': true,
+        },
+        'address': {
+          'postalAddress': {
+            'regionCode': 'AU',
+            'addressLines': ['126 Beverley Road'],
+            'locality': 'Rosanna',
+            'administrativeArea': 'VIC',
+            'postalCode': '3084',
+          },
+        },
+        'geocode': {
+          'location': {'latitude': -37.742, 'longitude': 145.067},
+        },
       },
-    },
-    'geocode': {
-      'location': {'latitude': -37.742, 'longitude': 145.067},
-    },
-  },
-};
+    };
 
-const _addressValidationReview = {
+const Map<String, Map<String, Map<String, Object>>> _addressValidationReview = {
   'result': {
     'verdict': {
       'validationGranularity': 'PREMISE',
@@ -1078,7 +1082,8 @@ const _addressValidationReview = {
   },
 };
 
-const _addressValidationKenilworth = {
+const Map<String, Map<String, Map<String, Object>>>
+_addressValidationKenilworth = {
   'result': {
     'verdict': {'validationGranularity': 'PREMISE', 'addressComplete': true},
     'address': {
@@ -1096,25 +1101,29 @@ const _addressValidationKenilworth = {
   },
 };
 
-const _addressValidationLockley = {
-  'result': {
-    'verdict': {'validationGranularity': 'PREMISE', 'addressComplete': true},
-    'address': {
-      'postalAddress': {
-        'regionCode': 'AU',
-        'addressLines': ['2/52 Lockley Road'],
-        'locality': 'Ivanhoe',
-        'administrativeArea': 'VIC',
-        'postalCode': '3079',
+const Map<String, Map<String, Map<String, Object>>> _addressValidationLockley =
+    {
+      'result': {
+        'verdict': {
+          'validationGranularity': 'PREMISE',
+          'addressComplete': true,
+        },
+        'address': {
+          'postalAddress': {
+            'regionCode': 'AU',
+            'addressLines': ['2/52 Lockley Road'],
+            'locality': 'Ivanhoe',
+            'administrativeArea': 'VIC',
+            'postalCode': '3079',
+          },
+        },
+        'geocode': {
+          'location': {'latitude': -37.7683771, 'longitude': 145.0429223},
+        },
       },
-    },
-    'geocode': {
-      'location': {'latitude': -37.7683771, 'longitude': 145.0429223},
-    },
-  },
-};
+    };
 
-const _addressValidationOrigin = {
+const Map<String, Map<String, Map<String, Object>>> _addressValidationOrigin = {
   'result': {
     'verdict': {'validationGranularity': 'PREMISE', 'addressComplete': true},
     'address': {
@@ -1130,7 +1139,8 @@ const _addressValidationOrigin = {
   },
 };
 
-const _addressValidationCedricUnchanged = {
+const Map<String, Map<String, Map<String, Object>>>
+_addressValidationCedricUnchanged = {
   'result': {
     'verdict': {
       'validationGranularity': 'PREMISE',
@@ -1150,7 +1160,8 @@ const _addressValidationCedricUnchanged = {
   },
 };
 
-const _addressValidationCedricEastIvanhoe = {
+const Map<String, Map<String, Map<String, Object>>>
+_addressValidationCedricEastIvanhoe = {
   'result': {
     'verdict': {'validationGranularity': 'PREMISE', 'addressComplete': true},
     'address': {
@@ -1168,7 +1179,8 @@ const _addressValidationCedricEastIvanhoe = {
   },
 };
 
-const _placesAutocompleteCedric = {
+const Map<String, List<Map<String, Map<String, Object>>>>
+_placesAutocompleteCedric = {
   'suggestions': [
     {
       'placePrediction': {
@@ -1179,7 +1191,8 @@ const _placesAutocompleteCedric = {
   ],
 };
 
-const _placesAutocompleteKenilworth = {
+const Map<String, List<Map<String, Map<String, Object>>>>
+_placesAutocompleteKenilworth = {
   'suggestions': [
     {
       'placePrediction': {

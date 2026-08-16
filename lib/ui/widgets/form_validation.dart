@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import 'hmb_toast.dart';
@@ -33,13 +31,11 @@ void _revealFirstInvalidField(BuildContext? formContext) {
     return;
   }
 
-  unawaited(
-    Scrollable.ensureVisible(
-      firstInvalidField,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
-      alignment: 0.1,
-    ),
+  Scrollable.ensureVisible(
+    firstInvalidField,
+    duration: const Duration(milliseconds: 250),
+    curve: Curves.easeOut,
+    alignment: 0.1,
   );
 
   final focusNode = _findFirstFocusable(firstInvalidField as Element);

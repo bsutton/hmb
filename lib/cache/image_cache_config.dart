@@ -28,7 +28,7 @@ class ImageCacheConfig {
   /// LRU budget across *all* cached variants.
   final int maxBytes;
   static const defaultMaxMegabytes = 100;
-  static const defaultMaxBytes = defaultMaxMegabytes * 1024 * 1024;
+  static const int defaultMaxBytes = defaultMaxMegabytes * 1024 * 1024;
 
   // Display: good zoom detail at small size. WebP.
   static const generalLongEdge = 3500;

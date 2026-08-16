@@ -276,7 +276,7 @@ class _ActivityEditorDialogState extends State<_ActivityEditorDialog> {
   late ActivityType _type;
   late DateTime _occurredAt;
   var _createTodo = false;
-  var _template = _ActivityTemplate.custom;
+  _ActivityTemplate _template = _ActivityTemplate.custom;
   String? _error;
 
   bool get _editing => widget.activity != null;

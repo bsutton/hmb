@@ -100,7 +100,7 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
   List<Job> _selectedJobs = [];
   var _showInactiveJobs = false;
   var _loadGeneration = 0;
-  var _displayedMode = _selectedMode;
+  ShoppingMode _displayedMode = _selectedMode;
   final selectedSupplier = SelectedSupplier();
   String? filter;
 
