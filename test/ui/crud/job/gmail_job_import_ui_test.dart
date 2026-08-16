@@ -166,6 +166,34 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 1));
   });
+
+  testWidgets('loads the next Gmail page', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Stack(
+          children: [
+            GmailJobImportScreen(service: _PaginatedGmailImportService()),
+            const BlockingOverlay(),
+          ],
+        ),
+      ),
+    );
+    await _pumpAsyncWork(tester);
+
+    expect(find.text('First email'), findsOneWidget);
+    expect(find.text('Load more'), findsOneWidget);
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Load more'));
+    await _pumpAsyncWork(tester);
+
+    expect(find.text('First email'), findsOneWidget);
+    expect(find.text('Second email'), findsOneWidget);
+    expect(find.text('Load more'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 1));
+  });
 }
 
 class _FakeGmailImportService extends GmailImportService {
@@ -249,6 +277,30 @@ class _OverlappingGmailImportService extends GmailImportService {
       ),
     ],
     nextPageToken: null,
+  );
+}
+
+class _PaginatedGmailImportService extends GmailImportService {
+  @override
+  Future<GmailSearchResult> search({
+    String query = 'newer_than:30d',
+    String? textFilter,
+    String? pageToken,
+    int maxResults = 30,
+  }) async => GmailSearchResult(
+    accountEmail: 'owner@example.com',
+    messages: [
+      GmailMessageSummary(
+        id: pageToken == null ? 'first' : 'second',
+        threadId: null,
+        sender: 'customer@example.com',
+        subject: pageToken == null ? 'First email' : 'Second email',
+        snippet: 'Email body',
+        receivedAt: DateTime.utc(2026, 8, 16),
+        hasAttachments: false,
+      ),
+    ],
+    nextPageToken: pageToken == null ? 'next-page' : null,
   );
 }
 

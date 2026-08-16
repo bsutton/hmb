@@ -484,6 +484,13 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
 
   Future<void> _onSearchChanged(String? value) async {
     _searchText = value?.trim() ?? '';
+    if (mounted) {
+      setState(() {
+        _messages = _messages
+            .where((message) => gmailMessageMatchesText(message, _searchText))
+            .toList();
+      });
+    }
     if (_accountEmail.isNotEmpty) {
       await _startSearch();
     }
