@@ -57,6 +57,12 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
   }
 
   @override
+  void dispose() {
+    unawaited(_service.cancelPendingOperation());
+    super.dispose();
+  }
+
+  @override
   Future<void> asyncInitState() => _startSearch();
 
   Future<void> _search({

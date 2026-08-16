@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:googleapis/gmail/v1.dart' as gmail;
 
 import '../../database/management/backup_providers/google_drive/google_drive.g.dart';
@@ -80,7 +82,9 @@ class GmailImportService {
   static const _maximumMessagesScannedPerSearch = 300;
   final GoogleMailAuth _auth;
   GoogleAuthClient? _activeClient;
-  var _cancelRequested = false;
+  GoogleMailAccessToken? _cachedAccess;
+  Future<GoogleMailAccessToken>? _pendingAccess;
+  _GmailSearchOperation? _activeSearch;
 
   GmailImportService({GoogleMailAuth? auth}) : _auth = auth ?? GoogleMailAuth();
 
@@ -90,10 +94,44 @@ class GmailImportService {
     String? pageToken,
     int maxResults = 30,
   }) async {
-    _cancelRequested = false;
+    final previousSearch = _activeSearch;
+    previousSearch?.cancel();
+    _activeClient?.close();
+
+    final operation = _GmailSearchOperation();
+    _activeSearch = operation;
+    final search = _search(
+      operation,
+      query: query,
+      textFilter: textFilter,
+      pageToken: pageToken,
+      maxResults: maxResults,
+    );
+    try {
+      return await Future.any([
+        search,
+        operation.whenCancelled.then<GmailSearchResult>(
+          (_) => throw const GmailImportCancelled(),
+        ),
+      ]);
+    } finally {
+      if (identical(_activeSearch, operation)) {
+        _activeSearch = null;
+      }
+    }
+  }
+
+  Future<GmailSearchResult> _search(
+    _GmailSearchOperation operation, {
+    required String query,
+    required String? textFilter,
+    required String? pageToken,
+    required int maxResults,
+  }) async {
     GoogleAuthClient? client;
     try {
-      final access = await _auth.getReadAccessToken();
+      final access = await readAccessToken();
+      operation.throwIfCancelled();
       client = GoogleAuthClient({
         'Authorization': 'Bearer ${access.accessToken}',
         'X-Goog-AuthUser': '0',
@@ -101,6 +139,7 @@ class GmailImportService {
       _activeClient = client;
       final api = gmail.GmailApi(client);
       final profile = await api.users.getProfile('me');
+      operation.throwIfCancelled();
       final messages = <GmailMessageSummary>[];
       var activePageToken = pageToken;
       String? nextPageToken;
@@ -113,8 +152,9 @@ class GmailImportService {
           pageToken: activePageToken,
           maxResults: maxResults,
         );
+        operation.throwIfCancelled();
         final references = response.messages ?? const <gmail.Message>[];
-        final summaries = await _loadSummaries(api, references);
+        final summaries = await _loadSummaries(api, references, operation);
         messages.addAll(_filterSummaries(summaries, textFilter));
         scanned += references.length;
         nextPageToken = response.nextPageToken;
@@ -129,12 +169,12 @@ class GmailImportService {
         nextPageToken: nextPageToken,
       );
     } on gmail.DetailedApiRequestError catch (error) {
-      if (_cancelRequested) {
+      if (operation.cancelled) {
         throw const GmailImportCancelled();
       }
       throw _friendlyApiError(error);
     } catch (error) {
-      if (_cancelRequested || error is GoogleMailAuthorizationCancelled) {
+      if (operation.cancelled || error is GoogleMailAuthorizationCancelled) {
         throw const GmailImportCancelled();
       }
       rethrow;
@@ -170,16 +210,36 @@ class GmailImportService {
   }
 
   Future<void> cancelPendingOperation() async {
-    _cancelRequested = true;
+    _activeSearch?.cancel();
     await _auth.cancelPendingAuthorization();
     _activeClient?.close();
+  }
+
+  @visibleForTesting
+  Future<GoogleMailAccessToken> readAccessToken() async {
+    final cached = _cachedAccess;
+    if (cached != null) {
+      return cached;
+    }
+
+    final pending = _pendingAccess ?? _auth.getReadAccessToken();
+    _pendingAccess = pending;
+    try {
+      final access = await pending;
+      _cachedAccess = access;
+      return access;
+    } finally {
+      if (identical(_pendingAccess, pending)) {
+        _pendingAccess = null;
+      }
+    }
   }
 
   Future<JobCreationEmailSource> loadMessage({
     required String accountEmail,
     required String messageId,
   }) async {
-    final access = await _auth.getReadAccessToken();
+    final access = await readAccessToken();
     final client = GoogleAuthClient({
       'Authorization': 'Bearer ${access.accessToken}',
       'X-Goog-AuthUser': '0',
@@ -216,7 +276,7 @@ class GmailImportService {
       return const [];
     }
 
-    final access = await _auth.getReadAccessToken();
+    final access = await readAccessToken();
     final client = GoogleAuthClient({
       'Authorization': 'Bearer ${access.accessToken}',
       'X-Goog-AuthUser': '0',
@@ -270,6 +330,7 @@ class GmailImportService {
   Future<List<GmailMessageSummary>> _loadSummaries(
     gmail.GmailApi api,
     List<gmail.Message> references,
+    _GmailSearchOperation operation,
   ) async {
     final summaries = <GmailMessageSummary>[];
     for (
@@ -277,9 +338,7 @@ class GmailImportService {
       offset < references.length;
       offset += _summaryBatchSize
     ) {
-      if (_cancelRequested) {
-        throw const GmailImportCancelled();
-      }
+      operation.throwIfCancelled();
       final proposedEnd = offset + _summaryBatchSize;
       final end = proposedEnd < references.length
           ? proposedEnd
@@ -301,6 +360,25 @@ class GmailImportService {
   ) => summaries
       .where((message) => gmailMessageMatchesText(message, textFilter))
       .toList();
+}
+
+class _GmailSearchOperation {
+  final _cancelled = Completer<void>();
+
+  bool get cancelled => _cancelled.isCompleted;
+  Future<void> get whenCancelled => _cancelled.future;
+
+  void cancel() {
+    if (!cancelled) {
+      _cancelled.complete();
+    }
+  }
+
+  void throwIfCancelled() {
+    if (cancelled) {
+      throw const GmailImportCancelled();
+    }
+  }
 }
 
 class GmailImportCancelled implements Exception {

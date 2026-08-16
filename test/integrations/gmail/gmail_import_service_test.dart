@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:googleapis/gmail/v1.dart' as gmail;
 import 'package:hmb/integrations/gmail/gmail_import_service.dart';
 import 'package:hmb/ui/crud/job/job_creation_email_source.dart';
+import 'package:hmb/ui/dialog/google_mail_auth.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -123,6 +125,55 @@ void main() {
 
     expect(utf8.decode(bytes), 'hello');
   });
+
+  test('reuses Gmail authorization for subsequent searches', () async {
+    final auth = _FakeGoogleMailAuth();
+    final service = GmailImportService(auth: auth);
+
+    await service.readAccessToken();
+    await service.readAccessToken();
+
+    expect(auth.authorizationRequests, 1);
+  });
+
+  test('cancelling releases a search waiting for authentication', () async {
+    final auth = _HangingGoogleMailAuth();
+    final service = GmailImportService(auth: auth);
+    final search = service.search();
+    final cancelled = expectLater(search, throwsA(isA<GmailImportCancelled>()));
+    await Future<void>.delayed(Duration.zero);
+
+    await service.cancelPendingOperation();
+
+    await cancelled;
+    expect(auth.cancelled, isTrue);
+  });
 }
 
 String _encode(String value) => base64UrlEncode(utf8.encode(value));
+
+class _FakeGoogleMailAuth extends GoogleMailAuth {
+  var authorizationRequests = 0;
+
+  @override
+  Future<GoogleMailAccessToken> getReadAccessToken() async {
+    authorizationRequests++;
+    return const GoogleMailAccessToken(
+      email: 'owner@example.com',
+      accessToken: 'access-token',
+    );
+  }
+}
+
+class _HangingGoogleMailAuth extends GoogleMailAuth {
+  final _authorization = Completer<GoogleMailAccessToken>();
+  var cancelled = false;
+
+  @override
+  Future<GoogleMailAccessToken> getReadAccessToken() => _authorization.future;
+
+  @override
+  Future<void> cancelPendingAuthorization() async {
+    cancelled = true;
+  }
+}
