@@ -116,7 +116,7 @@ void main() {
       () => Future<void>.delayed(const Duration(milliseconds: 1100)),
     );
     await tester.pump(const Duration(milliseconds: 1100));
-    final cancelButton = find.widgetWithText(HMBButton, 'Cancel');
+    final cancelButton = find.widgetWithText(ElevatedButton, 'Cancel');
     expect(cancelButton, findsOneWidget);
     await tester.tap(cancelButton);
     await _pumpAsyncWork(tester);
