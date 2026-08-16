@@ -12,6 +12,7 @@ import 'package:hmb/ui/crud/job/job_creation_email_source.dart';
 import 'package:hmb/ui/crud/job/job_creator.dart';
 import 'package:hmb/ui/crud/job/list_job_screen.dart';
 import 'package:hmb/ui/widgets/blocking_ui.dart';
+import 'package:hmb/ui/widgets/hmb_button.dart';
 import 'package:hmb/ui/widgets/icons/hmb_add_button.dart';
 import 'package:june/june.dart';
 
@@ -106,11 +107,18 @@ void main() {
       ),
     );
     await tester.pump();
+    await tester.pump();
 
     final overlay = June.getState(BlockingOverlayState.new);
     expect(overlay.blocked, isTrue);
     expect(overlay.topAction.canCancel, isTrue);
-    await overlay.topAction.cancel();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 1100)),
+    );
+    await tester.pump(const Duration(milliseconds: 1100));
+    final cancelButton = find.widgetWithText(HMBButton, 'Cancel');
+    expect(cancelButton, findsOneWidget);
+    await tester.tap(cancelButton);
     await _pumpAsyncWork(tester);
     await tester.pumpAndSettle();
 
