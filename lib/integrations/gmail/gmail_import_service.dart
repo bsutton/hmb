@@ -72,14 +72,16 @@ bool gmailMessageMatchesText(GmailMessageSummary message, String? textFilter) {
   final sender = message.sender.toLowerCase();
   final recipient = message.recipient.toLowerCase();
   final subject = message.subject.toLowerCase();
+  final snippet = message.snippet.toLowerCase();
   return sender.contains(filter) ||
       recipient.contains(filter) ||
-      subject.contains(filter);
+      subject.contains(filter) ||
+      snippet.contains(filter);
 }
 
 class GmailImportService {
   static const _summaryBatchSize = 4;
-  static const _maximumMessagesScannedPerSearch = 300;
+  static const _maximumMessagesScannedPerSearch = 1000;
   final GoogleMailAuth _auth;
   GoogleAuthClient? _activeClient;
   GoogleMailAccessToken? _cachedAccess;

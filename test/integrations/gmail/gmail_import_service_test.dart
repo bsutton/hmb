@@ -33,6 +33,21 @@ void main() {
     expect(gmailMessageMatchesText(message, 'unrelated'), isFalse);
   });
 
+  test('matches text in the Gmail snippet locally', () {
+    final message = GmailMessageSummary(
+      id: 'message-snippet',
+      threadId: null,
+      sender: 'customer@example.com',
+      recipient: 'owner@example.com',
+      subject: 'Request for a quote',
+      snippet: 'Please replace the damaged fence paling.',
+      receivedAt: DateTime.utc(2026, 8, 16),
+      hasAttachments: false,
+    );
+
+    expect(gmailMessageMatchesText(message, 'damaged fence'), isTrue);
+  });
+
   test('combines text and advanced Gmail filters', () {
     expect(
       buildGmailSearchQuery(

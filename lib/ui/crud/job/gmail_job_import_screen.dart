@@ -50,6 +50,7 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
   var _hasAttachments = false;
   _GmailAge _age = _GmailAge.last30Days;
   var _searchGeneration = 0;
+  var _searching = false;
   String? _nextPageToken;
 
   @override
@@ -417,14 +418,16 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
             ),
             Expanded(
               child: _messages.isEmpty
-                  ? Center(
-                      child: Text(
-                        _hasSearched
-                            ? 'No matching email found.'
-                            : 'Select Connect and search to choose an email '
-                                  'from Gmail.',
-                      ),
-                    )
+                  ? _searching
+                        ? const SizedBox.shrink()
+                        : Center(
+                            child: Text(
+                              _hasSearched
+                                  ? 'No matching email found.'
+                                  : 'Select Connect and search to choose an '
+                                        'email from Gmail.',
+                            ),
+                          )
                   : ListView.builder(
                       itemCount:
                           _messages.length + (_nextPageToken == null ? 0 : 1),
@@ -476,10 +479,19 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
     final generation = ++_searchGeneration;
     _nextPageToken = null;
     _importedJobIds.clear();
-    await _guard(
-      () => _search(showOverlay: true, generation: generation),
-      generation: generation,
-    );
+    if (mounted) {
+      setState(() => _searching = true);
+    }
+    try {
+      await _guard(
+        () => _search(showOverlay: true, generation: generation),
+        generation: generation,
+      );
+    } finally {
+      if (mounted && generation == _searchGeneration) {
+        setState(() => _searching = false);
+      }
+    }
   }
 
   Future<void> _onSearchChanged(String? value) async {
