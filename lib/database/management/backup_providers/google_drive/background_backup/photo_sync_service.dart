@@ -125,6 +125,11 @@ class PhotoSyncService {
 
   /// Kick off the sync and listen for both progress and payload messages.
   Future<void> start({bool retryOnFailure = true}) async {
+    if (!GoogleDriveAuth.isAuthSupported()) {
+      _stopAutomaticRetry();
+      await _releaseWakeLock();
+      return;
+    }
     final photos = await DaoPhoto().getUnsyncedPhotos();
     final deletes = (await DaoPhotoDeleteQueue().getPendingDeleteIds())
         .map(
@@ -240,12 +245,15 @@ class PhotoSyncService {
       return;
     }
     if (_syncHadError) {
-      if (retryOnFailure) {
+      final message = _lastErrorSummary ?? '';
+      if (shouldRetryPhotoSyncError(message, retryOnFailure: retryOnFailure)) {
         _scheduleRetry();
       } else {
-        throw PhotoSyncException(
-          _lastErrorSummary ?? 'Photo sync failed without an error message.',
-        );
+        if (!retryOnFailure) {
+          throw PhotoSyncException(
+            _lastErrorSummary ?? 'Photo sync failed without an error message.',
+          );
+        }
       }
     } else {
       _autoRetryAttempts = 0;
@@ -254,11 +262,7 @@ class PhotoSyncService {
   }
 
   void cancelSync() {
-    _retryTimer?.cancel();
-    _retryTimer = null;
-    _autoRetryAttempts = 0;
-    _lastErrorSummary = null;
-    _waitingForSignIn = false;
+    _stopAutomaticRetry();
     unawaited(_releaseWakeLock());
     if (!isRunning) {
       _controller.add(ProgressUpdate('Photo sync cancelled.', 0, 0));
@@ -319,7 +323,8 @@ class PhotoSyncService {
   }) {
     _syncHadError = true;
     _lastErrorSummary = _formatSyncError(error);
-    if (_shouldDeferRecoverableError(_lastErrorSummary!)) {
+    final recoverable = _shouldDeferRecoverableError(_lastErrorSummary!);
+    if (recoverable) {
       _controller.add(
         ProgressUpdate(
           'Photo sync was interrupted. It will retry shortly.',
@@ -332,11 +337,21 @@ class PhotoSyncService {
       _errorController.add(_lastErrorSummary!);
       _controller.add(ProgressUpdate('Photo sync failed.', 0, 0));
     }
-    if (retryOnFailure) {
+    if (retryOnFailure && recoverable) {
       _scheduleRetry();
       return;
     }
-    throw PhotoSyncException(_lastErrorSummary!);
+    if (!retryOnFailure) {
+      throw PhotoSyncException(_lastErrorSummary!);
+    }
+  }
+
+  void _stopAutomaticRetry() {
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    _autoRetryAttempts = 0;
+    _lastErrorSummary = null;
+    _waitingForSignIn = false;
   }
 
   void _scheduleRetry() {
@@ -431,7 +446,7 @@ class PhotoSyncService {
   }
 
   Future<void> resumeIfNeeded() async {
-    if (isRunning) {
+    if (isRunning || !GoogleDriveAuth.isAuthSupported()) {
       return;
     }
     final photos = await DaoPhoto().getUnsyncedPhotos();
@@ -596,6 +611,11 @@ bool isRecoverablePhotoSyncError(String message) {
       lowerMessage.contains('network is unreachable') ||
       lowerMessage.contains('software caused connection abort');
 }
+
+bool shouldRetryPhotoSyncError(
+  String message, {
+  required bool retryOnFailure,
+}) => retryOnFailure && isRecoverablePhotoSyncError(message);
 
 /// In the isolate, after each successful upload, send the payload itself:
 Future<void> _photoSyncEntry(PhotoSyncParams params) async {

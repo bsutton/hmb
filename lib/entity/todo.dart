@@ -77,12 +77,14 @@ class ToDo extends Entity<ToDo> {
     ToDoParentType? parentType,
     int? parentId,
     DateTime? completedDate,
+    bool clearDueDate = false,
+    bool clearReminder = false,
   }) => ToDo(
     id: id,
     title: title ?? this.title,
     note: note ?? this.note,
-    dueDate: dueDate ?? this.dueDate,
-    remindAt: remindAt ?? this.remindAt,
+    dueDate: clearDueDate ? null : dueDate ?? this.dueDate,
+    remindAt: clearReminder ? null : remindAt ?? this.remindAt,
     priority: priority ?? this.priority,
     status: status ?? this.status,
     parentType: parentType ?? this.parentType,
@@ -92,18 +94,13 @@ class ToDo extends Entity<ToDo> {
     modifiedDate: DateTime.now(),
   );
 
-  /// Changes the due date and keeps an invalidated reminder the same distance
-  /// ahead of it.
+  /// Changes the due date while preserving the reminder's lead time.
   ToDo withDueDate(DateTime newDueDate) {
     final currentReminder = remindAt;
-    var adjustedReminder = currentReminder;
-
-    if (currentReminder != null && currentReminder.isAfter(newDueDate)) {
-      final reminderLeadTime = dueDate?.difference(currentReminder);
-      adjustedReminder = reminderLeadTime == null || reminderLeadTime.isNegative
-          ? newDueDate
-          : newDueDate.subtract(reminderLeadTime);
-    }
+    final currentDueDate = dueDate;
+    final adjustedReminder = currentReminder == null || currentDueDate == null
+        ? currentReminder
+        : newDueDate.subtract(currentDueDate.difference(currentReminder));
 
     return copyWith(dueDate: newDueDate, remindAt: adjustedReminder);
   }

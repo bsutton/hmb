@@ -42,11 +42,7 @@ class _ToDoEditScreenState extends DeferredState<ToDoEditScreen>
     // Seed a working draft from the entity (or a minimal new one)
     _draft =
         currentEntity ??
-        ToDo.forInsert(
-          title: '',
-          parentType: widget.preselectedJob != null ? ToDoParentType.job : null,
-          parentId: widget.preselectedJob?.id,
-        );
+        createNewToDoDraft(preselectedJob: widget.preselectedJob);
   }
 
   @override
@@ -97,4 +93,14 @@ class _ToDoEditScreenState extends DeferredState<ToDoEditScreen>
     ToDoParentType.customer => selectedCustomer.customerId,
     _ => null,
   };
+}
+
+ToDo createNewToDoDraft({Job? preselectedJob, DateTime? now}) {
+  final reminderDay = (now ?? DateTime.now()).add(const Duration(days: 1));
+  return ToDo.forInsert(
+    title: '',
+    remindAt: DateTime(reminderDay.year, reminderDay.month, reminderDay.day, 9),
+    parentType: preselectedJob != null ? ToDoParentType.job : null,
+    parentId: preselectedJob?.id,
+  );
 }
