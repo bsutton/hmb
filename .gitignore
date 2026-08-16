@@ -65,4 +65,6 @@ error.txt
 logs/analyzer.txt
 build.err
 .env
+.*.lbox.lock
+.*.lbx.lock
 android/build/*

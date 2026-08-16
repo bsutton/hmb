@@ -27,8 +27,8 @@ import '../widgets/hmb_toast.dart';
 import '../widgets/icons/help_button.dart';
 import '../widgets/select/hmb_select_email_multi.dart';
 import '../widgets/select/hmb_select_mobile_multi.dart';
+import 'email_delivery.dart';
 import 'email_self_warning.dart';
-import 'hmb_email_sender.dart';
 import 'message_template_dialog.dart';
 import 'source_context.dart';
 
@@ -268,8 +268,10 @@ Add additional recipients who should receive a copy of the email.'''),
           },
         ),
         HMBButton(
-          label: 'Send...',
-          hint: 'Launch your device app to review and send the message.',
+          label: _channel == NoticeChannel.email ? 'Continue...' : 'Send...',
+          hint: _channel == NoticeChannel.email
+              ? 'Choose how to send the message.'
+              : 'Open your device SMS app to review and send the message.',
           onPressed: () async {
             if (_channel == NoticeChannel.sms) {
               await _sendSms(context);
@@ -341,6 +343,9 @@ Add additional recipients who should receive a copy of the email.'''),
     )) {
       return;
     }
+    if (!context.mounted) {
+      return;
+    }
 
     final email = Email(
       body: _bodyCtl.text,
@@ -351,13 +356,15 @@ Add additional recipients who should receive a copy of the email.'''),
     );
 
     try {
-      await HMBEmailSender().send(email);
+      final outcome = await deliverEmail(context: context, email: email);
+      if (outcome == EmailDeliveryOutcome.cancelled) {
+        return;
+      }
+      HMBToast.info(emailDeliveryMessage(outcome));
     } catch (e) {
       HMBToast.error(e.toString(), acknowledgmentRequired: true);
       return;
     }
-
-    HMBToast.info('Email send initiated');
     await _stampNoticeSent();
     if (context.mounted) {
       Navigator.of(context).pop(true);

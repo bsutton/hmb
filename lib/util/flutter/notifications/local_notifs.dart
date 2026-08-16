@@ -250,10 +250,15 @@ class LocalNotifs {
       _desktop?.resync(notifications);
     }
 
-    final pendingIds = {
-      for (final pending in await _fln.pendingNotificationRequests())
-        pending.id,
-    };
+    // flutter_local_notifications does not implement pending request queries
+    // on Linux. Linux reminders are owned by [_desktop], which was resynced
+    // above, so there is no native pending queue to reconcile.
+    final pendingIds = !kIsWeb && !Platform.isLinux
+        ? {
+            for (final pending in await _fln.pendingNotificationRequests())
+              pending.id,
+          }
+        : const <int>{};
     for (final id in pendingIds) {
       if (Notif.isManagedId(id) && !desired.contains(id)) {
         await cancel(id);

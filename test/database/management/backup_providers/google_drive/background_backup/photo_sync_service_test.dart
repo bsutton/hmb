@@ -108,4 +108,29 @@ void main() {
       );
     });
   });
+
+  group('shouldRetryPhotoSyncError', () {
+    test('retries transient failures only when automatic retry is enabled', () {
+      const transient = 'SocketException: Connection reset';
+
+      expect(
+        shouldRetryPhotoSyncError(transient, retryOnFailure: true),
+        isTrue,
+      );
+      expect(
+        shouldRetryPhotoSyncError(transient, retryOnFailure: false),
+        isFalse,
+      );
+    });
+
+    test('does not retry unsupported platform failures', () {
+      expect(
+        shouldRetryPhotoSyncError(
+          'UnimplementedError: Google Drive is not supported',
+          retryOnFailure: true,
+        ),
+        isFalse,
+      );
+    });
+  });
 }

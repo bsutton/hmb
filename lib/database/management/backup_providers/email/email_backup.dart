@@ -121,7 +121,7 @@ class EmailBackupProvider extends BackupProvider {
         attachmentPaths: [pathToZippedBackup],
       );
 
-      await HMBEmailSender().send(email);
+      await HMBEmailSender().openComposer(email);
     } catch (e) {
       throw BackupException('Error sending email: $e');
     }

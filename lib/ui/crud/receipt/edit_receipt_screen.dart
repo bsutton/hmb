@@ -24,6 +24,7 @@ import '../../../entity/entity.g.dart';
 import '../../../entity/helpers/charge_mode.dart';
 import '../../../entity/receipt_expense_category.dart';
 import '../../../util/dart/app_settings.dart';
+import '../../../util/dart/local_date.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../../util/dart/photo_meta.dart';
@@ -39,7 +40,9 @@ import '../../widgets/select/hmb_select_supplier.dart';
 import '../../widgets/widgets.g.dart' hide StatefulBuilder;
 import '../base_full_screen/edit_entity_screen.dart';
 import '../task/photo_crud.dart';
+import 'receipt_edit_logic.dart';
 import 'receipt_task_item_matcher.dart';
+import 'receipt_tax_calculator.dart';
 
 enum _ReceiptTaxMode {
   taxFree('Tax free'),
@@ -89,6 +92,8 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   final _legacyLinkedTaskItemIds = <int>{};
   final _matchedTaskItemUpdates = <int, TaskItem>{};
   var _linkableTaskItems = <TaskItem>[];
+  var _preferredReceiptJobIds = <int>{};
+  var _receiptJobIdsByTaskItemId = <int, int>{};
   final _jobAllocations = <_ReceiptJobAllocationEditor>[];
   final _lineItems = <_ReceiptLineItemEditor>[];
   Task? _lastCreatedLineTask;
@@ -99,6 +104,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   var _taxLabel = 'Tax';
   var _taxRateBasisPoints = 1000;
   var _taxMode = _ReceiptTaxMode.defaultRate;
+  var _totalBasis = ReceiptTotalBasis.includingTax;
   final _customTaxRateController = TextEditingController();
 
   final _taxExFocus = FocusNode();
@@ -119,34 +125,14 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     _totalExclCtrl = HMBMoneyEditingController(
       money: currentEntity?.totalExcludingTax,
     );
-    _totalExclCtrl.addListener(() {
-      if (!_isCalculating) {
-        if (_jobAllocations.length == 1 && _selectedJob.jobId != null) {
-          _jobAllocations.single
-            ..jobId = _selectedJob.jobId
-            ..amount = _totalExclCtrl.money ?? MoneyEx.zero;
-        }
-        _recalculate();
-      }
-    });
 
     // Tax
     _taxCtrl = HMBMoneyEditingController(money: currentEntity?.tax);
-    _taxCtrl.addListener(() {
-      if (!_isCalculating) {
-        _recalculate();
-      }
-    });
 
     /// Tax inc
     _totalInclCtrl = HMBMoneyEditingController(
       money: currentEntity?.totalIncludingTax,
     );
-    _totalInclCtrl.addListener(() {
-      if (!_isCalculating) {
-        _recalculate();
-      }
-    });
 
     _photoCtrl = PhotoController<Receipt>(
       parent: currentEntity,
@@ -181,10 +167,14 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         ),
       );
     }
-    if (_jobAllocations.isEmpty && currentEntity != null) {
+    final legacyJobId = currentEntity?.jobId;
+    if (shouldCreateLegacyReceiptAllocation(
+      hasPersistedAllocations: _jobAllocations.isNotEmpty,
+      legacyJobId: legacyJobId,
+    )) {
       _jobAllocations.add(
         _ReceiptJobAllocationEditor(
-          jobId: currentEntity!.jobId,
+          jobId: legacyJobId,
           amount: currentEntity!.totalExcludingTax,
         ),
       );
@@ -405,7 +395,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
                   _totalInclCtrl.money = lineIncTaxTotal;
                   _isCalculating = false;
                 });
-                _applyTaxMode();
+                _syncSoleJobAllocation();
               },
             ),
           ),
@@ -418,6 +408,10 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
           labelText: 'Total Incl. Tax',
           fieldName: 'Total Including Tax',
           focusNode: _taxIncFocus,
+          onChanged: (_) {
+            _totalBasis = ReceiptTotalBasis.includingTax;
+            _applyTaxMode();
+          },
         ),
         HMBDroplist<_ReceiptTaxMode>(
           title: 'Tax Treatment',
@@ -448,6 +442,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
           focusNode: _taxFocus,
           enabled: _taxMode == _ReceiptTaxMode.directEntry,
           nonZero: false,
+          onChanged: (_) => _applyTaxMode(),
         ),
         HMBMoneyField(
           fieldKey: TestKeys.receiptTotalExcludingTaxField,
@@ -455,7 +450,10 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
           labelText: 'Total Excl. Tax',
           fieldName: 'Total Excluding Tax',
           focusNode: _taxExFocus,
-          enabled: false,
+          onChanged: (_) {
+            _totalBasis = ReceiptTotalBasis.excludingTax;
+            _applyTaxMode();
+          },
         ),
       ],
     );
@@ -497,9 +495,20 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   }
 
   void _applyTaxMode() {
-    final totalIncludingTax = _totalInclCtrl.money ?? MoneyEx.zero;
+    if (_isCalculating) {
+      return;
+    }
+    final total = _totalBasis == ReceiptTotalBasis.includingTax
+        ? _totalInclCtrl.money ?? MoneyEx.zero
+        : _totalExclCtrl.money ?? MoneyEx.zero;
     if (_taxMode == _ReceiptTaxMode.directEntry) {
-      _calculateExclusiveFromDirectTax();
+      _setCalculatedTotals(
+        ReceiptTaxCalculator.fromDirectTax(
+          basis: _totalBasis,
+          total: total,
+          tax: _taxCtrl.money ?? MoneyEx.zero,
+        ),
+      );
       return;
     }
 
@@ -509,66 +518,49 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       _ReceiptTaxMode.customRate => _customTaxRateBasisPoints(),
       _ReceiptTaxMode.directEntry => 0,
     };
-    final tax = _calculateTaxFromInclusiveTotal(
-      totalIncludingTax,
-      rateBasisPoints,
-    );
-    _setCalculatedTotals(totalIncludingTax: totalIncludingTax, tax: tax);
-  }
-
-  Money _calculateTaxFromInclusiveTotal(
-    Money totalIncludingTax,
-    int rateBasisPoints,
-  ) {
-    if (totalIncludingTax.isZero || rateBasisPoints == 0) {
-      return MoneyEx.zero;
-    }
-
-    final totalMinorUnits = totalIncludingTax.minorUnits.toInt();
-    final sign = totalMinorUnits.isNegative ? -1 : 1;
-    final absoluteTotal = totalMinorUnits.abs();
-    final divisor = 10000 + rateBasisPoints;
-    final taxMinorUnits =
-        sign * ((absoluteTotal * rateBasisPoints + divisor ~/ 2) ~/ divisor);
-    return MoneyEx.fromInt(taxMinorUnits);
-  }
-
-  void _calculateExclusiveFromDirectTax() {
-    final totalIncludingTax = _totalInclCtrl.money ?? MoneyEx.zero;
-    final tax = _taxCtrl.money ?? MoneyEx.zero;
     _setCalculatedTotals(
-      totalIncludingTax: totalIncludingTax,
-      tax: tax,
-      updateTax: false,
+      ReceiptTaxCalculator.fromRate(
+        basis: _totalBasis,
+        total: total,
+        rateBasisPoints: rateBasisPoints,
+      ),
     );
   }
 
-  void _setCalculatedTotals({
-    required Money totalIncludingTax,
-    required Money tax,
-    bool updateTax = true,
-  }) {
+  void _setCalculatedTotals(ReceiptTaxTotals totals) {
     setState(() {
       _isCalculating = true;
-      if (updateTax) {
-        _taxCtrl.money = tax;
-      }
-      _totalExclCtrl.money = totalIncludingTax - tax;
+      _totalExclCtrl.money = totals.excluding;
+      _taxCtrl.money = totals.tax;
+      _totalInclCtrl.money = totals.including;
       _isCalculating = false;
     });
+    _syncSoleJobAllocation();
+  }
+
+  void _syncSoleJobAllocation() {
+    if (_jobAllocations.length == 1 && _selectedJob.jobId != null) {
+      _jobAllocations.single
+        ..jobId = _selectedJob.jobId
+        ..amount = _totalExclCtrl.money ?? MoneyEx.zero;
+    }
   }
 
   void _applyLineTaxMode(_ReceiptLineItemEditor line) {
     if (_isCalculating) {
       return;
     }
-    final totalIncludingTax = line.lineTotalIncTax;
+    final total = line.totalBasis == ReceiptTotalBasis.includingTax
+        ? line.lineTotalIncTax
+        : line.lineTotalExTax;
     if (line.taxMode == _ReceiptTaxMode.directEntry) {
       _setLineCalculatedTotals(
         line: line,
-        totalIncludingTax: totalIncludingTax,
-        tax: line.taxAmountController.money ?? MoneyEx.zero,
-        updateTax: false,
+        totals: ReceiptTaxCalculator.fromDirectTax(
+          basis: line.totalBasis,
+          total: total,
+          tax: line.taxAmountController.money ?? MoneyEx.zero,
+        ),
       );
       return;
     }
@@ -581,8 +573,11 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     };
     _setLineCalculatedTotals(
       line: line,
-      totalIncludingTax: totalIncludingTax,
-      tax: _calculateTaxFromInclusiveTotal(totalIncludingTax, rateBasisPoints),
+      totals: ReceiptTaxCalculator.fromRate(
+        basis: line.totalBasis,
+        total: total,
+        rateBasisPoints: rateBasisPoints,
+      ),
     );
   }
 
@@ -598,16 +593,13 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
 
   void _setLineCalculatedTotals({
     required _ReceiptLineItemEditor line,
-    required Money totalIncludingTax,
-    required Money tax,
-    bool updateTax = true,
+    required ReceiptTaxTotals totals,
   }) {
     setState(() {
       _isCalculating = true;
-      if (updateTax) {
-        line.taxAmountController.money = tax;
-      }
-      line.lineTotalExTaxController.money = totalIncludingTax - tax;
+      line.lineTotalExTaxController.money = totals.excluding;
+      line.taxAmountController.money = totals.tax;
+      line.lineTotalIncTaxController.money = totals.including;
       _isCalculating = false;
     });
   }
@@ -723,9 +715,30 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
                     required: true,
                   ),
                 ),
-                IconButton(
-                  tooltip: 'Remove receipt line',
-                  onPressed: () {
+                HMBIconButton(
+                  buttonKey: TestKeys.receiptLineMoveUp(index),
+                  hint: 'Move receipt line up',
+                  size: HMBIconButtonSize.small,
+                  showBackground: false,
+                  enabled: index != 0,
+                  onPressed: () async => _moveLine(index, -1),
+                  icon: const Icon(Icons.arrow_upward),
+                ),
+                HMBIconButton(
+                  buttonKey: TestKeys.receiptLineMoveDown(index),
+                  hint: 'Move receipt line down',
+                  size: HMBIconButtonSize.small,
+                  showBackground: false,
+                  enabled: index != _lineItems.length - 1,
+                  onPressed: () async => _moveLine(index, 1),
+                  icon: const Icon(Icons.arrow_downward),
+                ),
+                HMBIconButton(
+                  buttonKey: TestKeys.receiptLineRemove(index),
+                  hint: 'Remove receipt line',
+                  size: HMBIconButtonSize.small,
+                  showBackground: false,
+                  onPressed: () async {
                     setState(() {
                       _lineItems.removeAt(index).dispose();
                     });
@@ -753,7 +766,10 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
               labelText: 'Line Total Incl. Tax',
               fieldName: 'Line Total Including Tax',
               nonZero: false,
-              onChanged: (_) => _applyLineTaxMode(line),
+              onChanged: (_) {
+                line.totalBasis = ReceiptTotalBasis.includingTax;
+                _applyLineTaxMode(line);
+              },
             ),
             const SizedBox(height: 10),
             HMBDroplist<_ReceiptTaxMode>(
@@ -791,7 +807,10 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
               labelText: 'Line Total Excl. Tax',
               fieldName: 'Line Total Excluding Tax',
               nonZero: false,
-              enabled: false,
+              onChanged: (_) {
+                line.totalBasis = ReceiptTotalBasis.excludingTax;
+                _applyLineTaxMode(line);
+              },
             ),
             const SizedBox(height: 10),
             HMBDroplist<ReceiptExpenseCategory>(
@@ -931,18 +950,18 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     }
   }
 
-  _ReceiptTotals _balancedExtractionTotals(ReceiptExtractionResult result) {
-    var excluding = MoneyEx.fromInt(result.totalExcludingTax);
-    final tax = MoneyEx.fromInt(result.tax);
-    var including = MoneyEx.fromInt(result.totalIncludingTax);
+  ReceiptTaxTotals _balancedExtractionTotals(ReceiptExtractionResult result) =>
+      ReceiptTaxCalculator.balanceExtraction(
+        excludingMinorUnits: result.totalExcludingTax,
+        taxMinorUnits: result.tax,
+        includingMinorUnits: result.totalIncludingTax,
+        fallbackRateBasisPoints: _taxRateBasisPoints,
+      );
 
-    if (including.isPositive && tax.isPositive) {
-      excluding = including - tax;
-    } else if (excluding.isPositive && tax.isPositive) {
-      including = excluding + tax;
-    }
-
-    return _ReceiptTotals(excluding: excluding, tax: tax, including: including);
+  void _moveLine(int index, int offset) {
+    setState(() {
+      moveReceiptLine(_lineItems, index, index + offset);
+    });
   }
 
   void _addManualLine() {
@@ -1159,19 +1178,9 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   }
 
   Future<void> _reloadLinkableTaskItems() async {
-    final jobId = _selectedJob.jobId;
-    final since = _date.subtract(const Duration(days: 45));
-    final candidates = await DaoTaskItem().getPurchasedItemsForReceiptLink(
-      jobId: jobId,
-      supplierId: _supplierId,
-      since: since,
-    );
+    final candidates = await DaoTaskItem().getPurchasedItemsForReceiptLink();
     final returnedCandidates = await DaoTaskItem()
-        .getReturnedItemsForReceiptLink(
-          jobId: jobId,
-          supplierId: _supplierId,
-          since: since,
-        );
+        .getReturnedItemsForReceiptLink();
     final linked = currentEntity == null
         ? <TaskItem>[]
         : await DaoReceipt().getLinkedTaskItems(currentEntity!.id);
@@ -1180,6 +1189,18 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       for (final item in returnedCandidates) item.id: item,
       for (final item in linked) item.id: item,
     };
+    final today = LocalDate.today();
+    final activities = await DaoJobActivity().getActivitiesInRange(
+      today,
+      today.add(const Duration(days: 5)),
+    );
+    _preferredReceiptJobIds = {
+      for (final activity in activities) activity.jobId,
+      if (_selectedJob.jobId != null) _selectedJob.jobId!,
+    };
+    _receiptJobIdsByTaskItemId = await DaoTaskItem().getJobIdsForTaskItems(
+      byId.keys,
+    );
     _linkableTaskItems = _rankedTaskItemsForReceipt(byId.values);
     if (mounted) {
       setState(() {});
@@ -1190,6 +1211,8 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       ReceiptTaskItemMatcher.sortForLine(
         _linkableTaskItems.where((item) => item.isReturn == line.isReturn),
         line.matchInput(receiptDate: _date, supplierId: _supplierId),
+        preferredJobIds: _preferredReceiptJobIds,
+        jobIdByTaskItemId: _receiptJobIdsByTaskItemId,
       );
 
   List<TaskItem> _rankedTaskItemsForReceipt([Iterable<TaskItem>? items]) =>
@@ -1200,6 +1223,8 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
               line.matchInput(receiptDate: _date, supplierId: _supplierId),
         ),
         _date,
+        preferredJobIds: _preferredReceiptJobIds,
+        jobIdByTaskItemId: _receiptJobIdsByTaskItemId,
       );
 
   void _setLineMatch(_ReceiptLineItemEditor line, TaskItem? item) {
@@ -1564,13 +1589,6 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     }
   }
 
-  void _recalculate() {
-    if (_isCalculating) {
-      return;
-    }
-    _applyTaxMode();
-  }
-
   Future<bool> _validateTotals() async {
     final totalExcludingTax = MoneyEx.tryParse(_totalExclCtrl.text);
     final tax = MoneyEx.tryParse(_taxCtrl.text);
@@ -1742,18 +1760,6 @@ class _ReceiptJobAllocationEditor {
   }
 }
 
-class _ReceiptTotals {
-  final Money excluding;
-  final Money tax;
-  final Money including;
-
-  const _ReceiptTotals({
-    required this.excluding,
-    required this.tax,
-    required this.including,
-  });
-}
-
 class _ScoredReceiptTaskItem {
   final TaskItem item;
   final int score;
@@ -1772,6 +1778,7 @@ class _ReceiptLineItemEditor {
   int? matchedTaskItemId;
   var matchReviewed = true;
   _ReceiptTaxMode taxMode;
+  var totalBasis = ReceiptTotalBasis.includingTax;
   ReceiptExpenseCategory expenseCategory;
   final int confidence;
   final String source;

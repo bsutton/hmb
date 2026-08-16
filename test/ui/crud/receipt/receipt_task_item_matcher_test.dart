@@ -36,6 +36,37 @@ void main() {
     expect(sorted.first, likely);
   });
 
+  test('ranks task items from near-term scheduled jobs first', () {
+    final receiptDate = DateTime(2026, 5, 3);
+    final scheduled = _taskItem(
+      description: 'Generic materials',
+      unitCost: MoneyEx.dollars(20),
+      modifiedDate: receiptDate.subtract(const Duration(days: 10)),
+      supplierId: 8,
+    )..id = 11;
+    final otherwiseLikely = _taskItem(
+      description: 'Premium unleaded petrol',
+      unitCost: MoneyEx.dollars(80),
+      modifiedDate: receiptDate,
+      supplierId: 7,
+    )..id = 12;
+
+    final sorted = ReceiptTaskItemMatcher.sortForLine(
+      [otherwiseLikely, scheduled],
+      ReceiptLineMatchInput(
+        description: 'Petrol',
+        lineTotalExTax: MoneyEx.dollars(80),
+        receiptDate: receiptDate,
+        supplierId: 7,
+      ),
+      preferredJobIds: {20},
+      jobIdByTaskItemId: {11: 20, 12: 21},
+    );
+
+    expect(sorted.first, scheduled);
+    expect(sorted, contains(otherwiseLikely));
+  });
+
   test(
     'scores negative return receipt lines against positive return costs',
     () {

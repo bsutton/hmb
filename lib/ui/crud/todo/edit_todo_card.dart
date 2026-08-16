@@ -9,7 +9,7 @@ import '../../widgets/hmb_date_time_picker.dart';
 import '../../widgets/icons/help_button.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/select.g.dart';
-import '../../widgets/widgets.g.dart' show HMBSelectChips;
+import '../../widgets/widgets.g.dart' show HMBSelectChips, HMBSwitch;
 
 class ToDoEditorCard extends StatefulWidget {
   final ToDo todo;
@@ -153,32 +153,54 @@ class _ToDoEditorCardState extends State<ToDoEditorCard> {
           onChanged: (p) => _emit(v.copyWith(priority: p)),
         ),
 
-        // Due date/time
-        HMBDateTimeField(
-          label: 'Due By',
-          mode: HMBDateTimeFieldMode.dateAndTime,
-          initialDateTime:
-              v.dueDate ??
-              DateTime.now()
-                  .add(const Duration(days: 3))
-                  .withTime(const LocalTime(hour: 9, minute: 0)),
-          onChanged: (d) => _emit(v.withDueDate(d)),
+        HMBSwitch(
+          key: const ValueKey('todo_due_date_enabled'),
+          labelText: 'Due date enabled',
+          initialValue: v.dueDate != null,
+          onChanged: (enabled) {
+            if (!enabled) {
+              _emit(v.copyWith(clearDueDate: true));
+              return;
+            }
+            final dueDate = _defaultDueDate();
+            _emit(
+              v.remindAt == null
+                  ? v.copyWith(dueDate: dueDate)
+                  : v.copyWith(
+                      dueDate: dueDate,
+                      remindAt: dueDate.subtract(const Duration(days: 1)),
+                    ),
+            );
+          },
         ),
+        if (v.dueDate case final dueDate?)
+          HMBDateTimeField(
+            label: 'Due By',
+            mode: HMBDateTimeFieldMode.dateAndTime,
+            initialDateTime: dueDate,
+            onChanged: (date) => _emit(v.withDueDate(date)),
+          ),
 
-        // Reminder
-        HMBDateTimeField(
-          label: 'Reminder',
-          mode: HMBDateTimeFieldMode.dateAndTime,
-          initialDateTime:
-              v.remindAt ??
-              DateTime.now()
-                  .add(const Duration(days: 2))
-                  .withTime(const LocalTime(hour: 9, minute: 0)),
-          onChanged: (d) => _emit(v.copyWith(remindAt: d)),
-        ).help(
-          'Reminders',
-          'Reminders may arrive a few minutes late to save battery',
+        HMBSwitch(
+          key: const ValueKey('todo_reminder_enabled'),
+          labelText: 'Reminder enabled',
+          initialValue: v.remindAt != null,
+          onChanged: (enabled) => _emit(
+            enabled
+                ? v.copyWith(remindAt: _defaultReminder(v))
+                : v.copyWith(clearReminder: true),
+          ),
         ),
+        if (v.remindAt case final remindAt?)
+          HMBDateTimeField(
+            label: 'Reminder',
+            mode: HMBDateTimeFieldMode.dateAndTime,
+            initialDateTime: remindAt,
+            onChanged: (date) => _emit(v.copyWith(remindAt: date)),
+          ).help(
+            'Reminders',
+            'Reminders may arrive a few minutes late to save battery',
+          ),
 
         // Status (+ completedDate rule)
         HMBSelectChips<ToDoStatus>(
@@ -203,5 +225,20 @@ class _ToDoEditorCardState extends State<ToDoEditorCard> {
     _titleCtrl.dispose();
     _noteCtrl.dispose();
     super.dispose();
+  }
+
+  DateTime _defaultDueDate() => DateTime.now()
+      .add(const Duration(days: 3))
+      .withTime(const LocalTime(hour: 9, minute: 0));
+
+  DateTime _defaultReminder(ToDo todo) {
+    final now = DateTime.now();
+    final dueDate = todo.dueDate;
+    if (dueDate != null && dueDate.isAfter(now.add(const Duration(days: 1)))) {
+      return dueDate.subtract(const Duration(days: 1));
+    }
+    return now
+        .add(const Duration(days: 1))
+        .withTime(const LocalTime(hour: 9, minute: 0));
   }
 }

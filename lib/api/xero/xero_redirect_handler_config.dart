@@ -21,6 +21,9 @@ class XeroRedirectHandlerConfig implements RedirectHandlerConfig {
   @override
   int get port => 12335;
 
+  @override
+  String get loopbackHost => 'localhost';
+
   /// On mobile: https://ivanhoehandyman.com.au/xero/auth_complete
   /// On desktop: `http://localhost:<port>/xero/auth_complete`
   @override

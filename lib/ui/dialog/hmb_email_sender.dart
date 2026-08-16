@@ -27,22 +27,40 @@ import 'google_mail_auth.dart';
 
 class HMBEmailSender {
   static const _backslash = '\u005C';
+  final GoogleMailAuth _googleMailAuth;
 
-  Future<void> send(Email email) async {
+  HMBEmailSender({GoogleMailAuth? googleMailAuth})
+    : _googleMailAuth = googleMailAuth ?? GoogleMailAuth();
+
+  /// Whether HMB has enough configuration to offer direct SMTP delivery.
+  Future<bool> canSendDirectly() async {
+    final daoSystem = DaoSystem();
+    final system = await daoSystem.get();
+    if (!_hasSmtpConfig(system)) {
+      return false;
+    }
+    final credentials = await daoSystem.getSmtpCredentials();
+    return _missingSmtpFields(system, credentials).isEmpty;
+  }
+
+  /// Sends immediately through the configured SMTP service.
+  Future<void> sendDirectly(Email email) async {
     final system = await DaoSystem().get();
-    if (await _trySendNative(email)) {
-      return;
+    if (!_hasSmtpConfig(system)) {
+      throw HMBException(
+        'Direct SMTP sending is not configured. Configure Settings | '
+        'Integrations | SMTP Email.',
+      );
     }
-    if (_hasSmtpConfig(system)) {
-      final credentials = await DaoSystem().getSmtpCredentials();
-      await _sendSmtp(email, system, credentials);
-      return;
-    }
+    final credentials = await DaoSystem().getSmtpCredentials();
+    await _sendSmtp(email, system, credentials);
+  }
 
-    throw HMBException(
-      'No native email app was available for this message. Configure '
-      'Settings | Integrations | SMTP Email to send directly from HMB.',
-    );
+  /// Opens the platform email composer without sending the message.
+  Future<void> openComposer(Email email) async {
+    if (!await _trySendNative(email)) {
+      throw HMBException('No native email app was available for this message.');
+    }
   }
 
   Future<bool> _trySendNative(Email email) async {
@@ -219,23 +237,7 @@ ${attachments.map(_powerShellAttachment).join('\n')}
     SystemConfiguration system,
     SmtpCredentials credentials,
   ) async {
-    final missing = <String>[
-      if (system.smtpAuthMode != SmtpAuthMode.googleOAuth &&
-          Strings.isBlank(system.smtpHost))
-        'SMTP host',
-      if (system.smtpAuthMode != SmtpAuthMode.googleOAuth &&
-          system.smtpPort <= 0)
-        'SMTP port',
-      if (system.smtpAuthMode == SmtpAuthMode.password &&
-          Strings.isBlank(system.smtpUsername))
-        'SMTP username',
-      if (system.smtpAuthMode == SmtpAuthMode.password &&
-          Strings.isBlank(credentials.password))
-        'SMTP password',
-      if (system.smtpAuthMode == SmtpAuthMode.password &&
-          Strings.isBlank(system.smtpFromEmail))
-        'SMTP from email',
-    ];
+    final missing = _missingSmtpFields(system, credentials);
     if (missing.isNotEmpty) {
       throw HMBException(
         'Direct SMTP sending is not configured. Configure Settings | '
@@ -246,7 +248,7 @@ ${attachments.map(_powerShellAttachment).join('\n')}
 
     if (system.smtpProvider == SmtpProvider.gmail &&
         system.smtpAuthMode == SmtpAuthMode.googleOAuth) {
-      final token = await GoogleMailAuth().getAccessToken();
+      final token = await _googleMailAuth.getAccessToken();
       return gmailSaslXoauth2(
         _fromEmail(system, token.email),
         token.accessToken,
@@ -261,6 +263,26 @@ ${attachments.map(_powerShellAttachment).join('\n')}
       ssl: system.smtpUseSsl,
     );
   }
+
+  List<String> _missingSmtpFields(
+    SystemConfiguration system,
+    SmtpCredentials credentials,
+  ) => <String>[
+    if (system.smtpAuthMode != SmtpAuthMode.googleOAuth &&
+        Strings.isBlank(system.smtpHost))
+      'SMTP host',
+    if (system.smtpAuthMode != SmtpAuthMode.googleOAuth && system.smtpPort <= 0)
+      'SMTP port',
+    if (system.smtpAuthMode == SmtpAuthMode.password &&
+        Strings.isBlank(system.smtpUsername))
+      'SMTP username',
+    if (system.smtpAuthMode == SmtpAuthMode.password &&
+        Strings.isBlank(credentials.password))
+      'SMTP password',
+    if (system.smtpAuthMode == SmtpAuthMode.password &&
+        Strings.isBlank(system.smtpFromEmail))
+      'SMTP from email',
+  ];
 
   String _fromEmail(SystemConfiguration system, [String? fallback]) {
     final from = system.smtpFromEmail ?? system.smtpUsername ?? fallback;

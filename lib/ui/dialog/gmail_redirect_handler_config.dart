@@ -18,9 +18,12 @@ class GmailRedirectHandlerConfig implements RedirectHandlerConfig {
   int get port => 12336;
 
   @override
+  String get loopbackHost => '127.0.0.1';
+
+  @override
   Uri get redirectUri =>
       Uri.parse('https://ivanhoehandyman.com.au/$redirectPath');
 
   @override
-  String get redirectPath => 'gmail/auth_complete';
+  String get redirectPath => '';
 }

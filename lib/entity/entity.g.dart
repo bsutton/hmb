@@ -29,6 +29,7 @@ export 'invoice_options.dart';
 export 'job.dart';
 export 'job_activity.dart';
 export 'job_attachment.dart';
+export 'job_source_email.dart';
 export 'job_status.dart';
 export 'job_status_stage.dart';
 export 'mailing.dart';

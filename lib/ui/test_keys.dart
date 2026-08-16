@@ -48,6 +48,15 @@ class TestKeys {
   static ValueKey<String> receiptJobAllocationAmountField(int index) =>
       ValueKey('receipt_job_allocation_${index}_amount_field');
 
+  static ValueKey<String> receiptLineMoveUp(int index) =>
+      ValueKey('receipt_line_${index}_move_up');
+
+  static ValueKey<String> receiptLineMoveDown(int index) =>
+      ValueKey('receipt_line_${index}_move_down');
+
+  static ValueKey<String> receiptLineRemove(int index) =>
+      ValueKey('receipt_line_${index}_remove');
+
   static const jobCreatorReferredBySelector = ValueKey(
     'job_creator_referred_by_selector',
   );

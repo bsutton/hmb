@@ -36,7 +36,14 @@ Future<void> upgradeDb({
   required BackupProvider backupProvider,
   bool verbose = false,
 }) async {
-  if (oldVersion == 1) {
+  final resumeVersion = await getUpgradeResumeVersion(db, oldVersion);
+  if (verbose && resumeVersion != oldVersion) {
+    print(
+      'SQLite reports version $oldVersion, but HMB has completed database '
+      'migration $resumeVersion. Resuming from $resumeVersion.',
+    );
+  }
+  if (resumeVersion == 1) {
     if (verbose) {
       print('Creating database');
     }
@@ -46,9 +53,9 @@ Future<void> upgradeDb({
         print('Backing up database prior to upgrade');
       }
 
-      await backupProvider.performBackup(version: oldVersion, src: src);
+      await backupProvider.performBackup(version: resumeVersion, src: src);
       if (verbose) {
-        print('Upgrade database from Version $oldVersion');
+        print('Upgrade database from Version $resumeVersion');
       }
     } else {
       if (verbose) {
@@ -66,7 +73,7 @@ Future<void> upgradeDb({
         extractVerionForSQLUpgradeScript(b),
   );
 
-  final firstUpgrade = oldVersion + 1;
+  final firstUpgrade = resumeVersion + 1;
 
   /// find the first scrip to be applied
   var index = 0;
@@ -108,6 +115,35 @@ Future<void> upgradeDb({
       );
     }
   }
+}
+
+/// Reconciles SQLite's `user_version` with HMB's per-migration history.
+///
+/// SQLite only updates `user_version` after the complete open/upgrade callback
+/// succeeds. Each HMB migration is recorded as it completes, so a later
+/// failure can leave `user_version` behind the schema. Resuming from the
+/// highest completed migration prevents already-applied scripts from running
+/// again.
+Future<int> getUpgradeResumeVersion(Database db, int sqliteVersion) async {
+  final versionTables = await db.query(
+    'sqlite_master',
+    columns: const ['name'],
+    where: "type = 'table' AND name = ?",
+    whereArgs: const ['version'],
+    limit: 1,
+  );
+  if (versionTables.isEmpty) {
+    return sqliteVersion;
+  }
+
+  final rows = await db.rawQuery(
+    'SELECT MAX(db_version) AS db_version FROM version',
+  );
+  final recordedVersion = rows.first['db_version'] as int?;
+  if (recordedVersion == null || recordedVersion <= sqliteVersion) {
+    return sqliteVersion;
+  }
+  return recordedVersion;
 }
 
 final preUpgradeActions = <int, Future<void> Function(Database)>{
