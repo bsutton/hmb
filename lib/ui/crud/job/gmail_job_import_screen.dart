@@ -416,14 +416,6 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
               padding: const EdgeInsets.all(12),
               child: HMBRow(
                 children: [
-                  Expanded(
-                    child: Text(
-                      _accountEmail.isEmpty
-                          ? 'Connect Gmail, then search by sender, recipient, '
-                                'or subject.'
-                          : 'Connected as $_accountEmail',
-                    ),
-                  ),
                   if (_searching)
                     SizedBox(
                       width: 96,
@@ -447,6 +439,14 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
                           : 'Refresh the Gmail search results',
                       onPressed: _runSearch,
                     ),
+                  Expanded(
+                    child: Text(
+                      _accountEmail.isEmpty
+                          ? 'Connect Gmail, then search by sender, recipient, '
+                                'or subject.'
+                          : 'Connected as $_accountEmail',
+                    ),
+                  ),
                 ],
               ),
             ),
