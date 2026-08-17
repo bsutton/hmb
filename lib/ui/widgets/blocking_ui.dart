@@ -158,10 +158,12 @@ class _BlockingOverlayWidgetState extends State<_BlockingOverlayWidget> {
         limit: 100,
         interval: const Duration(milliseconds: 100),
         builder: (context, index) {
-          final action = widget.blockingOverlayState.topAction;
-          final elapsed = DateTime.now().difference(
-            widget.blockingOverlayState.startTime!,
-          );
+          final action = widget.blockingOverlayState.topActionOrNull;
+          final startTime = widget.blockingOverlayState.startTime;
+          if (action == null || startTime == null) {
+            return const HMBEmpty();
+          }
+          final elapsed = DateTime.now().difference(startTime);
           final showProgress = elapsed > const Duration(milliseconds: 500);
           final showLabel = elapsed > const Duration(milliseconds: 1000);
 
@@ -227,7 +229,10 @@ class _BlockingOverlayWidgetState extends State<_BlockingOverlayWidget> {
   }
 
   void cancelRun() {
-    unawaited(widget.blockingOverlayState.topAction.cancel());
+    final action = widget.blockingOverlayState.topActionOrNull;
+    if (action != null) {
+      unawaited(action.cancel());
+    }
   }
 }
 
@@ -320,6 +325,9 @@ class BlockingOverlayState extends JuneState {
   StackList<RunningSlowAction<dynamic>> actions = StackList();
 
   RunningSlowAction<dynamic> get topAction => actions.peek();
+
+  RunningSlowAction<dynamic>? get topActionOrNull =>
+      actions.stack.isEmpty ? null : actions.peek();
 
   Future<void> _waitForAllActions = Future.value();
 
