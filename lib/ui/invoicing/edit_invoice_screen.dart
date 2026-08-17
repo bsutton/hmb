@@ -14,8 +14,8 @@
 import 'dart:async';
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:strings/strings.dart';
 

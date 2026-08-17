@@ -18,7 +18,7 @@ import 'dart:async';
 import 'package:camera_platform_interface/camera_platform_interface.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 
-import '../../../ui/widgets/hmb_toast.dart';
+import '../hmb_toast.dart';
 
 class DesktopCameraDelegate extends ImagePickerCameraDelegate {
   List<CameraDescription> _cameras = [];

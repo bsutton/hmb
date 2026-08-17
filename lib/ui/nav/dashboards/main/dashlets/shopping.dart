@@ -12,7 +12,7 @@
 */
 
 // lib/src/ui/dashboard/shopping_dashlet.dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../../../dao/dao.g.dart';
 import '../../dashlet_card.dart';

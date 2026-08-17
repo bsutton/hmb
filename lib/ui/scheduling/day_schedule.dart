@@ -15,8 +15,8 @@ import 'dart:math';
 
 import 'package:calendar_view/calendar_view.dart';
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/flutter_extensions/job_activity_status_ex.dart';

@@ -11,7 +11,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Used in forms to ensure that the user can always
 /// scroll to every field when the keyboard is displayed.

@@ -1,13 +1,13 @@
 @Tags(['flutter'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao_message_template.dart';
 import 'package:hmb/entity/message_template.dart';
 import 'package:hmb/ui/dialog/message_template_dialog.dart';
 import 'package:hmb/ui/dialog/source_context.dart';
 import 'package:hmb/ui/widgets/select/hmb_droplist.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../database/management/db_utility_test_helper.dart';
 

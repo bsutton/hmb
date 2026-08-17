@@ -3,15 +3,15 @@
  All Rights Reserved.
 */
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../dao/dao_customer.dart';
 import '../../../dao/dao_job.dart';
 import '../../../entity/entity.g.dart';
 import '../../crud/customer/edit_customer_screen.dart';
 import '../../crud/job/edit_job_screen.dart';
-import '../../widgets/hmb_toast.dart';
 import '../hmb_chip.dart';
+import '../hmb_toast.dart';
 
 /// Generic entity chip that resolves [id] to an entity label and
 /// (by default) navigates to the editor when tapped.

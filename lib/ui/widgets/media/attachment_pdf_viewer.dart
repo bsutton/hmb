@@ -12,7 +12,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:pdfrx/pdfrx.dart';
 
 import '../desktop_back_gesture_suppress.dart';

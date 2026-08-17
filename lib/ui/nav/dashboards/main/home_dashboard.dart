@@ -11,9 +11,9 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// lib/src/ui/dashboard/main_dashboard_page.dart
-import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+// lib/src/ui/dashboard/main_dashboard_page.dart
+import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 
 import '../../../../dao/dao.g.dart';

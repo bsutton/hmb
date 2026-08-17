@@ -1,9 +1,9 @@
 @Tags(['flutter'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/ui/nav/dashboards/dashlet_card.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   testWidgets('runs before-open callback before dashlet tap action', (

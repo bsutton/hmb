@@ -2,12 +2,12 @@ import 'dart:convert';
 
 import 'package:money2/money2.dart';
 
-import '../../api/external_accounting.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../../util/dart/exceptions.dart';
 import '../../util/dart/log.dart';
 import '../../util/dart/money_ex.dart';
+import '../external_accounting.dart';
 import 'xero_invoice_payment_client.dart';
 
 typedef XeroInvoicePaymentSyncErrorHandler =

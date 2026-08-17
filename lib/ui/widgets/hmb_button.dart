@@ -13,7 +13,7 @@
 
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../util/flutter/hmb_theme.dart';
@@ -30,6 +30,7 @@ class HMBButton extends StatelessWidget {
   final bool enabled;
   final Color color;
   final String hint;
+  final bool showTooltip;
   final bool _smallFlag;
 
   const HMBButton({
@@ -37,6 +38,7 @@ class HMBButton extends StatelessWidget {
     required this.onPressed,
     required this.hint,
     this.enabled = true,
+    this.showTooltip = true,
     super.key,
     this.color = HMBColors.buttonLabel,
   }) : icon = null,
@@ -49,6 +51,7 @@ class HMBButton extends StatelessWidget {
     required this.hint,
     this.enabled = true,
     this.color = HMBColors.buttonLabel,
+    this.showTooltip = true,
     super.key,
   }) : _smallFlag = false;
 
@@ -59,6 +62,7 @@ class HMBButton extends StatelessWidget {
     required this.hint,
     this.enabled = true,
     this.color = HMBColors.buttonLabel,
+    this.showTooltip = true,
     super.key,
   }) : icon = null,
        _smallFlag = true;
@@ -71,6 +75,7 @@ class HMBButton extends StatelessWidget {
     required this.hint,
     this.enabled = true,
     this.color = HMBColors.buttonLabel,
+    this.showTooltip = true,
     super.key,
   }) : _smallFlag = true;
 
@@ -95,7 +100,7 @@ class HMBButton extends StatelessWidget {
             child: Text(label, style: TextStyle(color: color)),
           );
 
-    return HMBTooltip(hint: hint, child: button);
+    return showTooltip ? HMBTooltip(hint: hint, child: button) : button;
   }
 
   ButtonStyle _smallStyle(BuildContext context) => ElevatedButton.styleFrom(

@@ -14,9 +14,9 @@
 import 'dart:async';
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 import 'package:june/state_manager/src/simple/list_notifier.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../dao/dao_task.dart';
 import '../../dao/dao_time_entry.dart';

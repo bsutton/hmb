@@ -13,7 +13,7 @@
 
 // lib/src/ui/assignment/build_send_assignment_button.dart
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../api/external_accounting.dart';
 import '../../../dao/dao.g.dart';

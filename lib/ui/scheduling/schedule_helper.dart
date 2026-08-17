@@ -12,7 +12,7 @@
 */
 
 import 'package:calendar_view/calendar_view.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../dao/dao.g.dart';
 import '../../integrations/google_calendar/google_calendar_sync.dart';

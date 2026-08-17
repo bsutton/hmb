@@ -16,7 +16,6 @@ dependency_overrides:
   #   path: ../../flutter-permission-handler/permission_handler
   # permission_handler_platform_interface:
   #   path: ../../flutter-permission-handler/permission_handler_platform_interface
-  meta: ^1.12.0
   # runtime_named_locks:
   #   version: ^1.0.0-beta.7
   #   hosted: https://onepub.dev/api/jbbxpsdavu/
@@ -25,6 +24,7 @@ dependency_overrides:
   #   hosted: https://onepub.dev/api/jbbxpsdavu/
 
   #https://github.com/juliansteenbakker/flutter_secure_storage/issues/920
+  # meta: ^1.12.0
   flutter_secure_storage_linux:
     git:
       url: https://github.com/m-berto/flutter_secure_storage.git

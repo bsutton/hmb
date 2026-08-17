@@ -11,9 +11,9 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// lib/src/ui/about_screen.dart
-import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+// lib/src/ui/about_screen.dart
+import 'package:material_ui/material_ui.dart';
 
 import '../database/management/database_helper.dart';
 import '../src/version/version.g.dart';

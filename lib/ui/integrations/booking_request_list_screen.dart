@@ -11,9 +11,9 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:june/june.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../api/ihserver/booking_request_sync_service.dart';
 import '../../dao/dao_booking_request.dart';

@@ -11,8 +11,8 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Supports swipping left/right as well
 /// as using arrow keys (left/right) and the home

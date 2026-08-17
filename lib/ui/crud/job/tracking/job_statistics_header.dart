@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart' show FutureBuilderEx;
+import 'package:material_ui/material_ui.dart';
 
 import '../../../../dao/dao.g.dart';
 import '../../../../entity/entity.g.dart';

@@ -1,5 +1,5 @@
-import '../../../../dao/dao_photo.dart';
-import '../../../../database/management/backup_providers/backup_history_store.dart';
+import '../../../dao/dao_photo.dart';
+import '../../../database/management/backup_providers/backup_history_store.dart';
 
 class BackupReminderStatus {
   final bool needsReminder;

@@ -12,8 +12,8 @@
 */
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../ui/widgets/layout/hmb_column.dart';
 import '../../../ui/widgets/text/hmb_text.dart';
@@ -42,14 +42,10 @@ class BackupSelectionScreenState extends DeferredState<BackupSelectionScreen> {
     try {
       final backups = await widget.backupProvider.getBackups();
       final sorted = [...backups]
-        ..sort(
-          (a, b) {
-            final whenCompare = b.when.compareTo(a.when);
-            return whenCompare != 0
-                ? whenCompare
-                : b.pathTo.compareTo(a.pathTo);
-          },
-        );
+        ..sort((a, b) {
+          final whenCompare = b.when.compareTo(a.when);
+          return whenCompare != 0 ? whenCompare : b.pathTo.compareTo(a.pathTo);
+        });
       return Backups(sorted, await widget.backupProvider.backupLocation);
       // ignore: avoid_catches_without_on_clauses
     } catch (e) {

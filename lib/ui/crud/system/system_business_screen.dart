@@ -16,8 +16,8 @@ import 'dart:ui' as ui;
 
 import 'package:country_code2/country_code2.dart';
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 
 import '../../../dao/dao_system.dart';

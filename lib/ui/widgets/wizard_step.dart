@@ -11,7 +11,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'text/hmb_text_themes.dart';
 import 'wizard.dart';

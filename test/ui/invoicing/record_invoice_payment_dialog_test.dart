@@ -1,12 +1,12 @@
 @Tags(['flutter'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/ui/invoicing/payment_method_options.dart';
 import 'package:hmb/ui/invoicing/record_invoice_payment_dialog.dart';
 import 'package:hmb/ui/test_keys.dart';
 import 'package:hmb/util/dart/money_ex.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   testWidgets('record payment dialog returns payment details', (tester) async {

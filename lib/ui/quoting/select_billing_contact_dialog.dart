@@ -13,12 +13,12 @@
 
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
-import '../../../dao/dao_contact.dart';
-import '../../../dao/join_adaptors/join_adaptor_customer_contact.dart';
-import '../../../entity/contact.dart';
-import '../../../entity/customer.dart';
+import '../../dao/dao_contact.dart';
+import '../../dao/join_adaptors/join_adaptor_customer_contact.dart';
+import '../../entity/contact.dart';
+import '../../entity/customer.dart';
 import '../crud/contact/edit_contact_screen.dart';
 import '../widgets/widgets.g.dart';
 

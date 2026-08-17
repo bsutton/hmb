@@ -12,7 +12,7 @@
 */
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../ui/widgets/hmb_button.dart';
@@ -24,7 +24,7 @@ import '../../../versions/implementations/asset_script_source.dart';
 import '../backup.dart';
 import '../backup_provider.dart';
 import '../backup_selection.dart';
-import '../local/local_backup_provider.dart';
+import 'local_backup_provider.dart';
 
 class LocalBackupScreen extends StatefulWidget {
   const LocalBackupScreen({super.key});

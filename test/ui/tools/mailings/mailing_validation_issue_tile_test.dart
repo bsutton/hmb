@@ -1,12 +1,12 @@
 @Tags(['flutter'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/tools/mailings/google_maps_route_service.dart';
 import 'package:hmb/ui/tools/mailings/mailing_edit_screen.dart';
 import 'package:hmb/ui/widgets/hmb_button.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   testWidgets('validation actions use HMB buttons on a narrow screen', (

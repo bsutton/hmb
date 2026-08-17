@@ -1,7 +1,6 @@
 @Tags(['flutter'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/helpers/charge_mode.dart';
 import 'package:hmb/entity/material_price.dart';
@@ -11,6 +10,7 @@ import 'package:hmb/ui/crud/check_list/list_task_item_screen.dart';
 import 'package:hmb/util/dart/measurement_type.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 import 'package:hmb/util/dart/units.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 
 void main() {

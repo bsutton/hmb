@@ -14,7 +14,6 @@ import 'dart:io';
 
 // --- Adjust these imports to your project structure -------------
 import 'package:dcli_core/dcli_core.dart' as c;
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart' as t;
 import 'package:hmb/cache/hmb_image_cache.dart';
 // ImageVariant, CompressJob, CompressResult
@@ -27,6 +26,7 @@ import 'package:hmb/entity/image_cache_variant.dart';
 import 'package:hmb/entity/photo.dart';
 import 'package:hmb/util/dart/paths.dart';
 import 'package:hmb/util/dart/photo_meta.dart'; // PhotoMeta
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';

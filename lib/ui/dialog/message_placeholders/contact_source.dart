@@ -1,3 +1,5 @@
+// ignore_for_file: async_return_with_no_await
+
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
@@ -11,7 +13,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../dao/dao_contact.dart';
 import '../../../entity/contact.dart';

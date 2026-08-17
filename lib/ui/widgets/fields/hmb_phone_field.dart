@@ -10,7 +10,7 @@
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../util/dart/parse/parse.dart';
 import '../../dialog/source_context.dart';

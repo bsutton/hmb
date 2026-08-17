@@ -17,14 +17,15 @@ import 'dart:async';
 
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:june/june.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:stacktrace_impl/stacktrace_impl.dart';
 
 import '../../util/dart/log.dart';
 import '../../util/dart/stack_list.dart';
 import '../../util/flutter/hmb_theme.dart';
 import 'color_ex.dart';
+import 'hmb_button.dart';
 import 'layout/layout.g.dart';
 import 'text/hmb_text_themes.dart';
 import 'tick_builder.dart';
@@ -207,9 +208,11 @@ class _BlockingOverlayWidgetState extends State<_BlockingOverlayWidget> {
                           Semantics(
                             button: true,
                             label: 'Cancel this operation',
-                            child: ElevatedButton(
+                            child: HMBButton.small(
+                              label: 'Cancel',
+                              hint: 'Cancel this operation',
+                              showTooltip: false,
                               onPressed: cancelRun,
-                              child: const Text('Cancel'),
                             ),
                           ),
                       ],

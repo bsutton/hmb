@@ -12,8 +12,8 @@
 */
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 

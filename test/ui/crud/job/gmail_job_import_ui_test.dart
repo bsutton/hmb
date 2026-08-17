@@ -3,7 +3,6 @@ library;
 
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/integrations/gmail/gmail_import_service.dart';
@@ -15,6 +14,7 @@ import 'package:hmb/ui/widgets/blocking_ui.dart';
 import 'package:hmb/ui/widgets/hmb_button.dart';
 import 'package:hmb/ui/widgets/icons/hmb_add_button.dart';
 import 'package:june/june.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../database/management/db_utility_test_helper.dart';
 
@@ -116,7 +116,7 @@ void main() {
       () => Future<void>.delayed(const Duration(milliseconds: 1100)),
     );
     await tester.pump(const Duration(milliseconds: 1100));
-    final cancelButton = find.widgetWithText(ElevatedButton, 'Cancel');
+    final cancelButton = find.widgetWithText(HMBButton, 'Cancel');
     expect(cancelButton, findsOneWidget);
     await tester.tap(cancelButton);
     await _pumpAsyncWork(tester);
@@ -151,6 +151,7 @@ void main() {
     final searchField = find.byType(TextFormField);
     await tester.enterText(searchField, 'needle');
     await tester.pump(const Duration(milliseconds: 350));
+    expect(find.bySemanticsLabel('Searching Gmail'), findsOneWidget);
     await tester.enterText(searchField, '   ');
     await tester.pump(const Duration(milliseconds: 350));
     await _pumpAsyncWork(tester);
@@ -239,6 +240,7 @@ class _CancellableGmailImportService extends GmailImportService {
 
 class _OverlappingGmailImportService extends GmailImportService {
   final _filtered = Completer<GmailSearchResult>();
+  var cancellationCount = 0;
 
   @override
   Future<GmailSearchResult> search({
@@ -247,10 +249,15 @@ class _OverlappingGmailImportService extends GmailImportService {
     String? pageToken,
     int maxResults = 30,
   }) {
-    if (query.contains('needle')) {
+    if (textFilter == 'needle') {
       return _filtered.future;
     }
     return Future.value(_recentResult());
+  }
+
+  @override
+  Future<void> cancelPendingOperation() async {
+    cancellationCount++;
   }
 
   void completeFilteredSearch() {

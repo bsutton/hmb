@@ -1,7 +1,6 @@
 @Tags(['flutter'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/debtor_ledger_service.dart';
 import 'package:hmb/entity/entity.g.dart';
@@ -9,6 +8,7 @@ import 'package:hmb/ui/invoicing/invoice_details.dart';
 import 'package:hmb/ui/invoicing/list_invoice_card.dart';
 import 'package:hmb/util/dart/local_date.dart';
 import 'package:hmb/util/dart/money_ex.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 
 void main() {

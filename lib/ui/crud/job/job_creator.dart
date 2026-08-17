@@ -1,8 +1,10 @@
+// ignore_for_file: async_return_with_no_await
+
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
@@ -12,7 +14,6 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../../util/dart/parse/parse_customer.dart';
-import '../../crud/customer/customer_paste_panel.dart';
 import '../../dialog/source_context.dart';
 import '../../test_keys.dart';
 import '../../widgets/fields/hmb_email_field.dart';
@@ -21,6 +22,7 @@ import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/select.g.dart';
 import '../../widgets/widgets.g.dart';
+import '../customer/customer_paste_panel.dart';
 import 'job_creation_email_source.dart';
 import 'post_job_todo_prompt.dart';
 

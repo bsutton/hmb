@@ -12,19 +12,19 @@
 */
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
-import '../../../../dao/dao_customer.dart';
-import '../../../../dao/dao_job.dart';
-import '../../../../dao/dao_milestone.dart';
-import '../../../../dao/dao_quote.dart';
-import '../../../../entity/customer.dart';
-import '../../../../entity/job.dart';
-import '../../../../entity/milestone.dart';
-import '../../../../entity/quote.dart';
+import '../../../dao/dao_customer.dart';
+import '../../../dao/dao_job.dart';
+import '../../../dao/dao_milestone.dart';
+import '../../../dao/dao_quote.dart';
+import '../../../entity/customer.dart';
+import '../../../entity/job.dart';
+import '../../../entity/milestone.dart';
+import '../../../entity/quote.dart';
 import '../../../util/flutter/flutter_util.g.dart';
 import '../../quoting/select_quote_dialog.dart';
 import '../../widgets/layout/hmb_list_page.dart';

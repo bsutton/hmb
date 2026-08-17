@@ -11,7 +11,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Display one or another widget based on a condition.
 /// If [condition] is true, [onTrue] is displayed,

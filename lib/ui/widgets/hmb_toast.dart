@@ -13,7 +13,7 @@
 
 // ignore_for_file: avoid_classes_with_only_static_members
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:toastification/toastification.dart';
 
 class HMBToast {

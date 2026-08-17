@@ -11,7 +11,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../dao/dao_message_template.dart';
 import '../../../entity/message_template.dart';

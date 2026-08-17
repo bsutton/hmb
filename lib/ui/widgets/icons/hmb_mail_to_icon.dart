@@ -14,8 +14,8 @@
 import 'dart:async';
 
 import 'package:email_validator/email_validator.dart';
-import 'package:flutter/material.dart';
 import 'package:mailto/mailto.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 

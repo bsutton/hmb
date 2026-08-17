@@ -11,9 +11,9 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// lib/src/ui/dashboard/billing_dashlet.dart
-import 'package:flutter/material.dart';
 import 'package:june/june.dart';
+// lib/src/ui/dashboard/billing_dashlet.dart
+import 'package:material_ui/material_ui.dart';
 
 import '../../accounting/invoices.dart';
 import '../../dashlet_card.dart';

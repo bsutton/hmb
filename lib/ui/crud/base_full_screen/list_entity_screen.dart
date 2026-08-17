@@ -14,8 +14,8 @@
 import 'dart:async';
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart' hide StatefulBuilder;
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:material_ui/material_ui.dart' hide StatefulBuilder;
 
 import '../../../dao/dao.dart';
 import '../../../entity/entity.g.dart';

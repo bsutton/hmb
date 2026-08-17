@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
 import '../../../api/chat_gpt/customer_extract_api_client.dart';
@@ -42,7 +42,9 @@ class GmailJobImportScreen extends StatefulWidget {
 class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
   late final GmailImportService _service;
   final _importedJobIds = <String, int>{};
+  final _unfilteredImportedJobIds = <String, int>{};
   var _messages = <GmailMessageSummary>[];
+  var _unfilteredMessages = <GmailMessageSummary>[];
   var _accountEmail = '';
   var _hasSearched = false;
   var _searchText = '';
@@ -52,6 +54,7 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
   var _searchGeneration = 0;
   var _searching = false;
   String? _nextPageToken;
+  String? _unfilteredNextPageToken;
 
   @override
   void initState() {
@@ -102,6 +105,13 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
         ..clear()
         ..addAll(imported);
       _nextPageToken = result.nextPageToken;
+      if (_searchText.isEmpty) {
+        _unfilteredMessages = [...result.messages];
+        _unfilteredImportedJobIds
+          ..clear()
+          ..addAll(imported);
+        _unfilteredNextPageToken = result.nextPageToken;
+      }
     }
 
     if (showOverlay) {
@@ -148,6 +158,13 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
       _messages = [..._messages, ...result.messages];
       _importedJobIds.addAll(imported);
       _nextPageToken = result.nextPageToken;
+      if (_searchText.isEmpty) {
+        _unfilteredMessages = [..._messages];
+        _unfilteredImportedJobIds
+          ..clear()
+          ..addAll(_importedJobIds);
+        _unfilteredNextPageToken = result.nextPageToken;
+      }
     });
   }
 
@@ -189,6 +206,9 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
     }
 
     final sourceForAi = await _loadAiAttachments(source, selectedAttachments);
+    if (!mounted) {
+      return;
+    }
     final job = await JobCreator.show(context, emailSource: sourceForAi);
     if (job != null && mounted) {
       if (selectedAttachments.isNotEmpty) {
@@ -404,15 +424,29 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
                           : 'Connected as $_accountEmail',
                     ),
                   ),
-                  HMBButton(
-                    label: _accountEmail.isEmpty
-                        ? 'Connect and search'
-                        : 'Refresh',
-                    hint: _accountEmail.isEmpty
-                        ? 'Connect Gmail and search for matching email'
-                        : 'Refresh the Gmail search results',
-                    onPressed: _runSearch,
-                  ),
+                  if (_searching)
+                    SizedBox(
+                      width: 96,
+                      height: 32,
+                      child: Center(
+                        child: Semantics(
+                          label: 'Searching Gmail',
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    HMBButton(
+                      label: _accountEmail.isEmpty
+                          ? 'Connect and search'
+                          : 'Refresh',
+                      hint: _accountEmail.isEmpty
+                          ? 'Connect Gmail and search for matching email'
+                          : 'Refresh the Gmail search results',
+                      onPressed: _runSearch,
+                    ),
                 ],
               ),
             ),
@@ -471,11 +505,11 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
   Future<void> _startSearchAfterButtonFeedback() async {
     await WidgetsBinding.instance.endOfFrame;
     if (mounted) {
-      await _startSearch();
+      await _startSearch(showOverlay: _accountEmail.isEmpty);
     }
   }
 
-  Future<void> _startSearch() async {
+  Future<void> _startSearch({bool showOverlay = true}) async {
     final generation = ++_searchGeneration;
     _nextPageToken = null;
     _importedJobIds.clear();
@@ -484,7 +518,7 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
     }
     try {
       await _guard(
-        () => _search(showOverlay: true, generation: generation),
+        () => _search(showOverlay: showOverlay, generation: generation),
         generation: generation,
       );
     } finally {
@@ -496,15 +530,42 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
 
   Future<void> _onSearchChanged(String? value) async {
     _searchText = value?.trim() ?? '';
-    if (mounted) {
-      setState(() {
-        _messages = _messages
-            .where((message) => gmailMessageMatchesText(message, _searchText))
-            .toList();
-      });
+    final generation = ++_searchGeneration;
+    await _service.cancelPendingOperation();
+    if (!mounted || generation != _searchGeneration) {
+      return;
     }
-    if (_accountEmail.isNotEmpty) {
-      await _startSearch();
+    if (_searchText.isEmpty) {
+      setState(() {
+        _searching = false;
+        _messages = [..._unfilteredMessages];
+        _importedJobIds
+          ..clear()
+          ..addAll(_unfilteredImportedJobIds);
+        _nextPageToken = _unfilteredNextPageToken;
+      });
+      return;
+    }
+    if (_accountEmail.isEmpty) {
+      setState(() => _searching = false);
+      return;
+    }
+
+    setState(() {
+      _searching = true;
+      _messages = _unfilteredMessages
+          .where((message) => gmailMessageMatchesText(message, _searchText))
+          .toList();
+    });
+    try {
+      await _guard(
+        () => _search(showOverlay: false, generation: generation),
+        generation: generation,
+      );
+    } finally {
+      if (mounted && generation == _searchGeneration) {
+        setState(() => _searching = false);
+      }
     }
   }
 
@@ -556,7 +617,7 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
   void _filtersChanged() {
     setState(() {});
     if (_accountEmail.isNotEmpty) {
-      unawaited(_startSearch());
+      unawaited(_startSearch(showOverlay: false));
     }
   }
 

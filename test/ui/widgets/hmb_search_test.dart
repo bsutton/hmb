@@ -1,9 +1,9 @@
 @Tags(['flutter'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/ui/widgets/hmb_search.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   testWidgets('search with add leaves trailing screen padding', (tester) async {

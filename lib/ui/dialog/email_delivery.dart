@@ -11,8 +11,8 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter/material.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';

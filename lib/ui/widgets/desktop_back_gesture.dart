@@ -17,9 +17,9 @@
 import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:june/june.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../util/flutter/platform_ex.dart';
 import 'desktop_back_gesture_suppress.dart';

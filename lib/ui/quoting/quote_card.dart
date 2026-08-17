@@ -14,7 +14,7 @@
 // quote_list_screen.dart
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart' hide StatefulBuilder;
+import 'package:material_ui/material_ui.dart' hide StatefulBuilder;
 import 'package:strings/strings.dart';
 
 import '../../dao/dao.g.dart';

@@ -11,8 +11,8 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter/material.dart';
 import 'package:june/june.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 
 import '../../../dao/dao.g.dart';

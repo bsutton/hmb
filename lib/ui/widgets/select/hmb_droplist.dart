@@ -14,7 +14,7 @@
 import 'dart:async';
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';

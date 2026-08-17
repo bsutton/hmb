@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
 import 'package:fsm2/fsm2.dart' show StateMachine;
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../entity/entity.g.dart';
 import '../../../fsm/job_status_fsm.dart'

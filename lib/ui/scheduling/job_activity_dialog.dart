@@ -1,3 +1,5 @@
+// ignore_for_file: async_return_with_no_await
+
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
@@ -13,7 +15,7 @@
 
 import 'package:calendar_view/calendar_view.dart';
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 
 import '../../dao/dao_contact.dart';

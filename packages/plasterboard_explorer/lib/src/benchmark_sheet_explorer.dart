@@ -1,9 +1,9 @@
-// ignore_for_file: always_put_required_named_parameters_first
-// ignore_for_file: cascade_invocations
+// ignore_for_file: cascade_invocations,
+// always_put_required_named_parameters_first
 
 import 'dart:math';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'benchmark_visual_snapshot.dart';
 import 'explorer_units.dart';
@@ -13,9 +13,9 @@ class BenchmarkSheetExplorerPane extends StatelessWidget {
   final BenchmarkVisualScenarioSnapshot scenario;
 
   const BenchmarkSheetExplorerPane({
-    super.key,
     required this.solverFamily,
     required this.scenario,
+    super.key,
   });
 
   @override
@@ -314,10 +314,10 @@ class BenchmarkSurfaceSheetSection extends StatelessWidget {
   final List<String> placementLabels;
 
   const BenchmarkSurfaceSheetSection({
-    super.key,
     required this.layout,
     required this.sheetNumbers,
     required this.placementLabels,
+    super.key,
   });
 
   @override
@@ -374,10 +374,10 @@ class BenchmarkSurfaceLayoutDiagram extends StatelessWidget {
   final double height;
 
   const BenchmarkSurfaceLayoutDiagram({
-    super.key,
     required this.layout,
     required this.sheetNumbers,
     required this.showDimensionsOverlay,
+    super.key,
     this.showSheetMeasurements = false,
     this.width = 132,
     this.height = 84,
@@ -568,10 +568,10 @@ class BenchmarkProjectSheetCard extends StatelessWidget {
   final BenchmarkExplorerSheetLabels labels;
 
   const BenchmarkProjectSheetCard({
-    super.key,
     required this.sheet,
     required this.layout,
     required this.labels,
+    super.key,
   });
 
   String _formatLength(int value) =>
@@ -703,12 +703,12 @@ class BenchmarkProjectSheetDiagram extends StatelessWidget {
   final BenchmarkExplorerSheetLabels labels;
 
   const BenchmarkProjectSheetDiagram({
-    super.key,
     required this.sheet,
     required this.layout,
     required this.rotateForLayout,
     required this.formatLength,
     required this.labels,
+    super.key,
   });
 
   @override

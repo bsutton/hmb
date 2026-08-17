@@ -12,15 +12,15 @@
 */
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 
 import '../../dao/dao_system.dart';
 import '../../entity/job.dart';
 import '../../entity/system.dart';
-import '../../ui/widgets/hmb_toast.dart';
 import '../widgets/hmb_button.dart';
+import '../widgets/hmb_toast.dart';
 import '../widgets/select/hmb_select_email_multi.dart';
 import 'email_delivery.dart';
 import 'email_self_warning.dart';

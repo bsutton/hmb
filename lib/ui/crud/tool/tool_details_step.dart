@@ -1,3 +1,5 @@
+// ignore_for_file: async_return_with_no_await
+
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
@@ -11,7 +13,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
@@ -96,7 +98,9 @@ class ToolDetailsStep extends WizardStep {
       await daoTool.update(tool);
       toolWizardState.tool = tool;
     }
-    // ignore: use_build_context_synchronously
+    if (!context.mounted) {
+      return;
+    }
     return super.onNext(context, intendedStep, userOriginated: userOriginated);
   }
 

@@ -1,10 +1,12 @@
+// ignore_for_file: async_return_with_no_await
+
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 */
 
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 
 import '../../../dao/dao_customer.dart';

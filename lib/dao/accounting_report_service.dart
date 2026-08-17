@@ -1,3 +1,5 @@
+// ignore_for_file: async_return_with_no_await
+
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
@@ -1141,7 +1143,7 @@ AND NOT EXISTS (
       }
     }
 
-    return DaoTaxScheme().getByCode('custom');
+    return await DaoTaxScheme().getByCode('custom');
   }
 
   double? _ratePercent(TaxCode? code) =>

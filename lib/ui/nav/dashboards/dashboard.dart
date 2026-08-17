@@ -13,8 +13,8 @@
 
 // lib/src/ui/dashboard/dashboard_base.dart
 
-import 'package:flutter/material.dart';
 import 'package:june/june.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../util/flutter/app_title.dart';
 import '../route.dart';

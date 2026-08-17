@@ -12,7 +12,7 @@
 */
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 
 import '../../../dao/dao_contact.dart';

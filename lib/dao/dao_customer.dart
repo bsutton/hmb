@@ -1,3 +1,5 @@
+// ignore_for_file: async_return_with_no_await
+
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
@@ -99,7 +101,7 @@ where j.id =?
     final db = withoutTransaction();
 
     if (Strings.isBlank(filter)) {
-      return getAll(orderByClause: 'modifiedDate desc');
+      return await getAll(orderByClause: 'modifiedDate desc');
     }
     final text = filter!.trim();
     final mobileText = text.replaceAll(' ', '');

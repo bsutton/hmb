@@ -11,8 +11,8 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter/material.dart' hide StatefulBuilder;
 import 'package:intl/intl.dart';
+import 'package:material_ui/material_ui.dart' hide StatefulBuilder;
 
 import 'layout/layout.g.dart';
 import 'stateful_builder.dart';

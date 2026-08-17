@@ -1,12 +1,12 @@
 @Tags(['flutter'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/job.dart';
 import 'package:hmb/ui/crud/check_list/edit_task_item_screen.dart';
 import 'package:hmb/ui/widgets/blocking_ui.dart';
 import 'package:hmb/util/dart/money_ex.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../database/management/db_utility_test_helper.dart';
 import '../../../util/settings_test_helper.dart';

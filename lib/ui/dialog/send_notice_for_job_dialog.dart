@@ -15,8 +15,8 @@
 import 'dart:io';
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher.dart';
 

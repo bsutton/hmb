@@ -14,7 +14,7 @@
 import 'dart:async';
 
 import 'package:completer_ex/completer_ex.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../util/dart/log.dart';
 import '../../util/flutter/hmb_theme.dart';
@@ -76,7 +76,7 @@ class WizardState extends State<Wizard> {
   static const crossFadeDuration = Duration(milliseconds: 500);
   final _scrollController = ScrollController();
 
-  final ScrollPhysics physics = const ClampingScrollPhysics();
+  final physics = const ClampingScrollPhysics();
 
   late final List<WizardStep> steps;
 

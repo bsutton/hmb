@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/ui/crud/customer/customer_paste_panel.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   testWidgets('mobile actions use short labels and remain side by side', (

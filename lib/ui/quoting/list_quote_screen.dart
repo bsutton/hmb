@@ -11,7 +11,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter/material.dart' hide StatefulBuilder;
+import 'package:material_ui/material_ui.dart' hide StatefulBuilder;
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';

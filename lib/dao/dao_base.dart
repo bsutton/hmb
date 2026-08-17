@@ -14,7 +14,7 @@
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.dart';
-import '../util//dart/exceptions.dart' as hmb;
+import '../util/dart/exceptions.dart' as hmb;
 
 class DaoBase<T extends Entity<T>> {
   Database db;

@@ -13,7 +13,7 @@
 
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A small help icon that, when tapped, opens a dialog showing user
 /// help content.

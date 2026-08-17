@@ -13,14 +13,14 @@
 
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:zoom_view/zoom_view.dart';
 
-import '../../../ui/widgets/hmb_toast.dart';
 import '../../../util/dart/types.dart';
 import '../blocking_ui.dart';
 import '../desktop_back_gesture_suppress.dart';
+import '../hmb_toast.dart';
 import '../icons/hmb_email_icon.dart';
 import '../layout/layout.g.dart';
 

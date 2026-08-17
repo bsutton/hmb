@@ -1,10 +1,10 @@
 @Tags(['flutter'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/accounting_report_service.dart';
 import 'package:hmb/ui/nav/dashboards/accounting/accounting_period_selector.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   testWidgets('period selector exposes report period controls', (tester) async {

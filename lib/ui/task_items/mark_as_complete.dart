@@ -13,7 +13,7 @@
 
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide StatefulBuilder;
+import 'package:material_ui/material_ui.dart' hide StatefulBuilder;
 import 'package:strings/strings.dart';
 
 import '../../dao/dao.g.dart';

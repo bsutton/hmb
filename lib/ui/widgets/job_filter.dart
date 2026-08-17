@@ -13,8 +13,8 @@
 
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:june/june.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../dao/dao_job.dart';
 import '../../entity/job.dart';

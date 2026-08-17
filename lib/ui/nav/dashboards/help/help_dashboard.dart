@@ -14,7 +14,7 @@
 // lib/src/ui/dashboard/help_dashboard_page.dart
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../src/appname.dart';

@@ -161,7 +161,7 @@ class ComputeTask<T, R> {
 
 /// Run tasks in isolates but limit the number of concurrent isolates.
 class ComputeManager<T, R> {
-  // ignore: strict_raw_type
+  // ignore: strict_raw_type, no_raw_types
   static ComputeManager? _self;
 
   final int maxConcurrentTasks;

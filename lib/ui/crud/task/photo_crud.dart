@@ -16,9 +16,9 @@ import 'dart:io';
 
 import 'package:dcli_core/dcli_core.dart';
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 
 import '../../../entity/entity.dart';

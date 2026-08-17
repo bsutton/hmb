@@ -13,9 +13,9 @@
 
 import 'package:money2/money2.dart';
 
-import '../entity/entity.dart';
 import '../util/dart/local_date.dart';
 import '../util/dart/money_ex.dart';
+import 'entity.dart';
 
 class Milestone extends Entity<Milestone> {
   int quoteId;

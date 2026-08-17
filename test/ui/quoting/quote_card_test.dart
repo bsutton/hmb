@@ -1,11 +1,11 @@
 @Tags(['flutter'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/quoting/quote_card.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 import 'package:toastification/toastification.dart';
 
