@@ -16,6 +16,16 @@ void main() {
     expect(buildGmailSearchQuery(text: 'Flutter-23'), 'newer_than:30d');
   });
 
+  test('builds a quoted server-first Gmail query', () {
+    expect(
+      buildGmailServerSearchQuery(
+        'is:unread newer_than:30d',
+        'Casey "Customer"',
+      ),
+      r'is:unread newer_than:30d "Casey \"Customer\""',
+    );
+  });
+
   test('matches partial punctuated subjects locally', () {
     final message = GmailMessageSummary(
       id: 'message-23q',

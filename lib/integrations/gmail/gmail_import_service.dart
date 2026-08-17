@@ -64,6 +64,15 @@ String buildGmailSearchQuery({
   return clauses.join(' ');
 }
 
+String buildGmailServerSearchQuery(String query, String textFilter) {
+  final base = query.trim().isEmpty ? 'newer_than:30d' : query.trim();
+  final escaped = textFilter
+      .trim()
+      .replaceAll(r'\', r'\\')
+      .replaceAll('"', r'\"');
+  return escaped.isEmpty ? base : '$base "$escaped"';
+}
+
 bool gmailMessageMatchesText(GmailMessageSummary message, String? textFilter) {
   final filter = textFilter?.trim().toLowerCase() ?? '';
   if (filter.isEmpty) {
@@ -80,11 +89,16 @@ bool gmailMessageMatchesText(GmailMessageSummary message, String? textFilter) {
 }
 
 class GmailImportService {
-  static const _summaryBatchSize = 4;
+  static const _summaryBatchSize = 12;
+  static const _maximumCachedSummaries = 1500;
   static const _maximumMessagesScannedPerSearch = 1000;
+  static const _serverPageTokenPrefix = 'hmb-server:';
+  static const _localPageTokenPrefix = 'hmb-local:';
   final GoogleMailAuth _auth;
+  final _summaryCache = <String, GmailMessageSummary>{};
   GoogleAuthClient? _activeClient;
   GoogleMailAccessToken? _cachedAccess;
+  String? _cachedAccountEmail;
   Future<GoogleMailAccessToken>? _pendingAccess;
   _GmailSearchOperation? _activeSearch;
 
@@ -140,13 +154,44 @@ class GmailImportService {
       });
       _activeClient = client;
       final api = gmail.GmailApi(client);
-      final profile = await api.users.getProfile('me');
-      operation.throwIfCancelled();
+      var accountEmail = _cachedAccountEmail;
+      if (accountEmail == null) {
+        final profile = await api.users.getProfile('me');
+        operation.throwIfCancelled();
+        accountEmail = profile.emailAddress ?? access.email;
+        _cachedAccountEmail = accountEmail;
+      }
+      final filter = textFilter?.trim() ?? '';
+      final hasTextFilter = filter.isNotEmpty;
+      final requestedMode = _pageMode(pageToken);
+      var activePageToken = _rawPageToken(pageToken);
+
+      if (hasTextFilter && requestedMode != _GmailSearchMode.local) {
+        final response = await api.users.messages.list(
+          'me',
+          q: buildGmailServerSearchQuery(query, filter),
+          pageToken: activePageToken,
+          maxResults: maxResults,
+        );
+        operation.throwIfCancelled();
+        final references = response.messages ?? const <gmail.Message>[];
+        if (references.isNotEmpty || requestedMode == _GmailSearchMode.server) {
+          final summaries = await _loadSummaries(api, references, operation);
+          return GmailSearchResult(
+            accountEmail: accountEmail,
+            messages: summaries,
+            nextPageToken: _tagPageToken(
+              response.nextPageToken,
+              _GmailSearchMode.server,
+            ),
+          );
+        }
+        activePageToken = null;
+      }
+
       final messages = <GmailMessageSummary>[];
-      var activePageToken = pageToken;
       String? nextPageToken;
       var scanned = 0;
-      final hasTextFilter = (textFilter?.trim() ?? '').isNotEmpty;
       do {
         final response = await api.users.messages.list(
           'me',
@@ -166,9 +211,11 @@ class GmailImportService {
           nextPageToken != null &&
           scanned < _maximumMessagesScannedPerSearch);
       return GmailSearchResult(
-        accountEmail: profile.emailAddress ?? access.email,
+        accountEmail: accountEmail,
         messages: messages,
-        nextPageToken: nextPageToken,
+        nextPageToken: hasTextFilter
+            ? _tagPageToken(nextPageToken, _GmailSearchMode.local)
+            : nextPageToken,
       );
     } on gmail.DetailedApiRequestError catch (error) {
       if (operation.cancelled) {
@@ -370,9 +417,16 @@ class GmailImportService {
           : references.length;
       summaries.addAll(
         await Future.wait(
-          references
-              .sublist(offset, end)
-              .map((message) => _loadSummary(api, message)),
+          references.sublist(offset, end).map((message) async {
+            final id = message.id;
+            final cached = id == null ? null : _summaryCache[id];
+            if (cached != null) {
+              return cached;
+            }
+            final summary = await _loadSummary(api, message);
+            _cacheSummary(summary);
+            return summary;
+          }),
         ),
       );
     }
@@ -385,7 +439,50 @@ class GmailImportService {
   ) => summaries
       .where((message) => gmailMessageMatchesText(message, textFilter))
       .toList();
+
+  void _cacheSummary(GmailMessageSummary summary) {
+    _summaryCache[summary.id] = summary;
+    while (_summaryCache.length > _maximumCachedSummaries) {
+      _summaryCache.remove(_summaryCache.keys.first);
+    }
+  }
+
+  _GmailSearchMode? _pageMode(String? pageToken) {
+    if (pageToken?.startsWith(_serverPageTokenPrefix) ?? false) {
+      return _GmailSearchMode.server;
+    }
+    if (pageToken?.startsWith(_localPageTokenPrefix) ?? false) {
+      return _GmailSearchMode.local;
+    }
+    return null;
+  }
+
+  String? _rawPageToken(String? pageToken) {
+    final mode = _pageMode(pageToken);
+    return switch (mode) {
+      _GmailSearchMode.server => pageToken!.substring(
+        _serverPageTokenPrefix.length,
+      ),
+      _GmailSearchMode.local => pageToken!.substring(
+        _localPageTokenPrefix.length,
+      ),
+      null => pageToken,
+    };
+  }
+
+  String? _tagPageToken(String? pageToken, _GmailSearchMode mode) {
+    if (pageToken == null) {
+      return null;
+    }
+    final prefix = switch (mode) {
+      _GmailSearchMode.server => _serverPageTokenPrefix,
+      _GmailSearchMode.local => _localPageTokenPrefix,
+    };
+    return '$prefix$pageToken';
+  }
 }
+
+enum _GmailSearchMode { server, local }
 
 class _GmailSearchOperation {
   final _cancelled = Completer<void>();
