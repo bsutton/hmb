@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../dao/dao_system.dart';
+import 'open_ai_attachment.dart';
 
 class JobAssistResult {
   final String summary;
@@ -47,37 +48,19 @@ class TaskItemAssistTaskContext {
 }
 
 class JobAssistApiClient {
-  Future<JobAssistResult?> analyzeDescription(String description) async {
+  Future<JobAssistResult?> analyzeDescription(
+    String description, {
+    List<OpenAiAttachment> attachments = const [],
+  }) async {
     final credentials = await DaoSystem().getOpenAiCredentials();
     final apiKey = credentials.apiKey?.trim();
     if (apiKey == null || apiKey.isEmpty) {
       return null;
     }
 
-    final response = await http.post(
-      Uri.parse('https://api.openai.com/v1/chat/completions'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $apiKey',
-      },
-      body: jsonEncode({
-        'model': 'gpt-4o-mini',
-        'messages': [
-          {
-            'role': 'system',
-            'content':
-                'You help a handyman app. Return JSON only with keys: '
-                'summary (short job title, <= 60 chars), description '
-                '(short clear job description, <= 280 chars), and tasks '
-                '(array of short task titles). Use high-level, billable '
-                'task outcomes only. Do not break a single activity into '
-                'step-by-step subtasks. Prefer 3-6 tasks total.',
-          },
-          {'role': 'user', 'content': description},
-        ],
-        'temperature': 0.2,
-      }),
-    );
+    final response = attachments.isEmpty
+        ? await _analyzeText(apiKey, description)
+        : await _analyzeFiles(apiKey, description, attachments);
 
     if (response.statusCode != 200) {
       throw Exception(
@@ -86,11 +69,10 @@ class JobAssistApiClient {
     }
 
     final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
-    final choice =
-        (jsonResponse['choices'] as List).first as Map<String, dynamic>;
-    final content = _normalizeContent(
-      (choice['message'] as Map<String, dynamic>)['content'] as String,
-    );
+    final rawContent = attachments.isEmpty
+        ? _chatContent(jsonResponse)
+        : _responseContent(jsonResponse);
+    final content = _normalizeContent(rawContent);
     final parsed = jsonDecode(content) as Map<String, dynamic>;
     final summary = (parsed['summary'] as String?)?.trim() ?? '';
     final extractedDescription =
@@ -103,6 +85,101 @@ class JobAssistApiClient {
       description: extractedDescription,
       tasks: normalizeJobAssistTasks(tasks),
     );
+  }
+
+  Future<http.Response> _analyzeText(String apiKey, String description) =>
+      http.post(
+        Uri.parse('https://api.openai.com/v1/chat/completions'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $apiKey',
+        },
+        body: jsonEncode({
+          'model': 'gpt-4o-mini',
+          'messages': [
+            {'role': 'system', 'content': _jobExtractPrompt},
+            {'role': 'user', 'content': description},
+          ],
+          'temperature': 0.2,
+        }),
+      );
+
+  Future<http.Response> _analyzeFiles(
+    String apiKey,
+    String description,
+    List<OpenAiAttachment> attachments,
+  ) {
+    final content = <Map<String, dynamic>>[
+      {'type': 'input_text', 'text': description},
+      ...attachments
+          .where(
+            (attachment) => attachment.data.length <= maxOpenAiAttachmentBytes,
+          )
+          .map(
+            (attachment) => {
+              'type': 'input_file',
+              'filename': attachment.filename,
+              'file_data':
+                  'data:${attachment.mimeType};base64,'
+                  '${base64Encode(attachment.data)}',
+            },
+          ),
+    ];
+    return http.post(
+      Uri.parse('https://api.openai.com/v1/responses'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiKey',
+      },
+      body: jsonEncode({
+        'model': 'gpt-4o-mini',
+        'input': [
+          {
+            'role': 'system',
+            'content': [
+              {'type': 'input_text', 'text': _jobExtractPrompt},
+            ],
+          },
+          {'role': 'user', 'content': content},
+        ],
+        'text': {
+          'format': {'type': 'json_object'},
+        },
+        'temperature': 0.2,
+      }),
+    );
+  }
+
+  static const _jobExtractPrompt = '''
+You help a handyman app extract job details from an email and any attached
+documents. Attached work orders are the primary source of job details. Return
+JSON only with keys: summary (short job title, <= 60 chars), description
+(short clear job description, <= 280 chars), and tasks (array of short task
+titles). Include the requested work, relevant location or access details, and
+quote or approval limits in the description when supplied. Use high-level,
+billable task outcomes only. Do not break a single activity into step-by-step
+subtasks. Prefer 1-6 tasks total. Do not treat acknowledgement, invoicing or
+administrative instructions as repair tasks.
+''';
+
+  String _chatContent(Map<String, dynamic> response) {
+    final choice = (response['choices'] as List).first as Map<String, dynamic>;
+    return (choice['message'] as Map<String, dynamic>)['content'] as String;
+  }
+
+  String _responseContent(Map<String, dynamic> response) {
+    final output = response['output'] as List<dynamic>? ?? const [];
+    for (final item in output) {
+      final content =
+          (item as Map<String, dynamic>)['content'] as List<dynamic>?;
+      for (final part in content ?? const []) {
+        final text = (part as Map<String, dynamic>)['text'];
+        if (text is String && text.trim().isNotEmpty) {
+          return text;
+        }
+      }
+    }
+    throw const FormatException('OpenAI returned no job extraction content.');
   }
 
   Future<List<TaskItemAssistSuggestion>?> expandTaskToItems({

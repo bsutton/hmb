@@ -1,30 +1,15 @@
 import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:http/http.dart' as http;
 
 import '../../dao/dao_system.dart';
 import '../../util/dart/parse/parse_address.dart';
 import '../../util/dart/parse/parse_customer.dart';
-
-class CustomerExtractAttachment {
-  final String filename;
-  final String mimeType;
-  final Uint8List data;
-
-  const CustomerExtractAttachment({
-    required this.filename,
-    required this.mimeType,
-    required this.data,
-  });
-}
+import 'open_ai_attachment.dart';
 
 class CustomerExtractApiClient {
-  static const int maxAttachmentBytes = 10 * 1024 * 1024;
-
   Future<ParsedCustomer?> extract(
     String text, {
-    List<CustomerExtractAttachment> attachments = const [],
+    List<OpenAiAttachment> attachments = const [],
   }) async {
     final credentials = await DaoSystem().getOpenAiCredentials();
     final apiKey = credentials.apiKey?.trim();
@@ -99,12 +84,14 @@ class CustomerExtractApiClient {
   Future<http.Response> _fileRequest(
     String apiKey,
     String text,
-    List<CustomerExtractAttachment> attachments,
+    List<OpenAiAttachment> attachments,
   ) {
     final content = <Map<String, dynamic>>[
       {'type': 'input_text', 'text': text},
       ...attachments
-          .where((attachment) => attachment.data.length <= maxAttachmentBytes)
+          .where(
+            (attachment) => attachment.data.length <= maxOpenAiAttachmentBytes,
+          )
           .map(
             (attachment) => {
               'type': 'input_file',
@@ -140,13 +127,28 @@ class CustomerExtractApiClient {
     );
   }
 
-  static const _systemPrompt =
-      'Extract customer details from the message and any attached documents. '
-      'Return JSON only with keys: customerName, companyName, firstName, '
-      'surname, email, mobile, addressLine1, addressLine2, suburb, state, '
-      'postcode. If a company is clearly associated with the customer, set '
-      'companyName and prefer customerName to be the company name. Use empty '
-      'strings for unknown fields.';
+  static const _systemPrompt = '''
+Extract the party and contact details for a handyman job from the email and
+attached documents. Return JSON only with keys: customerName, companyName,
+firstName, surname, email, mobile, addressLine1, addressLine2, suburb, state,
+postcode.
+
+Interpret work orders as follows:
+- The addressee or named contractor is the handyman receiving the job, not the
+  customer. Never return the contractor's details as the customer.
+- firstName, surname, email and mobile belong to the person explicitly named
+  as the contact for questions or correspondence. Ignore unmonitored and
+  do-not-reply addresses when another contact is supplied.
+- The address fields are the work-site or service address. Do not use the
+  property manager's office, postal or invoice address when a work site is
+  present.
+- companyName is the organisation that ordered or manages the work.
+- customerName is the owners corporation, property owner, tenant or other
+  principal receiving the work. If no distinct principal is named, use the
+  organisation or contact person's full name.
+- Prefer explicit details in an attached work order over email signatures.
+- Do not invent missing values. Use empty strings for unknown fields.
+''';
 
   String _chatContent(Map<String, dynamic> response) {
     final choice = (response['choices'] as List).first as Map<String, dynamic>;

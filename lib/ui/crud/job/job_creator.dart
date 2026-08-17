@@ -10,6 +10,7 @@ import 'package:strings/strings.dart';
 
 import '../../../api/chat_gpt/customer_extract_api_client.dart';
 import '../../../api/chat_gpt/job_assist_api_client.dart';
+import '../../../api/chat_gpt/open_ai_attachment.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/money_ex.dart';
@@ -630,18 +631,17 @@ class _JobCreatorState extends State<JobCreator> {
                 .where(
                   (attachment) =>
                       attachment.data != null &&
-                      attachment.data!.length <=
-                          CustomerExtractApiClient.maxAttachmentBytes,
+                      attachment.data!.length <= maxOpenAiAttachmentBytes,
                 )
                 .map(
-                  (attachment) => CustomerExtractAttachment(
+                  (attachment) => OpenAiAttachment(
                     filename: attachment.filename,
                     mimeType: attachment.mimeType,
                     data: attachment.data!,
                   ),
                 )
                 .toList() ??
-            const <CustomerExtractAttachment>[];
+            const <OpenAiAttachment>[];
         final parsedCustomer = await CustomerExtractApiClient().extract(
           text,
           attachments: attachments,
@@ -666,7 +666,7 @@ class _JobCreatorState extends State<JobCreator> {
             ? '${_firstName.text} ${_surname.text}'.trim()
             : parsedCustomer.customerName;
 
-        await _generateSummaryAndTasks(text);
+        await _generateSummaryAndTasks(text, attachments: attachments);
 
         await _loadMatches(parsedCustomer);
         await _applyPartyHintsFromText(text);
@@ -693,13 +693,19 @@ class _JobCreatorState extends State<JobCreator> {
     );
   }
 
-  Future<void> _generateSummaryAndTasks(String text) async {
+  Future<void> _generateSummaryAndTasks(
+    String text, {
+    List<OpenAiAttachment> attachments = const [],
+  }) async {
     if (Strings.isBlank(text)) {
       return;
     }
 
     final client = JobAssistApiClient();
-    final result = await client.analyzeDescription(text);
+    final result = await client.analyzeDescription(
+      text,
+      attachments: attachments,
+    );
     if (result == null) {
       return;
     }

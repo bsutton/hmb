@@ -6,7 +6,7 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
-import '../../../api/chat_gpt/customer_extract_api_client.dart';
+import '../../../api/chat_gpt/open_ai_attachment.dart';
 import '../../../dao/dao_job_attachment.dart';
 import '../../../dao/dao_job_source_email.dart';
 import '../../../entity/job.dart';
@@ -239,7 +239,7 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
     final eligible = source.attachments.where(
       (attachment) =>
           selected.contains(attachment.key) &&
-          attachment.size <= CustomerExtractApiClient.maxAttachmentBytes &&
+          attachment.size <= maxOpenAiAttachmentBytes &&
           _isUsefulForAi(attachment),
     );
     if (eligible.isEmpty) {
@@ -253,8 +253,7 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
             messageId: source.messageId,
             attachment: attachment,
           );
-          if (bytes.isNotEmpty &&
-              bytes.length <= CustomerExtractApiClient.maxAttachmentBytes) {
+          if (bytes.isNotEmpty && bytes.length <= maxOpenAiAttachmentBytes) {
             data[attachment.key] = Uint8List.fromList(bytes);
           }
         } catch (_) {
