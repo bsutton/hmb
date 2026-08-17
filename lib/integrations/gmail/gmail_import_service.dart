@@ -128,6 +128,7 @@ class GmailImportService {
     required String? textFilter,
     required String? pageToken,
     required int maxResults,
+    bool allowAuthRetry = true,
   }) async {
     GoogleAuthClient? client;
     try {
@@ -172,6 +173,23 @@ class GmailImportService {
     } on gmail.DetailedApiRequestError catch (error) {
       if (operation.cancelled) {
         throw const GmailImportCancelled();
+      }
+      if (error.status == 401 && allowAuthRetry) {
+        if (identical(_activeClient, client)) {
+          _activeClient = null;
+        }
+        client?.close();
+        client = null;
+        await _refreshAccessToken();
+        operation.throwIfCancelled();
+        return await _search(
+          operation,
+          query: query,
+          textFilter: textFilter,
+          pageToken: pageToken,
+          maxResults: maxResults,
+          allowAuthRetry: false,
+        );
       }
       throw _friendlyApiError(error);
     } catch (error) {
@@ -234,6 +252,12 @@ class GmailImportService {
         _pendingAccess = null;
       }
     }
+  }
+
+  Future<void> _refreshAccessToken() async {
+    _cachedAccess = null;
+    _pendingAccess = null;
+    _cachedAccess = await _auth.refreshReadAccessToken();
   }
 
   Future<JobCreationEmailSource> loadMessage({

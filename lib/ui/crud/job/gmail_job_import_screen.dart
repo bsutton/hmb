@@ -643,6 +643,9 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
         HMBToast.info('Gmail search cancelled.');
       }
     } catch (error) {
+      if (!mounted || (generation != null && generation != _searchGeneration)) {
+        return;
+      }
       HMBToast.error(
         'Gmail import failed: $error',
         acknowledgmentRequired: true,

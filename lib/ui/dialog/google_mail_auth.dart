@@ -105,6 +105,19 @@ class GoogleMailAuth {
     throw HMBException('Gmail import is not available on this platform yet.');
   }
 
+  Future<GoogleMailAccessToken> refreshReadAccessToken() {
+    if (_isDesktopBrowserOAuthSupported) {
+      return _getDesktopBrowserAccessToken(
+        credentialKey: _readCredentialsKey,
+        scopes: const [readScope],
+        allowMailCredentials: true,
+        requireConfiguredEmail: false,
+        forceRefresh: true,
+      );
+    }
+    return getReadAccessToken();
+  }
+
   Future<void> connect() async {
     if (!_isDesktopBrowserOAuthSupported) {
       await getAccessToken();
@@ -193,6 +206,7 @@ class GoogleMailAuth {
     List<String> scopes = const [mailScope],
     bool allowMailCredentials = false,
     bool requireConfiguredEmail = true,
+    bool forceRefresh = false,
   }) async {
     var activeCredentialKey = credentialKey;
     var credentials = await _loadCredentials(credentialKey);
@@ -211,7 +225,7 @@ class GoogleMailAuth {
       throw HMBException('Google OAuth login did not return credentials.');
     }
 
-    if (credentials.isExpired) {
+    if (credentials.isExpired || forceRefresh) {
       final identity = await _desktopIdentity();
       final client = oauth2.Client(
         credentials,
