@@ -21,6 +21,36 @@ import '../../widgets/widgets.g.dart' hide StatefulBuilder;
 import 'job_creation_email_source.dart';
 import 'job_creator.dart';
 
+const _maxGmailAttachmentFilenameLength = 180;
+
+String gmailAttachmentLocalFilename(String filename, {int duplicate = 1}) {
+  var safeName = p
+      .basename(filename)
+      .replaceAll(RegExp('[^A-Za-z0-9._ -]'), '_')
+      .trim();
+  if (safeName.isEmpty || safeName == '.' || safeName == '..') {
+    safeName = 'attachment';
+  }
+
+  var extension = p.extension(safeName);
+  if (extension.length > 16) {
+    extension = '';
+  }
+  var stem = extension.isEmpty
+      ? safeName
+      : safeName.substring(0, safeName.length - extension.length);
+  final suffix = duplicate > 1 ? ' ($duplicate)' : '';
+  final maximumStemLength =
+      _maxGmailAttachmentFilenameLength - extension.length - suffix.length;
+  if (stem.length > maximumStemLength) {
+    stem = stem.substring(0, maximumStemLength).trimRight();
+  }
+  if (stem.isEmpty) {
+    stem = 'attachment';
+  }
+  return '$stem$suffix$extension';
+}
+
 class GmailJobImportScreen extends StatefulWidget {
   final GmailImportService? service;
 
@@ -355,6 +385,7 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
     if (!directory.existsSync()) {
       await directory.create(recursive: true);
     }
+    final usedNames = <String>{};
     for (final attachment in source.attachments) {
       if (!selected.contains(attachment.key)) {
         continue;
@@ -366,11 +397,18 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
       if (bytes.isEmpty) {
         throw StateError('Gmail returned an empty ${attachment.filename}.');
       }
-      final safeName = p
-          .basename(attachment.filename)
-          .replaceAll(RegExp('[^A-Za-z0-9._ -]'), '_');
-      final safeKey = attachment.key.replaceAll(RegExp('[^A-Za-z0-9._-]'), '_');
-      final file = File(p.join(directory.path, '${safeKey}_$safeName'));
+      var duplicate = 1;
+      var localName = gmailAttachmentLocalFilename(attachment.filename);
+      var file = File(p.join(directory.path, localName));
+      while (usedNames.contains(localName) || file.existsSync()) {
+        duplicate++;
+        localName = gmailAttachmentLocalFilename(
+          attachment.filename,
+          duplicate: duplicate,
+        );
+        file = File(p.join(directory.path, localName));
+      }
+      usedNames.add(localName);
       await file.writeAsBytes(bytes, flush: true);
       await DaoJobAttachment().insert(
         JobAttachment.forInsert(

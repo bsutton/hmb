@@ -26,6 +26,20 @@ void main() {
 
   tearDown(tearDownTestDb);
 
+  test('Gmail attachment local names are readable and bounded', () {
+    const original = 'Plinth board repair to front timber fence.pdf';
+    expect(gmailAttachmentLocalFilename(original), original);
+    expect(
+      gmailAttachmentLocalFilename(original, duplicate: 2),
+      'Plinth board repair to front timber fence (2).pdf',
+    );
+
+    final longName = '${List.filled(400, 'a').join()}.pdf';
+    final localName = gmailAttachmentLocalFilename(longName);
+    expect(localName.length, lessThanOrEqualTo(180));
+    expect(localName, endsWith('.pdf'));
+  });
+
   testWidgets('new job menu offers Gmail import', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(home: Scaffold(body: JobListScreen())),
