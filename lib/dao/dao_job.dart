@@ -30,6 +30,7 @@ import 'dao.dart';
 import 'dao_contact.dart';
 import 'dao_customer.dart';
 import 'dao_invoice.dart';
+import 'dao_job_source_email.dart';
 import 'dao_quote.dart';
 import 'dao_system.dart';
 import 'dao_task.dart';
@@ -72,6 +73,7 @@ class DaoJob extends Dao<Job> {
     await DaoTask().deleteByJob(id, transaction: transaction);
     await DaoQuote().deleteByJob(id, transaction: transaction);
     await DaoToDo().deleteByJob(id, transaction: transaction);
+    await DaoJobSourceEmail().deleteByJob(id, transaction: transaction);
 
     // Delete the job itself
     return db.delete(tableName, where: 'id = ?', whereArgs: [id]);
