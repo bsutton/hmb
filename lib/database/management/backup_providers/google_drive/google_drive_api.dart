@@ -66,7 +66,11 @@ class GoogleDriveApi {
       );
     }
     final auth = await GoogleDriveAuth.instance();
-    return GoogleDriveApi.fromHeaders(auth.authHeaders);
+    final headers = await auth.authHeadersOrNull(allowAutomaticSignIn: false);
+    if (headers == null) {
+      throw StateError('Google Drive authorization is not available.');
+    }
+    return GoogleDriveApi.fromHeaders(headers);
   }
 
   Future<void> init() async {

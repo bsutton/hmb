@@ -141,11 +141,18 @@ class GoogleDriveBackupProvider extends BackupProvider {
       final errorPort = ReceivePort();
       final exitPort = ReceivePort();
 
+      final auth = await GoogleDriveAuth.instance();
+      final authHeaders = await auth.authHeadersOrNull(
+        allowAutomaticSignIn: false,
+      );
+      if (authHeaders == null) {
+        throw StateError('Google Drive authorization is not available.');
+      }
       final params = BackupParams(
         sendPort: receivePort.sendPort,
         pathToZip: pathToZippedBackup,
         pathToBackupFile: pathToDatabaseCopy,
-        authHeaders: (await GoogleDriveAuth.instance()).authHeaders,
+        authHeaders: authHeaders,
         progressStageStart: 1,
         progressStageEnd: 3,
       );
@@ -163,7 +170,7 @@ class GoogleDriveBackupProvider extends BackupProvider {
       errorPort.listen((e) {
         backupFailed = true;
         failureMessage = '$e';
-        emitProgress(r'Error: $e', 3, 3);
+        emitProgress('Error: $e', 3, 3);
       });
       receivePort.listen((msg) {
         if (msg is ProgressUpdate) {
@@ -224,7 +231,7 @@ Google Drive backup failed${failureMessage == null ? '' : ': $failureMessage'}''
 
       sendPort.send(ProgressUpdate('Backup uploaded', 3, 3));
     } catch (e) {
-      sendPort.send(ProgressUpdate(r'Error during backup: $e', 3, 3));
+      sendPort.send(ProgressUpdate('Error during backup: $e', 3, 3));
     }
     Isolate.exit();
   }

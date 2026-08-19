@@ -101,7 +101,7 @@ class _BackupAuthGoogleScreenState
 
   Future<void> _uploadFile(BuildContext context) async {
     await auth.signInIfAutomatic();
-    if (auth.isSignedIn) {
+    if (!auth.isSignedIn) {
       if (context.mounted) {
         HMBToast.info('Not signed in');
       }
@@ -112,8 +112,16 @@ class _BackupAuthGoogleScreenState
     //   drive.DriveApi.driveFileScope,
     // ]);
 
-    final headers =
-        auth.authHeaders; //  {'Authorization': 'Bearer ${auth.accessToken}'};
+    final headers = await auth.authHeadersOrNull(
+      allowAutomaticSignIn: false,
+      allowAuthorizationPrompt: true,
+    );
+    if (headers == null) {
+      if (context.mounted) {
+        HMBToast.info('Google Drive authorization is not available.');
+      }
+      return;
+    }
     final client = AuthenticatedClient(http.Client(), headers);
     final driveApi = drive.DriveApi(client);
 

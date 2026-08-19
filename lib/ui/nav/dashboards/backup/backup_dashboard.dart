@@ -397,10 +397,16 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
 
   Future<bool> _ensureSignedInForAction() async {
     final auth = _auth ??= await GoogleDriveAuth.instance();
-    if (auth.isSignedIn) {
-      return true;
-    }
     try {
+      if (auth.isSignedIn) {
+        final headers = await auth.authHeadersOrNull(
+          allowAutomaticSignIn: false,
+          allowAuthorizationPrompt: true,
+        );
+        if (headers != null) {
+          return true;
+        }
+      }
       await auth.signIn();
       if (!auth.isSignedIn) {
         return false;

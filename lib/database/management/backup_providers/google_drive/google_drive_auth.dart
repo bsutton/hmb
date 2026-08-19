@@ -50,8 +50,7 @@ class GoogleDriveAuth {
   ];
 
   var _signedIn = false;
-
-  Map<String, String>? _authHeaders;
+  GoogleSignInAccount? _account;
 
   var _awaitingAuth = Completer<GoogleAuthResult>();
 
@@ -59,19 +58,9 @@ class GoogleDriveAuth {
   /// You must call init to get the single instance.
   GoogleDriveAuth._();
 
-  Map<String, String> get authHeaders {
-    final headers = _authHeaders;
-    if (!_signedIn || headers == null) {
-      throw StateError(
-        'Google Drive auth headers are not available. '
-        'Ensure sign-in completed first.',
-      );
-    }
-    return headers;
-  }
-
   Future<Map<String, String>?> authHeadersOrNull({
     bool allowAutomaticSignIn = true,
+    bool allowAuthorizationPrompt = false,
   }) async {
     if (allowAutomaticSignIn) {
       try {
@@ -84,7 +73,20 @@ class GoogleDriveAuth {
     if (!_signedIn) {
       return null;
     }
-    return _authHeaders;
+    final account = _account;
+    if (account == null) {
+      await _markSignedOut();
+      return null;
+    }
+
+    final headers = await account.authorizationClient.authorizationHeaders(
+      scopes,
+      promptIfNecessary: allowAuthorizationPrompt,
+    );
+    if (headers == null) {
+      return null;
+    }
+    return Map.unmodifiable(headers);
   }
 
   static Future<GoogleDriveAuth> instance() async {
@@ -184,16 +186,15 @@ class GoogleDriveAuth {
     GoogleSignInAuthenticationEventSignIn event,
   ) async {
     final account = event.user;
+    _account = account;
 
     try {
-      final authorization =
-          await account.authorizationClient.authorizationForScopes(scopes) ??
-          await account.authorizationClient.authorizeScopes(scopes);
-
-      _authHeaders = {
-        'Authorization': 'Bearer ${authorization.accessToken}',
-        'X-Goog-AuthUser': '0',
-      };
+      if (await account.authorizationClient.authorizationForScopes(scopes) ==
+          null) {
+        await account.authorizationClient.authorizeScopes(scopes);
+      }
+      // API calls request current headers again immediately before use because
+      // access tokens expire.
       await _markSignedIn();
       if (!_awaitingAuth.isCompleted) {
         _awaitingAuth.complete(GoogleAuthResult.success());
@@ -266,7 +267,7 @@ class GoogleDriveAuth {
 
   Future<void> _markSignedOut() async {
     _signedIn = false;
-    _authHeaders = null;
+    _account = null;
     await GoogleDriveFolderStore().clearAll();
 
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
