@@ -41,7 +41,12 @@ class HMBStatusBar extends StatelessWidget {
       color: Colors.purpleAccent,
       child: HMBRow(
         children: [
-          HMBStartTimeEntry(task: task, onStart: (_, _) => {}),
+          HMBStartTimeEntry(
+            task: task,
+            activeTimeEntry: activeTimeEntry,
+            stopOnly: true,
+            onStart: (_, _) {},
+          ),
           Expanded(
             child: FutureBuilderEx(
               future: DaoJob().getJobForTask(task?.id),

@@ -469,7 +469,6 @@ class BlockingUI {
 /// so that we can dump call site stack traces for debugging
 /// purposes.
 class RunningSlowAction<T> {
-  static const _initialBlockReportDelay = Duration(seconds: 5);
   static const _blockReportInterval = Duration(seconds: 5);
 
   final String? label;
@@ -489,7 +488,10 @@ class RunningSlowAction<T> {
     : completer = Completer<T>(),
       stackTrace = StackTraceImpl(skipFrames: 2),
       _createdAt = DateTime.now() {
-    _blockReportTimer = Timer(_initialBlockReportDelay, _reportIfStillBlocked);
+    _blockReportTimer = Timer.periodic(
+      _blockReportInterval,
+      (_) => _reportIfStillBlocked(),
+    );
   }
 
   bool get canCancel => onCancel != null && !completer.isCompleted;
@@ -536,7 +538,5 @@ class RunningSlowAction<T> {
       'Created at $_createdAt.',
       stackTrace: stackTrace,
     );
-
-    _blockReportTimer = Timer(_blockReportInterval, _reportIfStillBlocked);
   }
 }

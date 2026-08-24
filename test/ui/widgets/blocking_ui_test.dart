@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/ui/widgets/blocking_ui.dart';
+import 'package:hmb/util/dart/log.dart';
 import 'package:material_ui/material_ui.dart';
 
 void main() {
+  setUpAll(() => Log.configure(Directory.current.path));
+
   test(
     'slow action forwards an error without leaking an uncaught future',
     () async {
@@ -43,5 +47,20 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('slow action watchdog can report more than once', (tester) async {
+    final slowAction = Completer<void>();
+    final action = RunningSlowAction<void>(
+      'very slow action',
+      () => slowAction.future,
+      () {},
+    )..start();
+    await tester.pump(const Duration(seconds: 11));
+
+    expect(tester.takeException(), isNull);
+
+    slowAction.complete();
+    await action.completer.future;
   });
 }

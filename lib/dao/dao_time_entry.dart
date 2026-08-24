@@ -120,7 +120,7 @@ class DaoTimeEntry extends Dao<TimeEntry> {
       '''
       select * from $tableName
       where task_id in (select id from task where job_id =?)
-      order by start_time asc
+      order by start_time desc
 ''',
       [jobId],
     );

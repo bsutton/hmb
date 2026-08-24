@@ -27,53 +27,104 @@ import '../../entity/time_entry.dart';
 import '../../fsm/job_events.dart';
 import '../../fsm/job_status_fsm.dart';
 import '../../util/dart/format.dart';
+import '../../util/dart/log.dart';
 import '../dialog/hmb_ask_user_to_continue.dart';
 import '../dialog/start_timer_dialog.dart';
 import '../dialog/stop_timer_dialog.dart';
+import 'blocking_ui.dart';
 import 'hmb_toast.dart';
 
 class HMBStartTimeEntry extends StatefulWidget {
   final Task? task;
+  final TimeEntry? activeTimeEntry;
+  final bool stopOnly;
+  @visibleForTesting
+  final Future<TimeEntry?> Function()? loadActiveTimeEntry;
   final void Function(Job job, Task task) onStart;
   final VoidCallback? onTimerChanged;
 
   const HMBStartTimeEntry({
     required this.task,
     required this.onStart,
+    this.activeTimeEntry,
+    this.stopOnly = false,
+    this.loadActiveTimeEntry,
     this.onTimerChanged,
     super.key,
-  });
+  }) : assert(
+         !stopOnly || activeTimeEntry != null,
+         'A stop-only timer control requires an active time entry.',
+       );
 
   @override
   State<StatefulWidget> createState() => HMBStartTimeEntryState();
 }
 
 class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
+  static const _timerButtonSize = 56.0;
+  static const _timerIconSize = 32.0;
+
   Timer? _timer;
   TimeEntry? timeEntry;
+  var _timerActionInProgress = false;
 
   late Disposer disposer;
 
   @override
   void initState() {
     super.initState();
+    timeEntry = widget.activeTimeEntry;
+    if (timeEntry != null) {
+      _startTimer(timeEntry!);
+    }
     disposer = June.getState<ActiveTimeEntryState>(ActiveTimeEntryState.new)
         .addListener(() {
           final activeEntry = June.getState<ActiveTimeEntryState>(
             ActiveTimeEntryState.new,
           ).activeTimeEntry;
+          final isThisTaskActive =
+              activeEntry != null && activeEntry.taskId == widget.task?.id;
+          var entryChanged = false;
 
-          if (timeEntry != null && !_isSameTimeEntry(activeEntry, timeEntry)) {
-            /// we are no longer the active timer.
+          if (isThisTaskActive) {
+            entryChanged = !_isSameTimeEntry(activeEntry, timeEntry);
+            timeEntry = activeEntry;
+            if (entryChanged || !(_timer?.isActive ?? false)) {
+              _startTimer(activeEntry);
+            }
+          } else if (timeEntry != null) {
+            // We are no longer the active timer.
+            entryChanged = true;
             timeEntry = null;
             _timer?.cancel();
+          }
+
+          if (entryChanged && mounted) {
+            setState(() {});
           }
         });
   }
 
   @override
+  void didUpdateWidget(covariant HMBStartTimeEntry oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final activeEntry = widget.activeTimeEntry;
+    if (widget.stopOnly &&
+        !_isSameTimeEntry(activeEntry, oldWidget.activeTimeEntry)) {
+      timeEntry = activeEntry;
+      if (activeEntry == null) {
+        _timer?.cancel();
+      } else {
+        _startTimer(activeEntry);
+      }
+    }
+  }
+
+  @override
   Future<void> asyncInitState() async {
-    final entry = await DaoTimeEntry().getActiveEntry();
+    final entry =
+        await (widget.loadActiveTimeEntry?.call() ??
+            DaoTimeEntry().getActiveEntry());
     final task = widget.task;
     final isThisTaskActive = entry != null && entry.taskId == task?.id;
 
@@ -98,64 +149,96 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
-    builder: (context) => Row(
-      children: [
-        JuneBuilder(
-          ActiveTimeEntryState.new,
-          builder: (timeEntryState) {
-            final isActive =
-                timeEntryState.activeTimeEntry != null &&
-                _isSameTimeEntry(timeEntry, timeEntryState.activeTimeEntry);
+    builder: (context) => Material(
+      type: MaterialType.transparency,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          JuneBuilder(
+            ActiveTimeEntryState.new,
+            builder: (timeEntryState) {
+              final isActive =
+                  widget.stopOnly ||
+                  timeEntryState.activeTimeEntry?.taskId == widget.task?.id;
 
-            return IconButton(
-              constraints: const BoxConstraints.tightFor(
-                width: kMinInteractiveDimension,
-                height: kMinInteractiveDimension,
-              ),
-              padding: const EdgeInsets.all(8),
-              tooltip: isActive ? 'Stop task timer' : 'Start task timer',
-              // start / stop icon
-              icon: Icon(
-                isActive ? Icons.stop : Icons.play_arrow,
-                color: isActive ? Colors.red : Colors.blue,
-              ),
-              onPressed: () async {
-                if (timeEntry == null) {
-                  final canBeTimed = widget.task!.status.canBeTimed;
-
-                  if (!canBeTimed) {
-                    final canProceed = await _confirmStartForUnapprovedTask();
-                    if (canProceed) {
-                      unawaited(_start(widget.task));
-                    }
-                  } else {
-                    unawaited(_start(widget.task));
-                  }
-                } else {
-                  await _stop(widget.task);
-                }
-              },
-            );
-          },
-        ),
-        Flexible(child: _buildElapsedTime(timeEntry)),
-      ],
+              return IconButton(
+                constraints: const BoxConstraints.tightFor(
+                  width: _timerButtonSize,
+                  height: _timerButtonSize,
+                ),
+                padding: const EdgeInsets.all(8),
+                iconSize: _timerIconSize,
+                tooltip: isActive ? 'Stop task timer' : 'Start task timer',
+                // start / stop icon
+                icon: Icon(
+                  isActive ? Icons.stop : Icons.play_arrow,
+                  color: isActive ? Colors.red : Colors.blue,
+                ),
+                onPressed: _timerActionInProgress ? null : _handleTimerPressed,
+              );
+            },
+          ),
+          _buildElapsedTime(timeEntry),
+        ],
+      ),
     ),
   );
 
-  Future<void> _stop(Task? task) async {
+  Future<void> _handleTimerPressed() async {
+    final task = widget.task;
+    if (_timerActionInProgress || (!widget.stopOnly && task == null)) {
+      return;
+    }
+    final navigator = Navigator.of(context, rootNavigator: true);
+
+    setState(() => _timerActionInProgress = true);
+    try {
+      final activeEntry = June.getState<ActiveTimeEntryState>(
+        ActiveTimeEntryState.new,
+      ).activeTimeEntry;
+      final isActiveTask = widget.stopOnly || activeEntry?.taskId == task?.id;
+      if (isActiveTask) {
+        await _stop(navigator);
+      } else {
+        if (task!.status.canBeTimed || await _confirmStartForUnapprovedTask()) {
+          await _start(task, navigator);
+        }
+      }
+    } catch (error, stackTrace) {
+      await _syncActiveTimeEntryState();
+      Log.e(
+        'Unable to start or stop the task timer.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      HMBToast.error(
+        'The task timer could not be updated. Please try again.',
+        acknowledgmentRequired: true,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _timerActionInProgress = false);
+      }
+    }
+  }
+
+  Future<void> _stop(NavigatorState navigator) async {
     final runningTimer = await DaoTimeEntry().getActiveEntry();
-    assert(runningTimer != null, 'there should be a running timer');
+    if (runningTimer == null) {
+      await _syncActiveTimeEntryState();
+      return;
+    }
     final stopped = await _stopDialog(
-      runningTimer!,
+      runningTimer,
       _roundUpToQuaterHour(DateTime.now()),
+      navigator: navigator,
     );
-    if (stopped != null) {
+    if (stopped != null && mounted) {
       widget.onTimerChanged?.call();
     }
   }
 
-  Future<void> _start(Task? task) async {
+  Future<void> _start(Task task, NavigatorState navigator) async {
     final runningTimer = await DaoTimeEntry().getActiveEntry();
 
     Task? runningTask;
@@ -175,7 +258,7 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
       runningTimer: runningTimer,
       runningTask: runningTask,
       now: now,
-      startTask: widget.task!,
+      startTask: task,
     );
 
     var showStart = true;
@@ -188,24 +271,38 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
       stoppedEntry = await _stopDialog(
         runningTimer,
         startStopTimes.priorTaskStopTime!,
+        navigator: navigator,
+        clearActiveState: false,
       );
 
       if (stoppedEntry == null) {
         showStart = false;
       } else {
-        /// The user stopped a running time so we need to update
-        /// the suggested start time to be just after the
-        /// last timer was stopped.
-        startStopTimes.startTime = stoppedEntry.endTime!.add(
-          const Duration(minutes: 1),
+        startStopTimes.applyStoppedEntry(
+          stoppedEntry,
+          sameJob: runningTask!.jobId == task.jobId,
         );
       }
     }
 
     if (showStart) {
+      if (!navigator.mounted) {
+        await _syncActiveTimeEntryState();
+        return;
+      }
+
       /// there is no other timer running so just start the new timer
-      await _startDialog(widget.task!, startStopTimes.startTime);
-      setState(() {});
+      final started = await _startDialog(
+        task,
+        startStopTimes.startTime,
+        navigator,
+      );
+      if (!started && stoppedEntry != null) {
+        await _syncActiveTimeEntryState();
+      }
+      if (mounted) {
+        setState(() {});
+      }
     }
   }
 
@@ -369,30 +466,42 @@ The Task must be ${TaskStatus.approved.name} or ${TaskStatus.inProgress.name} in
 
   Future<TimeEntry?> _stopDialog(
     TimeEntry activeEntry,
-    DateTime stopTime,
-  ) async {
+    DateTime stopTime, {
+    required NavigatorState navigator,
+    bool clearActiveState = true,
+  }) async {
     final task = await DaoTask().getById(activeEntry.taskId);
+    if (!navigator.mounted) {
+      return null;
+    }
 
-    if (mounted) {
-      final stoppedTimeEntry = await StopTimerDialog.show(
-        context,
-        task: task!,
-        timeEntry: activeEntry,
-        showTask: true,
-        stopTime: stopTime,
+    final stoppedTimeEntry = await StopTimerDialog.show(
+      navigator.context,
+      task: task!,
+      timeEntry: activeEntry,
+      showTask: true,
+      stopTime: stopTime,
+    );
+    if (stoppedTimeEntry != null) {
+      await BlockingUI().runAndWait(
+        () => DaoTimeEntry().update(stoppedTimeEntry),
+        label: 'Stopping timer',
       );
-      if (stoppedTimeEntry != null) {
-        stoppedTimeEntry.endTime!.add(const Duration(minutes: 1));
-        await DaoTimeEntry().update(stoppedTimeEntry);
+
+      if (mounted) {
         timeEntry = null;
+      }
+      if (clearActiveState) {
         June.getState<ActiveTimeEntryState>(
           ActiveTimeEntryState.new,
         ).clearActiveTimeEntry();
-
-        _timer?.cancel();
-        setState(() {});
-        return stoppedTimeEntry;
       }
+
+      _timer?.cancel();
+      if (mounted) {
+        setState(() {});
+      }
+      return stoppedTimeEntry;
     }
     return null;
   }
@@ -403,36 +512,76 @@ The Task must be ${TaskStatus.approved.name} or ${TaskStatus.inProgress.name} in
     }
   }
 
-  Future<void> _startDialog(Task task, DateTime startTime) async {
+  Future<bool> _startDialog(
+    Task task,
+    DateTime startTime,
+    NavigatorState navigator,
+  ) async {
+    if (!navigator.mounted) {
+      return false;
+    }
+
     final newTimeEntry = await StartTimerDialog.show(
-      context,
-      task: widget.task!,
+      navigator.context,
+      task: task,
       startTime: startTime,
     );
-    if (newTimeEntry != null) {
+    if (newTimeEntry == null) {
+      return false;
+    }
+
+    final job = await BlockingUI().runAndWait(() async {
       await DaoTimeEntry().insert(newTimeEntry);
 
       /// If we are running a timer for a job then it must
       /// be the active job.
-
       final job = await transitionJobById(task.jobId, StartWork.new);
-      _startTimer(newTimeEntry);
 
       // mark the task as in progress.
-      widget.task!.status = TaskStatus.inProgress;
-      await DaoTask().update(widget.task!);
+      task.status = TaskStatus.inProgress;
+      await DaoTask().update(task);
+      return job;
+    }, label: 'Starting timer');
 
+    if (mounted) {
       timeEntry = newTimeEntry;
-      June.getState<ActiveTimeEntryState>(
-        ActiveTimeEntryState.new,
-      ).setActiveTimeEntry(newTimeEntry, widget.task);
+    }
+    June.getState<ActiveTimeEntryState>(
+      ActiveTimeEntryState.new,
+    ).setActiveTimeEntry(newTimeEntry, task);
 
-      widget.onStart(job, widget.task!);
+    if (mounted) {
+      _startTimer(newTimeEntry);
+      widget.onStart(job, task);
       widget.onTimerChanged?.call();
+    }
+    return true;
+  }
+
+  Future<void> _syncActiveTimeEntryState() async {
+    try {
+      final activeEntry = await DaoTimeEntry().getActiveEntry();
+      final activeState = June.getState<ActiveTimeEntryState>(
+        ActiveTimeEntryState.new,
+      );
+      if (activeEntry == null) {
+        activeState.clearActiveTimeEntry();
+        return;
+      }
+
+      final activeTask = await DaoTask().getById(activeEntry.taskId);
+      activeState.setActiveTimeEntry(activeEntry, activeTask);
+    } catch (error, stackTrace) {
+      Log.e(
+        'Unable to refresh the active task timer.',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 
   void _startTimer(TimeEntry timeEntry) {
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
         setState(() {});
@@ -449,15 +598,18 @@ The Task must be ${TaskStatus.approved.name} or ${TaskStatus.inProgress.name} in
 
   @override
   void dispose() {
-    super.dispose();
     _timer?.cancel();
     disposer();
+    super.dispose();
   }
 
   Widget _buildElapsedTime(TimeEntry? timeEntry) {
     final running = timeEntry != null && timeEntry.endTime == null;
     if (running) {
-      final elapsedTime = DateTime.now().difference(timeEntry.startTime);
+      final elapsedTime = runningTimerElapsed(
+        startTime: timeEntry.startTime,
+        now: DateTime.now(),
+      );
       return Text(
         formatDuration(elapsedTime, seconds: true),
         maxLines: 1,
@@ -501,4 +653,18 @@ class StopStartTime {
   DateTime? priorTaskStopTime;
 
   StopStartTime({required this.startTime, required this.priorTaskStopTime});
+
+  void applyStoppedEntry(TimeEntry stoppedEntry, {required bool sameJob}) {
+    if (sameJob) {
+      startTime = stoppedEntry.endTime!.add(const Duration(minutes: 1));
+    }
+  }
+}
+
+Duration runningTimerElapsed({
+  required DateTime startTime,
+  required DateTime now,
+}) {
+  final difference = now.difference(startTime);
+  return difference.isNegative ? Duration.zero : difference;
 }
