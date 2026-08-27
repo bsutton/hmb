@@ -25,6 +25,7 @@ Future<Job> transitionJobById(int jobid, BuildEvent buildEvent) async {
   final machine = await buildJobMachine(job);
 
   machine.applyEvent(event);
+  await machine.complete;
 
   return (await DaoJob().getById(jobid))!;
 }
@@ -34,8 +35,32 @@ Future<Job> transitionJob(Job job, BuildEvent buildEvent) async {
   final machine = await buildJobMachine(job);
   final event = buildEvent(job);
   machine.applyEvent(event);
+  await machine.complete;
   return (await DaoJob().getById(job.id))!;
 }
+
+Future<Job> markJobActive(int jobId) async {
+  final job = (await DaoJob().getById(jobId))!;
+  if (job.status.stage == JobStatusStage.preStart) {
+    return transitionJob(job, StartWork.new);
+  }
+  await DaoJob().markLastActive(jobId);
+  return (await DaoJob().getById(jobId))!;
+}
+
+Future<Job> startJobQuoting(int jobId) async {
+  final job = (await DaoJob().getById(jobId))!;
+  if (job.status != JobStatus.prospecting) {
+    await DaoJob().markLastActive(jobId);
+    return (await DaoJob().getById(jobId))!;
+  }
+  return transitionJob(job, StartQuoting.new);
+}
+
+Future<Job> submitJobQuote(int jobId) =>
+    transitionJobById(jobId, SubmitQuote.new);
+
+Future<Job> rejectJob(int jobId) => transitionJobById(jobId, RejectJob.new);
 
 /// Build the job FSM (wire transitions once).
 
@@ -75,6 +100,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
       ..state<Prospecting>(
         (b) => b
           ..on<StartQuoting, Quoting>()
+          ..on<SubmitQuote, AwaitingApproval>()
           ..on<PaymentReceived, ToBeScheduled>()
           ..on<StartWork, InProgress>()
           ..on<PauseJob, OnHold>()
@@ -82,7 +108,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
       )
       ..state<Quoting>(
         (b) => b
-          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.quoting))
+          ..onEnter((_, _) => _startQuoting(job))
           ..on<SubmitQuote, AwaitingApproval>()
           ..on<StartWork, InProgress>()
           ..on<PauseJob, OnHold>()
@@ -92,6 +118,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
         (b) => b
           ..onEnter((_, _) => _updateJobStatus(job, JobStatus.awaitingApproval))
           ..on<ApproveQuote, AwaitingPayment>()
+          ..on<StartWork, InProgress>()
           ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),
       )
@@ -119,7 +146,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
       ..state<Scheduled>(
         (b) => b
           ..onEnter((_, _) async {
-            await DaoJob().markScheduled(job);
+            await _updateJobStatus(job, JobStatus.scheduled);
             await _approveTasks(job);
           })
           ..on<StartWork, InProgress>()
@@ -136,6 +163,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
       )
       ..state<OnHold>(
         (b) => b
+          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.onHold))
           ..on<ResumeJob, InProgress>()
           ..on<ScheduleJob, ToBeScheduled>()
           ..on<MaterialsArrived, InProgress>()
@@ -143,23 +171,29 @@ Future<StateMachine> buildJobMachine(Job job) async {
       )
       ..state<AwaitingMaterials>(
         (b) => b
+          ..onEnter(
+            (_, _) => _updateJobStatus(job, JobStatus.awaitingMaterials),
+          )
           ..on<ResumeJob, InProgress>()
           ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<Completed>(
         (b) => b
+          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.completed))
           ..on<RaiseInvoice, ToBeBilled>()
           ..on<RejectJob, Rejected>(),
       )
-      ..state<ToBeBilled>((b) => b..on<CompleteJob, Completed>())
+      ..state<ToBeBilled>(
+        (b) => b
+          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.toBeBilled))
+          ..on<CompleteJob, Completed>(),
+      )
       // terminal-ish state sits outside; not rejectable itself
       ..state<Rejected>(
         (b) => b
-          ..on<ApproveQuote, AwaitingPayment>(
-            sideEffect: (e) =>
-                _updateJobStatus(e.job, JobStatus.awaitingApproval),
-          ), // e.g., “unreject” flow if you want it
+          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.rejected))
+          ..on<ApproveQuote, AwaitingPayment>(),
       );
   });
 
@@ -167,9 +201,14 @@ Future<StateMachine> buildJobMachine(Job job) async {
 }
 
 Future<void> _inProgress(Job job) async {
-  await DaoJob().markActive(job.id);
+  await DaoJob().markLastActive(job.id);
   await _updateJobStatus(job, JobStatus.inProgress);
   await _approveTasks(job);
+}
+
+Future<void> _startQuoting(Job job) async {
+  await DaoJob().markLastActive(job.id);
+  await _updateJobStatus(job, JobStatus.quoting);
 }
 
 Future<void> _approveTasks(Job job) async {
@@ -276,9 +315,10 @@ Future<List<Next>> nextFromFsm({
     out.add(
       Next(
         to: toStatus,
-        fire: (m) async => m.applyEvent(
-          event,
-        ), // fires the real transition. :contentReference[oaicite:5]{index=5}
+        fire: (m) async {
+          m.applyEvent(event);
+          await m.complete;
+        },
       ),
     );
   }

@@ -166,21 +166,6 @@ class DaoJob extends Dao<Job> {
     return getFirstOrNull(data);
   }
 
-  /// Marks the job as 'in progress' if it is
-  /// in a pre-start state.
-  /// Also marks the job as the last active job.
-  Future<Job> markActive(int jobId) async {
-    await markLastActive(jobId);
-    final job = await getById(jobId);
-
-    if (job!.status.stage == JobStatusStage.preStart) {
-      job.status = JobStatus.inProgress;
-      await update(job);
-    }
-
-    return job;
-  }
-
   @override
   Future<void> recordAccess(int? entityId, [Transaction? transaction]) async {
     if (entityId == null) {
@@ -205,24 +190,6 @@ class DaoJob extends Dao<Job> {
     job!.lastActive = true;
     job.modifiedDate = DateTime.now();
     await update(job);
-  }
-
-  /// Marks the job as 'in quoting' if it is
-  /// in a [JobStatus.prospecting] state.
-  Future<Job> markQuoting(int jobId) async {
-    final job = await getById(jobId);
-
-    /// even if the job is active we want to update the last
-    /// modified date so it comes up first in the job list.
-    job!.lastActive = true;
-    job.modifiedDate = DateTime.now();
-
-    if (job.status == JobStatus.prospecting) {
-      job.status = JobStatus.quoting;
-    }
-    await update(job);
-
-    return job;
   }
 
   /// search for jobs given a user supplied filter string.
@@ -348,25 +315,6 @@ where t.id =?
         [...canBeScheduled, likeArg, likeArg],
       ),
     );
-  }
-
-  Future<void> markAwaitingApproval(Job job) async {
-    final canBeApproved = JobStatus.canBeAwaitingApproved(job);
-
-    if (canBeApproved) {
-      job.status = JobStatus.awaitingApproval;
-      await DaoJob().update(job);
-    }
-  }
-
-  /// Mark the job as scheduled if it is in a pre-start state.
-  Future<void> markScheduled(Job job) async {
-    final jobStatus = job.status;
-
-    if (jobStatus.stage == JobStatusStage.preStart) {
-      job.status = JobStatus.scheduled;
-      await DaoJob().update(job);
-    }
   }
 
   /// Get Quotable Jobs - now filtered by `preStart` status
@@ -566,9 +514,8 @@ where q.id=?
 
     if (bestPhone == null) {
       final customer = await DaoCustomer().getByJob(job.id);
-      bestPhone = (await DaoContact().getPrimaryForCustomer(
-        customer!.id,
-      ))?.bestPhone;
+      bestPhone = (await DaoContact().getPrimaryForCustomer(customer!.id))
+          ?.bestPhone;
     }
     return bestPhone;
   }
@@ -581,9 +528,8 @@ where q.id=?
 
     if (bestEmail == null) {
       final customer = await DaoCustomer().getByJob(job.id);
-      bestEmail = (await DaoContact().getPrimaryForCustomer(
-        customer!.id,
-      ))?.bestEmail;
+      bestEmail = (await DaoContact().getPrimaryForCustomer(customer!.id))
+          ?.bestEmail;
     }
     return bestEmail;
   }

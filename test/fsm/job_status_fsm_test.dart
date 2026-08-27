@@ -66,9 +66,7 @@ void main() {
 
     test('marking job to be scheduled creates a schedule todo', () async {
       final job = await _insertJob(JobStatus.awaitingPayment);
-      final machine = await buildJobMachine(job);
-      machine.applyEvent(PaymentReceived(job));
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await transitionJob(job, PaymentReceived.new);
 
       final updatedJob = await DaoJob().getById(job.id);
       expect(updatedJob?.status, JobStatus.toBeScheduled);
@@ -80,6 +78,32 @@ void main() {
         ),
         isTrue,
       );
+    });
+
+    test('every offered transition persists its destination status', () async {
+      for (final status in JobStatus.values) {
+        final probe = await _insertJob(status);
+        final probeMachine = await buildJobMachine(probe);
+        final offered = await nextFromFsm(machine: probeMachine, job: probe);
+
+        for (final offeredTransition in offered) {
+          final job = await _insertJob(status);
+          final machine = await buildJobMachine(job);
+          final transitions = await nextFromFsm(machine: machine, job: job);
+          final transition = transitions.firstWhere(
+            (candidate) => candidate.to == offeredTransition.to,
+          );
+
+          await transition.fire(machine);
+
+          final updated = await DaoJob().getById(job.id);
+          expect(
+            updated?.status,
+            offeredTransition.to,
+            reason: '$status should persist ${offeredTransition.to}',
+          );
+        }
+      }
     });
 
     test(

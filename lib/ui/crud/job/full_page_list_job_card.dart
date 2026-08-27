@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
 
-import '../../../dao/dao_job.dart';
 import '../../../entity/job.dart';
+import '../../../fsm/job_status_fsm.dart';
 import '../../widgets/layout/layout.g.dart';
 import 'job_activity_timeline_section.dart';
 import 'list_job_card.dart';
@@ -22,7 +22,7 @@ class _FullPageListJobCardState extends State<FullPageListJobCard> {
   void initState() {
     super.initState();
     // Opening a job details card should make that job the active job.
-    unawaited(DaoJob().markActive(widget.job.id));
+    unawaited(markJobActive(widget.job.id));
   }
 
   @override

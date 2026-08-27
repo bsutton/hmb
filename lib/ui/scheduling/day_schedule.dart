@@ -22,6 +22,7 @@ import '../../dao/dao.g.dart';
 import '../../entity/flutter_extensions/job_activity_status_ex.dart';
 import '../../entity/operating_hours.dart';
 import '../../entity/system.dart';
+import '../../fsm/job_status_fsm.dart';
 import '../../util/dart/date_time_ex.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
@@ -208,9 +209,13 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
               timeStringBuilder: (date, {secondaryDate}) =>
                   formatTime(date, 'ha').toLowerCase(),
               heightPerMinute: 1.8,
-              eventTileBuilder:
-                  (date, events, boundary, startDuration, endDuration) =>
-                      _buildActvityCard(dayView, events.first),
+              eventTileBuilder: (
+                date,
+                events,
+                boundary,
+                startDuration,
+                endDuration,
+              ) => _buildActvityCard(dayView, events.first),
               timeLineWidth: 58,
               fullDayEventBuilder: (events, date) => const Text(
                 'Full Day Activity',
@@ -405,7 +410,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
                   job: jobAndCustomer.job,
                   onMapClicked: () async {
                     final job = jobAndCustomer.job;
-                    await DaoJob().markActive(job.id);
+                    await markJobActive(job.id);
                     await DaoActivity().recordNavigatedToJob(jobId: job.id);
                   },
                 ),

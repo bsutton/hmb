@@ -18,6 +18,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/entity.g.dart';
+import '../fsm/job_status_fsm.dart';
 import '../util/dart/exceptions.dart';
 import '../util/dart/money_ex.dart';
 import 'dao.g.dart';
@@ -447,7 +448,7 @@ class DaoQuote extends Dao<Quote> {
     );
 
     final job = await DaoJob().getByQuoteId(quoteId);
-    await DaoJob().markAwaitingApproval(job!);
+    await submitJobQuote(job!.id);
 
     return quoteId;
   }

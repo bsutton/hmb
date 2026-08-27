@@ -29,6 +29,7 @@ import '../../../../entity/material_price.dart';
 import '../../../../entity/task.dart';
 import '../../../../entity/task_item.dart';
 import '../../../../entity/task_item_type.dart';
+import '../../../../fsm/job_status_fsm.dart';
 import '../../../../util/dart/measurement_type.dart';
 import '../../../../util/dart/money_ex.dart';
 import '../../../../util/dart/units.dart';
@@ -95,7 +96,7 @@ class _JobEstimateBuilderScreenState
       }
       return;
     }
-    final job = await DaoJob().markQuoting(widget.job.id);
+    final job = await startJobQuoting(widget.job.id);
     widget.job.status = job.status;
     final refreshedJob = await DaoJob().getById(widget.job.id);
     if (refreshedJob != null) {

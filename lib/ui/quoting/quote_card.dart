@@ -19,6 +19,7 @@ import 'package:strings/strings.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
+import '../../fsm/job_status_fsm.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/types.dart';
 import '../crud/job/full_page_list_job_card.dart';
@@ -546,8 +547,7 @@ To approve it, reply to this email with:
                       if (action == _RejectAction.quoteAndJob) {
                         final job = await DaoJob().getById(quote.jobId);
                         if (job != null) {
-                          job.status = JobStatus.rejected;
-                          await DaoJob().update(job);
+                          await rejectJob(job.id);
                         }
                       }
                     });
