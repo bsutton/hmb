@@ -40,7 +40,9 @@ void main() {
     await tearDownTestDb();
   });
 
-  testWidgets('reject dialog can reject quote and job', (tester) async {
+  testWidgets('reject dialog offers quote-only and whole-job scopes', (
+    tester,
+  ) async {
     final quote = await tester.runAsync(() async {
       final job = await createJobWithCustomer(
         billingType: BillingType.fixedPrice,
@@ -79,8 +81,9 @@ void main() {
     await tester.tap(find.text('Reject'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Reject quote and job'), findsOneWidget);
-    expect(find.text('Reject Quote + Job'), findsOneWidget);
+    expect(find.text('Reject quote'), findsOneWidget);
+    expect(find.text('Quote Only'), findsOneWidget);
+    expect(find.text('Quote + Job'), findsOneWidget);
 
     await tester.tap(
       find.descendant(
@@ -90,7 +93,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Reject quote and job'), findsNothing);
+    expect(find.text('Reject quote'), findsNothing);
   });
 
   testWidgets('unapprove button rolls approved quote back to sent', (

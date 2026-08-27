@@ -37,6 +37,12 @@ class QuoteUnapproved extends JobEvent {
   String get name => 'QuoteUnapproved';
 }
 
+class QuoteNeedsRevision extends JobEvent {
+  QuoteNeedsRevision(super.job);
+  @override
+  String get name => 'QuoteNeedsRevision';
+}
+
 class PaymentReceived extends JobEvent {
   PaymentReceived(super.job);
   @override
@@ -53,6 +59,12 @@ class ScheduleJob extends JobEvent {
   ScheduleJob(super.job);
   @override
   String get name => 'ScheduleCreated';
+}
+
+class ScheduleRemoved extends JobEvent {
+  ScheduleRemoved(super.job);
+  @override
+  String get name => 'ScheduleRemoved';
 }
 
 class StartWork extends JobEvent {
@@ -100,6 +112,12 @@ class ReopenWork extends JobEvent {
   String get name => 'ReopenWork';
 }
 
+class ReopenForScheduling extends JobEvent {
+  ReopenForScheduling(super.job);
+  @override
+  String get name => 'ReopenForScheduling';
+}
+
 class RejectJob extends JobEvent {
   RejectJob(super.job);
   @override
@@ -119,9 +137,11 @@ final Map<Type, BuildEvent> eventFactory = {
   SubmitQuote: SubmitQuote.new,
   ApproveQuote: ApproveQuote.new,
   QuoteUnapproved: QuoteUnapproved.new,
+  QuoteNeedsRevision: QuoteNeedsRevision.new,
   PaymentReceived: PaymentReceived.new,
   ProceedToScheduling: ProceedToScheduling.new,
   ScheduleJob: ScheduleJob.new,
+  ScheduleRemoved: ScheduleRemoved.new,
   StartWork: StartWork.new,
   PauseJob: PauseJob.new,
   ResumeJob: ResumeJob.new,
@@ -129,6 +149,7 @@ final Map<Type, BuildEvent> eventFactory = {
   MaterialsArrived: MaterialsArrived.new,
   CompleteJob: CompleteJob.new,
   ReopenWork: ReopenWork.new,
+  ReopenForScheduling: ReopenForScheduling.new,
   RejectJob: RejectJob.new,
   RestoreJob: RestoreJob.new,
 };

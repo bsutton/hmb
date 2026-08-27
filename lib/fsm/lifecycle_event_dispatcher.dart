@@ -14,6 +14,181 @@ import 'quote_events.dart';
 class LifecycleEventDispatcher {
   Database get _db => DatabaseHelper.instance.database;
 
+  Future<int> scheduleActivity(
+    JobActivity activity, {
+    required LifecycleContext context,
+  }) async {
+    final activityId = await _db.transaction((transaction) async {
+      final id = await DaoJobActivity().insert(activity, transaction);
+      final job = await DaoJob().getById(activity.jobId, transaction);
+      if (job == null) {
+        throw LifecycleException('Job ${activity.jobId} no longer exists.');
+      }
+      await _advanceJobForSchedule(job, context, transaction);
+      return id;
+    });
+    _notifyJobCommand(activity.jobId);
+    Dao.notifier(DaoJobActivity(), activityId);
+    return activityId;
+  }
+
+  Future<void> updateScheduledActivity(
+    JobActivity activity, {
+    required LifecycleContext context,
+  }) async {
+    final originalJobId = await _db.transaction((transaction) async {
+      final original = await DaoJobActivity().getById(activity.id, transaction);
+      if (original == null) {
+        throw LifecycleException(
+          'Schedule activity ${activity.id} no longer exists.',
+        );
+      }
+      await DaoJobActivity().update(activity, transaction);
+      final job = await DaoJob().getById(activity.jobId, transaction);
+      if (job == null) {
+        throw LifecycleException('Job ${activity.jobId} no longer exists.');
+      }
+      if (original.jobId != activity.jobId ||
+          job.status != JobStatus.completed) {
+        await _advanceJobForSchedule(job, context, transaction);
+      }
+      if (original.jobId != activity.jobId) {
+        await _returnUnscheduledJobIfEmpty(
+          original.jobId,
+          context,
+          transaction,
+        );
+      }
+      return original.jobId;
+    });
+    _notifyJobCommand(activity.jobId);
+    if (originalJobId != activity.jobId) {
+      _notifyJobCommand(originalJobId);
+    }
+    Dao.notifier(DaoJobActivity(), activity.id);
+  }
+
+  Future<void> deleteScheduledActivity(
+    int activityId, {
+    required LifecycleContext context,
+  }) async {
+    final jobId = await _db.transaction((transaction) async {
+      final activity = await DaoJobActivity().getById(activityId, transaction);
+      if (activity == null) {
+        return null;
+      }
+      await DaoJobActivity().delete(activityId, transaction);
+      await _returnUnscheduledJobIfEmpty(activity.jobId, context, transaction);
+      return activity.jobId;
+    });
+    if (jobId != null) {
+      _notifyJobCommand(jobId);
+    }
+    Dao.notifier(DaoJobActivity(), activityId);
+  }
+
+  Future<void> _advanceJobForSchedule(
+    Job job,
+    LifecycleContext context,
+    Transaction transaction,
+  ) async {
+    var current = job;
+    if (current.status == JobStatus.rejected) {
+      throw const LifecycleException('A rejected job cannot be scheduled.');
+    }
+    if (current.status == JobStatus.completed) {
+      final event = ReopenForScheduling(current);
+      final target = targetForJobEvent(current.status, event)!;
+      current = (await _applyJobTransition(
+        job: current,
+        event: event,
+        target: target,
+        context: context,
+        transaction: transaction,
+      )).entity;
+    } else {
+      final event = ProceedToScheduling(current);
+      final target = targetForJobEvent(current.status, event);
+      if (target != null) {
+        current = (await _applyJobTransition(
+          job: current,
+          event: event,
+          target: target,
+          context: context,
+          transaction: transaction,
+        )).entity;
+      }
+    }
+    if (current.status == JobStatus.toBeScheduled) {
+      final event = ScheduleJob(current);
+      final target = targetForJobEvent(current.status, event)!;
+      await _applyJobTransition(
+        job: current,
+        event: event,
+        target: target,
+        context: context,
+        transaction: transaction,
+      );
+    }
+  }
+
+  Future<void> _returnUnscheduledJobIfEmpty(
+    int jobId,
+    LifecycleContext context,
+    Transaction transaction,
+  ) async {
+    final remaining = await transaction.query(
+      DaoJobActivity.tableName,
+      columns: ['id'],
+      where: 'job_id = ?',
+      whereArgs: [jobId],
+      limit: 1,
+    );
+    if (remaining.isNotEmpty) {
+      return;
+    }
+    final job = await DaoJob().getById(jobId, transaction);
+    if (job == null || job.status != JobStatus.scheduled) {
+      return;
+    }
+    final event = ScheduleRemoved(job);
+    final target = targetForJobEvent(job.status, event)!;
+    await _applyJobTransition(
+      job: job,
+      event: event,
+      target: target,
+      context: context,
+      transaction: transaction,
+    );
+  }
+
+  Future<void> validateQuote(
+    int quoteId,
+    QuoteEvent Function(Quote) buildEvent,
+  ) => _db.transaction((transaction) async {
+    final quote = await DaoQuote().getById(quoteId, transaction);
+    if (quote == null) {
+      throw LifecycleException('Quote $quoteId no longer exists.');
+    }
+    final event = buildEvent(quote);
+    if (targetForQuoteEvent(quote.state, event) == null) {
+      throw LifecycleException(
+        '${event.name} is not valid while the quote is ${quote.state.name}.',
+      );
+    }
+    await _validateQuoteTransition(quote, event, transaction);
+    if (event is RejectQuoteAndJob) {
+      final job = await DaoJob().getById(quote.jobId, transaction);
+      if (job != null &&
+          job.status != JobStatus.rejected &&
+          targetForJobEvent(job.status, RejectJob(job)) == null) {
+        throw LifecycleException(
+          'The ${job.status.displayName} job cannot be rejected.',
+        );
+      }
+    }
+  });
+
   Future<LifecycleResult<Job>> dispatchJob(
     int jobId,
     JobEvent Function(Job) buildEvent, {
@@ -55,12 +230,22 @@ class LifecycleEventDispatcher {
     final from = job.status;
     final changed = from != target;
     final now = context.requestedAt.toIso8601String();
+    final resumeStatus = switch (event) {
+      PauseJob() => job.resumeStatus ?? from,
+      WaitForMaterials() => job.resumeStatus ?? from,
+      _ => null,
+    };
+    final resumeChanged = resumeStatus != job.resumeStatus;
 
-    if (changed) {
+    if (changed || resumeChanged) {
       await transaction
           .update(
             DaoJob.tableName,
-            {'status_id': target.id, 'modified_date': now},
+            {
+              'status_id': target.id,
+              'resume_status_id': resumeStatus?.id,
+              'modified_date': now,
+            },
             where: 'id = ? AND status_id = ?',
             whereArgs: [job.id, from.id],
           )
@@ -118,7 +303,7 @@ class LifecycleEventDispatcher {
         );
       }
       await _validateQuoteTransition(quote, event, transaction);
-      if (event is RejectQuoteEvent) {
+      if (event is RejectQuoteAndJob) {
         final job = await DaoJob().getById(quote.jobId, transaction);
         if (job != null &&
             job.status != JobStatus.rejected &&
@@ -155,6 +340,7 @@ class LifecycleEventDispatcher {
       }
 
       if (event is RejectQuoteEvent ||
+          event is RejectQuoteAndJob ||
           event is WithdrawQuote ||
           event is AmendQuote) {
         await DaoMilestone().voidByQuoteId(quote.id, transaction: transaction);
@@ -207,6 +393,7 @@ class LifecycleEventDispatcher {
     if (quote.state != QuoteState.approved ||
         (event is! UnapproveQuote &&
             event is! RejectQuoteEvent &&
+            event is! RejectQuoteAndJob &&
             event is! AmendQuote)) {
       return;
     }
@@ -251,8 +438,12 @@ class LifecycleEventDispatcher {
       if (otherApproved.isEmpty) {
         jobEvent = QuoteUnapproved(job);
       }
-    } else if (event is RejectQuoteEvent) {
+    } else if (event is RejectQuoteAndJob) {
       jobEvent = RejectJob(job);
+    } else if (event is RejectQuoteEvent ||
+        event is WithdrawQuote ||
+        event is AmendQuote) {
+      jobEvent = await _jobEventAfterQuoteRemoval(job, quote.id, transaction);
     }
 
     if (jobEvent == null) {
@@ -270,6 +461,42 @@ class LifecycleEventDispatcher {
       context: context,
       transaction: transaction,
     );
+  }
+
+  Future<JobEvent?> _jobEventAfterQuoteRemoval(
+    Job job,
+    int changedQuoteId,
+    Transaction transaction,
+  ) async {
+    if (job.status != JobStatus.awaitingApproval &&
+        job.status != JobStatus.awaitingPayment) {
+      return null;
+    }
+
+    final remaining = await transaction.query(
+      DaoQuote.tableName,
+      columns: ['state'],
+      where: 'job_id = ? AND id != ?',
+      whereArgs: [job.id, changedQuoteId],
+    );
+    final states = remaining
+        .map((row) => QuoteState.values.byName(row['state']! as String))
+        .toSet();
+    final hasApproved =
+        states.contains(QuoteState.approved) ||
+        states.contains(QuoteState.invoiced);
+    if (hasApproved) {
+      return job.status == JobStatus.awaitingApproval
+          ? ApproveQuote(job)
+          : null;
+    }
+    final hasSent = states.contains(QuoteState.sent);
+    if (hasSent) {
+      return job.status == JobStatus.awaitingPayment
+          ? QuoteUnapproved(job)
+          : null;
+    }
+    return QuoteNeedsRevision(job);
   }
 
   Future<void> _runJobEntryActions(

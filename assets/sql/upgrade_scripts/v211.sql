@@ -23,6 +23,8 @@ CREATE INDEX lifecycle_transition_aggregate_time
     occurred_at DESC
   );
 
+ALTER TABLE job ADD COLUMN resume_status_id TEXT;
+
 UPDATE job
 SET status_id = 'Completed'
 WHERE status_id = 'ToBeBilled';

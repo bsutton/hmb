@@ -1,6 +1,7 @@
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/entity/helpers/charge_mode.dart';
+import 'package:hmb/fsm/lifecycle_models.dart';
 import 'package:hmb/util/dart/measurement_type.dart';
 import 'package:hmb/util/dart/units.dart';
 import 'package:money2/money2.dart';
@@ -147,6 +148,48 @@ void main() {
     expect(amended.id, isNot(original.id));
     expect(amended.state, QuoteState.reviewing);
     expect(amendedGroups.single.taskId, task.id);
+  });
+
+  test('amendQuote validates before creating a replacement', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.fixedPrice,
+      hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+    );
+    final contact = (await DaoContact().getById(job.billingContactId))!;
+    final original = Quote.forInsert(
+      jobId: job.id,
+      summary: 'Invoiced original',
+      description: 'Cannot amend',
+      totalAmount: Money.fromInt(10000, isoCode: 'AUD'),
+      state: QuoteState.approved,
+    );
+    await DaoQuote().insert(original);
+    await DaoMilestone().insert(
+      Milestone.forInsert(
+        quoteId: original.id,
+        milestoneNumber: 1,
+        paymentAmount: Money.fromInt(10000, isoCode: 'AUD'),
+        paymentPercentage: Percentage.fromInt(100),
+        milestoneDescription: 'Invoiced',
+        invoiceId: 123,
+      ),
+    );
+
+    await expectLater(
+      DaoQuote().amendQuote(
+        original,
+        InvoiceOptions(
+          selectedTaskIds: const [],
+          billBookingFee: false,
+          groupByTask: true,
+          contact: contact,
+        ),
+      ),
+      throwsA(isA<LifecycleException>()),
+    );
+
+    expect(await DaoQuote().getByJobId(job.id), hasLength(1));
+    expect((await DaoQuote().getById(original.id))?.state, QuoteState.approved);
   });
 
   test('markQuoteSent moves prospecting job to awaiting approval', () async {

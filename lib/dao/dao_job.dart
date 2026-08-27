@@ -93,7 +93,9 @@ class DaoJob extends Dao<Job> {
       );
     }
     entity.modifiedDate = DateTime.now();
-    final values = entity.toMap()..remove('status_id');
+    final values = entity.toMap()
+      ..remove('status_id')
+      ..remove('resume_status_id');
     final count = await withinTransaction(
       transaction,
     ).update(tableName, values, where: 'id = ?', whereArgs: [entity.id]);

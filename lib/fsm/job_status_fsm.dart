@@ -96,6 +96,7 @@ Future<StateMachine> buildJobMachine(Job job) =>
         ..state<AwaitingApproval>(
           (state) => state
             ..on<ApproveQuote, AwaitingPayment>()
+            ..on<QuoteNeedsRevision, Quoting>()
             ..on<ProceedToScheduling, ToBeScheduled>()
             ..on<StartWork, InProgress>()
             ..on<PauseJob, OnHold>()
@@ -106,6 +107,7 @@ Future<StateMachine> buildJobMachine(Job job) =>
             ..on<PaymentReceived, ToBeScheduled>()
             ..on<ProceedToScheduling, ToBeScheduled>()
             ..on<QuoteUnapproved, AwaitingApproval>()
+            ..on<QuoteNeedsRevision, Quoting>()
             ..on<StartWork, InProgress>()
             ..on<PauseJob, OnHold>()
             ..on<RejectJob, Rejected>(),
@@ -119,9 +121,11 @@ Future<StateMachine> buildJobMachine(Job job) =>
         )
         ..state<Scheduled>(
           (state) => state
+            ..on<ScheduleRemoved, ToBeScheduled>()
             ..on<StartWork, InProgress>()
             ..on<WaitForMaterials, AwaitingMaterials>()
             ..on<PauseJob, OnHold>()
+            ..on<CompleteJob, Completed>()
             ..on<RejectJob, Rejected>(),
         )
         ..state<InProgress>(
@@ -132,23 +136,95 @@ Future<StateMachine> buildJobMachine(Job job) =>
             ..on<CompleteJob, Completed>()
             ..on<RejectJob, Rejected>(),
         )
-        ..state<OnHold>(
-          (state) => state
-            ..on<ResumeJob, InProgress>()
+        ..state<OnHold>((state) {
+          _registerResumeTransition(state, resumeTarget(job.resumeStatus));
+          state
             ..on<WaitForMaterials, AwaitingMaterials>()
             ..on<ProceedToScheduling, ToBeScheduled>()
-            ..on<RejectJob, Rejected>(),
-        )
-        ..state<AwaitingMaterials>(
-          (state) => state
-            ..on<MaterialsArrived, InProgress>()
-            ..on<ResumeJob, InProgress>()
+            ..on<CompleteJob, Completed>()
+            ..on<RejectJob, Rejected>();
+        })
+        ..state<AwaitingMaterials>((state) {
+          _registerMaterialResumeTransitions(
+            state,
+            resumeTarget(job.resumeStatus),
+          );
+          state
             ..on<PauseJob, OnHold>()
-            ..on<RejectJob, Rejected>(),
+            ..on<ProceedToScheduling, ToBeScheduled>()
+            ..on<CompleteJob, Completed>()
+            ..on<RejectJob, Rejected>();
+        })
+        ..state<Completed>(
+          (state) => state
+            ..on<ReopenWork, InProgress>()
+            ..on<ReopenForScheduling, ToBeScheduled>(),
         )
-        ..state<Completed>((state) => state..on<ReopenWork, InProgress>())
         ..state<Rejected>((state) => state..on<RestoreJob, Prospecting>());
     });
+
+void _registerResumeTransition(StateBuilder<OnHold> state, JobStatus target) {
+  switch (target) {
+    case JobStatus.prospecting:
+      state.on<ResumeJob, Prospecting>();
+    case JobStatus.quoting:
+      state.on<ResumeJob, Quoting>();
+    case JobStatus.awaitingApproval:
+      state.on<ResumeJob, AwaitingApproval>();
+    case JobStatus.awaitingPayment:
+      state.on<ResumeJob, AwaitingPayment>();
+    case JobStatus.toBeScheduled:
+      state.on<ResumeJob, ToBeScheduled>();
+    case JobStatus.scheduled:
+      state.on<ResumeJob, Scheduled>();
+    case JobStatus.inProgress ||
+        JobStatus.onHold ||
+        JobStatus.awaitingMaterials ||
+        JobStatus.completed ||
+        JobStatus.rejected:
+      state.on<ResumeJob, InProgress>();
+  }
+}
+
+void _registerMaterialResumeTransitions(
+  StateBuilder<AwaitingMaterials> state,
+  JobStatus target,
+) {
+  switch (target) {
+    case JobStatus.prospecting:
+      state
+        ..on<MaterialsArrived, Prospecting>()
+        ..on<ResumeJob, Prospecting>();
+    case JobStatus.quoting:
+      state
+        ..on<MaterialsArrived, Quoting>()
+        ..on<ResumeJob, Quoting>();
+    case JobStatus.awaitingApproval:
+      state
+        ..on<MaterialsArrived, AwaitingApproval>()
+        ..on<ResumeJob, AwaitingApproval>();
+    case JobStatus.awaitingPayment:
+      state
+        ..on<MaterialsArrived, AwaitingPayment>()
+        ..on<ResumeJob, AwaitingPayment>();
+    case JobStatus.toBeScheduled:
+      state
+        ..on<MaterialsArrived, ToBeScheduled>()
+        ..on<ResumeJob, ToBeScheduled>();
+    case JobStatus.scheduled:
+      state
+        ..on<MaterialsArrived, Scheduled>()
+        ..on<ResumeJob, Scheduled>();
+    case JobStatus.inProgress ||
+        JobStatus.onHold ||
+        JobStatus.awaitingMaterials ||
+        JobStatus.completed ||
+        JobStatus.rejected:
+      state
+        ..on<MaterialsArrived, InProgress>()
+        ..on<ResumeJob, InProgress>();
+  }
+}
 
 const _pickerActions = <LifecycleAction>[
   LifecycleAction(
@@ -160,6 +236,12 @@ const _pickerActions = <LifecycleAction>[
     eventType: PaymentReceived,
     label: 'Payment received',
     hint: 'Record that the required payment was received',
+  ),
+  LifecycleAction(
+    eventType: QuoteNeedsRevision,
+    label: 'Revise quote',
+    hint: 'Return the job to quoting and prepare another option',
+    requiresConfirmation: true,
   ),
   LifecycleAction(
     eventType: ProceedToScheduling,
@@ -206,6 +288,12 @@ const _pickerActions = <LifecycleAction>[
     requiresConfirmation: true,
   ),
   LifecycleAction(
+    eventType: ReopenForScheduling,
+    label: 'Reopen for scheduling',
+    hint: 'Reopen the completed job and arrange another visit',
+    requiresConfirmation: true,
+  ),
+  LifecycleAction(
     eventType: RejectJob,
     label: 'Reject job',
     hint: 'Reject the job and its active quotes',
@@ -223,6 +311,12 @@ Future<List<Next>> nextFromFsm({
   required StateMachine machine,
   required Job job,
 }) async {
+  final hydrated = stateFromType(await currentState(machine)).status;
+  if (hydrated != job.status) {
+    throw StateError(
+      'Job FSM is ${hydrated.name}, but job ${job.id} is ${job.status.name}.',
+    );
+  }
   final next = <Next>[];
   for (final action in _pickerActions) {
     final factory = eventFactory[action.eventType]!;
@@ -231,10 +325,24 @@ Future<List<Next>> nextFromFsm({
     if (target == null) {
       continue;
     }
+    final returnsToSavedStage =
+        (action.eventType == ResumeJob ||
+            action.eventType == MaterialsArrived) &&
+        target != JobStatus.inProgress;
+    final displayAction = returnsToSavedStage
+        ? LifecycleAction(
+            eventType: action.eventType,
+            label: action.eventType == MaterialsArrived
+                ? 'Materials arrived — ${target.displayName}'
+                : 'Resume ${target.displayName.toLowerCase()}',
+            hint: 'Return the job to ${target.displayName}',
+            requiresConfirmation: action.requiresConfirmation,
+          )
+        : action;
     next.add(
       Next(
         to: target,
-        action: action,
+        action: displayAction,
         fire: () async => (await LifecycleEventDispatcher().dispatchJob(
           job.id,
           factory,

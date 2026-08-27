@@ -33,6 +33,11 @@ CREATE TABLE job (
       }
 
       expect((await db.query('job')).single['status_id'], 'Completed');
+      final jobColumns = await db.rawQuery('PRAGMA table_info(job)');
+      expect(
+        jobColumns.map((column) => column['name']),
+        contains('resume_status_id'),
+      );
       final columns = await db.rawQuery(
         'PRAGMA table_info(lifecycle_transition)',
       );

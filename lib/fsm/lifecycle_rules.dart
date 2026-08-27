@@ -3,6 +3,17 @@ import '../entity/quote.dart';
 import 'job_events.dart';
 import 'quote_events.dart';
 
+JobStatus resumeTarget(JobStatus? saved) => switch (saved) {
+  JobStatus.prospecting ||
+  JobStatus.quoting ||
+  JobStatus.awaitingApproval ||
+  JobStatus.awaitingPayment ||
+  JobStatus.toBeScheduled ||
+  JobStatus.scheduled ||
+  JobStatus.inProgress => saved!,
+  _ => JobStatus.inProgress,
+};
+
 JobStatus? targetForJobEvent(JobStatus from, JobEvent event) => switch (from) {
   JobStatus.prospecting => switch (event) {
     StartQuoting() => JobStatus.quoting,
@@ -27,6 +38,7 @@ JobStatus? targetForJobEvent(JobStatus from, JobEvent event) => switch (from) {
     StartWork() => JobStatus.inProgress,
     PauseJob() => JobStatus.onHold,
     RejectJob() => JobStatus.rejected,
+    QuoteNeedsRevision() => JobStatus.quoting,
     _ => null,
   },
   JobStatus.awaitingPayment => switch (event) {
@@ -35,6 +47,7 @@ JobStatus? targetForJobEvent(JobStatus from, JobEvent event) => switch (from) {
     StartWork() => JobStatus.inProgress,
     PauseJob() => JobStatus.onHold,
     RejectJob() => JobStatus.rejected,
+    QuoteNeedsRevision() => JobStatus.quoting,
     _ => null,
   },
   JobStatus.toBeScheduled => switch (event) {
@@ -45,9 +58,11 @@ JobStatus? targetForJobEvent(JobStatus from, JobEvent event) => switch (from) {
     _ => null,
   },
   JobStatus.scheduled => switch (event) {
+    ScheduleRemoved() => JobStatus.toBeScheduled,
     StartWork() => JobStatus.inProgress,
     WaitForMaterials() => JobStatus.awaitingMaterials,
     PauseJob() => JobStatus.onHold,
+    CompleteJob() => JobStatus.completed,
     RejectJob() => JobStatus.rejected,
     _ => null,
   },
@@ -60,20 +75,24 @@ JobStatus? targetForJobEvent(JobStatus from, JobEvent event) => switch (from) {
     _ => null,
   },
   JobStatus.onHold => switch (event) {
-    ResumeJob() => JobStatus.inProgress,
+    ResumeJob() => resumeTarget(event.job.resumeStatus),
     WaitForMaterials() => JobStatus.awaitingMaterials,
     ProceedToScheduling() => JobStatus.toBeScheduled,
+    CompleteJob() => JobStatus.completed,
     RejectJob() => JobStatus.rejected,
     _ => null,
   },
   JobStatus.awaitingMaterials => switch (event) {
-    MaterialsArrived() || ResumeJob() => JobStatus.inProgress,
+    MaterialsArrived() || ResumeJob() => resumeTarget(event.job.resumeStatus),
     PauseJob() => JobStatus.onHold,
+    ProceedToScheduling() => JobStatus.toBeScheduled,
+    CompleteJob() => JobStatus.completed,
     RejectJob() => JobStatus.rejected,
     _ => null,
   },
   JobStatus.completed => switch (event) {
     ReopenWork() => JobStatus.inProgress,
+    ReopenForScheduling() => JobStatus.toBeScheduled,
     _ => null,
   },
   JobStatus.rejected => switch (event) {
@@ -86,14 +105,14 @@ QuoteState? targetForQuoteEvent(QuoteState from, QuoteEvent event) =>
     switch (from) {
       QuoteState.reviewing => switch (event) {
         SendQuote() => QuoteState.sent,
-        RejectQuoteEvent() => QuoteState.rejected,
+        RejectQuoteEvent() || RejectQuoteAndJob() => QuoteState.rejected,
         AmendQuote() => QuoteState.rejected,
         _ => null,
       },
       QuoteState.sent => switch (event) {
         SendQuote() => QuoteState.sent,
         ApproveQuoteEvent() => QuoteState.approved,
-        RejectQuoteEvent() => QuoteState.rejected,
+        RejectQuoteEvent() || RejectQuoteAndJob() => QuoteState.rejected,
         WithdrawQuote() => QuoteState.withdrawn,
         AmendQuote() => QuoteState.rejected,
         _ => null,
@@ -102,7 +121,7 @@ QuoteState? targetForQuoteEvent(QuoteState from, QuoteEvent event) =>
         SendQuote() => QuoteState.approved,
         UnapproveQuote() => QuoteState.sent,
         QuoteInvoiced() => QuoteState.invoiced,
-        RejectQuoteEvent() => QuoteState.rejected,
+        RejectQuoteEvent() || RejectQuoteAndJob() => QuoteState.rejected,
         AmendQuote() => QuoteState.rejected,
         _ => null,
       },
@@ -111,5 +130,12 @@ QuoteState? targetForQuoteEvent(QuoteState from, QuoteEvent event) =>
         QuoteInvoiced() => QuoteState.invoiced,
         _ => null,
       },
-      QuoteState.rejected || QuoteState.withdrawn => null,
+      QuoteState.rejected => switch (event) {
+        AmendQuote() => QuoteState.rejected,
+        _ => null,
+      },
+      QuoteState.withdrawn => switch (event) {
+        AmendQuote() => QuoteState.withdrawn,
+        _ => null,
+      },
     };

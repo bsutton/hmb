@@ -19,6 +19,8 @@ import 'package:strings/strings.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
+import '../../fsm/job_events.dart';
+import '../../fsm/lifecycle_rules.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/types.dart';
 import '../crud/job/full_page_list_job_card.dart';
@@ -31,6 +33,8 @@ import '../widgets/widgets.g.dart';
 import 'generate_quote_pdf.dart';
 import 'job_and_customer.dart';
 import 'select_quote_task_photos_dialog.dart';
+
+enum _RejectAction { quoteOnly, quoteAndJob }
 
 class QuoteCard extends StatefulWidget {
   final Quote quote;
@@ -283,27 +287,36 @@ To approve it, reply to this email with:
     },
   );
 
-  Future<bool?> _promptRejectAction(BuildContext context) => showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Reject quote and job'),
-      content: const Text(
-        'Reject this quote and the job? This is recorded as one action.',
-      ),
-      actions: [
-        HMBButton(
-          label: 'Cancel',
-          hint: 'Keep the quote unchanged',
-          onPressed: () => Navigator.pop(context, false),
+  Future<_RejectAction?> _promptRejectAction(BuildContext context) =>
+      showDialog<_RejectAction>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Reject quote'),
+          content: const Text(
+            'Reject only this quote, or reject the entire job and all of its '
+            'active quotes?',
+          ),
+          actions: [
+            HMBButton(
+              label: 'Cancel',
+              hint: 'Keep the quote unchanged',
+              onPressed: () => Navigator.pop(context),
+            ),
+            HMBButton(
+              label: 'Quote Only',
+              hint: 'Reject this quote but keep the job active',
+              onPressed: () => Navigator.pop(context, _RejectAction.quoteOnly),
+            ),
+            if (targetForJobEvent(jc.job.status, RejectJob(jc.job)) != null)
+              HMBButton(
+                label: 'Quote + Job',
+                hint: 'Reject the job and all active quotes',
+                onPressed: () =>
+                    Navigator.pop(context, _RejectAction.quoteAndJob),
+              ),
+          ],
         ),
-        HMBButton(
-          label: 'Reject Quote + Job',
-          hint: 'Reject the quote and the job',
-          onPressed: () => Navigator.pop(context, true),
-        ),
-      ],
-    ),
-  );
+      );
 
   Future<bool?> _promptWithdraw(BuildContext context) => showDialog<bool>(
     context: context,
@@ -365,6 +378,7 @@ To approve it, reply to this email with:
     final showSentRollback = quote.state == QuoteState.approved;
     final showApproval = quote.state == QuoteState.sent || showSentRollback;
     final showDestructive = !isRejected && !isWithdrawn && !isInvoiced;
+    final canAmend = !isInvoiced;
     final showWithdrawn = quote.state == QuoteState.sent;
 
     return DeferredBuilder(
@@ -438,8 +452,10 @@ To approve it, reply to this email with:
               ),
               HMBButton(
                 label: 'Amend',
-                hint: 'Create a replacement quote and reject this quote',
-                enabled: showDestructive,
+                hint: isRejected || isWithdrawn
+                    ? 'Create a replacement from this closed quote'
+                    : 'Create a replacement quote and reject this quote',
+                enabled: canAmend,
                 onPressed: _amendQuote,
               ),
             ],
@@ -472,12 +488,16 @@ To approve it, reply to this email with:
                   hint: 'Mark the quote as rejected by the Customer',
                   onPressed: () async {
                     final action = await _promptRejectAction(context);
-                    if (action != true) {
+                    if (action == null) {
                       return;
                     }
 
                     await _updateQuote(() async {
-                      await DaoQuote().rejectQuote(quote.id);
+                      if (action == _RejectAction.quoteAndJob) {
+                        await DaoQuote().rejectQuoteAndJob(quote.id);
+                      } else {
+                        await DaoQuote().rejectQuote(quote.id);
+                      }
                     });
                   },
                 ),

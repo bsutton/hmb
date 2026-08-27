@@ -310,6 +310,7 @@ class DaoQuote extends Dao<Quote> {
       throw InvoiceException('Job ${original.jobId} not found.');
     }
 
+    await LifecycleEventDispatcher().validateQuote(original.id, AmendQuote.new);
     final amended = await create(job, invoiceOptions);
     await LifecycleEventDispatcher().dispatchQuote(
       original.id,
@@ -427,6 +428,13 @@ class DaoQuote extends Dao<Quote> {
         quoteId,
         RejectQuoteEvent.new,
         context: LifecycleContext(source: 'quote.reject'),
+      )).entity.id;
+
+  Future<int> rejectQuoteAndJob(int quoteId) async =>
+      (await LifecycleEventDispatcher().dispatchQuote(
+        quoteId,
+        RejectQuoteAndJob.new,
+        context: LifecycleContext(source: 'quote.rejectJob'),
       )).entity.id;
 
   /// Withdraw quote by business

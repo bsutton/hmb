@@ -206,7 +206,8 @@ Phase 5: hardening
    `PaymentReceived` or the explicit `ProceedToScheduling` override moves it to
    `ToBeScheduled`.
 5. `AwaitingMaterials` is reachable from `Scheduled`, `InProgress`, and
-   `OnHold`; materials arriving returns the job to `InProgress`.
+   `OnHold`; materials arriving returns the job to the stage saved when the
+   material wait began (or `InProgress` for legacy rows).
 6. Restoring a rejected job returns it to `Prospecting`; reopening a completed
    job returns it to `InProgress`.
 7. `ToBeBilled` is retired. Upgrade v211 maps it to `Completed`. Billing
@@ -222,3 +223,24 @@ Phase 5: hardening
 11. The application currently has no user identity, so `actor_id` is nullable.
     Ledger payments do not imply a deposit and therefore do not automatically
     dispatch `PaymentReceived`.
+12. Holding a job records `resume_status_id`. `ResumeJob` and
+    `MaterialsArrived` return to that saved workflow stage rather than always
+    skipping forward to `InProgress`. Legacy rows without a saved stage fall
+    back to `InProgress`.
+13. Quote-only rejection is distinct from rejecting the whole job. Removing
+    the last viable quote from an approval/payment workflow returns the job to
+    `Quoting`; remaining sent or approved alternatives keep the corresponding
+    job stage active.
+14. Scheduled, held, and materials-blocked jobs may be completed explicitly
+    without manufacturing a false work-start event. Completed work may reopen
+    either to `InProgress` or `ToBeScheduled`.
+15. Transition tests must cover the `fsm2` graph, dispatcher persistence,
+    audit record, blocked-event rollback, and presence of a user recovery
+    action for every persisted job state.
+16. Creating or moving a scheduling activity and advancing the job are one
+    transaction. Removing or moving the last activity from a `Scheduled` job
+    dispatches `ScheduleRemoved` and returns it to `ToBeScheduled`.
+17. Scheduling from any pre-work stage follows its explicit
+    `ProceedToScheduling` path. Scheduling completed work reopens it for
+    scheduling, while scheduling rejected work is rejected atomically. Editing
+    an existing completed job's historical activity does not reopen the job.

@@ -34,6 +34,12 @@ class RejectQuoteEvent extends QuoteEvent {
   String get name => 'RejectQuote';
 }
 
+class RejectQuoteAndJob extends QuoteEvent {
+  RejectQuoteAndJob(super.quote);
+  @override
+  String get name => 'RejectQuoteAndJob';
+}
+
 class WithdrawQuote extends QuoteEvent {
   WithdrawQuote(super.quote);
   @override
