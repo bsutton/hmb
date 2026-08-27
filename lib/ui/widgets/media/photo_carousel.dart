@@ -30,10 +30,12 @@ import 'copy_image_to_clipboard.dart';
 class PhotoCarousel extends StatefulWidget {
   final List<PhotoMeta> photos;
   final int initialIndex;
+  final Map<int, String> photoPaths;
 
   const PhotoCarousel({
     required this.photos,
     required this.initialIndex,
+    this.photoPaths = const {},
     super.key,
   });
 
@@ -147,9 +149,11 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
     itemCount: widget.photos.length,
     itemBuilder: (context, index) {
       final photoMeta = widget.photos[index];
+      final photoPath =
+          widget.photoPaths[photoMeta.photo.id] ?? photoMeta.absolutePathTo;
       return DesktopBackGestureSuppress(
         child: PhotoView(
-          imageProvider: FileImage(File(photoMeta.absolutePathTo)),
+          imageProvider: FileImage(File(photoPath)),
           backgroundDecoration: const BoxDecoration(color: Colors.black),
           minScale: PhotoViewComputedScale.contained,
           maxScale: PhotoViewComputedScale.covered * 2.0,
@@ -230,8 +234,9 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
       HMBCopyIcon(
         onPressed: () async {
           try {
+            final photo = widget.photos[_currentIndex];
             await copyImageToClipboard(
-              widget.photos[_currentIndex].absolutePathTo,
+              widget.photoPaths[photo.photo.id] ?? photo.absolutePathTo,
             );
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
