@@ -37,12 +37,14 @@ class HMBSelectContact extends StatefulWidget {
 
   /// Label for the field.
   final String title;
+  final bool showRole;
 
   const HMBSelectContact({
     required this.initialContact,
     required this.customer,
     this.onSelected,
     this.title = 'Contact',
+    this.showRole = false,
     super.key,
   });
 
@@ -68,6 +70,7 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
     return contacts.where((contact) {
       final fullName = '${contact.firstName} ${contact.surname}'.toLowerCase();
       return fullName.contains(search) ||
+          contact.roleDescription.toLowerCase().contains(search) ||
           contact.emailAddress.toLowerCase().contains(search) ||
           contact.mobileNumber.toLowerCase().contains(search);
     }).toList();
@@ -120,7 +123,10 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
                 selectedItem: () async => contact,
                 onChanged: _onContactChanged,
                 items: _getContacts,
-                format: (contact) => '${contact.firstName} ${contact.surname}',
+                format: (contact) => formatContactForSelection(
+                  contact,
+                  showRole: widget.showRole,
+                ),
                 required: false,
               ),
             ),
@@ -135,4 +141,17 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
       }
     },
   );
+}
+
+String formatContactForSelection(Contact contact, {bool showRole = false}) {
+  final name = '${contact.firstName} ${contact.surname}'.trim();
+  final fallback = name.isNotEmpty
+      ? name
+      : contact.emailAddress.isNotEmpty
+      ? contact.emailAddress
+      : contact.mobileNumber.isNotEmpty
+      ? contact.mobileNumber
+      : 'Unnamed contact';
+  final role = contact.roleDescription.trim();
+  return showRole && role.isNotEmpty ? '$fallback — $role' : fallback;
 }
