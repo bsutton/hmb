@@ -78,7 +78,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
                     title: 'Select Task',
                     selectedItem: () async => selectedTask,
                     items: (filter) =>
-                        DaoTask().getTasksByJob(selectedJob.jobId!),
+                        DaoTask().getOpenTasksByJob(selectedJob.jobId!, filter),
                     format: (task) => task.name,
                     onChanged: (task) {
                       setState(() {
