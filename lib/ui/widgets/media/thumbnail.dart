@@ -34,8 +34,10 @@ class Thumbnail {
 
   static Future<Thumbnail> fromMeta(PhotoMeta meta) async {
     await meta.resolve();
-    final source = meta.absolutePathTo;
+    return await fromSource(meta.absolutePathTo);
+  }
 
+  static Future<Thumbnail> fromSource(String source) async {
     final thumbnailDir = await _getThumbnailDirectory();
     final target = p.join(
       thumbnailDir,

@@ -34,6 +34,7 @@ import 'package:test/test.dart';
 
 import '../database/management/backup_providers/test_backup_provider.dart';
 import '../database/management/db_utility_test_helper.dart';
+
 // ---------------------------------------------------------------
 
 void main() {
@@ -116,6 +117,33 @@ void main() {
         expect(row, isNotNull);
       },
     );
+
+    test('cached variant lookup does not download a missing photo', () async {
+      final original = await _makeOriginal(name: 'photo-cached.jpg');
+      final meta = await _metaFrom(id: 111, absolutePath: original.path);
+
+      expect(
+        await cache.getCachedVariantPathForMeta(
+          meta: meta,
+          imageVariant: ImageVariantType.raw,
+        ),
+        isNull,
+      );
+
+      final raw = ImageVariant(meta, ImageVariantType.raw);
+      final downloaded = await cache.getVariantPath(
+        variant: raw,
+        fetch: fakeDownloader,
+      );
+
+      expect(
+        await cache.getCachedVariantPathForMeta(
+          meta: meta,
+          imageVariant: ImageVariantType.raw,
+        ),
+        downloaded,
+      );
+    });
 
     test(
       'Background compression eventually creates requested variant',
