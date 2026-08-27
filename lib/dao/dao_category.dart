@@ -13,12 +13,26 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'package:sqflite_common/sqlite_api.dart';
+
 import '../entity/category.dart';
 import 'dao.dart';
+import 'dao_reference_guard.dart';
 
 class DaoCategory extends Dao<Category> {
   static const tableName = 'category';
   DaoCategory() : super(tableName);
+
+  @override
+  Future<int> delete(int id, [Transaction? transaction]) async {
+    await DaoReferenceGuard.ensureNotReferenced(
+      db: withinTransaction(transaction),
+      entityName: 'Category',
+      id: id,
+      references: const [DaoReference('tool', 'categoryId', 'tools')],
+    );
+    return super.delete(id, transaction);
+  }
 
   Future<List<Category>> getByFilter(String? filter) async {
     if (filter == null || filter.isEmpty) {
