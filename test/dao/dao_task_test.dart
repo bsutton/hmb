@@ -105,6 +105,58 @@ void main() {
 
     expect(estimates.map((estimate) => estimate.task.id), [activeTask.id]);
   });
+
+  test('open task lookup excludes completed and cancelled tasks', () async {
+    final customer = Customer.forInsert(
+      name: 'Packing Customer',
+      description: '',
+      disbarred: false,
+      customerType: CustomerType.residential,
+      hourlyRate: MoneyEx.zero,
+      billingContactId: null,
+    );
+    await DaoCustomer().insert(customer);
+    final job = Job.forInsert(
+      customerId: customer.id,
+      summary: 'Packing Job',
+      description: '',
+      siteId: null,
+      contactId: null,
+      billingContactId: null,
+      status: JobStatus.inProgress,
+      hourlyRate: MoneyEx.zero,
+      bookingFee: MoneyEx.zero,
+    );
+    await DaoJob().insert(job);
+
+    Future<Task> insertTask(String name, TaskStatus status) async {
+      final task = Task.forInsert(
+        jobId: job.id,
+        name: name,
+        description: '',
+        status: status,
+      );
+      await DaoTask().insert(task);
+      return task;
+    }
+
+    final open = await insertTask('Open task', TaskStatus.inProgress);
+    final onHold = await insertTask('Paused task', TaskStatus.onHold);
+    await insertTask('Completed task', TaskStatus.completed);
+    await insertTask('Cancelled task', TaskStatus.cancelled);
+
+    final tasks = await DaoTask().getOpenTasksByJob(job.id);
+
+    expect(tasks.map((task) => task.id), containsAll([open.id, onHold.id]));
+    expect(tasks, hasLength(2));
+    expect(
+      (await DaoTask().getOpenTasksByJob(
+        job.id,
+        'Open',
+      )).map((task) => task.id),
+      [open.id],
+    );
+  });
 }
 
 Future<Task> _insertEstimatedTask({

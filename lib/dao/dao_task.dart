@@ -54,6 +54,30 @@ ORDER BY
     return tasks;
   }
 
+  Future<List<Task>> getOpenTasksByJob(int jobId, [String? filter]) async {
+    final db = withoutTransaction();
+    final where = <String>['t.job_id = ?', 't.task_status_id NOT IN (?, ?)'];
+    final args = <Object?>[
+      jobId,
+      TaskStatus.completed.id,
+      TaskStatus.cancelled.id,
+    ];
+    final trimmedFilter = filter?.trim();
+    if (trimmedFilter != null && trimmedFilter.isNotEmpty) {
+      where.add('(t.name LIKE ? OR t.description LIKE ?)');
+      args.addAll(['%$trimmedFilter%', '%$trimmedFilter%']);
+    }
+
+    return toList(
+      await db.rawQuery('''
+SELECT t.*
+FROM task t
+WHERE ${where.join(' AND ')}
+ORDER BY t.modifiedDate DESC
+''', args),
+    );
+  }
+
   @override
   Future<int> insert(covariant Task entity, [Transaction? transaction]) {
     final task = super.insert(entity, transaction);
