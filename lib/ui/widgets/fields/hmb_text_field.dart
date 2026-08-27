@@ -35,6 +35,8 @@ class HMBTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final List<TextInputFormatter> inputFormatters;
   final Key? fieldKey;
+  final int? minLines;
+  final int maxLines;
 
   /// A customizable text field that supports disabling/enabling input.
   const HMBTextField({
@@ -54,6 +56,8 @@ class HMBTextField extends StatelessWidget {
     this.suffixIcon,
     this.inputFormatters = const [],
     this.fieldKey,
+    this.minLines,
+    this.maxLines = 1,
   });
 
   @override
@@ -82,6 +86,8 @@ class HMBTextField extends StatelessWidget {
             focusNode: focusNode,
             autofocus: autofocus,
             keyboardType: keyboardType,
+            minLines: minLines,
+            maxLines: maxLines,
             obscureText: obscureText,
             textCapitalization: textCapitalization,
             inputFormatters: inputFormatters,

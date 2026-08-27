@@ -144,9 +144,8 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       );
       _linkedTaskItemIds.addAll(linkedIds);
       _lineItems.addAll(
-        (await DaoReceiptLineItem().getByReceiptId(
-          currentEntity!.id,
-        )).map(_ReceiptLineItemEditor.fromEntity),
+        (await DaoReceiptLineItem().getByReceiptId(currentEntity!.id))
+            .map(_ReceiptLineItemEditor.fromEntity),
       );
       final matchedIds = {
         for (final line in _lineItems)
@@ -713,6 +712,9 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
                     controller: line.descriptionController,
                     labelText: 'Description',
                     required: true,
+                    keyboardType: TextInputType.multiline,
+                    minLines: 2,
+                    maxLines: 4,
                   ),
                 ),
                 HMBIconButton(
@@ -1401,9 +1403,8 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     required MaterialPrice price,
     required Money lineTotalExTax,
   }) async {
-    final exactUnitCost = _absoluteMoney(
-      lineTotalExTax,
-    ).divideByFixed(price.quantity);
+    final exactUnitCost = _absoluteMoney(lineTotalExTax)
+        .divideByFixed(price.quantity);
     final exactPrice = price.mode == MaterialPriceEntryMode.packages
         ? MaterialPrice.packages(
             packageCount: price.quantity,
@@ -1457,9 +1458,8 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     if (line.unitPrice.isNonZero) {
       return _absoluteMoney(line.unitPrice);
     }
-    return _absoluteMoney(
-      line.lineTotalExTax,
-    ).divideByFixed(_parsePositiveFixed(line.quantity.toString()));
+    return _absoluteMoney(line.lineTotalExTax)
+        .divideByFixed(_parsePositiveFixed(line.quantity.toString()));
   }
 
   Fixed _parsePositiveFixed(String value) {
@@ -1526,12 +1526,9 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     final warnings = <String>[
       ...changes,
       ...billedWarnings,
-      if (matchedLines.isEmpty && _selectedJob.jobId != null)
-        '''This receipt is linked only to a job. It will not be added to an invoice; match its lines to Task Items to bill them.''',
-      if (matchedLines.isEmpty && _selectedJob.jobId == null)
-        '''This receipt is linked to neither a Task Item nor a job. It will be saved for bookkeeping but will not be billed.''',
-      if (matchedLines.isNotEmpty && _jobAllocations.isNotEmpty)
-        '''Job allocations are bookkeeping only. Only matched Task Items can flow through to an invoice.''',
+      if (matchedLines.isEmpty && _selectedJob.jobId != null) '''This receipt is linked only to a job. It will not be added to an invoice; match its lines to Task Items to bill them.''',
+      if (matchedLines.isEmpty && _selectedJob.jobId == null) '''This receipt is linked to neither a Task Item nor a job. It will be saved for bookkeeping but will not be billed.''',
+      if (matchedLines.isNotEmpty && _jobAllocations.isNotEmpty) '''Job allocations are bookkeeping only. Only matched Task Items can flow through to an invoice.''',
     ];
     if (warnings.isEmpty) {
       return true;
