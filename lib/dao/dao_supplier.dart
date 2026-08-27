@@ -16,10 +16,47 @@ import 'package:strings/strings.dart';
 
 import '../entity/supplier.dart';
 import 'dao.dart';
+import 'dao_reference_guard.dart';
 
 class DaoSupplier extends Dao<Supplier> {
   static const tableName = 'supplier';
   DaoSupplier() : super(tableName);
+
+  @override
+  Future<int> delete(int id, [Transaction? transaction]) async {
+    final executor = withinTransaction(transaction);
+    await DaoReferenceGuard.ensureNotReferenced(
+      db: executor,
+      entityName: 'Supplier',
+      id: id,
+      references: const [
+        DaoReference('receipt', 'supplier_id', 'receipts'),
+        DaoReference('task_item', 'supplier_id', 'task items'),
+        DaoReference('time_entry', 'supplier_id', 'time entries'),
+        DaoReference('check_list_item', 'supplier_id', 'checklist items'),
+        DaoReference('tool', 'supplierId', 'tools'),
+        DaoReference('supplier_assignment', 'supplier_id', 'assignments'),
+        DaoReference('plaster_project', 'supplier_id', 'plaster projects'),
+        DaoReference(
+          'plaster_material_size',
+          'supplier_id',
+          'plaster material sizes',
+        ),
+        DaoReference('task_estimate', 'supplier_id', 'task estimates'),
+      ],
+    );
+    await executor.delete(
+      'supplier_contact',
+      where: 'supplier_id = ?',
+      whereArgs: [id],
+    );
+    await executor.delete(
+      'supplier_site',
+      where: 'supplier_id = ?',
+      whereArgs: [id],
+    );
+    return await super.delete(id, transaction);
+  }
 
   Future<List<Supplier>> getByFilter(String? filter) async {
     final db = withoutTransaction();

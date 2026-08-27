@@ -424,6 +424,7 @@ You can set a default booking fee from System | Billing screen''');
       ),
       initialContact: June.getState(SelectedReferrerContact.new).contactId,
       customer: referrerCustomer,
+      showRole: true,
       onSelected: (contact) {
         June.getState(SelectedReferrerContact.new).contactId = contact?.id;
       },

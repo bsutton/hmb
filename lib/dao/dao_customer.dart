@@ -18,8 +18,8 @@ import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/customer.dart';
-import '../util/dart/exceptions.dart';
 import 'dao.dart';
+import 'dao_reference_guard.dart';
 import 'dao_system.dart';
 
 class DaoCustomer extends Dao<Customer> {
@@ -34,37 +34,23 @@ class DaoCustomer extends Dao<Customer> {
   Future<int> delete(int id, [Transaction? transaction]) async {
     final db = withinTransaction(transaction);
 
-    final dependencyRows = await db.rawQuery(
-      '''
-SELECT
-  (SELECT COUNT(*) FROM job j WHERE j.customer_id = ?) AS job_count,
-  (
-    SELECT COUNT(*)
-    FROM quote q
-    JOIN job j ON j.id = q.job_id
-    WHERE j.customer_id = ?
-  ) AS quote_count,
-  (
-    SELECT COUNT(*)
-    FROM invoice i
-    JOIN job j ON j.id = i.job_id
-    WHERE j.customer_id = ?
-  ) AS invoice_count
-''',
-      [id, id, id],
+    await DaoReferenceGuard.ensureNotReferenced(
+      db: db,
+      entityName: 'Customer',
+      id: id,
+      references: const [
+        DaoReference('job', 'customer_id', 'jobs'),
+        DaoReference('job', 'referrer_customer_id', 'job referrals'),
+        DaoReference(
+          'debtor_transaction',
+          'debtor_customer_id',
+          'debtor transactions',
+        ),
+        DaoReference('debtor_payment', 'customer_id', 'debtor payments'),
+        DaoReference('credit_note', 'customer_id', 'credit notes'),
+        DaoReference('mailing_recipient', 'customer_id', 'mailings'),
+      ],
     );
-
-    final counts = dependencyRows.first;
-    final jobCount = counts['job_count'] as int? ?? 0;
-    final quoteCount = counts['quote_count'] as int? ?? 0;
-    final invoiceCount = counts['invoice_count'] as int? ?? 0;
-
-    if (jobCount > 0 || quoteCount > 0 || invoiceCount > 0) {
-      throw HMBException(
-        'Customer cannot be deleted while related records exist '
-        '(jobs: $jobCount, quotes: $quoteCount, invoices: $invoiceCount).',
-      );
-    }
 
     await db.delete(
       'customer_contact',

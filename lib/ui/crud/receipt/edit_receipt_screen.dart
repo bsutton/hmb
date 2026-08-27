@@ -94,6 +94,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   var _linkableTaskItems = <TaskItem>[];
   var _preferredReceiptJobIds = <int>{};
   var _receiptJobIdsByTaskItemId = <int, int>{};
+  var _receiptMatchContexts = <int, ReceiptTaskItemContext>{};
   final _jobAllocations = <_ReceiptJobAllocationEditor>[];
   final _lineItems = <_ReceiptLineItemEditor>[];
   Task? _lastCreatedLineTask;
@@ -144,9 +145,8 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       );
       _linkedTaskItemIds.addAll(linkedIds);
       _lineItems.addAll(
-        (await DaoReceiptLineItem().getByReceiptId(
-          currentEntity!.id,
-        )).map(_ReceiptLineItemEditor.fromEntity),
+        (await DaoReceiptLineItem().getByReceiptId(currentEntity!.id))
+            .map(_ReceiptLineItemEditor.fromEntity),
       );
       final matchedIds = {
         for (final line in _lineItems)
@@ -713,6 +713,9 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
                     controller: line.descriptionController,
                     labelText: 'Description',
                     required: true,
+                    keyboardType: TextInputType.multiline,
+                    minLines: 2,
+                    maxLines: 4,
                   ),
                 ),
                 HMBIconButton(
@@ -835,7 +838,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
                   : _firstOrNull(
                       await DaoTaskItem().getByIds([line.matchedTaskItemId!]),
                     ),
-              items: (_) async => _rankedTaskItemsForLine(line),
+              items: (filter) async => _filteredTaskItemsForLine(line, filter),
               onAdd: () => _createTaskItemForLine(line),
               onChanged: (item) => _setLineMatch(line, item),
               format: _formatTaskItemMatch,
@@ -1178,9 +1181,11 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   }
 
   Future<void> _reloadLinkableTaskItems() async {
-    final candidates = await DaoTaskItem().getPurchasedItemsForReceiptLink();
+    final candidates = await DaoTaskItem().getPurchasedItemsForReceiptLink(
+      jobId: _selectedJob.jobId,
+    );
     final returnedCandidates = await DaoTaskItem()
-        .getReturnedItemsForReceiptLink();
+        .getReturnedItemsForReceiptLink(jobId: _selectedJob.jobId);
     final linked = currentEntity == null
         ? <TaskItem>[]
         : await DaoReceipt().getLinkedTaskItems(currentEntity!.id);
@@ -1201,6 +1206,9 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     _receiptJobIdsByTaskItemId = await DaoTaskItem().getJobIdsForTaskItems(
       byId.keys,
     );
+    _receiptMatchContexts = await DaoTaskItem().getReceiptMatchContexts(
+      byId.keys,
+    );
     _linkableTaskItems = _rankedTaskItemsForReceipt(byId.values);
     if (mounted) {
       setState(() {});
@@ -1214,6 +1222,17 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         preferredJobIds: _preferredReceiptJobIds,
         jobIdByTaskItemId: _receiptJobIdsByTaskItemId,
       );
+
+  List<TaskItem> _filteredTaskItemsForLine(
+    _ReceiptLineItemEditor line,
+    String? filter,
+  ) => _rankedTaskItemsForLine(line).where((item) {
+    final context = _receiptMatchContexts[item.id];
+    return context?.matches(filter, item.description) ??
+        item.description.toLowerCase().contains(
+          filter?.trim().toLowerCase() ?? '',
+        );
+  }).toList();
 
   List<TaskItem> _rankedTaskItemsForReceipt([Iterable<TaskItem>? items]) =>
       ReceiptTaskItemMatcher.sortForReceipt(
@@ -1258,8 +1277,11 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         '${price.unitCost} = ${price.totalCost}';
   }
 
-  String _formatTaskItemMatch(TaskItem item) =>
-      '${item.description} - ${_formatTaskItemCost(item)}';
+  String _formatTaskItemMatch(TaskItem item) {
+    final summary = '${item.description} - ${_formatTaskItemCost(item)}';
+    final context = _receiptMatchContexts[item.id];
+    return context == null ? summary : '$summary · ${context.display}';
+  }
 
   Future<void> _createTaskItemForLine(_ReceiptLineItemEditor line) async {
     final selectedJob = SelectedJob()..jobId = _selectedJob.jobId;
@@ -1401,9 +1423,8 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     required MaterialPrice price,
     required Money lineTotalExTax,
   }) async {
-    final exactUnitCost = _absoluteMoney(
-      lineTotalExTax,
-    ).divideByFixed(price.quantity);
+    final exactUnitCost = _absoluteMoney(lineTotalExTax)
+        .divideByFixed(price.quantity);
     final exactPrice = price.mode == MaterialPriceEntryMode.packages
         ? MaterialPrice.packages(
             packageCount: price.quantity,
@@ -1457,9 +1478,8 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     if (line.unitPrice.isNonZero) {
       return _absoluteMoney(line.unitPrice);
     }
-    return _absoluteMoney(
-      line.lineTotalExTax,
-    ).divideByFixed(_parsePositiveFixed(line.quantity.toString()));
+    return _absoluteMoney(line.lineTotalExTax)
+        .divideByFixed(_parsePositiveFixed(line.quantity.toString()));
   }
 
   Fixed _parsePositiveFixed(String value) {
@@ -1526,12 +1546,9 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     final warnings = <String>[
       ...changes,
       ...billedWarnings,
-      if (matchedLines.isEmpty && _selectedJob.jobId != null)
-        '''This receipt is linked only to a job. It will not be added to an invoice; match its lines to Task Items to bill them.''',
-      if (matchedLines.isEmpty && _selectedJob.jobId == null)
-        '''This receipt is linked to neither a Task Item nor a job. It will be saved for bookkeeping but will not be billed.''',
-      if (matchedLines.isNotEmpty && _jobAllocations.isNotEmpty)
-        '''Job allocations are bookkeeping only. Only matched Task Items can flow through to an invoice.''',
+      if (matchedLines.isEmpty && _selectedJob.jobId != null) '''This receipt is linked only to a job. It will not be added to an invoice; match its lines to Task Items to bill them.''',
+      if (matchedLines.isEmpty && _selectedJob.jobId == null) '''This receipt is linked to neither a Task Item nor a job. It will be saved for bookkeeping but will not be billed.''',
+      if (matchedLines.isNotEmpty && _jobAllocations.isNotEmpty) '''Job allocations are bookkeeping only. Only matched Task Items can flow through to an invoice.''',
     ];
     if (warnings.isEmpty) {
       return true;

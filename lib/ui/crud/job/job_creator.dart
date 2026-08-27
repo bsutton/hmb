@@ -403,9 +403,10 @@ class _JobCreatorState extends State<JobCreator> {
     final contacts = await daoContact.getByCustomer(customer.id);
     final sites = await daoSite.getByCustomer(customer.id);
     contacts.sort(
-      (a, b) => _displayName(
-        a,
-      ).toLowerCase().compareTo(_displayName(b).toLowerCase()),
+      (a, b) =>
+          _displayName(a)
+              .toLowerCase()
+              .compareTo(_displayName(b).toLowerCase()),
     );
     if (!mounted || _selectedCustomer?.id != customer.id) {
       return;
@@ -1379,10 +1380,14 @@ class _JobStep extends WizardStep {
                   final name = '${contact.firstName} ${contact.surname}'
                       .toLowerCase();
                   final email = contact.emailAddress.toLowerCase();
-                  return name.contains(value) || email.contains(value);
+                  final role = contact.roleDescription.toLowerCase();
+                  return name.contains(value) ||
+                      email.contains(value) ||
+                      role.contains(value);
                 }).toList();
               },
-              format: state._displayContact,
+              format: (contact) =>
+                  formatContactForSelection(contact, showRole: true),
               onChanged: (contact) {
                 setState(() {
                   state._selectedReferrerContact = contact;
