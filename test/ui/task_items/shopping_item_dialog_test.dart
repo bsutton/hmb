@@ -103,8 +103,7 @@ void main() {
         bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
         summary: 'Shopping Packet Job',
       );
-      job.status = JobStatus.scheduled;
-      await DaoJob().update(job);
+      await setJobStatusForTest(job, JobStatus.scheduled);
 
       task = Task.forInsert(
         jobId: job.id,

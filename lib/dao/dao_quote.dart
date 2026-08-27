@@ -18,7 +18,9 @@ import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/entity.g.dart';
-import '../fsm/job_status_fsm.dart';
+import '../fsm/lifecycle_event_dispatcher.dart';
+import '../fsm/lifecycle_models.dart';
+import '../fsm/quote_events.dart';
 import '../util/dart/exceptions.dart';
 import '../util/dart/money_ex.dart';
 import 'dao.g.dart';
@@ -30,6 +32,27 @@ class DaoQuote extends Dao<Quote> {
 
   @override
   Quote fromMap(Map<String, dynamic> map) => Quote.fromMap(map);
+
+  @override
+  Future<int> update(Quote entity, [Transaction? transaction]) async {
+    final existing = await getById(entity.id, transaction);
+    if (existing != null && existing.state != entity.state) {
+      throw const LifecycleException(
+        'Quote state must be changed through LifecycleEventDispatcher.',
+      );
+    }
+    entity.modifiedDate = DateTime.now();
+    final values = entity.toMap()
+      ..remove('state')
+      ..remove('date_sent')
+      ..remove('date_approved');
+    final count = await withinTransaction(
+      transaction,
+    ).update(tableName, values, where: 'id = ?', whereArgs: [entity.id]);
+    assert(count == 1, 'A quote update must affect exactly one row.');
+    Dao.notifier(this, entity.id);
+    return entity.id;
+  }
 
   @override
   Future<List<Quote>> getAll({
@@ -288,7 +311,11 @@ class DaoQuote extends Dao<Quote> {
     }
 
     final amended = await create(job, invoiceOptions);
-    await rejectQuote(original.id);
+    await LifecycleEventDispatcher().dispatchQuote(
+      original.id,
+      AmendQuote.new,
+      context: LifecycleContext(source: 'quote.amend'),
+    );
     return amended;
   }
 
@@ -379,77 +406,42 @@ class DaoQuote extends Dao<Quote> {
     await DaoQuote().update(updatedQuote);
   }
 
-  /// Updates the quote's state (and the modified_date).
-  Future<int> updateState(
-    int quoteId,
-    QuoteState newState, {
-    Transaction? transaction,
-  }) {
-    final db = withinTransaction(transaction);
-    return db.update(
-      tableName,
-      {
-        'state': newState.name,
-        'modified_date': DateTime.now().toIso8601String(),
-      },
-      where: 'id = ?',
-      whereArgs: [quoteId],
-    );
-  }
-
   /// Approve quote
-  Future<int> approveQuote(int quoteId, {Transaction? transaction}) {
-    final db = withinTransaction(transaction);
-    return db.update(
-      tableName,
-      {
-        'state': QuoteState.approved.name,
-        'date_approved': DateTime.now().toIso8601String(),
-        'modified_date': DateTime.now().toIso8601String(),
-      },
-      where: 'id = ?',
-      whereArgs: [quoteId],
-    );
-  }
+  Future<int> approveQuote(int quoteId) async =>
+      (await LifecycleEventDispatcher().dispatchQuote(
+        quoteId,
+        ApproveQuoteEvent.new,
+        context: LifecycleContext(source: 'quote.approve'),
+      )).entity.id;
+
+  Future<int> unapproveQuote(int quoteId) async =>
+      (await LifecycleEventDispatcher().dispatchQuote(
+        quoteId,
+        UnapproveQuote.new,
+        context: LifecycleContext(source: 'quote.unapprove'),
+      )).entity.id;
 
   /// Reject quote
-  Future<int> rejectQuote(int quoteId, {Transaction? transaction}) async {
-    await DaoMilestone().voidByQuoteId(quoteId, transaction: transaction);
-    return updateState(quoteId, QuoteState.rejected, transaction: transaction);
-  }
+  Future<int> rejectQuote(int quoteId) async =>
+      (await LifecycleEventDispatcher().dispatchQuote(
+        quoteId,
+        RejectQuoteEvent.new,
+        context: LifecycleContext(source: 'quote.reject'),
+      )).entity.id;
 
   /// Withdraw quote by business
-  Future<int> withdrawQuote(int quoteId, {Transaction? transaction}) async {
-    await DaoMilestone().voidByQuoteId(quoteId, transaction: transaction);
-    return updateState(quoteId, QuoteState.withdrawn, transaction: transaction);
-  }
-
-  Future<void> rejectByJob(int jobId, {Transaction? transaction}) async {
-    final quotes = await getByJobId(jobId, transaction: transaction);
-    for (final quote in quotes) {
-      if (quote.state != QuoteState.rejected) {
-        await rejectQuote(quote.id, transaction: transaction);
-      }
-    }
-  }
+  Future<int> withdrawQuote(int quoteId) async =>
+      (await LifecycleEventDispatcher().dispatchQuote(
+        quoteId,
+        WithdrawQuote.new,
+        context: LifecycleContext(source: 'quote.withdraw'),
+      )).entity.id;
 
   /// quote sent
-  Future<int> markQuoteSent(int quoteId, {Transaction? transaction}) async {
-    final db = withinTransaction(transaction);
-    await db.update(
-      tableName,
-      {
-        'state': QuoteState.sent.name,
-        'date_sent': DateTime.now().toIso8601String(),
-        'modified_date': DateTime.now().toIso8601String(),
-      },
-      where: 'id = ?',
-      whereArgs: [quoteId],
-    );
-
-    final job = await DaoJob().getByQuoteId(quoteId);
-    await submitJobQuote(job!.id);
-
-    return quoteId;
-  }
+  Future<int> markQuoteSent(int quoteId) async =>
+      (await LifecycleEventDispatcher().dispatchQuote(
+        quoteId,
+        SendQuote.new,
+        context: LifecycleContext(source: 'quote.sent'),
+      )).entity.id;
 }

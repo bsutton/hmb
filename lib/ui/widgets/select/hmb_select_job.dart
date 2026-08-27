@@ -84,8 +84,7 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
       job.status != JobStatus.rejected &&
       job.status != JobStatus.onHold &&
       job.status != JobStatus.awaitingPayment &&
-      job.status != JobStatus.completed &&
-      job.status != JobStatus.toBeBilled;
+      job.status != JobStatus.completed;
 
   void _onJobChanged(JobAndCustomer? jc) {
     setState(() {

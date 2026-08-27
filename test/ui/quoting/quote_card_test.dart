@@ -79,9 +79,8 @@ void main() {
     await tester.tap(find.text('Reject'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Reject Quote'), findsOneWidget);
-    expect(find.text('Quote Only'), findsOneWidget);
-    expect(find.text('Quote + Job'), findsOneWidget);
+    expect(find.text('Reject quote and job'), findsOneWidget);
+    expect(find.text('Reject Quote + Job'), findsOneWidget);
 
     await tester.tap(
       find.descendant(
@@ -91,7 +90,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Reject Quote'), findsNothing);
+    expect(find.text('Reject quote and job'), findsNothing);
   });
 
   testWidgets('unapprove button rolls approved quote back to sent', (
@@ -132,9 +131,22 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'Unapprove'));
     await tester.pumpAndSettle();
 
-    final updatedQuote = await tester.runAsync(
-      () => DaoQuote().getById(quote.id),
-    );
+    final updatedQuote = await tester.runAsync(() async {
+      Quote? updated;
+      for (var attempt = 0; attempt < 20; attempt++) {
+        updated = await DaoQuote().getById(quote.id);
+        if (updated?.state == QuoteState.sent) {
+          break;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      // The database state commits before the button callback reloads the
+      // quote and posts its confirmation toast.
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      return updated;
+    });
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 7));
     expect(updatedQuote?.state, QuoteState.sent);
   });
 

@@ -27,8 +27,11 @@ class DaoTask extends Dao<Task> {
   @override
   Task fromMap(Map<String, dynamic> map) => Task.fromMap(map);
 
-  Future<List<Task>> getTasksByJob(int jobId) async {
-    final db = withoutTransaction();
+  Future<List<Task>> getTasksByJob(
+    int jobId, {
+    Transaction? transaction,
+  }) async {
+    final db = withinTransaction(transaction);
 
     final results = await db.rawQuery(
       '''
@@ -555,7 +558,7 @@ SELECT 1
   /// If the job has been approved then we mark the
   /// task as [TaskStatus.approved] providing it is in
   /// an appropriate state.
-  Future<void> jobHasBeenApproved(Task task) async {
+  Future<void> jobHasBeenApproved(Task task, {Transaction? transaction}) async {
     final status = switch (task.status) {
       TaskStatus.approved => TaskStatus.approved,
       TaskStatus.awaitingApproval => TaskStatus.approved,
@@ -575,7 +578,7 @@ SELECT 1
     };
 
     final updatedTask = task.copyWith(status: status);
-    await update(updatedTask);
+    await update(updatedTask, transaction);
   }
 }
 

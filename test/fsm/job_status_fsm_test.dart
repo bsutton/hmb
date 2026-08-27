@@ -1,130 +1,247 @@
-// test/job_status_fsm_test.dart
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/fsm/job_events.dart';
 import 'package:hmb/fsm/job_states.dart';
 import 'package:hmb/fsm/job_status_fsm.dart';
+import 'package:hmb/fsm/lifecycle_event_dispatcher.dart';
+import 'package:hmb/fsm/lifecycle_models.dart';
+import 'package:hmb/fsm/lifecycle_rules.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 import 'package:test/test.dart';
 
 import '../database/management/db_utility_test_helper.dart';
 
 void main() {
-  setUp(() async {
-    await setupTestDb();
-  });
+  setUp(setupTestDb);
+  tearDown(tearDownTestDb);
 
-  tearDown(() async {
-    await tearDownTestDb();
-  });
-
-  group('Job FSM hydration', () {
-    test('starts in the persisted state without changing job.status', () async {
-      final job = await _insertJob(JobStatus.inProgress);
-
-      final machine = await buildJobMachine(job);
-
-      // We hydrate directly into the persisted state; no transition fired.
-      expect(await machine.isInState<InProgress>(), isTrue);
-      expect(job.status, JobStatus.inProgress);
-    });
-
-    test(
-      'next valid states from Quoting include AwaitingApproval and Rejected',
-      () async {
-        final job = await _insertJob(JobStatus.quoting);
+  group('Job lifecycle rules', () {
+    test('hydrates every persisted state without writing it', () async {
+      for (final status in JobStatus.values) {
+        final job = await _insertJob(status);
         final machine = await buildJobMachine(job);
-
-        final next = await nextStatusesOnly(machine: machine, job: job);
-
-        // Direct transition + explicit reject transition on Quoting.
-        expect(next, contains(JobStatus.awaitingApproval));
-        expect(next, contains(JobStatus.rejected));
-
-        // Obviously invalid from Quoting.
-        expect(next, isNot(contains(JobStatus.completed)));
-        expect(next, isNot(contains(JobStatus.toBeBilled)));
-      },
-    );
-
-    test('Reject is available from every rejectable state', () async {
-      final nonRejectable = {JobStatus.rejected, JobStatus.toBeBilled};
-      for (final s in JobStatus.values.where(
-        (s) => !nonRejectable.contains(s),
-      )) {
-        final job = await _insertJob(s);
-        final machine = await buildJobMachine(job);
-
-        final next = await nextStatusesOnly(machine: machine, job: job);
-        expect(
-          next,
-          contains(JobStatus.rejected),
-          reason: 'Reject must be available from $s',
-        );
+        expect(await currentState(machine), stateTypeFromStatus(status));
+        expect((await DaoJob().getById(job.id))?.status, status);
       }
     });
 
-    test('marking job to be scheduled creates a schedule todo', () async {
-      final job = await _insertJob(JobStatus.awaitingPayment);
-      await transitionJob(job, PaymentReceived.new);
+    test('allowed transitions exactly match the domain matrix', () async {
+      final expected = <JobStatus, Set<Type>>{
+        JobStatus.prospecting: {
+          StartQuoting,
+          SubmitQuote,
+          ProceedToScheduling,
+          StartWork,
+          PauseJob,
+          RejectJob,
+        },
+        JobStatus.quoting: {
+          SubmitQuote,
+          ProceedToScheduling,
+          StartWork,
+          PauseJob,
+          RejectJob,
+        },
+        JobStatus.awaitingApproval: {
+          ApproveQuote,
+          ProceedToScheduling,
+          StartWork,
+          PauseJob,
+          RejectJob,
+        },
+        JobStatus.awaitingPayment: {
+          PaymentReceived,
+          ProceedToScheduling,
+          QuoteUnapproved,
+          StartWork,
+          PauseJob,
+          RejectJob,
+        },
+        JobStatus.toBeScheduled: {ScheduleJob, StartWork, PauseJob, RejectJob},
+        JobStatus.scheduled: {StartWork, WaitForMaterials, PauseJob, RejectJob},
+        JobStatus.inProgress: {
+          StartWork,
+          WaitForMaterials,
+          PauseJob,
+          CompleteJob,
+          RejectJob,
+        },
+        JobStatus.onHold: {
+          ResumeJob,
+          WaitForMaterials,
+          ProceedToScheduling,
+          RejectJob,
+        },
+        JobStatus.awaitingMaterials: {
+          MaterialsArrived,
+          ResumeJob,
+          PauseJob,
+          RejectJob,
+        },
+        JobStatus.completed: {ReopenWork},
+        JobStatus.rejected: {RestoreJob},
+      };
 
-      final updatedJob = await DaoJob().getById(job.id);
-      expect(updatedJob?.status, JobStatus.toBeScheduled);
-
-      final openTodos = await DaoToDo().getOpenByJob(job.id);
-      expect(
-        openTodos.any(
-          (todo) => todo.title.trim().toLowerCase() == 'schedule job',
-        ),
-        isTrue,
-      );
-    });
-
-    test('every offered transition persists its destination status', () async {
       for (final status in JobStatus.values) {
-        final probe = await _insertJob(status);
-        final probeMachine = await buildJobMachine(probe);
-        final offered = await nextFromFsm(machine: probeMachine, job: probe);
-
-        for (final offeredTransition in offered) {
-          final job = await _insertJob(status);
-          final machine = await buildJobMachine(job);
-          final transitions = await nextFromFsm(machine: machine, job: job);
-          final transition = transitions.firstWhere(
-            (candidate) => candidate.to == offeredTransition.to,
-          );
-
-          await transition.fire(machine);
-
-          final updated = await DaoJob().getById(job.id);
+        final job = await _insertJob(status);
+        for (final entry in eventFactory.entries) {
+          final allowed = targetForJobEvent(status, entry.value(job)) != null;
           expect(
-            updated?.status,
-            offeredTransition.to,
-            reason: '$status should persist ${offeredTransition.to}',
+            allowed,
+            expected[status]!.contains(entry.key),
+            reason: '${entry.key} from ${status.name}',
           );
         }
       }
     });
 
+    test('every job state is reachable from prospecting', () async {
+      final reached = <JobStatus>{JobStatus.prospecting};
+      var changed = true;
+      while (changed) {
+        changed = false;
+        for (final from in reached.toList()) {
+          final job = await _insertJob(from);
+          for (final factory in eventFactory.values) {
+            final target = targetForJobEvent(from, factory(job));
+            if (target != null && reached.add(target)) {
+              changed = true;
+            }
+          }
+        }
+      }
+      expect(reached, JobStatus.values.toSet());
+    });
+  });
+
+  group('Job lifecycle dispatcher', () {
+    test('persists transition, entry action and audit atomically', () async {
+      final job = await _insertJob(JobStatus.awaitingPayment);
+      final result = await LifecycleEventDispatcher().dispatchJob(
+        job.id,
+        PaymentReceived.new,
+        context: LifecycleContext(source: 'test', reason: 'Deposit cleared'),
+      );
+
+      expect(result.entity.status, JobStatus.toBeScheduled);
+      expect(result.changed, isTrue);
+      final todos = await DaoToDo().getOpenByJob(job.id);
+      expect(todos.map((todo) => todo.title), contains('Schedule job'));
+      final audit = await DaoLifecycleTransition().getByJob(job.id);
+      expect(audit, hasLength(1));
+      expect(audit.single.event, 'PaymentReceived');
+      expect(audit.single.reason, 'Deposit cleared');
+    });
+
+    test('invalid event makes no state or audit write', () async {
+      final job = await _insertJob(JobStatus.completed);
+
+      await expectLater(
+        LifecycleEventDispatcher().dispatchJob(
+          job.id,
+          RejectJob.new,
+          context: LifecycleContext(source: 'test'),
+        ),
+        throwsA(isA<LifecycleException>()),
+      );
+
+      expect((await DaoJob().getById(job.id))?.status, JobStatus.completed);
+      expect(await DaoLifecycleTransition().getByJob(job.id), isEmpty);
+    });
+
+    test('DAO rejects direct lifecycle state writes', () async {
+      final job = await _insertJob(JobStatus.prospecting);
+      await expectLater(
+        DaoJob().update(job.copyWith(status: JobStatus.inProgress)),
+        throwsA(isA<LifecycleException>()),
+      );
+      expect((await DaoJob().getById(job.id))?.status, JobStatus.prospecting);
+    });
+
+    test('navigation records recency without starting work', () async {
+      final job = await _insertJob(JobStatus.prospecting);
+      final updated = await markJobActive(job.id);
+      expect(updated.status, JobStatus.prospecting);
+      expect(await DaoLifecycleTransition().getByJob(job.id), isEmpty);
+    });
+
+    test('picker keeps distinct actions with the same destination', () async {
+      final job = await _insertJob(JobStatus.awaitingPayment);
+      final machine = await buildJobMachine(job);
+      final actions = await nextFromFsm(machine: machine, job: job);
+      final scheduling = actions
+          .where((action) => action.to == JobStatus.toBeScheduled)
+          .toList();
+      expect(scheduling, hasLength(2));
+      expect(
+        scheduling.map((action) => action.action.label),
+        containsAll(['Payment received', 'Proceed to scheduling']),
+      );
+    });
+
     test(
-      'on hold offers to be scheduled and de-duplicates in progress',
+      'start-work payload commits timer, task, job and audit together',
       () async {
-        final job = await _insertJob(JobStatus.onHold);
-        final machine = await buildJobMachine(job);
-
-        final next = await nextStatusesOnly(machine: machine, job: job);
-
-        expect(next, contains(JobStatus.toBeScheduled));
-        expect(
-          next.where((status) => status == JobStatus.inProgress).length,
-          1,
+        final job = await _insertJob(JobStatus.scheduled);
+        final task = Task.forInsert(
+          jobId: job.id,
+          name: 'Work',
+          description: '',
+          status: TaskStatus.approved,
         );
+        await DaoTask().insert(task);
+        final entry = TimeEntry.forInsert(
+          taskId: task.id,
+          startTime: DateTime(2025, 1, 1, 9),
+        );
+
+        await LifecycleEventDispatcher().dispatchJob(
+          job.id,
+          (job) => StartWork(job, task: task, timeEntry: entry),
+          context: LifecycleContext(source: 'test.timer'),
+        );
+
+        expect((await DaoJob().getById(job.id))?.status, JobStatus.inProgress);
+        expect(
+          (await DaoTask().getById(task.id))?.status,
+          TaskStatus.inProgress,
+        );
+        expect(await DaoTimeEntry().getById(entry.id), isNotNull);
+        expect(await DaoLifecycleTransition().getByJob(job.id), hasLength(1));
       },
     );
+
+    test('invalid start-work payload rolls back every write', () async {
+      final job = await _insertJob(JobStatus.completed);
+      final task = Task.forInsert(
+        jobId: job.id,
+        name: 'Work',
+        description: '',
+        status: TaskStatus.approved,
+      );
+      await DaoTask().insert(task);
+      final entry = TimeEntry.forInsert(
+        taskId: task.id,
+        startTime: DateTime(2025, 1, 1, 9),
+      );
+
+      await expectLater(
+        LifecycleEventDispatcher().dispatchJob(
+          job.id,
+          (job) => StartWork(job, task: task, timeEntry: entry),
+          context: LifecycleContext(source: 'test.timer'),
+        ),
+        throwsA(isA<LifecycleException>()),
+      );
+
+      expect((await DaoJob().getById(job.id))?.status, JobStatus.completed);
+      expect((await DaoTask().getById(task.id))?.status, TaskStatus.approved);
+      expect(await DaoTimeEntry().getByTask(task.id), isEmpty);
+      expect(await DaoLifecycleTransition().getByJob(job.id), isEmpty);
+    });
   });
 }
 
-// Keep your helper consistent with your entity shape.
 Future<Job> _insertJob(JobStatus status) async {
   final job = Job.forInsert(
     customerId: 1,
@@ -138,7 +255,6 @@ Future<Job> _insertJob(JobStatus status) async {
     lastActive: true,
     billingContactId: 1,
   );
-  final id = await DaoJob().insert(job);
-  job.id = id;
+  await DaoJob().insert(job);
   return job;
 }

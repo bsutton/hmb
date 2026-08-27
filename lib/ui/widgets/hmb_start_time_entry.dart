@@ -25,7 +25,8 @@ import '../../entity/task.dart';
 import '../../entity/task_status.dart';
 import '../../entity/time_entry.dart';
 import '../../fsm/job_events.dart';
-import '../../fsm/job_status_fsm.dart';
+import '../../fsm/lifecycle_event_dispatcher.dart';
+import '../../fsm/lifecycle_models.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/log.dart';
 import '../dialog/hmb_ask_user_to_continue.dart';
@@ -531,16 +532,13 @@ The Task must be ${TaskStatus.approved.name} or ${TaskStatus.inProgress.name} in
     }
 
     final job = await BlockingUI().runAndWait(() async {
-      await DaoTimeEntry().insert(newTimeEntry);
-
-      /// If we are running a timer for a job then it must
-      /// be the active job.
-      final job = await transitionJobById(task.jobId, StartWork.new);
-
-      // mark the task as in progress.
+      final result = await LifecycleEventDispatcher().dispatchJob(
+        task.jobId,
+        (job) => StartWork(job, task: task, timeEntry: newTimeEntry),
+        context: LifecycleContext(source: 'timer.start'),
+      );
       task.status = TaskStatus.inProgress;
-      await DaoTask().update(task);
-      return job;
+      return result.entity;
     }, label: 'Starting timer');
 
     if (mounted) {

@@ -25,8 +25,10 @@ import '../../entity/contact.dart';
 import '../../entity/flutter_extensions/job_activity_status_ex.dart';
 import '../../entity/job.dart';
 import '../../entity/job_activity.dart';
+import '../../entity/job_status.dart';
 import '../../fsm/job_events.dart';
-import '../../fsm/job_status_fsm.dart';
+import '../../fsm/lifecycle_event_dispatcher.dart';
+import '../../fsm/lifecycle_models.dart';
 import '../../util/dart/date_time_ex.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
@@ -537,10 +539,26 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
   }
 
   Future<void> _updateJobStatus() async {
-    // Next, check the job’s status
     final job = await DaoJob().getById(_selectedJob.jobId);
-    if (job != null) {
-      (await buildJobMachine(job)).applyEvent(ScheduleJob(job));
+    if (job == null) {
+      return;
+    }
+    final dispatcher = LifecycleEventDispatcher();
+    var current = job;
+    if (current.status == JobStatus.awaitingPayment ||
+        current.status == JobStatus.onHold) {
+      current = (await dispatcher.dispatchJob(
+        current.id,
+        ProceedToScheduling.new,
+        context: LifecycleContext(source: 'schedule.create'),
+      )).entity;
+    }
+    if (current.status == JobStatus.toBeScheduled) {
+      await dispatcher.dispatchJob(
+        current.id,
+        ScheduleJob.new,
+        context: LifecycleContext(source: 'schedule.create'),
+      );
     }
   }
 

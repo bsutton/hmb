@@ -26,6 +26,7 @@ class _JobActivityTimelineSectionState
 
   Future<_ActivityTimelineData> _load() async {
     final activities = await DaoActivity().getByJob(widget.job.id, limit: 200);
+    final transitions = await DaoLifecycleTransition().getByJob(widget.job.id);
     final todoIds = activities
         .map((e) => e.linkedTodoId)
         .whereType<int>()
@@ -33,7 +34,11 @@ class _JobActivityTimelineSectionState
         .toList();
     final todos = await DaoToDo().getByIds(todoIds);
     final todoById = {for (final todo in todos) todo.id: todo};
-    return _ActivityTimelineData(activities, todoById);
+    final entries = <_TimelineEntry>[
+      ...activities.map(_TimelineEntry.activity),
+      ...transitions.map(_TimelineEntry.transition),
+    ]..sort((left, right) => right.occurredAt.compareTo(left.occurredAt));
+    return _ActivityTimelineData(entries, todoById);
   }
 
   Future<void> _addActivity() async {
@@ -148,13 +153,17 @@ class _JobActivityTimelineSectionState
           future: _load(),
           builder: (context, data) {
             final timeline = data!;
-            if (timeline.activities.isEmpty) {
+            if (timeline.entries.isEmpty) {
               return const Text('No activity yet.');
             }
 
             return HMBColumn(
-              children: timeline.activities
-                  .map((activity) => _buildItem(activity, timeline.todoById))
+              children: timeline.entries
+                  .map(
+                    (entry) => entry.activity != null
+                        ? _buildItem(entry.activity!, timeline.todoById)
+                        : _buildTransitionItem(entry.transition!),
+                  )
                   .toList(),
             );
           },
@@ -218,6 +227,28 @@ class _JobActivityTimelineSectionState
     );
   }
 
+  Widget _buildTransitionItem(LifecycleTransition transition) => Surface(
+    rounded: true,
+    elevation: SurfaceElevation.e1,
+    margin: const EdgeInsets.only(top: 8),
+    child: HMBColumn(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        HMBTextHeadline2(
+          '${transition.aggregateType == 'job' ? 'Job' : 'Quote'}: '
+          '${transition.fromState} → ${transition.toState}',
+        ),
+        Text(
+          '${transition.event}  •  system  •  '
+          '${formatDateTime(transition.occurredAt)}',
+        ),
+        Text('Source: ${transition.source}'),
+        if ((transition.reason ?? '').trim().isNotEmpty)
+          Text(transition.reason!.trim()),
+      ],
+    ),
+  );
+
   String _labelForType(ActivityType type) => switch (type) {
     ActivityType.call => 'Call',
     ActivityType.email => 'Email',
@@ -231,10 +262,26 @@ class _JobActivityTimelineSectionState
 }
 
 class _ActivityTimelineData {
-  final List<Activity> activities;
+  final List<_TimelineEntry> entries;
   final Map<int, ToDo> todoById;
 
-  _ActivityTimelineData(this.activities, this.todoById);
+  _ActivityTimelineData(this.entries, this.todoById);
+}
+
+class _TimelineEntry {
+  final Activity? activity;
+  final LifecycleTransition? transition;
+  final DateTime occurredAt;
+
+  _TimelineEntry.activity(Activity value)
+    : activity = value,
+      transition = null,
+      occurredAt = value.occurredAt;
+
+  _TimelineEntry.transition(LifecycleTransition value)
+    : activity = null,
+      transition = value,
+      occurredAt = value.occurredAt;
 }
 
 enum _ActivityTemplate {

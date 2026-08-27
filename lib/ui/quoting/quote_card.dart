@@ -19,7 +19,6 @@ import 'package:strings/strings.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
-import '../../fsm/job_status_fsm.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/types.dart';
 import '../crud/job/full_page_list_job_card.dart';
@@ -32,8 +31,6 @@ import '../widgets/widgets.g.dart';
 import 'generate_quote_pdf.dart';
 import 'job_and_customer.dart';
 import 'select_quote_task_photos_dialog.dart';
-
-enum _RejectAction { quoteOnly, quoteAndJob }
 
 class QuoteCard extends StatefulWidget {
   final Quote quote;
@@ -286,32 +283,27 @@ To approve it, reply to this email with:
     },
   );
 
-  Future<_RejectAction?> _promptRejectAction(BuildContext context) =>
-      showDialog<_RejectAction>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Reject Quote'),
-          content: const Text('Do you want to reject the job as well?'),
-          actions: [
-            HMBButton(
-              label: 'Cancel',
-              hint: 'Keep the quote unchanged',
-              onPressed: () => Navigator.pop(context),
-            ),
-            HMBButton(
-              label: 'Quote Only',
-              hint: 'Reject the quote but keep the job active',
-              onPressed: () => Navigator.pop(context, _RejectAction.quoteOnly),
-            ),
-            HMBButton(
-              label: 'Quote + Job',
-              hint: 'Reject the quote and the job',
-              onPressed: () =>
-                  Navigator.pop(context, _RejectAction.quoteAndJob),
-            ),
-          ],
+  Future<bool?> _promptRejectAction(BuildContext context) => showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Reject quote and job'),
+      content: const Text(
+        'Reject this quote and the job? This is recorded as one action.',
+      ),
+      actions: [
+        HMBButton(
+          label: 'Cancel',
+          hint: 'Keep the quote unchanged',
+          onPressed: () => Navigator.pop(context, false),
         ),
-      );
+        HMBButton(
+          label: 'Reject Quote + Job',
+          hint: 'Reject the quote and the job',
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
+    ),
+  );
 
   Future<bool?> _promptWithdraw(BuildContext context) => showDialog<bool>(
     context: context,
@@ -358,61 +350,6 @@ To approve it, reply to this email with:
     }
   }
 
-  Future<bool> _offerScheduleTodo() async {
-    final existing = await DaoToDo().getOpenByJob(quote.jobId);
-    if (existing.any(
-      (todo) => todo.title.trim().toLowerCase() == 'schedule job',
-    )) {
-      return false;
-    }
-
-    if (!mounted) {
-      return false;
-    }
-
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Add scheduling todo?'),
-            content: const Text(
-              'Create a high priority todo to schedule this job.',
-            ),
-            actions: [
-              HMBButton(
-                onPressed: () => Navigator.pop(context, false),
-                label: 'Not Now',
-                hint: "Don't add a scheduling todo",
-              ),
-              HMBButton(
-                onPressed: () => Navigator.pop(context, true),
-                label: 'Add Todo',
-                hint: 'Add a high-priority scheduling todo',
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
-
-  Future<void> _ensureScheduleTodo() async {
-    final openTodos = await DaoToDo().getOpenByJob(quote.jobId);
-    final alreadyExists = openTodos.any(
-      (todo) => todo.title.trim().toLowerCase() == 'schedule job',
-    );
-    if (alreadyExists) {
-      return;
-    }
-
-    await DaoToDo().insert(
-      ToDo.forInsert(
-        title: 'Schedule job',
-        parentType: ToDoParentType.job,
-        parentId: quote.jobId,
-        priority: ToDoPriority.high,
-      ),
-    );
-  }
-
   HMBChipTone get _stateTone => switch (quote.state) {
     QuoteState.approved || QuoteState.invoiced => HMBChipTone.accent,
     QuoteState.rejected || QuoteState.withdrawn => HMBChipTone.danger,
@@ -424,7 +361,10 @@ To approve it, reply to this email with:
   Widget build(BuildContext context) {
     final isRejected = quote.state == QuoteState.rejected;
     final isWithdrawn = quote.state == QuoteState.withdrawn;
+    final isInvoiced = quote.state == QuoteState.invoiced;
     final showSentRollback = quote.state == QuoteState.approved;
+    final showApproval = quote.state == QuoteState.sent || showSentRollback;
+    final showDestructive = !isRejected && !isWithdrawn && !isInvoiced;
     final showWithdrawn = quote.state == QuoteState.sent;
 
     return DeferredBuilder(
@@ -493,13 +433,13 @@ To approve it, reply to this email with:
               HMBButton(
                 label: 'Invoice',
                 hint: 'Create invoice(s) from quote milestones',
-                enabled: !isRejected && !isWithdrawn,
+                enabled: quote.state.isPostApproval,
                 onPressed: _openInvoiceAction,
               ),
               HMBButton(
                 label: 'Amend',
                 hint: 'Create a replacement quote and reject this quote',
-                enabled: !isRejected && !isWithdrawn,
+                enabled: showDestructive,
                 onPressed: _amendQuote,
               ),
             ],
@@ -510,46 +450,34 @@ To approve it, reply to this email with:
             spacing: 8,
             runSpacing: 8,
             children: [
-              if (!isRejected && !isWithdrawn)
+              if (showApproval)
                 HMBButton(
                   label: showSentRollback ? 'Unapprove' : 'Approve',
                   hint: showSentRollback
                       ? 'Move approved quote back to sent'
                       : 'Mark the quote as approved by the customer',
                   onPressed: () async {
-                    final addScheduleTodo =
-                        !showSentRollback && await _offerScheduleTodo();
                     await _updateQuote(() async {
                       if (showSentRollback) {
-                        await DaoQuote().markQuoteSent(quote.id);
+                        await DaoQuote().unapproveQuote(quote.id);
                       } else {
                         await DaoQuote().approveQuote(quote.id);
-                        if (addScheduleTodo) {
-                          await _ensureScheduleTodo();
-                        }
                       }
                     });
                   },
                 ),
-              if (!isRejected && !isWithdrawn)
+              if (showDestructive)
                 HMBButton(
                   label: 'Reject',
                   hint: 'Mark the quote as rejected by the Customer',
                   onPressed: () async {
                     final action = await _promptRejectAction(context);
-                    if (action == null) {
+                    if (action != true) {
                       return;
                     }
 
                     await _updateQuote(() async {
                       await DaoQuote().rejectQuote(quote.id);
-
-                      if (action == _RejectAction.quoteAndJob) {
-                        final job = await DaoJob().getById(quote.jobId);
-                        if (job != null) {
-                          await rejectJob(job.id);
-                        }
-                      }
                     });
                   },
                 ),

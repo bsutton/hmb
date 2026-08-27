@@ -81,8 +81,7 @@ void main() {
         BillingType.timeAndMaterial,
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
       );
-      job.status = status;
-      await DaoJob().update(job);
+      await setJobStatusForTest(job, status);
       await DaoToDo().insert(
         ToDo.forInsert(
           title: status.name,

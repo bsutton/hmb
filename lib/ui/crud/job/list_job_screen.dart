@@ -21,6 +21,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/flutter_extensions/job_status_ex.dart';
 import '../../../entity/job.dart';
+import '../../../entity/job_status.dart';
 import '../../../entity/job_status_stage.dart';
 import '../../../util/dart/format.dart';
 import '../../widgets/icons/hmb_copy_icon.dart';
@@ -233,11 +234,16 @@ class _JobListScreenState extends State<JobListScreen> {
         continue;
       }
       final stage = job.status.stage;
+      final hasBillingAttention =
+          job.status == JobStatus.completed &&
+          (await JobBillingReadinessService().evaluate(job)).needsAttention;
       final isCurrent =
           stage == JobStatusStage.preStart ||
-          stage == JobStatusStage.progressing;
+          stage == JobStatusStage.progressing ||
+          hasBillingAttention;
       final isOld =
-          stage == JobStatusStage.onHold || stage == JobStatusStage.finalised;
+          stage == JobStatusStage.onHold ||
+          stage == JobStatusStage.finalised && !hasBillingAttention;
       if (_showCurrentJobs && isCurrent || _showOldJobs && isOld) {
         selected.add(job);
       }

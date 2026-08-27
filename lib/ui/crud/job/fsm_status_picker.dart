@@ -9,6 +9,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../entity/entity.g.dart';
 import '../../../fsm/job_status_fsm.dart'
     show Next, buildJobMachine, nextFromFsm;
+import '../../../fsm/lifecycle_models.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
 import 'edit_job_card.dart';
@@ -120,10 +121,14 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
       _firing = true;
     });
     try {
-      await step.fire(_machine!); // runs side-effects & persists
+      if (step.action.requiresConfirmation &&
+          !await _confirmAction(step.action)) {
+        return;
+      }
+      final updated = await step.fire();
       // Keep the UI model in sync with the new status.
-      widget.job.status = step.to;
-      June.getState(SelectJobStatus.new).jobStatus = step.to;
+      widget.job.status = updated.status;
+      June.getState(SelectJobStatus.new).jobStatus = updated.status;
 
       widget.onStatusChanged?.call(); // NEW: tell parent we succeeded
     } catch (e) {
@@ -137,6 +142,26 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
       }
     }
   }
+
+  Future<bool> _confirmAction(LifecycleAction action) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(action.label),
+          content: Text(action.hint),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
 
   @override
   Widget build(BuildContext context) => DeferredBuilder(
@@ -167,7 +192,7 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
               return HMBColumn(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Move to:'),
+                  const Text('Available actions:'),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -176,8 +201,8 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
                           (n) => HMBButton(
                             enabled: !_firing,
                             onPressed: () => _moveTo(n),
-                            label: n.to.displayName,
-                            hint: '',
+                            label: n.action.label,
+                            hint: n.action.hint,
                           ),
                         )
                         .toList(),

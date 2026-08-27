@@ -193,10 +193,32 @@ Phase 5: hardening
 5. Full lifecycle test suite passes, including guard and side-effect cases.
 6. Transition audit records are written for all successful transitions.
 
-## 11. Open Design Decisions
+## 11. Resolved Design Decisions
 
-1. Single combined lifecycle engine vs separate job/quote engines with
-   cross-dispatch.
-2. Event sourcing-lite (append-only transition log) vs simple audit table.
-3. Whether to expose transition history in UI immediately or later.
-
+1. Job and quote have separate pure `fsm2` graphs and share one transactional
+   dispatcher. Quote events may couple to a job event without allowing an
+   already-active job to regress.
+2. Successful commands append to `lifecycle_transition`. There is no backfill;
+   the table is an audit log, not the source of truth.
+3. Lifecycle audit rows are shown read-only in the existing Job Activity
+   Timeline alongside editable manual activities.
+4. Quote approval moves a job from `AwaitingApproval` to `AwaitingPayment`.
+   `PaymentReceived` or the explicit `ProceedToScheduling` override moves it to
+   `ToBeScheduled`.
+5. `AwaitingMaterials` is reachable from `Scheduled`, `InProgress`, and
+   `OnHold`; materials arriving returns the job to `InProgress`.
+6. Restoring a rejected job returns it to `Prospecting`; reopening a completed
+   job returns it to `InProgress`.
+7. `ToBeBilled` is retired. Upgrade v211 maps it to `Completed`. Billing
+   readiness is calculated independently so repeated time-and-materials
+   invoicing does not misuse lifecycle state.
+8. A completed job with billing attention remains in Current Jobs and Ready to
+   Invoice. Once that attention is cleared it appears only in Old Jobs.
+9. Fixed-price billing attention includes uninvoiced active milestones,
+   approved quote value not allocated to milestones, and missing approved quote
+   setup on completed work. Mixed jobs also include unbilled T&M variations.
+10. Opening or navigating to a job only changes recency; starting work always
+    requires an explicit lifecycle action.
+11. The application currently has no user identity, so `actor_id` is nullable.
+    Ledger payments do not imply a deposit and therefore do not automatically
+    dispatch `PaymentReceived`.

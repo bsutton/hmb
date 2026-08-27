@@ -13,6 +13,9 @@
 
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
+import 'package:hmb/fsm/job_events.dart';
+import 'package:hmb/fsm/lifecycle_event_dispatcher.dart';
+import 'package:hmb/fsm/lifecycle_models.dart';
 import 'package:hmb/util/dart/exceptions.dart';
 import 'package:money2/money2.dart';
 import 'package:test/test.dart';
@@ -175,8 +178,11 @@ void main() {
       );
       await DaoMilestone().insert(milestone);
 
-      job.status = JobStatus.rejected;
-      await DaoJob().update(job);
+      await LifecycleEventDispatcher().dispatchJob(
+        job.id,
+        RejectJob.new,
+        context: LifecycleContext(source: 'test'),
+      );
 
       final reloadedQuote = await DaoQuote().getById(quote.id);
       expect(reloadedQuote?.state, equals(QuoteState.rejected));
@@ -216,8 +222,14 @@ void main() {
       );
       await DaoMilestone().insert(milestone);
 
-      job.status = JobStatus.rejected;
-      expect(() => DaoJob().update(job), throwsA(isA<InvoiceException>()));
+      await expectLater(
+        LifecycleEventDispatcher().dispatchJob(
+          job.id,
+          RejectJob.new,
+          context: LifecycleContext(source: 'test'),
+        ),
+        throwsA(isA<LifecycleException>()),
+      );
     });
   });
 }

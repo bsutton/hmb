@@ -114,15 +114,6 @@ enum JobStatus {
     ordinal: 10,
   ),
 
-  toBeBilled(
-    id: 'ToBeBilled',
-    displayName: 'To be Billed',
-    description: 'Completed — needs to be billed',
-    colorCode: '#FFA07A',
-    stage: JobStatusStage.finalised,
-    schedulingAllowed: false,
-    ordinal: 11,
-  ),
   rejected(
     id: 'Rejected',
     displayName: 'Rejected',
@@ -130,7 +121,7 @@ enum JobStatus {
     colorCode: '#FFB6C1',
     stage: JobStatusStage.finalised,
     schedulingAllowed: false,
-    ordinal: 12,
+    ordinal: 11,
   );
 
   const JobStatus({
@@ -155,10 +146,17 @@ enum JobStatus {
 
   static JobStatus get startingStatus => JobStatus.prospecting;
 
-  static JobStatus fromId(String id) => values.firstWhere(
-    (e) => e.id == id,
-    orElse: () => JobStatus.startingStatus,
-  );
+  static JobStatus fromId(String id) {
+    // Databases are upgraded before entities are loaded, but accepting the
+    // retired value makes backup inspection and staged upgrades safe.
+    if (id == 'ToBeBilled') {
+      return JobStatus.completed;
+    }
+    return values.firstWhere(
+      (status) => status.id == id,
+      orElse: () => throw ArgumentError.value(id, 'id', 'Unknown job status'),
+    );
+  }
 
   static List<JobStatus> byOrdinal() => values.toList()
     ..sort((a, b) => a.ordinal - b.ordinal)

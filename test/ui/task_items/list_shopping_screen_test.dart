@@ -74,8 +74,7 @@ void main() {
         bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
         summary: 'Shopping Delete Job',
       );
-      job.status = JobStatus.scheduled;
-      await DaoJob().update(job);
+      await setJobStatusForTest(job, JobStatus.scheduled);
 
       final task = Task.forInsert(
         jobId: job.id,
@@ -129,8 +128,7 @@ void main() {
             'Very long shopping job name that should ellipsize instead of '
             'wrapping over the action buttons on the card',
       );
-      job.status = JobStatus.scheduled;
-      await DaoJob().update(job);
+      await setJobStatusForTest(job, JobStatus.scheduled);
 
       final task = Task.forInsert(
         jobId: job.id,
@@ -189,15 +187,13 @@ void main() {
     late TaskItemContext itemContext;
     late CustomerAndJob details;
     await tester.runAsync(() async {
-      final job =
-          await createJobWithCustomer(
-              billingType: BillingType.fixedPrice,
-              hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
-              bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
-              summary: 'Purchased card layout job',
-            )
-            ..status = JobStatus.inProgress;
-      await DaoJob().update(job);
+      final job = await createJobWithCustomer(
+        billingType: BillingType.fixedPrice,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+        summary: 'Purchased card layout job',
+      );
+      await setJobStatusForTest(job, JobStatus.inProgress);
 
       final supplier = Supplier.forInsert(
         name: 'Purchased card supplier',
@@ -299,25 +295,21 @@ void main() {
     late Job activeJob;
     late Job inactiveJob;
     await tester.runAsync(() async {
-      activeJob =
-          await createJobWithCustomer(
-              billingType: BillingType.fixedPrice,
-              hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
-              bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
-              summary: 'Active history selector job',
-            )
-            ..status = JobStatus.inProgress;
-      await DaoJob().update(activeJob);
+      activeJob = await createJobWithCustomer(
+        billingType: BillingType.fixedPrice,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+        summary: 'Active history selector job',
+      );
+      await setJobStatusForTest(activeJob, JobStatus.inProgress);
 
-      inactiveJob =
-          await createJobWithCustomer(
-              billingType: BillingType.fixedPrice,
-              hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
-              bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
-              summary: 'Inactive history selector job',
-            )
-            ..status = JobStatus.completed;
-      await DaoJob().update(inactiveJob);
+      inactiveJob = await createJobWithCustomer(
+        billingType: BillingType.fixedPrice,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+        summary: 'Inactive history selector job',
+      );
+      await setJobStatusForTest(inactiveJob, JobStatus.completed);
     });
 
     var showInactiveJobs = false;

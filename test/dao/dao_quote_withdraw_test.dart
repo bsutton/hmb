@@ -179,9 +179,8 @@ void main() {
     final job = await createJobWithCustomer(
       billingType: BillingType.fixedPrice,
       hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+      status: JobStatus.scheduled,
     );
-    final activeJob = job.copyWith(status: JobStatus.scheduled);
-    await DaoJob().update(activeJob);
 
     final quoteId = await DaoQuote().insert(
       Quote.forInsert(
