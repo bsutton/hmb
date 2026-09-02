@@ -9,6 +9,7 @@ import 'package:test/test.dart';
 import '../database/management/db_utility_test_helper.dart';
 import '../ui/ui_test_helpers.dart';
 import '../util/settings_test_helper.dart';
+import 'invoice/utility.dart';
 
 void main() {
   setUpAll(() async {
@@ -520,6 +521,82 @@ void main() {
     expect(report.rows.map((row) => row.receiptId), contains(receipt.id));
     expect(report.total, MoneyEx.dollars(25));
   });
+
+  test(
+    'materials billing surfaces missing prices and unbilled items first',
+    () async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.dollars(80),
+        summary: 'Materials audit job',
+      );
+      final task = await createTask(job, 'Install materials');
+      final missingPrice = await insertMaterialItem(
+        task,
+        itemType: TaskItemType.materialsBuy,
+        description: 'Missing price',
+      );
+      final unbilled = await insertMaterialItem(
+        task,
+        itemType: TaskItemType.materialsStock,
+        description: 'Ready to bill',
+        actualQuantity: Fixed.fromNum(2, decimalDigits: 3),
+        actualUnitCost: MoneyEx.dollars(15),
+      );
+      final billed = await insertMaterialItem(
+        task,
+        itemType: TaskItemType.consumablesBuy,
+        description: 'Already billed',
+        actualQuantity: Fixed.one,
+        actualUnitCost: MoneyEx.dollars(12),
+      );
+      await insertMaterialItem(
+        task,
+        itemType: TaskItemType.toolsBuy,
+        description: 'Still incomplete',
+        completed: false,
+      );
+      await insertLabourEstimates(task, MoneyEx.dollars(40), Fixed.one);
+
+      final invoice = await _insertInvoice(job, MoneyEx.dollars(12));
+      await DaoInvoice().update(invoice.copyWith(invoiceNum: 'INV-601'));
+      final group = InvoiceLineGroup.forInsert(
+        invoiceId: invoice.id,
+        name: task.name,
+      );
+      await DaoInvoiceLineGroup().insert(group);
+      final line = InvoiceLine.forInsert(
+        invoiceId: invoice.id,
+        invoiceLineGroupId: group.id,
+        description: billed.description,
+        quantity: Fixed.one,
+        unitPrice: MoneyEx.dollars(12),
+        lineTotal: MoneyEx.dollars(12),
+      );
+      await DaoInvoiceLine().insert(line);
+      await DaoTaskItem().markAsBilled(billed, line.id);
+
+      final report = await AccountingReportService().materialsBilling();
+
+      expect(report.rows.map((row) => row.taskItem.id), [
+        missingPrice.id,
+        unbilled.id,
+        billed.id,
+      ]);
+      expect(report.unbilledCount, 2);
+      expect(report.missingPriceCount, 1);
+      expect(report.billedCount, 1);
+      expect(report.rows.first.customerName, startsWith('Test Customer'));
+      expect(report.rows.first.jobSummary, 'Materials audit job');
+      expect(report.rows.first.taskName, 'Install materials');
+      expect(report.rows[1].actualCost, MoneyEx.dollars(30));
+      expect(report.rows.last.invoiceDisplay, 'INV-601');
+      expect(
+        AccountingReportCsvExporter().materialsBilling(report),
+        contains('INV-601'),
+      );
+    },
+  );
 
   test('report CSV exporter quotes comma values', () {
     final csv = AccountingReportCsvExporter().debtorStatement(

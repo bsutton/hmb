@@ -11,9 +11,10 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart' hide Route;
 
+import '../../dao/accounting_report_service.dart';
 import '../../database/management/backup_providers/google_drive/google_drive_backup_screen.dart';
 import '../../database/management/backup_providers/local/local_backup_screen.dart';
 import '../../util/flutter/flutter_types.dart';
@@ -51,6 +52,7 @@ import '../task_items/list_packing_screen.dart';
 import '../task_items/list_shopping_screen.dart';
 import '../tools/mailings/mailing_list_screen.dart';
 import '../tools/plasterboard/plaster_project_list_screen.dart';
+import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/media/full_screen_photo_view.dart';
 import '../widgets/splash_screen.dart';
@@ -62,6 +64,7 @@ import 'dashboards/accounting/aged_receivables_screen.dart';
 import 'dashboards/accounting/cash_received_screen.dart';
 import 'dashboards/accounting/debtor_statement_screen.dart';
 import 'dashboards/accounting/job_profit_report_screen.dart';
+import 'dashboards/accounting/materials_billing_screen.dart';
 import 'dashboards/accounting/profit_and_loss_screen.dart';
 import 'dashboards/accounting/supplier_spend_screen.dart';
 import 'dashboards/accounting/tax_summary_screen.dart';
@@ -336,6 +339,20 @@ List<GoRoute> accountingRoutes() => [
   GoRoute(
     path: 'unlinked_costs',
     builder: (_, _) => const HomeScaffold(initialScreen: UnlinkedCostsScreen()),
+  ),
+  GoRoute(
+    path: 'materials_billing',
+    builder: (_, _) => HomeScaffold(
+      initialScreen: BlockingUITransition<MaterialBillingReport>(
+        label: 'Loading materials billing',
+        slowAction: AccountingReportService().materialsBilling,
+        builder: (_, report) => MaterialsBillingScreen(report: report!),
+        errorBuilder: (_, error) => Scaffold(
+          appBar: AppBar(title: const Text('Materials Billing')),
+          body: Center(child: Text('Unable to load materials billing: $error')),
+        ),
+      ),
+    ),
   ),
   GoRoute(
     path: 'aged_receivables',
