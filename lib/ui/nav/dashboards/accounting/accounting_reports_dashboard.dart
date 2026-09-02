@@ -73,6 +73,14 @@ class AccountingReportsDashboardPage extends StatelessWidget {
         valueBuilder: (_, _) => const HMBEmpty(),
       ),
       DashletCard<void>.route(
+        label: 'Materials Billing',
+        hint: 'Check completed materials for missing prices or billing',
+        icon: Icons.inventory_2,
+        value: () async => const DashletValue(null),
+        route: '/home/accounting/materials_billing',
+        valueBuilder: (_, _) => const HMBEmpty(),
+      ),
+      DashletCard<void>.route(
         label: 'Aged Receivables',
         hint: 'Show outstanding invoice balances by age',
         icon: Icons.request_quote,

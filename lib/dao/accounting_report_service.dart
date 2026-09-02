@@ -19,6 +19,9 @@ import '../api/external_accounting.dart';
 import '../entity/credit_note.dart';
 import '../entity/debtor_adjustment.dart';
 import '../entity/invoice.dart';
+import '../entity/job.dart';
+import '../entity/task_item.dart';
+import '../entity/task_item_type.dart';
 import '../entity/tax_code.dart';
 import '../entity/tax_scheme.dart';
 import '../util/dart/app_settings.dart';
@@ -358,6 +361,60 @@ class UnlinkedCostReport {
 
   Money get total =>
       rows.fold(MoneyEx.zero, (total, row) => total + row.amount);
+}
+
+class MaterialBillingRow {
+  final TaskItem taskItem;
+  final int jobId;
+  final String jobSummary;
+  final String customerName;
+  final String taskName;
+  final BillingType billingType;
+  final Money hourlyRate;
+  final int? invoiceId;
+  final String? invoiceNumber;
+
+  const MaterialBillingRow({
+    required this.taskItem,
+    required this.jobId,
+    required this.jobSummary,
+    required this.customerName,
+    required this.taskName,
+    required this.billingType,
+    required this.hourlyRate,
+    required this.invoiceId,
+    required this.invoiceNumber,
+  });
+
+  bool get hasActualPrice => taskItem.actualPrice != null;
+
+  Money? get actualCost {
+    final total = taskItem.actualPrice?.totalCost;
+    if (total == null) {
+      return null;
+    }
+    return taskItem.isReturn ? -total : total;
+  }
+
+  Money get charge => taskItem.getTotalLineCharge(billingType, hourlyRate);
+
+  String get invoiceDisplay => invoiceNumber?.trim().isNotEmpty ?? false
+      ? invoiceNumber!.trim()
+      : invoiceId == null
+      ? ''
+      : '#$invoiceId';
+}
+
+class MaterialBillingReport {
+  final List<MaterialBillingRow> rows;
+
+  const MaterialBillingReport({required this.rows});
+
+  int get unbilledCount => rows.where((row) => !row.taskItem.billed).length;
+
+  int get missingPriceCount => rows.where((row) => !row.hasActualPrice).length;
+
+  int get billedCount => rows.where((row) => row.taskItem.billed).length;
 }
 
 class _StatementInvoice {
@@ -752,6 +809,57 @@ ORDER BY r.receipt_date DESC, r.id DESC
             supplierName: row['supplier_name']! as String,
             jobSummary: row['job_summary']! as String,
             amount: MoneyEx.fromInt(row['total_excluding_tax']! as int),
+          ),
+      ],
+    );
+  }
+
+  Future<MaterialBillingReport> materialsBilling() async {
+    final db = DaoInvoice().withoutTransaction();
+    final rows = await db.rawQuery('''
+SELECT
+  ti.*,
+  t.name AS report_task_name,
+  j.id AS report_job_id,
+  j.summary AS report_job_summary,
+  IFNULL(c.name, 'Unknown customer') AS report_customer_name,
+  COALESCE(t.billing_type, j.billing_type, 'timeAndMaterial')
+    AS report_billing_type,
+  IFNULL(j.hourly_rate, 0) AS report_hourly_rate,
+  il.invoice_id AS report_invoice_id,
+  i.invoice_num AS report_invoice_number
+FROM task_item ti
+JOIN task t ON t.id = ti.task_id
+JOIN job j ON j.id = t.job_id
+LEFT JOIN customer c ON c.id = j.customer_id
+LEFT JOIN invoice_line il ON il.id = ti.invoice_line_id
+LEFT JOIN invoice i ON i.id = il.invoice_id
+WHERE ti.completed = 1
+  AND ti.item_type_id != ${TaskItemType.labour.id}
+  AND COALESCE(t.billing_type, j.billing_type, 'timeAndMaterial')
+    != 'nonBillable'
+ORDER BY
+  CASE WHEN ti.actual_price_mode IS NULL THEN 0 ELSE 1 END,
+  ti.billed,
+  ti.modified_date DESC,
+  ti.id DESC
+''');
+
+    return MaterialBillingReport(
+      rows: [
+        for (final row in rows)
+          MaterialBillingRow(
+            taskItem: TaskItem.fromMap(row),
+            jobId: row['report_job_id']! as int,
+            jobSummary: row['report_job_summary']! as String,
+            customerName: row['report_customer_name']! as String,
+            taskName: row['report_task_name']! as String,
+            billingType: BillingType.fromName(
+              row['report_billing_type'] as String?,
+            ),
+            hourlyRate: MoneyEx.fromInt(row['report_hourly_rate'] as int?),
+            invoiceId: row['report_invoice_id'] as int?,
+            invoiceNumber: row['report_invoice_number'] as String?,
           ),
       ],
     );
@@ -1310,6 +1418,32 @@ class AccountingReportCsvExporter {
         row.supplierName,
         row.jobSummary,
         row.amount,
+      ],
+  ]);
+
+  String materialsBilling(MaterialBillingReport report) => _csv([
+    [
+      'Customer',
+      'Job',
+      'Task',
+      'Item',
+      'Type',
+      'Actual cost',
+      'Charge',
+      'Billing status',
+      'Invoice',
+    ],
+    for (final row in report.rows)
+      [
+        row.customerName,
+        '#${row.jobId} ${row.jobSummary}',
+        row.taskName,
+        row.taskItem.description,
+        row.taskItem.itemType.label,
+        row.actualCost,
+        row.charge,
+        if (row.taskItem.billed) 'Billed' else 'Not billed',
+        row.invoiceDisplay,
       ],
   ]);
 
