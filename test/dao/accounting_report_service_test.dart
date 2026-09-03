@@ -598,6 +598,41 @@ void main() {
     },
   );
 
+  test(
+    'materials billing ignores task items with unrecognised item type ids',
+    () async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.dollars(80),
+        summary: 'Materials audit bad row job',
+      );
+      final task = await createTask(job, 'Install materials');
+      final validItem = await insertMaterialItem(
+        task,
+        itemType: TaskItemType.materialsStock,
+        description: 'Good row',
+      );
+      final invalidItem = await insertMaterialItem(
+        task,
+        itemType: TaskItemType.materialsBuy,
+        description: 'Bad row',
+      );
+      await DaoTaskItem().withoutTransaction().update(
+        'task_item',
+        {'item_type_id': 999},
+        where: 'id = ?',
+        whereArgs: [invalidItem.id],
+      );
+
+      final report = await AccountingReportService().materialsBilling();
+
+      expect(
+        report.rows.map((row) => row.taskItem.id),
+        [validItem.id],
+      );
+    },
+  );
+
   test('report CSV exporter quotes comma values', () {
     final csv = AccountingReportCsvExporter().debtorStatement(
       DebtorStatementReport(

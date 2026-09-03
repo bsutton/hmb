@@ -845,24 +845,62 @@ ORDER BY
   ti.id DESC
 ''');
 
+    final materialRows = <MaterialBillingRow>[];
+    for (final row in rows) {
+      final taskItem = _materialTaskItem(row);
+      if (taskItem == null) {
+        continue;
+      }
+      final billingType = _parseBillingType(row['report_billing_type']);
+      final jobId = row['report_job_id'];
+      if (jobId is! int) {
+        continue;
+      }
+
+      materialRows.add(
+        MaterialBillingRow(
+          taskItem: taskItem,
+          jobId: jobId,
+          jobSummary: (row['report_job_summary'] as String?) ?? 'Unknown job',
+          customerName:
+              (row['report_customer_name'] as String?) ?? 'Unknown customer',
+          taskName: (row['report_task_name'] as String?) ?? 'Unknown task',
+          billingType: billingType,
+          hourlyRate: MoneyEx.fromInt(row['report_hourly_rate'] as int?),
+          invoiceId: row['report_invoice_id'] as int?,
+          invoiceNumber: row['report_invoice_number'] as String?,
+        ),
+      );
+    }
+
     return MaterialBillingReport(
-      rows: [
-        for (final row in rows)
-          MaterialBillingRow(
-            taskItem: TaskItem.fromMap(row),
-            jobId: row['report_job_id']! as int,
-            jobSummary: row['report_job_summary']! as String,
-            customerName: row['report_customer_name']! as String,
-            taskName: row['report_task_name']! as String,
-            billingType: BillingType.fromName(
-              row['report_billing_type'] as String?,
-            ),
-            hourlyRate: MoneyEx.fromInt(row['report_hourly_rate'] as int?),
-            invoiceId: row['report_invoice_id'] as int?,
-            invoiceNumber: row['report_invoice_number'] as String?,
-          ),
-      ],
+      rows: materialRows,
     );
+  }
+
+  BillingType _parseBillingType(Object? value) {
+    if (value is! String) {
+      return BillingType.timeAndMaterial;
+    }
+    for (final type in BillingType.values) {
+      if (type.name == value) {
+        return type;
+      }
+    }
+    return BillingType.timeAndMaterial;
+  }
+
+  TaskItem? _materialTaskItem(Map<String, dynamic> row) {
+    final itemTypeId = row['item_type_id'];
+    if (itemTypeId is! int ||
+        !TaskItemType.values.any((type) => type.id == itemTypeId)) {
+      return null;
+    }
+    try {
+      return TaskItem.fromMap(row);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<Money> _invoiceIncome({AccountingPeriod? period, int? jobId}) => _sum(
