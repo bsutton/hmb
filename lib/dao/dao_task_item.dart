@@ -38,6 +38,49 @@ enum ShoppingHistoryRange {
   }
 }
 
+class ReceiptTaskItemContext {
+  final int taskItemId;
+  final String taskName;
+  final int jobId;
+  final String jobSummary;
+  final String customerName;
+  final List<String> contactNames;
+
+  const ReceiptTaskItemContext({
+    required this.taskItemId,
+    required this.taskName,
+    required this.jobId,
+    required this.jobSummary,
+    required this.customerName,
+    required this.contactNames,
+  });
+
+  String get display {
+    final contacts = contactNames.where((name) => name.isNotEmpty).join(', ');
+    return [
+      'Task: $taskName',
+      'Job #$jobId: $jobSummary',
+      customerName,
+      if (contacts.isNotEmpty) contacts,
+    ].where((part) => part.trim().isNotEmpty).join(' · ');
+  }
+
+  bool matches(String? filter, String itemDescription) {
+    final search = filter?.trim().toLowerCase() ?? '';
+    if (search.isEmpty) {
+      return true;
+    }
+    return [
+      itemDescription,
+      taskName,
+      jobId.toString(),
+      jobSummary,
+      customerName,
+      ...contactNames,
+    ].any((value) => value.toLowerCase().contains(search));
+  }
+}
+
 class DaoTaskItem extends Dao<TaskItem> {
   static final List<String> _closedShoppingJobStatusIds = [
     JobStatus.rejected.id,
@@ -232,6 +275,56 @@ SELECT ti.id AS task_item_id, t.job_id
     return {
       for (final row in rows)
         (row['task_item_id'] as int?)!: (row['job_id'] as int?)!,
+    };
+  }
+
+  Future<Map<int, ReceiptTaskItemContext>> getReceiptMatchContexts(
+    Iterable<int> taskItemIds,
+  ) async {
+    final ids = taskItemIds.toSet();
+    if (ids.isEmpty) {
+      return {};
+    }
+    final placeholders = List.filled(ids.length, '?').join(',');
+    final rows = await withoutTransaction().rawQuery('''
+SELECT ti.id AS task_item_id,
+       t.name AS task_name,
+       j.id AS job_id,
+       j.summary AS job_summary,
+       c.name AS customer_name,
+       TRIM(IFNULL(primary_contact.firstName, '') || ' ' ||
+            IFNULL(primary_contact.surname, '')) AS primary_contact_name,
+       TRIM(IFNULL(billing_contact.firstName, '') || ' ' ||
+            IFNULL(billing_contact.surname, '')) AS billing_contact_name,
+       TRIM(IFNULL(referrer_contact.firstName, '') || ' ' ||
+            IFNULL(referrer_contact.surname, '')) AS referrer_contact_name
+  FROM task_item ti
+  JOIN task t ON t.id = ti.task_id
+  JOIN job j ON j.id = t.job_id
+  JOIN customer c ON c.id = j.customer_id
+  LEFT JOIN contact primary_contact
+    ON primary_contact.id = j.contact_id
+  LEFT JOIN contact billing_contact
+    ON billing_contact.id = j.billing_contact_id
+  LEFT JOIN contact referrer_contact
+    ON referrer_contact.id = j.referrer_contact_id
+ WHERE ti.id IN ($placeholders)
+''', ids.toList());
+
+    return {
+      for (final row in rows)
+        (row['task_item_id'] as int?)!: ReceiptTaskItemContext(
+          taskItemId: (row['task_item_id'] as int?)!,
+          taskName: row['task_name'] as String? ?? '',
+          jobId: (row['job_id'] as int?)!,
+          jobSummary: row['job_summary'] as String? ?? '',
+          customerName: row['customer_name'] as String? ?? '',
+          contactNames: {
+            row['primary_contact_name'] as String? ?? '',
+            row['billing_contact_name'] as String? ?? '',
+            row['referrer_contact_name'] as String? ?? '',
+          }.where((name) => name.isNotEmpty).toList(),
+        ),
     };
   }
 

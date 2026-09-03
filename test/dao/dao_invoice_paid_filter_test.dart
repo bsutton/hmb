@@ -57,6 +57,45 @@ void main() {
     );
   });
 
+  test(
+    'getByFilter puts unsent invoices before overdue sent invoices',
+    () async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.zero,
+        summary: 'Invoice action order job',
+      );
+
+      final sentOverdue = Invoice.forInsert(
+        jobId: job.id,
+        dueDate: LocalDate.today().subtract(const Duration(days: 30)),
+        totalAmount: Money.fromInt(1000, isoCode: 'AUD'),
+        billingContactId: job.billingContactId,
+        sent: true,
+      );
+      await DaoInvoice().insert(sentOverdue);
+      await DaoInvoice().update(
+        sentOverdue.copyWith(invoiceNum: 'INV-SENT-OVERDUE'),
+      );
+
+      final unsent = Invoice.forInsert(
+        jobId: job.id,
+        dueDate: LocalDate.today().add(const Duration(days: 14)),
+        totalAmount: Money.fromInt(2000, isoCode: 'AUD'),
+        billingContactId: job.billingContactId,
+      );
+      await DaoInvoice().insert(unsent);
+      await DaoInvoice().update(unsent.copyWith(invoiceNum: 'INV-UNSENT'));
+
+      final invoices = await DaoInvoice().getByFilter(null);
+
+      expect(invoices.map((invoice) => invoice.invoiceNum).take(2), [
+        'INV-UNSENT',
+        'INV-SENT-OVERDUE',
+      ]);
+    },
+  );
+
   test('getByFilter can limit paid invoices to a recent window', () async {
     final job = await createJobWithCustomer(
       billingType: BillingType.timeAndMaterial,
@@ -317,14 +356,12 @@ void main() {
         summary: 'Kitchen refit',
       );
 
-      final contact = (await DaoContact().getById(
-        job.contactId,
-      ))!.copyWith(firstName: 'Zelda', surname: 'Zimmer');
+      final contact = (await DaoContact().getById(job.contactId))!
+          .copyWith(firstName: 'Zelda', surname: 'Zimmer');
       await DaoContact().update(contact);
 
-      final customer = (await DaoCustomer().getById(
-        job.customerId,
-      ))!.copyWith(name: 'Acme Plumbing');
+      final customer = (await DaoCustomer().getById(job.customerId))!
+          .copyWith(name: 'Acme Plumbing');
       await DaoCustomer().update(customer);
 
       final invoice = Invoice.forInsert(

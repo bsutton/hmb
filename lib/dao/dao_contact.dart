@@ -25,11 +25,42 @@ import 'dao_contact_customer.dart';
 import 'dao_contact_supplier.dart';
 import 'dao_customer.dart';
 import 'dao_job.dart';
+import 'dao_reference_guard.dart';
 
 class DaoContact extends Dao<Contact> {
   static const tableName = 'contact';
   DaoContact() : super(tableName);
   Future<void> createTable(Database db, int version) async {}
+
+  @override
+  Future<int> delete(int id, [Transaction? transaction]) async {
+    await DaoReferenceGuard.ensureNotReferenced(
+      db: withinTransaction(transaction),
+      entityName: 'Contact',
+      id: id,
+      references: const [
+        DaoReference('job', 'contact_id', 'jobs'),
+        DaoReference('job', 'billing_contact_id', 'job billing contacts'),
+        DaoReference('job', 'referrer_contact_id', 'job referrers'),
+        DaoReference('job', 'tenant_contact_id', 'job tenants'),
+        DaoReference('customer', 'billing_contact_id', 'customers'),
+        DaoReference('customer_contact', 'contact_id', 'customers'),
+        DaoReference('supplier_contact', 'contact_id', 'suppliers'),
+        DaoReference('supplier_assignment', 'contact_id', 'assignments'),
+        DaoReference('invoice', 'billing_contact_id', 'invoices'),
+        DaoReference('milestone', 'billing_contact_id', 'milestones'),
+        DaoReference(
+          'debtor_transaction',
+          'debtor_contact_id',
+          'debtor transactions',
+        ),
+        DaoReference('debtor_payment', 'contact_id', 'debtor payments'),
+        DaoReference('credit_note', 'contact_id', 'credit notes'),
+        DaoReference('mailing_recipient', 'contact_id', 'mailings'),
+      ],
+    );
+    return super.delete(id, transaction);
+  }
 
   @override
   Contact fromMap(Map<String, dynamic> map) => Contact.fromMap(map);

@@ -178,6 +178,11 @@ AND job_id = ?
     LEFT JOIN contact jobContact ON j.contact_id = jobContact.id
     $whereClause
     ORDER BY
+      CASE
+        WHEN IFNULL(i.paid, 0) = 0 AND IFNULL(i.sent, 0) = 0 THEN 0
+        WHEN IFNULL(i.paid, 0) = 0 THEN 1
+        ELSE 2
+      END ASC,
       CASE WHEN IFNULL(i.paid, 0) = 0 THEN 0 ELSE 1 END ASC,
       CASE
         WHEN IFNULL(i.paid, 0) = 0 THEN IFNULL(i.due_date, i.created_date)
@@ -368,9 +373,8 @@ ORDER BY modified_date DESC
   }
 
   Future<void> deleteByJob(int jobId, {Transaction? transaction}) async {
-    await withinTransaction(
-      transaction,
-    ).delete(tableName, where: 'job_id = ?', whereArgs: [jobId]);
+    await withinTransaction(transaction)
+        .delete(tableName, where: 'job_id = ?', whereArgs: [jobId]);
   }
 
   Future<void> recalculateTotal(int invoiceId) async {

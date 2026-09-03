@@ -38,6 +38,7 @@ class HMBSelectContact extends StatefulWidget {
   /// Label for the field.
   final String title;
   final bool showEmail;
+  final bool showRole;
 
   const HMBSelectContact({
     required this.initialContact,
@@ -45,6 +46,7 @@ class HMBSelectContact extends StatefulWidget {
     this.onSelected,
     this.title = 'Contact',
     this.showEmail = false,
+    this.showRole = false,
     super.key,
   });
 
@@ -70,6 +72,7 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
     return contacts.where((contact) {
       final fullName = '${contact.firstName} ${contact.surname}'.toLowerCase();
       return fullName.contains(search) ||
+          contact.roleDescription.toLowerCase().contains(search) ||
           contact.emailAddress.toLowerCase().contains(search) ||
           contact.mobileNumber.toLowerCase().contains(search);
     }).toList();
@@ -122,16 +125,11 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
                 selectedItem: () async => contact,
                 onChanged: _onContactChanged,
                 items: _getContacts,
-                format: (contact) {
-                  final name = '${contact.firstName} ${contact.surname}'.trim();
-                  if (!widget.showEmail) {
-                    return name;
-                  }
-                  final email = Strings.isNotBlank(contact.bestEmail)
-                      ? contact.bestEmail
-                      : 'No email address';
-                  return '$name — $email';
-                },
+                format: (contact) => formatContactForSelection(
+                  contact,
+                  showRole: widget.showRole,
+                  showEmail: widget.showEmail,
+                ),
                 required: false,
               ),
             ),
@@ -146,4 +144,31 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
       }
     },
   );
+}
+
+String formatContactForSelection(
+  Contact contact, {
+  bool showRole = false,
+  bool showEmail = false,
+}) {
+  final name = '${contact.firstName} ${contact.surname}'.trim();
+  final fallback = name.isNotEmpty
+      ? name
+      : contact.emailAddress.isNotEmpty
+      ? contact.emailAddress
+      : contact.mobileNumber.isNotEmpty
+      ? contact.mobileNumber
+      : 'Unnamed contact';
+  var label = fallback;
+  final role = contact.roleDescription.trim();
+  if (showRole && role.isNotEmpty) {
+    label = '$label — $role';
+  }
+  if (showEmail) {
+    final email = Strings.isNotBlank(contact.bestEmail)
+        ? contact.bestEmail
+        : 'No email address';
+    label = '$label — $email';
+  }
+  return label;
 }

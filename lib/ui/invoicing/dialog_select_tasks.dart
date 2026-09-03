@@ -102,21 +102,10 @@ Future<InvoiceOptions?> selectTasksToInvoice({
   required String title,
   BillingType? billingTypeFilter,
 }) async {
-  final values = await DaoTask().getAccruedValueForJob(
+  final selectors = await taskSelectorsForInvoice(
     job: job,
-    includedBilled: false,
+    billingTypeFilter: billingTypeFilter,
   );
-
-  final selectors = <TaskSelector>[];
-  for (final value in values) {
-    if (billingTypeFilter != null &&
-        value.task.effectiveBillingType(job.billingType) != billingTypeFilter) {
-      continue;
-    }
-    selectors.add(
-      TaskSelector(value.task, value.task.name, await value.earned),
-    );
-  }
 
   final contact =
       await DaoContact().getBillingContactByJob(job) ??
@@ -135,6 +124,30 @@ Future<InvoiceOptions?> selectTasksToInvoice({
     return invoiceOptions;
   }
   return null;
+}
+
+Future<List<TaskSelector>> taskSelectorsForInvoice({
+  required Job job,
+  BillingType? billingTypeFilter,
+}) async {
+  final values = await DaoTask().getAccruedValueForJob(
+    job: job,
+    includedBilled: false,
+  );
+
+  final selectors = <TaskSelector>[];
+  for (final value in values) {
+    if (billingTypeFilter != null &&
+        value.task.effectiveBillingType(job.billingType) != billingTypeFilter) {
+      continue;
+    }
+    final earned = await value.earned;
+    if (earned.isZero) {
+      continue;
+    }
+    selectors.add(TaskSelector(value.task, value.task.name, earned));
+  }
+  return selectors;
 }
 
 class DialogTaskSelection extends StatefulWidget {

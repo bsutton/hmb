@@ -296,6 +296,19 @@ class HMBImageCache {
     );
   }
 
+  Future<Path?> getCachedVariantPathForMeta({
+    required PhotoMeta meta,
+    required ImageVariantType imageVariant,
+  }) async {
+    await meta.resolve();
+    final variant = ImageVariant(meta, imageVariant);
+    final path = await _cachedIfExists(variant.key);
+    if (path != null) {
+      await _touch(variant.key);
+    }
+    return path;
+  }
+
   /// Convenience for bytes (useful for PDF generation).
   Future<Uint8List> getVariantBytesForMeta({
     required PhotoMeta meta,
@@ -560,11 +573,7 @@ class HMBImageCache {
       return;
     }
     final dao = DaoImageCacheVariant();
-    await dao.touch(
-      parts.photoId,
-      parts.variant,
-      when.millisecondsSinceEpoch,
-    );
+    await dao.touch(parts.photoId, parts.variant, when.millisecondsSinceEpoch);
   }
 
   // /// Convenience overload to match callsites shown in the migration.

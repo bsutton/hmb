@@ -18,11 +18,16 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../cache/hmb_image_cache.dart';
+import '../../../cache/image_cache_config.dart';
 import '../../../dao/dao_photo.dart';
 import '../../../dao/dao_task.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/compute_manager.dart';
 import '../../../util/dart/photo_meta.dart';
+import '../blocking_ui.dart';
+import '../hmb_button.dart';
+import '../hmb_toast.dart';
 import '../layout/hmb_placeholder.dart';
 import 'photo_carousel.dart';
 import 'thumbnail.dart';
@@ -101,20 +106,22 @@ class PhotoGallery extends StatelessWidget {
               padding: const EdgeInsets.only(right: 16),
               child: GestureDetector(
                 onTap: () async {
-                  if (photoMeta.exists()) {
-                    if (context.mounted) {
-                      final index = photos.indexOf(photoMeta);
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (context) => PhotoCarousel(
-                            photos: photos,
-                            initialIndex: index,
-                          ),
-                        ),
-                      );
-                    }
+                  final paths = await _availablePhotoPaths(photos);
+                  if (!paths.containsKey(photoMeta.photo.id) ||
+                      !context.mounted) {
+                    return;
                   }
+                  final index = photos.indexOf(photoMeta);
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (context) => PhotoCarousel(
+                        photos: photos,
+                        initialIndex: index,
+                        photoPaths: paths,
+                      ),
+                    ),
+                  );
                 },
 
                 // onTap: () async {
@@ -133,11 +140,11 @@ class PhotoGallery extends StatelessWidget {
                 child: FutureBuilderEx<Thumbnail?>(
                   future: _getThumbNail(photoMeta),
                   waitingBuilder: (context) => _showWaitingIcon(),
-                  errorBuilder: (context, error) => _showMissingIcon(),
+                  errorBuilder: (context, error) => _showFetchButton(photos),
 
                   builder: (context, thumbnail) {
                     if (thumbnail == null) {
-                      return _showMissingIcon();
+                      return _showFetchButton(photos);
                     } else {
                       return _showThumbnail(thumbnail);
                     }
@@ -182,11 +189,28 @@ class PhotoGallery extends StatelessWidget {
     child: const Icon(Icons.image, color: Colors.white, size: 40),
   );
 
-  Container _showMissingIcon() => Container(
+  Widget _showFetchButton(List<PhotoMeta> photos) => Container(
     width: 80,
     height: 80,
     color: Colors.grey,
-    child: const Icon(Icons.error, color: Colors.white, size: 40),
+    padding: const EdgeInsets.all(4),
+    child: HMBButton.smallWithIcon(
+      label: 'Fetch',
+      hint: 'Fetch all photos in this gallery',
+      icon: const Icon(Icons.cloud_download),
+      onPressed: () async {
+        try {
+          await BlockingUI().runAndWait(
+            () => _fetchGallery(photos),
+            label: 'Fetching gallery photos',
+          );
+        } catch (error) {
+          HMBToast.error('Unable to fetch gallery photos: $error');
+        } finally {
+          notify();
+        }
+      },
+    ),
   );
 
   static void notify() {
@@ -194,13 +218,59 @@ class PhotoGallery extends StatelessWidget {
   }
 
   Future<Thumbnail?> _getThumbNail(PhotoMeta photoMeta) async {
-    await photoMeta.resolve();
-    if (photoMeta.exists()) {
-      final thumbnail = await Thumbnail.fromMeta(photoMeta);
-      await thumbnail.generate(computeManager);
-      return thumbnail;
-    } else {
+    final path = await _availablePhotoPath(photoMeta);
+    if (path == null) {
       return null;
+    }
+    final thumbnail = await Thumbnail.fromSource(path);
+    await thumbnail.generate(computeManager);
+    return thumbnail;
+  }
+
+  Future<String?> _availablePhotoPath(PhotoMeta meta) async {
+    await meta.resolve();
+    if (meta.exists()) {
+      return meta.absolutePathTo;
+    }
+    final cache = HMBImageCache();
+    for (final variant in [
+      ImageVariantType.general,
+      ImageVariantType.raw,
+      ImageVariantType.thumb,
+    ]) {
+      final path = await cache.getCachedVariantPathForMeta(
+        meta: meta,
+        imageVariant: variant,
+      );
+      if (path != null) {
+        return path;
+      }
+    }
+    return null;
+  }
+
+  Future<Map<int, String>> _availablePhotoPaths(List<PhotoMeta> photos) async {
+    final paths = <int, String>{};
+    for (final photo in photos) {
+      final path = await _availablePhotoPath(photo);
+      if (path != null) {
+        paths[photo.photo.id] = path;
+      }
+    }
+    return paths;
+  }
+
+  Future<void> _fetchGallery(List<PhotoMeta> photos) async {
+    final cache = HMBImageCache();
+    for (final photo in photos) {
+      if (await _availablePhotoPath(photo) != null) {
+        continue;
+      }
+      await cache.getVariantPathForMeta(
+        meta: photo,
+        imageVariant: ImageVariantType.raw,
+        cacheRaw: true,
+      );
     }
   }
 }

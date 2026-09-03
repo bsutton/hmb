@@ -131,4 +131,26 @@ void main() {
       findsOneWidget,
     );
   });
+
+  test('invoice selectors exclude tasks with no amount to bill', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.timeAndMaterial,
+      hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+    );
+    final emptyTask = await createTask(job, 'Nothing to bill');
+    final billableTask = await createTask(job, 'Billable work');
+    await createTimeEntry(
+      billableTask,
+      DateTime.now(),
+      const Duration(hours: 1),
+    );
+
+    final selectors = await taskSelectorsForInvoice(job: job);
+
+    expect(selectors.map((selector) => selector.task.id), [billableTask.id]);
+    expect(
+      selectors.map((selector) => selector.task.id),
+      isNot(contains(emptyTask.id)),
+    );
+  });
 }
