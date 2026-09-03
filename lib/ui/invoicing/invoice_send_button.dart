@@ -16,9 +16,11 @@ import 'package:strings/strings.dart';
 
 import '../../api/external_accounting.dart';
 import '../../dao/dao.g.dart';
+import '../../dao/invoice_billing_contact.dart';
 import '../../entity/contact.dart';
 import '../../entity/invoice.dart';
 import '../../entity/job.dart';
+import '../../util/dart/exceptions.dart';
 import '../../util/dart/format.dart';
 import '../dialog/email_dialog_for_job.dart';
 import '../widgets/blocking_ui.dart';
@@ -104,6 +106,8 @@ class BuildSendButton extends StatelessWidget {
         final recipients = await DaoInvoice().getEmailsByInvoice(invoice);
         final preferredRecipient = Strings.isNotBlank(greetingContact.bestEmail)
             ? greetingContact.bestEmail
+            : recipients.isEmpty
+            ? ''
             : recipients.first;
         if (context.mounted) {
           await Navigator.of(context).push(
@@ -138,6 +142,11 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
                     ),
                 onSent: () => DaoInvoice().markSent(invoice),
                 canEmail: () async {
+                  try {
+                    await _prepareBillingContactForDelivery(invoice, job);
+                  } on InvoiceException catch (error) {
+                    return EmailBlocked(blocked: true, reason: error.message);
+                  }
                   if ((await ExternalAccounting().isEnabled()) &&
                       !invoice.isUploaded()) {
                     return EmailBlocked(
@@ -237,6 +246,19 @@ Future<Contact> invoiceGreetingContact({
   required Job job,
   required Contact primaryContact,
 }) async =>
-    await DaoContact().getById(invoice.billingContactId) ??
-    await DaoContact().getBillingContactByJob(job) ??
+    (await resolveInvoiceBillingContact(invoice, job: job)).contact ??
     primaryContact;
+
+Future<Contact> _prepareBillingContactForDelivery(
+  Invoice invoice,
+  Job job,
+) async {
+  final resolved = await resolveInvoiceBillingContact(invoice, job: job);
+  final contact = await requireInvoiceBillingContact(invoice, job: job);
+  if (resolved.source == InvoiceBillingContactSource.jobFallback &&
+      invoice.canChangeBillingContact) {
+    await DaoInvoice().updateBillingContact(invoice.id, contact.id);
+    invoice.billingContactId = contact.id;
+  }
+  return contact;
+}

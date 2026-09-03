@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:strings/strings.dart';
-
 import '../../dao/dao_contact.dart';
 import '../../dao/dao_invoice.dart';
 import '../../dao/dao_job.dart';
+import '../../dao/invoice_billing_contact.dart';
 import '../../entity/invoice.dart';
 import '../../util/dart/exceptions.dart';
 import '../xero/models/xero_contact.dart';
@@ -40,18 +39,10 @@ class XeroAccountingAdaptor extends AccountingAdaptor {
     // Fetch the job associated with the invoice
     final job = await DaoJob().getById(invoice.jobId);
 
-    final billingContact = await DaoContact().getBillingContactByJob(job!);
-
-    // Fetch the primary contact for the customer
-    if (billingContact == null) {
-      throw Exception('You must select a contact for the Job');
-    }
-    if (Strings.isBlank(billingContact.emailAddress)) {
-      throw Exception(
-        '''
-You must provide an email address for the Contact ${billingContact.fullname}''',
-      );
-    }
+    final billingContact = await requireInvoiceBillingContact(
+      invoice,
+      job: job,
+    );
 
     // Check if the contact exists in Xero
     final contactResponse = await xeroApi.getContact(billingContact.fullname);

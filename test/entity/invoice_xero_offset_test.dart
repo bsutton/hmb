@@ -123,6 +123,28 @@ void main() {
     expect(xeroB.lineItems.single.unitAmount, equals(MoneyEx.fromInt(1125)));
     expect(xeroB.lineItems.single.quantity, equals(-Fixed.one));
   });
+
+  test(
+    'uses the invoice billing contact rather than the job contact',
+    () async {
+      final fixture = await _createFixture();
+      final invoiceContact = Contact.forInsert(
+        firstName: 'Invoice',
+        surname: 'Recipient',
+        mobileNumber: '',
+        landLine: '',
+        officeNumber: '',
+        emailAddress: 'invoice@example.com',
+      );
+      await DaoContact().insert(invoiceContact);
+      final invoice = await _createInvoice(fixture.job, invoiceContact);
+
+      final xeroInvoice = await invoice.toXeroInvoice(invoice);
+
+      expect(xeroInvoice.contact.name, 'Invoice Recipient');
+      expect(xeroInvoice.contact.email, 'invoice@example.com');
+    },
+  );
 }
 
 class _Fixture {

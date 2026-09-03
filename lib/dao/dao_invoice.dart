@@ -317,6 +317,20 @@ ORDER BY modified_date DESC
     await update(invoice.copyWith(paymentSource: InvoicePaymentSource.manual));
   }
 
+  Future<void> updateBillingContact(int invoiceId, int contactId) async {
+    final invoice = await getById(invoiceId);
+    if (invoice == null) {
+      throw InvoiceException('Invoice $invoiceId no longer exists.');
+    }
+    if (!invoice.canChangeBillingContact) {
+      throw InvoiceException(
+        'The billing contact cannot be changed after an invoice is sent, '
+        'uploaded, voided, or deleted.',
+      );
+    }
+    await update(invoice.copyWith(billingContactId: contactId));
+  }
+
   Future<void> voidInvoice({
     required int invoiceId,
     required String description,

@@ -21,18 +21,24 @@ import 'package:strings/strings.dart';
 
 import '../../api/accounting/accounting_adaptor.dart';
 import '../../api/external_accounting.dart';
-import '../../dao/dao_contact.dart';
 import '../../dao/dao_invoice.dart';
 import '../../dao/dao_invoice_line.dart';
 import '../../dao/dao_invoice_line_group.dart';
 import '../../dao/dao_task_item.dart';
 import '../../dao/dao_time_entry.dart';
 import '../../dao/debtor_ledger_service.dart';
+import '../../dao/invoice_billing_contact.dart';
+import '../../dao/join_adaptors/join_adaptor_customer_contact.dart';
+import '../../entity/contact.dart';
+import '../../entity/customer.dart';
 import '../../entity/invoice.dart';
 import '../../entity/invoice_line.dart';
+import '../../util/dart/exceptions.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/money_ex.dart';
+import '../crud/contact/edit_contact_screen.dart';
 import '../dialog/hmb_comfirm_delete_dialog.dart';
+import '../quoting/select_billing_contact_dialog.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
@@ -57,6 +63,8 @@ class InvoiceEditScreen extends StatefulWidget {
   @override
   State<InvoiceEditScreen> createState() => _InvoiceEditScreenState();
 }
+
+enum _BillingContactFix { edit, change }
 
 class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   late final int invoiceId;
@@ -108,6 +116,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                 ),
                 Text('Customer: ${customer?.name ?? "N/A"}'),
                 Text('Job: ${job.summary} #${job.id}'),
+                _buildBillingContact(details, canChangeInvoice),
                 if (Strings.isNotBlank(invoice.voidDescription))
                   Text('Void description: ${invoice.voidDescription}'),
                 Wrap(
@@ -271,6 +280,138 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
     InvoiceExternalSyncStatus.deleted => 'Deleted in Xero',
     InvoiceExternalSyncStatus.voided => 'Voided in Xero',
   };
+
+  Widget _buildBillingContact(InvoiceDetails details, bool canChangeInvoice) {
+    final resolved = details.billingContact;
+    final contact = resolved.contact;
+    final jobContact = details.jobBillingContact;
+    final contactName = contact?.fullname.trim();
+    final hasMismatch =
+        contact != null && jobContact != null && contact.id != jobContact.id;
+    final jobContactEmail =
+        jobContact != null && Strings.isNotBlank(jobContact.bestEmail)
+        ? jobContact.bestEmail
+        : 'no email';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Surface(
+        elevation: SurfaceElevation.e1,
+        child: HMBColumn(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Billing contact',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              contact == null || contactName!.isEmpty
+                  ? 'No billing contact selected'
+                  : contactName,
+            ),
+            if (contact != null && resolved.hasEmail)
+              Text(contact.bestEmail)
+            else
+              const Text(
+                'No email address. Add an email or select another contact '
+                'before sending or uploading this invoice.',
+                style: TextStyle(color: Colors.red),
+              ),
+            if (resolved.source == InvoiceBillingContactSource.jobFallback)
+              const Text('Currently inherited from the job.'),
+            if (hasMismatch)
+              Text(
+                'Job billing contact: ${jobContact.fullname.trim()} '
+                '($jobContactEmail)',
+              ),
+            if (canChangeInvoice)
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  HMBButton(
+                    label: 'Change Contact',
+                    hint: 'Select the billing contact for this invoice',
+                    onPressed: () => _changeBillingContact(details),
+                  ),
+                  if (contact != null)
+                    HMBButton(
+                      label: 'Edit Contact',
+                      hint: 'Edit ${contact.fullname.trim()}',
+                      onPressed: () => _editBillingContact(details, contact),
+                    ),
+                  if (jobContact != null &&
+                      (hasMismatch ||
+                          resolved.source ==
+                              InvoiceBillingContactSource.jobFallback))
+                    HMBButton(
+                      label: 'Use Job Contact',
+                      hint:
+                          'Use ${jobContact.fullname.trim()} for this invoice',
+                      onPressed: () =>
+                          _saveBillingContact(details.invoice, jobContact),
+                    ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _changeBillingContact(InvoiceDetails details) async {
+    final customer = details.billingCustomer;
+    if (customer == null) {
+      HMBToast.error('The billing party does not have a customer record.');
+      return;
+    }
+    final selected = await SelectBillingContactDialog.show(
+      context,
+      customer,
+      details.billingContact.contact,
+      null,
+    );
+    if (selected != null) {
+      await _saveBillingContact(details.invoice, selected);
+    }
+  }
+
+  Future<void> _editBillingContact(
+    InvoiceDetails details,
+    Contact contact,
+  ) async {
+    final customer = details.billingCustomer;
+    if (customer == null) {
+      HMBToast.error('The billing party does not have a customer record.');
+      return;
+    }
+    await Navigator.of(context).push<Contact>(
+      MaterialPageRoute<Contact>(
+        builder: (context) => ContactEditScreen<Customer>(
+          parent: customer,
+          daoJoin: JoinAdaptorCustomerContact(),
+          contact: contact,
+        ),
+      ),
+    );
+    await _reloadInvoiceAndRefresh();
+  }
+
+  Future<void> _saveBillingContact(Invoice invoice, Contact contact) async {
+    await BlockingUI().runAndWait(
+      () => DaoInvoice().updateBillingContact(invoice.id, contact.id),
+      label: 'Updating billing contact',
+    );
+    await _reloadInvoiceAndRefresh();
+    HMBToast.info('Invoice billing contact updated.');
+  }
+
+  Future<void> _reloadInvoiceAndRefresh() async {
+    await _reloadInvoice();
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   String _paymentManagementLabel(Invoice invoice) {
     if (invoice.isManagedLocally) {
@@ -579,19 +720,16 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       return;
     }
     try {
-      final invoice = (await _invoiceDetails).invoice;
+      final details = await _invoiceDetails;
+      final invoice = details.invoice;
       if (invoice.isUploaded()) {
         HMBToast.error('This invoice has already been uploaded to Xero.');
         return;
       }
-      final contact = await DaoContact().getById(invoice.billingContactId);
-      if (contact == null) {
-        HMBToast.error('You must first add a Contact to the Customer');
-        return;
-      }
-
-      if (Strings.isBlank(contact.emailAddress)) {
-        HMBToast.error("The customer's billing contact must have an email.");
+      try {
+        await _prepareBillingContactForDelivery(invoice);
+      } on InvoiceException catch (error) {
+        await _showBillingContactProblem(details, error.message);
         return;
       }
 
@@ -609,19 +747,77 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       }
       setState(() {});
     } catch (e, st) {
-      if (!e.toString().contains('You must provide an email address for')) {
-        unawaited(
-          Sentry.captureException(
-            e,
-            stackTrace: st,
-            hint: Hint.withMap({'hint': 'UploadInvoiceToXero'}),
-          ),
-        );
-      }
+      unawaited(
+        Sentry.captureException(
+          e,
+          stackTrace: st,
+          hint: Hint.withMap({'hint': 'UploadInvoiceToXero'}),
+        ),
+      );
       HMBToast.error(
         'Failed to upload invoice: $e',
         acknowledgmentRequired: true,
       );
+    }
+  }
+
+  Future<Contact> _prepareBillingContactForDelivery(Invoice invoice) async {
+    final resolved = await resolveInvoiceBillingContact(invoice);
+    final contact = await requireInvoiceBillingContact(invoice);
+    if (resolved.source == InvoiceBillingContactSource.jobFallback &&
+        invoice.canChangeBillingContact) {
+      await DaoInvoice().updateBillingContact(invoice.id, contact.id);
+      invoice.billingContactId = contact.id;
+    }
+    return contact;
+  }
+
+  Future<void> _showBillingContactProblem(
+    InvoiceDetails details,
+    String message,
+  ) async {
+    if (!mounted) {
+      return;
+    }
+    final contact = details.billingContact.contact;
+    final action = await showDialog<_BillingContactFix>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Billing contact needs attention'),
+        content: Text(message),
+        actions: [
+          HMBButton(
+            label: 'Cancel',
+            hint: 'Return to the invoice',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          if (contact != null)
+            HMBButton(
+              label: 'Edit Contact',
+              hint: 'Add or change the billing contact email',
+              onPressed: () =>
+                  Navigator.of(context).pop(_BillingContactFix.edit),
+            ),
+          HMBButton(
+            label: 'Change Contact',
+            hint: 'Select another billing contact',
+            onPressed: () =>
+                Navigator.of(context).pop(_BillingContactFix.change),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+    switch (action) {
+      case _BillingContactFix.edit when contact != null:
+        await _editBillingContact(details, contact);
+      case _BillingContactFix.change:
+        await _changeBillingContact(details);
+      case null:
+      case _BillingContactFix.edit:
+        return;
     }
   }
 

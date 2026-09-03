@@ -14,8 +14,10 @@
 import 'package:deferred_state/deferred_state.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
+import 'package:strings/strings.dart';
 
 import '../../dao/dao.g.dart';
+import '../../dao/invoice_billing_contact.dart';
 import '../../entity/entity.g.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_select_contact.dart';
@@ -193,8 +195,8 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
           .effectiveBillingType(widget.job.billingType);
     }
 
-    _customer = (await DaoCustomer().getById(widget.job.customerId))!;
-    _contacts = await DaoContact().getByCustomer(widget.job.customerId);
+    _customer = (await getBillingCustomerForJob(widget.job))!;
+    _contacts = await DaoContact().getByCustomer(_customer.id);
     _selectedContact = widget.contact;
   }
 
@@ -244,11 +246,19 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
 
                 initialContact: _selectedContact.id,
                 customer: _customer,
+                showEmail: true,
                 onSelected: (value) {
                   setState(() {
                     _selectedContact = value!;
                   });
                 },
+              ),
+            if (Strings.isBlank(_selectedContact.bestEmail))
+              const Text(
+                'This contact has no email address. You can create the draft, '
+                'but must add an email or choose another contact before '
+                'sending or uploading it.',
+                style: TextStyle(color: Colors.red),
               ),
             if (_hasSelectedTimeAndMaterialsTasks)
               DropdownButton<bool>(

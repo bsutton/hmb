@@ -158,17 +158,20 @@ class _SelectBillingContactDialogState
                         final current = _contacts[index];
                         final fullName =
                             '${current.firstName} ${current.surname}'.trim();
-                        final subtitle = current.emailAddress.isNotEmpty
-                            ? current.emailAddress
-                            : (current.mobileNumber.isNotEmpty
-                                  ? current.mobileNumber
-                                  : null);
+                        final subtitle = current.bestEmail.isNotEmpty
+                            ? current.bestEmail
+                            : 'No email address';
                         return RadioListTile<Contact?>(
                           value: current,
                           title: Text(
                             fullName.isEmpty ? 'Unnamed contact' : fullName,
                           ),
-                          subtitle: subtitle == null ? null : Text(subtitle),
+                          subtitle: Text(
+                            subtitle,
+                            style: current.bestEmail.isEmpty
+                                ? const TextStyle(color: Colors.red)
+                                : null,
+                          ),
                         );
                       },
                     ),

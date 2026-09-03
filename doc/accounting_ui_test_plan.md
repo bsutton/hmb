@@ -117,7 +117,14 @@ rg -n -C 20 "Exception caught by rendering library|RenderFlex|overflow|flutterEr
   - writes off the remaining balance.
   - handles a 0.40 small-balance adjustment as a normal write-off.
 - Invoice PDF preview opens and is readable on phone.
-- Send invoice path handles missing email and valid email without crashing.
+- Invoice details show the selected billing contact and email.
+- A draft whose contact differs from the job shows `Use Job Contact`; using it
+  persists the change after reload.
+- A contact without email shows an inline warning. The draft remains valid,
+  while email and Xero upload are blocked with the contact named.
+- PDF, email greeting, and Xero payload use the invoice contact rather than a
+  different current job contact.
+- Sent/uploaded/voided invoices do not offer billing-contact edit actions.
 - Void/delete guards prevent unsafe deletion of invoiced/ledger-linked records.
 
 ## Receipts

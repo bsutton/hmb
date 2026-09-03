@@ -97,4 +97,38 @@ void main() {
 
     expect(find.text('Bill booking Fee'), findsNothing);
   });
+
+  testWidgets('invoice draft warns when billing contact has no email', (
+    tester,
+  ) async {
+    final dialog = await tester.runAsync(() async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+      );
+      final task = await createTask(job, 'Invoice task');
+      final contact = (await DaoContact().getBillingContactByJob(job))!;
+      final withoutEmail = contact.copyWith(emailAddress: '');
+      await DaoContact().update(withoutEmail);
+
+      return DialogTaskSelection(
+        job: job,
+        contact: withoutEmail,
+        title: 'Tasks to Invoice',
+        forQuote: false,
+        taskSelectors: [
+          TaskSelector(task, task.name, Money.fromInt(25000, isoCode: 'AUD')),
+        ],
+      );
+    });
+
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: dialog)));
+    await tester.pumpAndSettle();
+    await waitForText(tester, 'Select All');
+
+    expect(
+      find.textContaining('This contact has no email address'),
+      findsOneWidget,
+    );
+  });
 }

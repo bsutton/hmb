@@ -37,12 +37,14 @@ class HMBSelectContact extends StatefulWidget {
 
   /// Label for the field.
   final String title;
+  final bool showEmail;
 
   const HMBSelectContact({
     required this.initialContact,
     required this.customer,
     this.onSelected,
     this.title = 'Contact',
+    this.showEmail = false,
     super.key,
   });
 
@@ -120,7 +122,16 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
                 selectedItem: () async => contact,
                 onChanged: _onContactChanged,
                 items: _getContacts,
-                format: (contact) => '${contact.firstName} ${contact.surname}',
+                format: (contact) {
+                  final name = '${contact.firstName} ${contact.surname}'.trim();
+                  if (!widget.showEmail) {
+                    return name;
+                  }
+                  final email = Strings.isNotBlank(contact.bestEmail)
+                      ? contact.bestEmail
+                      : 'No email address';
+                  return '$name — $email';
+                },
                 required: false,
               ),
             ),

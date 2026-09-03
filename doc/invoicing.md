@@ -258,6 +258,18 @@ These rules apply no matter where invoicing is initiated:
 ## 9. UI Requirements
 
 - Billing type selector shows `Inherited` for `NULL`.
+- An invoice stores the billing contact selected when the draft is created.
+  Later job or customer billing-contact changes do not silently rewrite it.
+- Draft invoices show the selected contact's name and email and allow the
+  contact to be changed until the invoice is sent or uploaded.
+- If the invoice and job billing contacts differ, show both and offer an
+  explicit `Use Job Contact` action.
+- A missing email does not prevent creating a draft, but blocks email delivery
+  and external-accounting upload with the contact's name and a corrective next
+  step.
+- PDF, email greeting/recipient selection, and external-accounting upload use
+  the invoice contact consistently. Legacy invoices without a stored contact
+  may inherit the job contact, which is pinned when delivery is attempted.
 - Invoice actions enforce canonical rules consistently across all entry points.
 - When an action is blocked, show a clear reason and next step.
 - Surface quoted vs unquoted task scope in invoicing views.
@@ -272,5 +284,9 @@ when a task item is copied.
 - FP task not attached to a quote can be directly invoiced.
 - Approved quote + milestones blocks direct invoicing of quoted FP tasks.
 - Unquoted tasks remain direct-invoice eligible.
+- Draft billing-contact changes survive reload and are reflected in the PDF,
+  email, and external-accounting payload.
+- Sent, uploaded, voided, and externally deleted invoices expose their billing
+  contact read-only.
 - Changing quoted active FP scope requires quote lifecycle action first
   (reject/withdraw path).

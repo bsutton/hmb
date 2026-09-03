@@ -20,6 +20,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:strings/strings.dart';
 
 import '../../../dao/dao.g.dart';
+import '../../../dao/invoice_billing_contact.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/format.dart';
 import '../../../util/dart/money_ex.dart';
@@ -56,8 +57,10 @@ Future<File> generateInvoicePdf(
 
   // Retrieve the customer for the job and the primary contact for the job.
   final customer = await DaoCustomer().getByJob(invoice.jobId);
-  var billingContact = await DaoContact().getById(invoice.billingContactId);
-  billingContact ??= await DaoContact().getBillingContactByJob(job);
+  final billingContact = (await resolveInvoiceBillingContact(
+    invoice,
+    job: job,
+  )).contact;
 
   // Group lines if requested
   var groupedLines = <GroupedLine>[];

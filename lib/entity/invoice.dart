@@ -17,6 +17,7 @@ import 'package:strings/strings.dart';
 import '../api/xero/models/xero_invoice.dart';
 import '../api/xero/models/xero_line_item.dart';
 import '../dao/dao.g.dart';
+import '../dao/invoice_billing_contact.dart';
 import '../util/dart/exceptions.dart';
 import '../util/dart/local_date.dart';
 import 'entity.dart';
@@ -154,14 +155,12 @@ class Invoice extends Entity<Invoice> {
 
   String get bestNumber => invoiceNum ?? '$id';
 
+  bool get canChangeBillingContact =>
+      !sent && !isUploaded() && !isExternallyDeletedOrVoided;
+
   Future<XeroInvoice> toXeroInvoice(Invoice invoice) async {
-    final job = await DaoJob().getById(invoice.jobId);
-    final contact = await DaoContact().getBillingContactByJob(job!);
-    if (contact == null) {
-      throw InvoiceException(
-        'You must assign a Contact to the Job before you can upload an invoice',
-      );
-    }
+    final job = (await DaoJob().getById(invoice.jobId))!;
+    final contact = await requireInvoiceBillingContact(invoice, job: job);
     final system = await DaoSystem().get();
 
     if (Strings.isBlank(system.invoiceLineRevenueAccountCode) ||

@@ -32,7 +32,7 @@ class XeroContact {
   /// Create a [XeroContact] from a [Contact].
   factory XeroContact.fromContact(Contact contact) => XeroContact(
     name: contact.fullname,
-    email: contact.emailAddress,
+    email: contact.bestEmail,
     phone: contact.bestPhone,
   );
 
