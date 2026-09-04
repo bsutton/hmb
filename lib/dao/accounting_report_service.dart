@@ -19,6 +19,7 @@ import '../api/external_accounting.dart';
 import '../entity/credit_note.dart';
 import '../entity/debtor_adjustment.dart';
 import '../entity/invoice.dart';
+import '../entity/job_status.dart';
 import '../entity/job.dart';
 import '../entity/task_item.dart';
 import '../entity/task_item_type.dart';
@@ -836,6 +837,10 @@ LEFT JOIN invoice_line il ON il.id = ti.invoice_line_id
 LEFT JOIN invoice i ON i.id = il.invoice_id
 WHERE ti.completed = 1
   AND ti.item_type_id != ${TaskItemType.labour.id}
+  AND j.status_id NOT IN (
+    '${JobStatus.onHold.id}',
+    '${JobStatus.rejected.id}'
+  )
   AND COALESCE(t.billing_type, j.billing_type, 'timeAndMaterial')
     != 'nonBillable'
 ORDER BY

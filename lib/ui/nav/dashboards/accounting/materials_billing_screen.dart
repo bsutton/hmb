@@ -14,12 +14,15 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../../dao/dao.g.dart';
+import '../../../../entity/job.dart';
 import '../../../../entity/task_item.dart';
+import '../../../../entity/job_status.dart';
 import '../../../../util/dart/format.dart';
 import '../../../crud/check_list/edit_task_item_screen.dart';
 import '../../../crud/check_list/list_task_item_screen.dart';
 import '../../../widgets/icons/hmb_edit_icon.dart';
 import '../../../widgets/layout/layout.g.dart';
+import '../../../widgets/select/hmb_select_job.dart';
 import '../../../widgets/widgets.g.dart';
 import 'report_csv_export.dart';
 
@@ -53,6 +56,7 @@ class MaterialsBillingScreen extends StatefulWidget {
 
 class _MaterialsBillingScreenState extends State<MaterialsBillingScreen> {
   late MaterialBillingReport _report;
+  final _selectedJob = SelectedJob();
   MaterialBillingFilter _filter = MaterialBillingFilter.attention;
   var _search = '';
 
@@ -77,6 +81,13 @@ class _MaterialsBillingScreenState extends State<MaterialsBillingScreen> {
             _summary(),
             const SizedBox(height: 12),
             _actions(context, visibleReport),
+            const SizedBox(height: 12),
+            HMBSelectJob(
+              selectedJob: _selectedJob,
+              onSelected: (_) => setState(() {}),
+              showAdd: false,
+              items: _getMaterialJobs,
+            ),
             const SizedBox(height: 12),
             SizedBox(
               width: 420,
@@ -234,6 +245,10 @@ class _MaterialsBillingScreenState extends State<MaterialsBillingScreen> {
   );
 
   bool _isVisible(MaterialBillingRow row) {
+    if (_selectedJob.jobId != null && _selectedJob.jobId != row.jobId) {
+      return false;
+    }
+
     final statusMatches = switch (_filter) {
       MaterialBillingFilter.attention =>
         !row.taskItem.billed || !row.hasActualPrice,
@@ -255,6 +270,17 @@ class _MaterialsBillingScreenState extends State<MaterialsBillingScreen> {
       row.taskItem.itemType.label,
       row.invoiceDisplay,
     ].any((value) => value.toLowerCase().contains(_search));
+  }
+
+  Future<List<Job>> _getMaterialJobs(String? filter) async {
+    final jobs = await DaoJob().getByFilter(filter);
+    return jobs
+        .where(
+          (job) =>
+              job.status != JobStatus.rejected &&
+              job.status != JobStatus.onHold,
+        )
+        .toList();
   }
 
   String get _emptyMessage => _filter == MaterialBillingFilter.attention
