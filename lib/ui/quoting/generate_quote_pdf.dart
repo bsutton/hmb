@@ -14,6 +14,7 @@
 // lib/src/services/quote_pdf_generator.dart
 
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:path_provider/path_provider.dart';
@@ -21,6 +22,8 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:strings/strings.dart';
 
+import '../../cache/hmb_image_cache.dart';
+import '../../cache/image_cache_config.dart';
 import '../../dao/dao_job.dart';
 import '../../dao/dao_photo.dart';
 import '../../dao/dao_quote_task_photo.dart';
@@ -63,6 +66,7 @@ Future<File> generateQuotePdf(
       .toList();
   final taxDisplayText = await buildPdfTaxDisplayText();
   final appendix = await _loadQuotePhotoAppendix(jobQuote);
+  final appendixPhotoBytes = await _loadQuotePhotoBytes(appendix);
 
   final totalAmount = visibleGroups.fold(
     MoneyEx.zero,
@@ -417,13 +421,17 @@ Future<File> generateQuotePdf(
             }
 
             for (final photo in section.photos) {
+              final bytes = appendixPhotoBytes[photo.photo.absolutePathTo];
+              if (bytes == null || bytes.isEmpty) {
+                continue;
+              }
               content.add(
                 pw.Container(
                   margin: const pw.EdgeInsets.only(bottom: 10),
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Image(pw.MemoryImage(photo.bytes)),
+                      pw.Image(pw.MemoryImage(bytes)),
                       if (Strings.isNotBlank(photo.comment))
                         pw.Padding(
                           padding: const pw.EdgeInsets.only(top: 4),
@@ -467,30 +475,27 @@ Future<List<_QuotePhotoAppendixSection>> _loadQuotePhotoAppendix(
     return [];
   }
 
-  final metasByTask = <int, Map<int, String>>{};
+  final metasByTask = <int, Map<int, PhotoMeta>>{};
   final taskIds = selected.map((s) => s.taskId).toSet();
   for (final taskId in taskIds) {
     final metas = await DaoPhoto.getByTask(taskId);
     await PhotoMeta.resolveAll(metas);
-    final byPhoto = <int, String>{};
+    final byPhoto = <int, PhotoMeta>{};
     for (final meta in metas) {
-      byPhoto[meta.photo.id] = meta.absolutePathTo;
+      byPhoto[meta.photo.id] = meta;
     }
     metasByTask[taskId] = byPhoto;
   }
 
   final photoById = <int, _ResolvedQuotePhoto>{};
   for (final selection in selected) {
-    final path = metasByTask[selection.taskId]?[selection.photoId];
-    if (Strings.isBlank(path)) {
-      continue;
-    }
-    final file = File(path!);
-    if (!file.existsSync()) {
+    final meta = metasByTask[selection.taskId]?[selection.photoId];
+    final path = meta?.absolutePathTo ?? '';
+    if (meta == null || Strings.isBlank(path) || !File(path).existsSync()) {
       continue;
     }
     photoById[selection.photoId] = _ResolvedQuotePhoto(
-      bytes: await file.readAsBytes(),
+      photo: meta,
       comment: selection.comment,
     );
   }
@@ -507,7 +512,7 @@ Future<List<_QuotePhotoAppendixSection>> _loadQuotePhotoAppendix(
           _QuotePhotoRow(
             order: selection.displayOrder,
             comment: resolved.comment,
-            bytes: resolved.bytes,
+            photo: resolved.photo,
           ),
         );
   }
@@ -535,11 +540,53 @@ Future<List<_QuotePhotoAppendixSection>> _loadQuotePhotoAppendix(
   return sections;
 }
 
+Future<Map<String, Uint8List>> _loadQuotePhotoBytes(
+  List<_QuotePhotoAppendixSection> sections,
+) async {
+  final photoByPath = <String, PhotoMeta>{};
+  for (final section in sections) {
+    for (final row in section.photos) {
+      final path = row.photo.absolutePathTo;
+      if (path.isNotEmpty) {
+        photoByPath[path] = row.photo;
+      }
+    }
+  }
+
+  final photos = photoByPath.values.toList();
+  if (photos.isEmpty) {
+    return const {};
+  }
+
+  final maxConcurrent = max(1, Platform.numberOfProcessors - 1);
+  final bytesByPath = <String, Uint8List>{};
+  for (var i = 0; i < photos.length; i += maxConcurrent) {
+    final batch = photos.skip(i).take(maxConcurrent).toList();
+    final results = await Future.wait(
+      batch
+          .map(
+            (meta) => HMBImageCache().getVariantBytesForMeta(
+              meta: meta,
+              variant: ImageVariantType.pdf,
+            ),
+          )
+          .toList(),
+    );
+    for (var j = 0; j < batch.length; j++) {
+      final bytes = results[j];
+      if (bytes.isNotEmpty) {
+        bytesByPath[batch[j].absolutePathTo] = bytes;
+      }
+    }
+  }
+  return bytesByPath;
+}
+
 class _ResolvedQuotePhoto {
-  final Uint8List bytes;
+  final PhotoMeta photo;
   final String comment;
 
-  _ResolvedQuotePhoto({required this.bytes, required this.comment});
+  _ResolvedQuotePhoto({required this.photo, required this.comment});
 }
 
 class _QuotePhotoAppendixSection {
@@ -557,12 +604,12 @@ class _QuotePhotoAppendixSection {
 class _QuotePhotoRow {
   final int order;
   final String comment;
-  final Uint8List bytes;
+  final PhotoMeta photo;
 
   _QuotePhotoRow({
     required this.order,
     required this.comment,
-    required this.bytes,
+    required this.photo,
   });
 }
 

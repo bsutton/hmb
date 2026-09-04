@@ -204,6 +204,22 @@ class HMBImageCache {
   Path pathForVariant(ImageVariant variant) =>
       p.join(_cacheDir, variant.cacheFileName);
 
+  void _copyFileIfNeeded({
+    required Path src,
+    required Path dst,
+  }) {
+    if (src == dst || exists(dst)) {
+      return;
+    }
+    try {
+      copy(src, dst, overwrite: true);
+    } on Exception catch (_) {
+      if (!exists(dst)) {
+        rethrow;
+      }
+    }
+  }
+
   /// moves a image stored at [PhotoMeta] into
   /// cache and triggers a background compression
   /// and upload to cloud.
@@ -214,7 +230,10 @@ class HMBImageCache {
 
     // copy the raw image into cache and let
     // it expire naturally
-    copy(meta.absolutePathTo, pathForVariant(rawVariant));
+    _copyFileIfNeeded(
+      src: meta.absolutePathTo,
+      dst: pathForVariant(rawVariant),
+    );
     await _upsertEntry(rawVariant);
 
     await setLastAccess(
@@ -286,7 +305,7 @@ class HMBImageCache {
         final localPath = variant.meta.absolutePathTo;
         if (exists(localPath)) {
           if (localPath != targetPath) {
-            copy(localPath, targetPath);
+            _copyFileIfNeeded(src: localPath, dst: targetPath);
           }
           return;
         }
