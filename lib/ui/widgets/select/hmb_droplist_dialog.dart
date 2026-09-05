@@ -244,43 +244,46 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
 
     return Flexible(
       child: Surface(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.6,
-          ),
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: _items!.length + (widget.allowClear ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (widget.allowClear && index == 0) {
-                return ListTile(
-                  leading: const Icon(Icons.clear, color: Colors.red),
-                  title: const Text(
-                    'Clear selection',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
+        child: Material(
+          type: MaterialType.transparency,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.6,
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _items!.length + (widget.allowClear ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (widget.allowClear && index == 0) {
+                  return ListTile(
+                    leading: const Icon(Icons.clear, color: Colors.red),
+                    title: const Text(
+                      'Clear selection',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
                     ),
+                    onTap: () => Navigator.of(context).pop(),
+                  );
+                }
+                final item = _items![index - (widget.allowClear ? 1 : 0)];
+                final isSelected = item == widget.selectedItem;
+                return ListTile(
+                  selected: isSelected,
+                  selectedTileColor: Theme.of(
+                    context,
+                  ).primaryColor.withSafeOpacity(0.1),
+                  title: Text(
+                    widget.formatItem(item),
+                    style: const TextStyle(color: HMBColors.textPrimary),
                   ),
-                  onTap: () => Navigator.of(context).pop(),
+                  onTap: () {
+                    Navigator.of(context).pop(item);
+                  },
                 );
-              }
-              final item = _items![index - (widget.allowClear ? 1 : 0)];
-              final isSelected = item == widget.selectedItem;
-              return ListTile(
-                selected: isSelected,
-                selectedTileColor: Theme.of(
-                  context,
-                ).primaryColor.withSafeOpacity(0.1),
-                title: Text(
-                  widget.formatItem(item),
-                  style: const TextStyle(color: HMBColors.textPrimary),
-                ),
-                onTap: () {
-                  Navigator.of(context).pop(item);
-                },
-              );
-            },
+              },
+            ),
           ),
         ),
       ),

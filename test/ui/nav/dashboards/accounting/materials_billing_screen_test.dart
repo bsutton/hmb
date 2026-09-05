@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/accounting_report_service.dart';
+import 'package:hmb/dao/dao_job.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/entity/helpers/charge_mode.dart';
 import 'package:hmb/ui/nav/dashboards/accounting/materials_billing_screen.dart';
@@ -9,7 +10,54 @@ import 'package:hmb/util/dart/units.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 
+import '../../../../database/management/db_utility_test_helper.dart';
+
 void main() {
+  setUp(setupTestDb);
+  tearDown(tearDownTestDb);
+
+  testWidgets('job picker defaults to active jobs and can show old jobs', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      for (final status in [JobStatus.inProgress, JobStatus.completed]) {
+        await DaoJob().insert(
+          Job.forInsert(
+            customerId: 1,
+            summary: 'Picker ${status.name}',
+            description: '',
+            siteId: 1,
+            contactId: 1,
+            billingContactId: 1,
+            status: status,
+            hourlyRate: MoneyEx.zero,
+            bookingFee: MoneyEx.zero,
+          ),
+        );
+      }
+    });
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: MaterialsBillingScreen(report: MaterialBillingReport(rows: [])),
+      ),
+    );
+    await _pumpUntil(tester, find.text('Select a Job'));
+    await tester.tap(find.text('Select a Job'));
+    await _pumpUntil(tester, find.textContaining('Picker inProgress'));
+    expect(find.textContaining('Picker completed'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.tune));
+    await _pumpUntil(tester, find.text('Show Inactive Jobs'));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('Show Inactive Jobs'));
+    await tester.pump();
+    Navigator.of(tester.element(find.text('Show Inactive Jobs'))).pop();
+    await _pumpUntil(tester, find.textContaining('Picker completed'));
+    expect(find.textContaining('Picker inProgress'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 10));
+  });
+
   testWidgets('attention filter highlights material billing problems', (
     tester,
   ) async {
@@ -37,6 +85,19 @@ void main() {
 
     expect(find.text('Already billed'), findsOneWidget);
   });
+}
+
+Future<void> _pumpUntil(WidgetTester tester, Finder finder) async {
+  for (var attempt = 0; attempt < 100; attempt++) {
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+    if (finder.evaluate().isNotEmpty) {
+      return;
+    }
+  }
+  expect(finder, findsWidgets);
 }
 
 MaterialBillingRow _row(

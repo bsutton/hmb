@@ -14,9 +14,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../../dao/dao.g.dart';
-import '../../../../entity/job.dart';
 import '../../../../entity/task_item.dart';
-import '../../../../entity/job_status.dart';
 import '../../../../util/dart/format.dart';
 import '../../../crud/check_list/edit_task_item_screen.dart';
 import '../../../crud/check_list/list_task_item_screen.dart';
@@ -86,7 +84,6 @@ class _MaterialsBillingScreenState extends State<MaterialsBillingScreen> {
               selectedJob: _selectedJob,
               onSelected: (_) => setState(() {}),
               showAdd: false,
-              items: _getMaterialJobs,
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -270,17 +267,6 @@ class _MaterialsBillingScreenState extends State<MaterialsBillingScreen> {
       row.taskItem.itemType.label,
       row.invoiceDisplay,
     ].any((value) => value.toLowerCase().contains(_search));
-  }
-
-  Future<List<Job>> _getMaterialJobs(String? filter) async {
-    final jobs = await DaoJob().getByFilter(filter);
-    return jobs
-        .where(
-          (job) =>
-              job.status != JobStatus.rejected &&
-              job.status != JobStatus.onHold,
-        )
-        .toList();
   }
 
   String get _emptyMessage => _filter == MaterialBillingFilter.attention
