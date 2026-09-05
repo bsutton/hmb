@@ -27,6 +27,8 @@ import '../dialog/email_dialog_for_job.dart';
 import '../invoicing/dialog_select_tasks.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/media/pdf_preview.dart';
+import '../widgets/select/hmb_droplist.dart';
+import '../widgets/select/hmb_select_email_multi.dart';
 import '../widgets/widgets.g.dart';
 import 'generate_quote_pdf.dart';
 import 'job_and_customer.dart';
@@ -101,10 +103,22 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
     }
 
     final primaryContact = await DaoContact().getPrimaryForQuote(quote.id);
-    if (primaryContact == null) {
-      HMBToast.error('You must first set a Contact on the Job');
-      return;
+    final billingContact = await DaoContact().getBillingContactByJob(job);
+    final recipients = await BlockingUI().runAndWait(
+      () => ContactAndEmail.fromJob(job, null),
+    );
+    final preferredEmail =
+        (billingContact?.bestEmail ?? primaryContact?.bestEmail ?? '')
+            .trim()
+            .toLowerCase();
+    ContactAndEmail? recipient;
+    for (final candidate in recipients) {
+      if (candidate.email.toLowerCase() == preferredEmail) {
+        recipient = candidate;
+        break;
+      }
     }
+    recipient ??= recipients.firstOrNull;
 
     var displayCosts = true;
     var displayGroupHeaders = true;
@@ -119,14 +133,17 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
         displayCosts: displayCosts,
         displayGroupHeaders: displayGroupHeaders,
         displayItems: displayItems,
+        job: job,
+        recipient: recipient,
       );
       if (result == null || !mounted) {
         return;
       }
-      displayCosts = result['displayCosts'] ?? true;
-      displayGroupHeaders = result['displayGroupHeaders'] ?? true;
-      displayItems = result['displayItems'] ?? true;
-      final editTaskPhotos = result['manageTaskPhotos'] ?? false;
+      displayCosts = result.displayCosts;
+      displayGroupHeaders = result.displayGroupHeaders;
+      displayItems = result.displayItems;
+      recipient = result.recipient;
+      final editTaskPhotos = result.manageTaskPhotos;
       if (editTaskPhotos) {
         await SelectQuoteTaskPhotosDialog.show(
           context: context,
@@ -151,7 +168,6 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
     );
 
     final system = await DaoSystem().get();
-    final billingContact = await DaoContact().getBillingContactByJob(job);
     if (!mounted) {
       return;
     }
@@ -161,14 +177,13 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
         builder: (context) => PdfPreviewScreen(
           title: 'Fixed Price Quote #${quote.bestNumber} ${job.summary}',
           filePath: quoteFile.path,
-          preferredRecipient:
-              billingContact?.emailAddress ?? primaryContact.emailAddress,
+          preferredRecipient: recipient?.email ?? '',
           emailSubject:
               '${system.businessName ?? 'Your'} Fixed Price Quote #'
               '${quote.bestNumber}',
           emailBody:
               '''
-${primaryContact.firstName.trim()},
+${recipient?.contact.firstName.trim() ?? 'Hello'},
 
 Please review the attached fixed price quote for your job.
 To approve it, reply to this email with:
@@ -200,67 +215,88 @@ To approve it, reply to this email with:
     }
   }
 
-  Future<Map<String, bool>?> _showQuoteOptionsDialog({
+  Future<_QuoteOptions?> _showQuoteOptionsDialog({
     required BuildContext context,
     required bool displayCosts,
     required bool displayGroupHeaders,
     required bool displayItems,
-  }) => showDialog<Map<String, bool>>(
+    required Job job,
+    required ContactAndEmail? recipient,
+  }) => showDialog<_QuoteOptions>(
     context: context,
     builder: (context) {
       var tempDisplayCosts = displayCosts;
       var tempDisplayGroupHeaders = displayGroupHeaders;
       var tempDisplayItems = displayItems;
+      var tempRecipient = recipient;
 
       return StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: const Text('Select Quote Options'),
-          content: HMBColumn(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CheckboxListTile(
-                title: const Text('Display Costs'),
-                value: tempDisplayCosts,
-                onChanged: (value) {
-                  setState(() {
-                    tempDisplayCosts = value ?? true;
-                  });
-                },
-              ),
-              CheckboxListTile(
-                title: const Text('Display Group Headers'),
-                value: tempDisplayGroupHeaders,
-                onChanged: (value) {
-                  setState(() {
-                    tempDisplayGroupHeaders = value ?? true;
-                  });
-                },
-              ),
-              CheckboxListTile(
-                title: const Text('Display Items'),
-                value: tempDisplayItems,
-                onChanged: (value) {
-                  setState(() {
-                    tempDisplayItems = value ?? true;
-                  });
-                },
-              ),
-              const SizedBox(height: 12),
-              HMBButtonSecondary(
-                label: 'Select Task Photos',
-                hint:
-                    'Select, comment, and order task photos for the '
-                    'quote appendix',
-                onPressed: () {
-                  Navigator.of(context).pop({
-                    'displayCosts': tempDisplayCosts,
-                    'displayGroupHeaders': tempDisplayGroupHeaders,
-                    'displayItems': tempDisplayItems,
-                    'manageTaskPhotos': true,
-                  });
-                },
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: HMBColumn(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                HMBDroplist<ContactAndEmail>(
+                  title: 'Send quote to',
+                  selectedItem: () async => tempRecipient,
+                  items: (filter) => ContactAndEmail.fromJob(job, filter),
+                  format: (contact) =>
+                      '${contact.contact.fullname} — ${contact.email}',
+                  onChanged: (value) => setState(() => tempRecipient = value),
+                  required: false,
+                ),
+                const Text(
+                  'Choose a contact for this email. '
+                  'Job billing details stay the same.',
+                ),
+                CheckboxListTile(
+                  title: const Text('Display Costs'),
+                  value: tempDisplayCosts,
+                  onChanged: (value) {
+                    setState(() {
+                      tempDisplayCosts = value ?? true;
+                    });
+                  },
+                ),
+                CheckboxListTile(
+                  title: const Text('Display Group Headers'),
+                  value: tempDisplayGroupHeaders,
+                  onChanged: (value) {
+                    setState(() {
+                      tempDisplayGroupHeaders = value ?? true;
+                    });
+                  },
+                ),
+                CheckboxListTile(
+                  title: const Text('Display Items'),
+                  value: tempDisplayItems,
+                  onChanged: (value) {
+                    setState(() {
+                      tempDisplayItems = value ?? true;
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                HMBButtonSecondary(
+                  label: 'Select Task Photos',
+                  hint:
+                      'Select, comment, and order task photos for the '
+                      'quote appendix',
+                  onPressed: () {
+                    Navigator.of(context).pop(
+                      _QuoteOptions(
+                        displayCosts: tempDisplayCosts,
+                        displayGroupHeaders: tempDisplayGroupHeaders,
+                        displayItems: tempDisplayItems,
+                        recipient: tempRecipient,
+                        manageTaskPhotos: true,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
           actions: [
             HMBButton(
@@ -272,11 +308,14 @@ To approve it, reply to this email with:
               label: 'OK',
               hint: 'View and optionally send the quote',
               onPressed: () {
-                Navigator.of(context).pop({
-                  'displayCosts': tempDisplayCosts,
-                  'displayGroupHeaders': tempDisplayGroupHeaders,
-                  'displayItems': tempDisplayItems,
-                });
+                Navigator.of(context).pop(
+                  _QuoteOptions(
+                    displayCosts: tempDisplayCosts,
+                    displayGroupHeaders: tempDisplayGroupHeaders,
+                    displayItems: tempDisplayItems,
+                    recipient: tempRecipient,
+                  ),
+                );
               },
             ),
           ],
@@ -574,4 +613,20 @@ To approve it, reply to this email with:
       ),
     );
   }
+}
+
+class _QuoteOptions {
+  final bool displayCosts;
+  final bool displayGroupHeaders;
+  final bool displayItems;
+  final bool manageTaskPhotos;
+  final ContactAndEmail? recipient;
+
+  const _QuoteOptions({
+    required this.displayCosts,
+    required this.displayGroupHeaders,
+    required this.displayItems,
+    required this.recipient,
+    this.manageTaskPhotos = false,
+  });
 }
