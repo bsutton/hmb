@@ -20,6 +20,57 @@ void main() {
     await tearDownTestDb();
   });
 
+  test(
+    'pending task photos keep separate comments and save with the task',
+    () async {
+      final controller = PhotoController<Task>(
+        parent: null,
+        parentType: ParentType.task,
+      );
+      addTearDown(controller.dispose);
+      final photos = List.generate(
+        2,
+        (index) => PhotoMeta(
+          photo: Photo.forInsert(
+            parentId: -1,
+            parentType: ParentType.task,
+            filename: 'pending-$index.jpg',
+            comment: '',
+          ),
+          title: '',
+          comment: '',
+        ),
+      );
+      for (final photo in photos) {
+        await controller.addPhoto(photo);
+      }
+      controller.commentController(photos[0]).text = 'First';
+      controller.commentController(photos[1]).text = 'Second';
+      await controller.saveComment(photos[1]);
+      expect(await DaoPhoto().getByParent(-1, ParentType.task), isEmpty);
+      expect(controller.commentController(photos[0]).text, 'First');
+      final task = Task.forInsert(
+        jobId: 1,
+        name: 'Draft with photos',
+        description: '',
+        status: TaskStatus.awaitingApproval,
+      );
+      await DaoTask().db.transaction((transaction) async {
+        await DaoTask().insert(task, transaction);
+        controller.parent = task;
+        await controller.savePendingPhotos(transaction: transaction);
+        await controller.save(transaction: transaction);
+      });
+      await controller.savePendingPhotos();
+      final saved = await DaoPhoto().getByParent(task.id, ParentType.task);
+      expect(
+        saved.map((photo) => photo.comment),
+        unorderedEquals(['First', 'Second']),
+      );
+      expect(saved, hasLength(2));
+    },
+  );
+
   test('saveComment persists and reloads task photo comments', () async {
     final job = await createJobWithCustomer(
       billingType: BillingType.timeAndMaterial,
