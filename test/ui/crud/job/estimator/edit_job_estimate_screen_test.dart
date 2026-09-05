@@ -49,6 +49,14 @@ void main() {
     await _pumpUntilFound(tester, find.text('Raise Quote'));
 
     expect(find.text('Estimate Complete: No'), findsOneWidget);
+    expect(find.textContaining('Labour:'), findsNothing);
+    await tester.tap(find.text('Show costs'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Labour:'), findsOneWidget);
+    expect(find.textContaining('Materials:'), findsOneWidget);
+    await tester.tap(find.text('Hide costs'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Labour:'), findsNothing);
     await tester.tap(find.text('Raise Quote'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
@@ -63,7 +71,8 @@ void main() {
     expect(find.text('Tasks for Quote'), findsNothing);
     toastification.dismissAll();
     await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(seconds: 1));
+    // Drain the diagnostic timers retained by asynchronous helpers.
+    await tester.pump(const Duration(seconds: 10));
   });
 }
 
