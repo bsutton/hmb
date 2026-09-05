@@ -78,7 +78,9 @@ Web: ${system.webUrl}
 $businessDetails
 ''',
     );
-    _selectedRecipients = [widget.preferredRecipient];
+    _selectedRecipients = [
+      widget.preferredRecipient.trim(),
+    ].where((email) => email.isNotEmpty).toList();
   }
 
   @override
@@ -96,7 +98,7 @@ $businessDetails
         child: ListBody(
           children: <Widget>[
             HMBSelectEmailMulti(
-              initialEmails: [widget.preferredRecipient],
+              initialEmails: _selectedRecipients,
               job: widget.job,
               onChanged: (selectedRecipients) {
                 setState(() {
