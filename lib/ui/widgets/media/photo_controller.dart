@@ -19,6 +19,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:june/june.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../../dao/dao_photo.dart';
 import '../../../entity/entity.g.dart';
@@ -77,27 +78,31 @@ class PhotoController<E extends Entity<E>> {
   }
 
   /// Save comments explicitly when saving the task
-  Future<void> save() async {
+  Future<void> save({Transaction? transaction}) async {
     for (var i = 0; i < _commentControllers.length; i++) {
       final photoMeta = _photos[i];
       final updatedComment = _commentControllers[i].text.trim();
       photoMeta.comment = updatedComment;
       photoMeta.photo.comment = updatedComment;
-      await DaoPhoto().update(photoMeta.photo);
+      if (photoMeta.photo.id != -1) {
+        await DaoPhoto().update(photoMeta.photo, transaction);
+      }
       _originalComments[i] = updatedComment;
     }
     PhotoGallery.notify();
   }
 
   Future<void> saveComment(PhotoMeta photoMeta) async {
-    final index = _indexForPhotoId(photoMeta.photo.id);
+    final index = _indexForPhoto(photoMeta);
     if (index == -1) {
       return;
     }
     final updatedComment = _commentControllers[index].text.trim();
     photoMeta.comment = updatedComment;
     photoMeta.photo.comment = updatedComment;
-    await DaoPhoto().update(photoMeta.photo);
+    if (photoMeta.photo.id != -1) {
+      await DaoPhoto().update(photoMeta.photo);
+    }
     _originalComments[index] = updatedComment;
     PhotoGallery.notify();
   }
@@ -109,10 +114,10 @@ class PhotoController<E extends Entity<E>> {
   }
 
   TextEditingController commentController(PhotoMeta photoMeta) =>
-      _commentControllers[_indexForPhotoId(photoMeta.photo.id)];
+      _commentControllers[_indexForPhoto(photoMeta)];
 
   bool isCommentDirty(PhotoMeta photoMeta) {
-    final index = _indexForPhotoId(photoMeta.photo.id);
+    final index = _indexForPhoto(photoMeta);
     if (index == -1) {
       return false;
     }
@@ -120,7 +125,7 @@ class PhotoController<E extends Entity<E>> {
   }
 
   void onCommentChanged(PhotoMeta photoMeta, String value) {
-    final index = _indexForPhotoId(photoMeta.photo.id);
+    final index = _indexForPhoto(photoMeta);
     if (index == -1) {
       return;
     }
@@ -149,7 +154,7 @@ class PhotoController<E extends Entity<E>> {
     _refresh();
   }
 
-  Future<void> savePendingPhotos() async {
+  Future<void> savePendingPhotos({Transaction? transaction}) async {
     if (_entity == null) {
       return;
     }
@@ -157,7 +162,8 @@ class PhotoController<E extends Entity<E>> {
     for (final photoMeta in _photos.where((meta) => meta.photo.id == -1)) {
       photoMeta.photo.parentId = _entity!.id;
       photoMeta.photo.parentType = parentType;
-      await DaoPhoto().insert(photoMeta.photo);
+      photoMeta.photo.comment = commentController(photoMeta).text.trim();
+      await DaoPhoto().insert(photoMeta.photo, transaction);
     }
   }
 
@@ -166,9 +172,13 @@ class PhotoController<E extends Entity<E>> {
     final exist = File(photoMeta.absolutePathTo).existsSync();
     print('exists: $exist');
     // Delete the photo from the database and the disk
-    await DaoPhoto().delete(photoMeta.photo.id);
-    await File(photoMeta.absolutePathTo).delete();
-    final index = _indexForPhotoId(photoMeta.photo.id);
+    if (photoMeta.photo.id != -1) {
+      await DaoPhoto().delete(photoMeta.photo.id);
+    }
+    if (exist) {
+      await File(photoMeta.absolutePathTo).delete();
+    }
+    final index = _indexForPhoto(photoMeta);
     if (index != -1) {
       _commentControllers.removeAt(index).dispose();
       _originalComments.removeAt(index);
@@ -193,6 +203,9 @@ class PhotoController<E extends Entity<E>> {
     PhotoGallery.notify();
   }
 
-  int _indexForPhotoId(int photoId) =>
-      _photos.indexWhere((photoMeta) => photoMeta.photo.id == photoId);
+  int _indexForPhoto(PhotoMeta photo) => _photos.indexWhere(
+    (entry) =>
+        identical(entry, photo) ||
+        (photo.photo.id != -1 && entry.photo.id == photo.photo.id),
+  );
 }

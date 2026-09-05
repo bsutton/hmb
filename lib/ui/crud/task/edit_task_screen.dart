@@ -162,6 +162,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         _buildItemList(task),
         PhotoCrud<Task>(
           parentName: 'Task',
+          allowPendingPhotos: true,
           parentType: ParentType.task,
           controller: _photoController,
         ),
@@ -239,17 +240,14 @@ Navigate to Billing | Milestones.
   }
 
   @override
-  Future<Task> forUpdate(Task task) async {
-    await _photoController.save();
-    return task.copyWith(
-      jobId: widget.job.id,
-      name: _nameController.text,
-      billingType: selectedBillingType,
-      description: _descriptionController.text,
-      assumption: _assumptionController.text,
-      status: June.getState(SelectedTaskStatus.new).taskStatus,
-    );
-  }
+  Future<Task> forUpdate(Task task) async => task.copyWith(
+    jobId: widget.job.id,
+    name: _nameController.text,
+    billingType: selectedBillingType,
+    description: _descriptionController.text,
+    assumption: _assumptionController.text,
+    status: June.getState(SelectedTaskStatus.new).taskStatus,
+  );
 
   @override
   Future<Task> forInsert() async => Task.forInsert(
@@ -267,7 +265,24 @@ Navigate to Billing | Milestones.
   }
 
   @override
-  Future<void> postSave(Transaction transaction, Operation operation) async {}
+  Future<void> postSave(Transaction transaction, Operation operation) async {
+    final pending = (await _photoController.photos)
+        .where((meta) => meta.photo.id == -1)
+        .toList();
+    try {
+      await _photoController.savePendingPhotos(transaction: transaction);
+      await _photoController.save(transaction: transaction);
+    } catch (_) {
+      // The enclosing task transaction rolls back; keep draft photos retryable.
+      for (final meta in pending) {
+        meta.photo.id = -1;
+      }
+      if (operation == Operation.insert) {
+        _photoController.parent = null;
+      }
+      rethrow;
+    }
+  }
 }
 
 class SelectedTaskStatus extends JuneState {
