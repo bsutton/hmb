@@ -114,6 +114,7 @@ void main() {
     expect(find.text('Tasks for Quote'), findsNothing);
     toastification.dismissAll();
     await tester.pumpWidget(const SizedBox.shrink());
+    // Drain the diagnostic timers retained by asynchronous helpers.
     await tester.pump(const Duration(seconds: 10));
   });
 }
