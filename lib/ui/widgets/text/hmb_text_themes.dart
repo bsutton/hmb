@@ -196,6 +196,7 @@ class HMBTextHeadline extends StatelessWidget {
 
 class HMBTextHeadline2 extends StatelessWidget {
   final String text;
+  final int? maxLines;
   final Color color;
   final Color? backgroundColor;
   static const fontSize = 24.0;
@@ -203,6 +204,7 @@ class HMBTextHeadline2 extends StatelessWidget {
   const HMBTextHeadline2(
     this.text, {
     super.key,
+    this.maxLines = 1,
     this.color = HMBColors.textPrimary,
     this.backgroundColor,
   });
@@ -219,8 +221,8 @@ class HMBTextHeadline2 extends StatelessWidget {
         fontSize: fontSize,
         fontWeight: FontWeight.w500,
       ),
-      overflow: TextOverflow.ellipsis, // Handle overflow
-      maxLines: 1, // Limit to one line
+      overflow: maxLines == null ? TextOverflow.visible : TextOverflow.ellipsis,
+      maxLines: maxLines,
     ),
   );
 

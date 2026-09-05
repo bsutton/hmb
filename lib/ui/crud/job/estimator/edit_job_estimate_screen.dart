@@ -438,22 +438,18 @@ class _JobEstimateBuilderScreenState
         child: HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            HMBTextHeadline2(task.name, maxLines: null),
+            Wrap(
+              spacing: 4,
               children: [
-                Expanded(child: HMBTextHeadline2(task.name)),
-                Wrap(
-                  spacing: 4,
-                  children: [
-                    _buildAiExpandButton(task),
-                    HMBEditIcon(
-                      onPressed: () => _editTask(task),
-                      hint: 'Edit Task',
-                    ),
-                    HMBDeleteIcon(
-                      onPressed: () => _deleteTask(task),
-                      hint: 'Delete Task',
-                    ),
-                  ],
+                _buildAiExpandButton(task),
+                HMBEditIcon(
+                  onPressed: () => _editTask(task),
+                  hint: 'Edit Task',
+                ),
+                HMBDeleteIcon(
+                  onPressed: () => _deleteTask(task),
+                  hint: 'Delete Task',
                 ),
               ],
             ),
