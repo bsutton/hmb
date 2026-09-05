@@ -5,15 +5,19 @@ import '../entity/entity.g.dart';
 import 'job_events.dart';
 import 'job_states.dart';
 
-/// What the UI cares about: a target JobStatus to show, and a way to fire it.
+/// An available action, its resulting status, and a way to perform it.
 class Next {
+  final JobEvent event;
+
+  String get label => event.label;
+
   /// The target status the user would be moving to.
   final JobStatus to;
 
   /// Fire the underlying fsm2 event to do the transition.
   final Future<void> Function(StateMachine machine) fire;
 
-  const Next({required this.to, required this.fire});
+  const Next({required this.event, required this.to, required this.fire});
 }
 
 typedef BuildEvent = JobEvent Function(Job job);
@@ -25,6 +29,7 @@ Future<Job> transitionJobById(int jobid, BuildEvent buildEvent) async {
   final machine = await buildJobMachine(job);
 
   machine.applyEvent(event);
+  await machine.complete;
 
   return (await DaoJob().getById(jobid))!;
 }
@@ -34,6 +39,7 @@ Future<Job> transitionJob(Job job, BuildEvent buildEvent) async {
   final machine = await buildJobMachine(job);
   final event = buildEvent(job);
   machine.applyEvent(event);
+  await machine.complete;
   return (await DaoJob().getById(job.id))!;
 }
 
@@ -129,13 +135,13 @@ Future<StateMachine> buildJobMachine(Job job) async {
       ..state<InProgress>(
         (b) => b
           ..onEnter((_, _) => _inProgress(job))
-          ..on<StartWork, InProgress>()
           ..on<CompleteJob, Completed>()
           ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<OnHold>(
         (b) => b
+          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.onHold))
           ..on<ResumeJob, InProgress>()
           ..on<ScheduleJob, ToBeScheduled>()
           ..on<MaterialsArrived, InProgress>()
@@ -143,23 +149,30 @@ Future<StateMachine> buildJobMachine(Job job) async {
       )
       ..state<AwaitingMaterials>(
         (b) => b
+          ..onEnter(
+            (_, _) => _updateJobStatus(job, JobStatus.awaitingMaterials),
+          )
           ..on<ResumeJob, InProgress>()
           ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<Completed>(
         (b) => b
+          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.completed))
+          ..on<ReopenJob, InProgress>()
           ..on<RaiseInvoice, ToBeBilled>()
           ..on<RejectJob, Rejected>(),
       )
-      ..state<ToBeBilled>((b) => b..on<CompleteJob, Completed>())
-      // terminal-ish state sits outside; not rejectable itself
+      ..state<ToBeBilled>(
+        (b) => b
+          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.toBeBilled))
+          ..on<CompleteJob, Completed>()
+          ..on<ReopenJob, InProgress>(),
+      )
       ..state<Rejected>(
         (b) => b
-          ..on<ApproveQuote, AwaitingPayment>(
-            sideEffect: (e) =>
-                _updateJobStatus(e.job, JobStatus.awaitingApproval),
-          ), // e.g., “unreject” flow if you want it
+          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.rejected))
+          ..on<ApproveQuote, AwaitingPayment>(),
       );
   });
 
@@ -206,18 +219,7 @@ Future<void> _ensureScheduleTodo(Job job) async {
   );
 }
 
-/// Return *guarded* next steps as JobStatus values + a way to trigger them.
-///
-/// How it works:
-/// 1) We locate the active state's StateDefinition via `traverseTree()`.
-/// 2) We list its transitions with `getTransitions(includeInherited: true)`.
-/// 3) For each transition, we build the appropriate Event with your
-/// Job payload,
-///    then ask `findTriggerableTransition(fromType, event)` to see if
-/// it would fire.
-///    If yes, we include the mapped target JobStatus. :contentReference
-/// [oaicite:1]
-/// {index=1}
+/// Return permitted user actions, preserving events with the same destination.
 Future<List<Next>> nextFromFsm({
   required StateMachine machine,
   required Job job,
@@ -235,12 +237,11 @@ Future<List<Next>> nextFromFsm({
   }
 
   final out = <Next>[];
-  final seenStatuses = <JobStatus>{};
+  final seenEvents = <Type>{};
 
   // All static (i.e., declared) transitions, including those
   //inherited from parents.
-  final transitions = def
-      .getTransitions(); // :contentReference[oaicite:3]{index=3}
+  final transitions = def.getTransitions();
 
   for (final td in transitions) {
     // td.eventType and td.toState.stateType are available on
@@ -254,10 +255,7 @@ Future<List<Next>> nextFromFsm({
 
     // Ask fsm2 if this event would actually trigger from the active
     //state *right now*.
-    final triggerable = await def.findTriggerableTransition(
-      activeType,
-      event,
-    ); // :contentReference[oaicite:4]{index=4}
+    final triggerable = await def.findTriggerableTransition(activeType, event);
     if (triggerable == null) {
       continue;
     }
@@ -268,17 +266,19 @@ Future<List<Next>> nextFromFsm({
       continue;
     }
     final toStatus = statusFromType(toType);
-    if (seenStatuses.contains(toStatus)) {
+    if (toStatus == statusFromType(stateFromType(activeType)) ||
+        !seenEvents.add(event.runtimeType)) {
       continue;
     }
-    seenStatuses.add(toStatus);
 
     out.add(
       Next(
+        event: event,
         to: toStatus,
-        fire: (m) async => m.applyEvent(
-          event,
-        ), // fires the real transition. :contentReference[oaicite:5]{index=5}
+        fire: (m) async {
+          m.applyEvent(event);
+          await m.complete;
+        },
       ),
     );
   }
@@ -294,5 +294,5 @@ Future<List<JobStatus>> nextStatusesOnly({
   required Job job,
 }) async {
   final next = await nextFromFsm(machine: machine, job: job);
-  return next.map((n) => n.to).toList();
+  return next.map((n) => n.to).toSet().toList();
 }

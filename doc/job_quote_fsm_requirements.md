@@ -200,3 +200,19 @@ Phase 5: hardening
 2. Event sourcing-lite (append-only transition log) vs simple audit table.
 3. Whether to expose transition history in UI immediately or later.
 
+## 12. Job Action Picker and Recovery
+
+- Show the current status separately from the available actions.
+- Label controls with actions such as `Start work`, `Pause job`, and
+  `Mark work complete`; show the resulting status as secondary information.
+- Preserve distinct events even when they lead to the same status.
+- Do not offer a transition back to the current status.
+- Wait for the event and its persistence to finish before reporting success.
+- `Reopen job` moves a completed or to-be-billed job back to `In Progress`.
+  This resumes work; it does not restore todos closed by completion or undo
+  earlier quote, billing, or task changes.
+- A general `Undo last action` requires recorded transition history and
+  enough information to reverse its side effects safely. It is not yet
+  implemented by the job action picker.
+- Labels must describe what an action actually does. `Mark for billing`
+  changes the job status; it does not generate or send an invoice.

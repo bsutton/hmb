@@ -24,10 +24,7 @@ Future<void> showJobStatusDialog(BuildContext context, Job job) async {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'Update Job Status',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('Job actions', style: Theme.of(context).textTheme.titleLarge),
             // The picker runs side-effects and calls back on success.
             FsmStatusPicker(
               job: job,
@@ -38,9 +35,10 @@ Future<void> showJobStatusDialog(BuildContext context, Job job) async {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton(
+                HMBButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Close'),
+                  label: 'Close',
+                  hint: 'Close job actions',
                 ),
               ],
             ),
@@ -74,6 +72,7 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
   JobStatus? _lastHydratedStatus;
 
   var _loading = Completer<void>();
+  Object? _loadError;
 
   @override
   Future<void> asyncInitState() async {
@@ -92,44 +91,51 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
 
   Future<void> _hydrate() async {
     _loading = Completer<void>();
+    _loadError = null;
     try {
-      _lastHydratedStatus = widget.job.status;
-      final machine = await buildJobMachine(widget.job);
-      final next = await nextFromFsm(machine: machine, job: widget.job);
-      if (!mounted) {
-        return;
-      }
-      _machine = machine;
-      _next = next;
-      _loading.complete();
+      await BlockingUI().runAndWait(() async {
+        _lastHydratedStatus = widget.job.status;
+        final machine = await buildJobMachine(widget.job);
+        final next = await nextFromFsm(machine: machine, job: widget.job);
+        if (!mounted) {
+          return;
+        }
+        _machine = machine;
+        _next = next;
+        _loading.complete();
+      });
     } catch (e) {
       if (!mounted) {
         return;
       }
+      _machine = null;
       _next = const [];
+      _loadError = e;
       _loading.complete();
       HMBToast.error('Failed to build job workflow: $e');
     }
   }
 
   Future<void> _moveTo(Next step) async {
-    if (_machine == null) {
+    if (_machine == null || _firing) {
       return;
     }
     setState(() {
       _firing = true;
     });
     try {
-      await step.fire(_machine!); // runs side-effects & persists
-      // Keep the UI model in sync with the new status.
-      widget.job.status = step.to;
-      June.getState(SelectJobStatus.new).jobStatus = step.to;
-
-      widget.onStatusChanged?.call(); // NEW: tell parent we succeeded
+      await BlockingUI().runAndWait(() => step.fire(_machine!));
+      if (!mounted) {
+        return;
+      }
+      June.getState(SelectJobStatus.new).jobStatus = widget.job.status;
+      widget.onStatusChanged?.call();
     } catch (e) {
-      HMBToast.error('Could not change status: $e');
+      HMBToast.error('Could not perform job action: $e');
     } finally {
-      await _hydrate();
+      if (mounted) {
+        await _hydrate();
+      }
       if (mounted) {
         setState(() {
           _firing = false;
@@ -141,6 +147,8 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
+    waitingBuilder: (_) => const SizedBox.shrink(),
+    errorBuilder: (_, error) => const Text('Could not load job actions.'),
     builder: (context) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -160,24 +168,39 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
 
         FutureBuilderEx(
           future: _loading.future,
+          waitingBuilder: (_) => const SizedBox.shrink(),
+          errorBuilder: (_, error) => const Text('Could not load job actions.'),
           builder: (context, _) {
+            if (_loadError != null) {
+              return const Text('Could not load job actions.');
+            }
             if (_next.isEmpty) {
-              return const Text('No valid next steps.');
+              return const Text('No actions available.');
             } else {
               return HMBColumn(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Move to:'),
+                  const Text('Actions:'),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: _next
                         .map(
-                          (n) => HMBButton(
-                            enabled: !_firing,
-                            onPressed: () => _moveTo(n),
-                            label: n.to.displayName,
-                            hint: '',
+                          (n) => HMBColumn(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              HMBButton(
+                                enabled: !_firing,
+                                onPressed: () => _moveTo(n),
+                                label: n.label,
+                                hint: 'Changes status to ${n.to.displayName}',
+                              ),
+                              Text(
+                                'Status: ${n.to.displayName}',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
                           ),
                         )
                         .toList(),
