@@ -12,9 +12,8 @@
 */
 
 import 'dart:io';
-import 'dart:math';
+import 'dart:isolate';
 
-import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -28,6 +27,7 @@ import '../../../entity/entity.g.dart';
 import '../../../util/dart/photo_meta.dart';
 import '../../dialog/email_dialog_for_job.dart';
 import '../../invoicing/select_job_dialog.dart';
+import '../../pdf/pdf_file_output.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/pdf_preview.dart';
 import '../../widgets/widgets.g.dart';
@@ -372,7 +372,7 @@ Future<File> _generateJobCompletionReportPdf(
   final primaryContact = await DaoContact().getPrimaryForJob(job.id);
   final site = job.siteId == null ? null : await DaoSite().getById(job.siteId);
   final businessNumberLabel = system.businessNumberLabel ?? 'Business Number';
-  final compressedBytes = await _compressSelectedPhotos(selection);
+  final photoPaths = await _loadSelectedPhotoPaths(selection);
 
   pdf.addPage(
     pw.MultiPage(
@@ -436,7 +436,7 @@ Future<File> _generateJobCompletionReportPdf(
             _buildTaskReportSection(
               number: i + 1,
               reportTask: selection.tasks[i],
-              compressedBytes: compressedBytes,
+              photoPaths: photoPaths,
             ),
           );
         }
@@ -447,7 +447,7 @@ Future<File> _generateJobCompletionReportPdf(
 
   final output = await getTemporaryDirectory();
   final file = File('${output.path}/job_report_${job.id}.pdf');
-  await file.writeAsBytes(await pdf.save());
+  await Isolate.run(() => writePdfToFile(pdf, file.path));
   return file;
 }
 
@@ -541,7 +541,7 @@ pw.Widget _buildReportHeader({
 List<pw.Widget> _buildTaskReportSection({
   required int number,
   required _ReportTask reportTask,
-  required Map<String, Uint8List> compressedBytes,
+  required Map<String, String> photoPaths,
 }) {
   final task = reportTask.task;
   final widgets = <pw.Widget>[
@@ -581,15 +581,15 @@ List<pw.Widget> _buildTaskReportSection({
   } else {
     var renderedPhoto = false;
     for (final meta in reportTask.selectedPhotos) {
-      final bytes = compressedBytes[meta.absolutePathTo];
-      if (bytes == null) {
+      final path = photoPaths[meta.absolutePathTo];
+      if (path == null) {
         continue;
       }
       renderedPhoto = true;
       widgets.add(
         pw.Container(
           margin: const pw.EdgeInsets.only(bottom: 8),
-          child: pw.Image(pw.MemoryImage(bytes)),
+          child: pw.Image(PdfFileImage(path)),
         ),
       );
       final comment = meta.comment?.trim() ?? '';
@@ -615,33 +615,25 @@ List<pw.Widget> _buildTaskReportSection({
   return widgets;
 }
 
-Future<Map<String, Uint8List>> _compressSelectedPhotos(
+Future<Map<String, String>> _loadSelectedPhotoPaths(
   _ReportSelection selection,
 ) async {
-  final maxConcurrent = max(1, Platform.numberOfProcessors - 1);
-  final compressedBytes = <String, Uint8List>{};
+  final photoPaths = <String, String>{};
   final metas = selection.tasks
       .expand((task) => task.selectedPhotos)
       .where((meta) => File(meta.absolutePathTo).existsSync())
       .toList();
 
-  for (var i = 0; i < metas.length; i += maxConcurrent) {
-    final batch = metas.skip(i).take(maxConcurrent).toList();
-    final futures = batch
-        .map(
-          (meta) => HMBImageCache().getVariantBytesForMeta(
+  for (final meta in metas) {
+    try {
+      photoPaths[meta.absolutePathTo] = await HMBImageCache()
+          .getVariantPathForMeta(
             meta: meta,
-            variant: ImageVariantType.pdf,
-          ),
-        )
-        .toList();
-    final results = await Future.wait(futures);
-    for (var j = 0; j < batch.length; j++) {
-      final bytes = results[j];
-      if (bytes.isNotEmpty) {
-        compressedBytes[batch[j].absolutePathTo] = bytes;
-      }
+            imageVariant: ImageVariantType.pdf,
+          );
+    } catch (_) {
+      // Skip an unavailable photo without failing the completion report.
     }
   }
-  return compressedBytes;
+  return photoPaths;
 }

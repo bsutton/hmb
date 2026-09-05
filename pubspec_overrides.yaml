@@ -1,4 +1,7 @@
 dependency_overrides:
+  pdf:
+    path: ../pdf/pdf
+
   # calendar_view:
   #   path: ../flutter_calendar_view
   # mailto:

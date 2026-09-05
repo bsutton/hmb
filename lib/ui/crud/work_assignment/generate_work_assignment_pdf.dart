@@ -15,10 +15,9 @@
 library;
 
 import 'dart:io';
-import 'dart:math';
+import 'dart:isolate';
 
 import 'package:dcli_core/dcli_core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -27,6 +26,7 @@ import '../../../cache/image_cache_config.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/flutter/flutter_util.g.dart';
+import '../../pdf/pdf_file_output.dart';
 
 /// Internal data holder for task plus its resolved photos
 class _TaskData {
@@ -82,31 +82,21 @@ Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
     );
   }
 
-  // --- Limit concurrent isolates for image compression
-  // leaving 1 cpu so the UI will continue updating ---
-  final maxConcurrent = max(1, Platform.numberOfProcessors - 1);
-  final compressedBytes = <Path, Uint8List>{};
+  final photoPaths = <Path, String>{};
   final allMetas = taskDataList
       .expand((d) => d.photos)
       .where((m) => exists(m.absolutePathTo))
       .toList();
 
-  for (var i = 0; i < allMetas.length; i += maxConcurrent) {
-    final batch = allMetas.skip(i).take(maxConcurrent).toList();
-    final futures = batch
-        .map(
-          (meta) => HMBImageCache().getVariantBytesForMeta(
+  for (final meta in allMetas) {
+    try {
+      photoPaths[meta.absolutePathTo] = await HMBImageCache()
+          .getVariantPathForMeta(
             meta: meta,
-            variant: ImageVariantType.pdf,
-          ),
-        )
-        .toList();
-    final results = await Future.wait(futures);
-    for (var j = 0; j < batch.length; j++) {
-      final bytes = results[j];
-      if (bytes.isNotEmpty) {
-        compressedBytes[batch[j].absolutePathTo] = bytes;
-      }
+            imageVariant: ImageVariantType.pdf,
+          );
+    } catch (_) {
+      // Skip an unavailable photo without failing the assignment report.
     }
   }
 
@@ -277,14 +267,14 @@ Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
           if (data.photos.isNotEmpty) {
             content.add(pw.SizedBox(height: 8));
             for (final meta in data.photos) {
-              final bytes = compressedBytes[meta.absolutePathTo];
-              if (bytes == null) {
+              final path = photoPaths[meta.absolutePathTo];
+              if (path == null) {
                 continue;
               }
               content.add(
                 pw.Container(
                   margin: const pw.EdgeInsets.only(bottom: 8),
-                  child: pw.Image(pw.MemoryImage(bytes)),
+                  child: pw.Image(PdfFileImage(path)),
                 ),
               );
             }
@@ -304,6 +294,6 @@ Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
   // --- Write out the PDF ---
   final dir = await getTemporaryDirectory();
   final out = File('$dir/assignment_${assignment.id}.pdf');
-  await out.writeAsBytes(await pdf.save());
+  await Isolate.run(() => writePdfToFile(pdf, out.path));
   return out;
 }

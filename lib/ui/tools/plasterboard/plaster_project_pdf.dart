@@ -3,6 +3,7 @@
 */
 
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -11,6 +12,7 @@ import '../../../entity/entity.g.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/plaster_geometry.dart';
 import '../../../util/dart/plaster_sheet_direction.dart';
+import '../../pdf/pdf_file_output.dart';
 
 Future<File> generatePlasterProjectPdf({
   required PlasterProject project,
@@ -162,7 +164,7 @@ Future<File> generatePlasterProjectPdf({
 
   final output = await Directory.systemTemp.createTemp('plaster_project_');
   final file = File('${output.path}/plaster_project_${project.id}.pdf');
-  await file.writeAsBytes(await pdf.save());
+  await Isolate.run(() => writePdfToFile(pdf, file.path));
   return file;
 }
 

@@ -12,6 +12,7 @@
 */
 
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:money2/money2.dart';
 import 'package:pdf/pdf.dart';
@@ -21,6 +22,7 @@ import '../../../../dao/dao.g.dart';
 import '../../../../entity/entity.g.dart';
 import '../../../../util/dart/format.dart';
 import '../../../invoicing/pdf/generate_invoice_pdf.dart';
+import '../../../pdf/pdf_file_output.dart';
 
 Future<File> buildDebtorStatementPdfFile({
   required String fileName,
@@ -70,7 +72,7 @@ Future<File> buildDebtorStatementPdfFile({
 
   final dir = await Directory.systemTemp.createTemp('hmb_statement_pdf_');
   final file = File('${dir.path}/$fileName');
-  await file.writeAsBytes(await pdf.save(), flush: true);
+  await Isolate.run(() => writePdfToFile(pdf, file.path));
   return file;
 }
 

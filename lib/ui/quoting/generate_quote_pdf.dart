@@ -14,8 +14,7 @@
 // lib/src/services/quote_pdf_generator.dart
 
 import 'dart:io';
-import 'dart:math';
-import 'dart:typed_data';
+import 'dart:isolate';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -36,6 +35,7 @@ import '../../util/dart/format.dart';
 import '../../util/dart/money_ex.dart';
 import '../../util/dart/photo_meta.dart';
 import '../../util/dart/tax_display_text.dart';
+import '../pdf/pdf_file_output.dart';
 import '../pdf/pdf_page_band_layout.dart';
 import 'quote_details.dart';
 
@@ -66,7 +66,7 @@ Future<File> generateQuotePdf(
       .toList();
   final taxDisplayText = await buildPdfTaxDisplayText();
   final appendix = await _loadQuotePhotoAppendix(jobQuote);
-  final appendixPhotoBytes = await _loadQuotePhotoBytes(appendix);
+  final appendixPhotoPaths = await _loadQuotePhotoPaths(appendix);
 
   final totalAmount = visibleGroups.fold(
     MoneyEx.zero,
@@ -76,84 +76,86 @@ Future<File> generateQuotePdf(
   final logo = await _getLogo(system);
   final systemColor = PdfColor.fromInt(system.billingColour);
 
-  pdf.addPage(
-    pw.MultiPage(
-      pageTheme: pw.PageTheme(
-        margin: const pw.EdgeInsets.fromLTRB(20, 20, 20, 50),
-        buildBackground: (context) => pw.Stack(
-          children: [
-            // Top band
-            pw.Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: pw.Container(
-                height: PdfPageBandLayout.bandHeight,
-                color: systemColor,
-              ),
-            ),
-            // Bottom band with T&C
-            pw.Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: pw.Container(
-                height: PdfPageBandLayout.bandHeight,
-                color: systemColor,
-                child: pw.Padding(
-                  padding: const pw.EdgeInsets.symmetric(horizontal: 10),
-                  child: pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.RichText(
-                        text: pw.TextSpan(
-                          text: 'This quote is subject to our ',
-                          style: const pw.TextStyle(
+  final pageTheme = pw.PageTheme(
+    margin: const pw.EdgeInsets.fromLTRB(20, 20, 20, 50),
+    buildBackground: (context) => pw.Stack(
+      children: [
+        // Top band
+        pw.Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: pw.Container(
+            height: PdfPageBandLayout.bandHeight,
+            color: systemColor,
+          ),
+        ),
+        // Bottom band with T&C
+        pw.Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: pw.Container(
+            height: PdfPageBandLayout.bandHeight,
+            color: systemColor,
+            child: pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 10),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.RichText(
+                    text: pw.TextSpan(
+                      text: 'This quote is subject to our ',
+                      style: const pw.TextStyle(
+                        color: PdfColors.white,
+                        fontSize: 10,
+                      ),
+                      children: [
+                        pw.WidgetSpan(
+                          // nudge the UrlLink down to align with the text
+                          baseline: -2,
+                          child: pw.UrlLink(
+                            destination: system.termsUrl ?? '',
+                            child: pw.Text(
+                              'Terms and Conditions',
+                              style: const pw.TextStyle(
+                                fontSize: 10,
+                                color: PdfColors.blue,
+                                decoration: pw.TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const pw.TextSpan(
+                          text: ' and is valid for 30 days',
+                          style: pw.TextStyle(
                             color: PdfColors.white,
                             fontSize: 10,
                           ),
-                          children: [
-                            pw.WidgetSpan(
-                              // nudge the UrlLink down to align with the text
-                              baseline: -2,
-                              child: pw.UrlLink(
-                                destination: system.termsUrl ?? '',
-                                child: pw.Text(
-                                  'Terms and Conditions',
-                                  style: const pw.TextStyle(
-                                    fontSize: 10,
-                                    color: PdfColors.blue,
-                                    decoration: pw.TextDecoration.underline,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const pw.TextSpan(
-                              text: ' and is valid for 30 days',
-                              style: pw.TextStyle(
-                                color: PdfColors.white,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ],
                         ),
-                      ),
-
-                      pw.Text(
-                        '${context.pageNumber} of ${context.pagesCount}',
-                        style: const pw.TextStyle(
-                          fontSize: 12,
-                          color: PdfColors.white,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+
+                  pw.Text(
+                    '${context.pageNumber} of ${context.pagesCount}',
+                    style: const pw.TextStyle(
+                      fontSize: 12,
+                      color: PdfColors.white,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
+    ),
+  );
+
+  pdf.addPage(
+    pw.MultiPage(
+      pageTheme: pageTheme,
       header: (context) {
         if (context.pageNumber == 1) {
           return pw.Padding(
@@ -387,23 +389,40 @@ Future<File> generateQuotePdf(
           }
         }
 
-        if (appendix.isNotEmpty) {
-          content
-            ..add(pw.NewPage())
-            ..add(
-              pw.Text(
-                'Appendix: Task Photos',
-                style: pw.TextStyle(
-                  fontSize: 16,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-            )
-            ..add(pw.SizedBox(height: 8));
+        return content;
+      },
+    ),
+  );
 
-          for (final section in appendix) {
-            content
-              ..add(
+  var firstAppendixPage = true;
+  for (final section in appendix) {
+    for (final photo in section.photos) {
+      final imagePath = appendixPhotoPaths[photo.photo.absolutePathTo];
+      if (imagePath == null) {
+        continue;
+      }
+      final showAppendixTitle = firstAppendixPage;
+      firstAppendixPage = false;
+      pdf.addPage(
+        pw.Page(
+          pageTheme: pageTheme,
+          build: (_) => pw.Padding(
+            padding: const pw.EdgeInsets.only(
+              top: PdfPageBandLayout.bandHeight + 10,
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                if (showAppendixTitle) ...[
+                  pw.Text(
+                    'Appendix: Task Photos',
+                    style: pw.TextStyle(
+                      fontSize: 16,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.SizedBox(height: 8),
+                ],
                 pw.Text(
                   section.taskName,
                   style: pw.TextStyle(
@@ -411,52 +430,27 @@ Future<File> generateQuotePdf(
                     fontWeight: pw.FontWeight.bold,
                   ),
                 ),
-              )
-              ..add(pw.SizedBox(height: 4));
-
-            if (Strings.isNotBlank(section.taskDescription)) {
-              content
-                ..add(pw.Text(section.taskDescription))
-                ..add(pw.SizedBox(height: 6));
-            }
-
-            for (final photo in section.photos) {
-              final bytes = appendixPhotoBytes[photo.photo.absolutePathTo];
-              if (bytes == null || bytes.isEmpty) {
-                continue;
-              }
-              content.add(
-                pw.Container(
-                  margin: const pw.EdgeInsets.only(bottom: 10),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Image(pw.MemoryImage(bytes)),
-                      if (Strings.isNotBlank(photo.comment))
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.only(top: 4),
-                          child: pw.Text('Comment: ${photo.comment}'),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            }
-            content
-              ..add(pw.SizedBox(height: 6))
-              ..add(pw.Divider())
-              ..add(pw.SizedBox(height: 8));
-          }
-        }
-
-        return content;
-      },
-    ),
-  );
+                if (Strings.isNotBlank(section.taskDescription)) ...[
+                  pw.SizedBox(height: 4),
+                  pw.Text(section.taskDescription),
+                ],
+                pw.SizedBox(height: 8),
+                pw.Expanded(child: pw.Image(PdfFileImage(imagePath))),
+                if (Strings.isNotBlank(photo.comment)) ...[
+                  pw.SizedBox(height: 6),
+                  pw.Text('Comment: ${photo.comment}'),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+  }
 
   final output = await getTemporaryDirectory();
   final file = File('${output.path}/quote_${quote.quoteNum ?? quote.id}.pdf');
-  await file.writeAsBytes(await pdf.save());
+  await Isolate.run(() => writePdfToFile(pdf, file.path));
   return file;
 }
 
@@ -540,7 +534,7 @@ Future<List<_QuotePhotoAppendixSection>> _loadQuotePhotoAppendix(
   return sections;
 }
 
-Future<Map<String, Uint8List>> _loadQuotePhotoBytes(
+Future<Map<String, String>> _loadQuotePhotoPaths(
   List<_QuotePhotoAppendixSection> sections,
 ) async {
   final photoByPath = <String, PhotoMeta>{};
@@ -553,33 +547,22 @@ Future<Map<String, Uint8List>> _loadQuotePhotoBytes(
     }
   }
 
-  final photos = photoByPath.values.toList();
-  if (photos.isEmpty) {
-    return const {};
-  }
-
-  final maxConcurrent = max(1, Platform.numberOfProcessors - 1);
-  final bytesByPath = <String, Uint8List>{};
-  for (var i = 0; i < photos.length; i += maxConcurrent) {
-    final batch = photos.skip(i).take(maxConcurrent).toList();
-    final results = await Future.wait(
-      batch
-          .map(
-            (meta) => HMBImageCache().getVariantBytesForMeta(
-              meta: meta,
-              variant: ImageVariantType.pdf,
-            ),
-          )
-          .toList(),
-    );
-    for (var j = 0; j < batch.length; j++) {
-      final bytes = results[j];
-      if (bytes.isNotEmpty) {
-        bytesByPath[batch[j].absolutePathTo] = bytes;
+  final pathsByOriginal = <String, String>{};
+  for (final photo in photoByPath.values) {
+    try {
+      final path = await HMBImageCache().getVariantPathForMeta(
+        meta: photo,
+        imageVariant: ImageVariantType.pdf,
+      );
+      if (File(path).existsSync()) {
+        pathsByOriginal[photo.absolutePathTo] = path;
       }
+    } catch (_) {
+      // An unavailable or invalid photo should not prevent the quote itself
+      // from being generated.
     }
   }
-  return bytesByPath;
+  return pathsByOriginal;
 }
 
 class _ResolvedQuotePhoto {

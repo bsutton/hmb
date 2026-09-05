@@ -12,10 +12,9 @@
 */
 
 import 'dart:io';
-import 'dart:math';
+import 'dart:isolate';
 
 import 'package:dcli_core/dcli_core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -24,6 +23,7 @@ import '../../../cache/image_cache_config.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/photo_meta.dart';
+import '../../pdf/pdf_file_output.dart';
 
 class _TaskData {
   final Task task;
@@ -70,29 +70,21 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
     );
   }
 
-  final maxConcurrent = max(1, Platform.numberOfProcessors - 1);
-  final compressedBytes = <String, Uint8List>{};
+  final photoPaths = <String, String>{};
   final allMetas = taskDataList
       .expand((d) => d.photos)
       .where((m) => exists(m.absolutePathTo))
       .toList();
 
-  for (var i = 0; i < allMetas.length; i += maxConcurrent) {
-    final batch = allMetas.skip(i).take(maxConcurrent).toList();
-    final futures = batch
-        .map(
-          (meta) => HMBImageCache().getVariantBytesForMeta(
+  for (final meta in allMetas) {
+    try {
+      photoPaths[meta.absolutePathTo] = await HMBImageCache()
+          .getVariantPathForMeta(
             meta: meta,
-            variant: ImageVariantType.pdf,
-          ),
-        )
-        .toList();
-    final results = await Future.wait(futures);
-    for (var j = 0; j < batch.length; j++) {
-      final bytes = results[j];
-      if (bytes.isNotEmpty) {
-        compressedBytes[batch[j].absolutePathTo] = bytes;
-      }
+            imageVariant: ImageVariantType.pdf,
+          );
+    } catch (_) {
+      // Skip an unavailable photo without failing the approval report.
     }
   }
 
@@ -142,10 +134,8 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
                               if (job.summary.trim().isNotEmpty)
                                 pw.Text('Summary: ${job.summary}'),
                               if (job.description.trim().isNotEmpty)
-                                pw.Text(
-                                  '''
-Description: ${job.description.replaceAll('\n', ' ')}''',
-                                ),
+                                pw.Text('''
+Description: ${job.description.replaceAll('\n', ' ')}'''),
                               if (job.assumption.trim().isNotEmpty)
                                 pw.Text('''
 Assumptions: ${job.assumption.replaceAll('\n', ' ')}'''),
@@ -319,14 +309,14 @@ Assumptions: ${job.assumption.replaceAll('\n', ' ')}'''),
           } else {
             content.add(pw.SizedBox(height: 8));
             for (final meta in data.photos) {
-              final bytes = compressedBytes[meta.absolutePathTo];
-              if (bytes == null) {
+              final path = photoPaths[meta.absolutePathTo];
+              if (path == null) {
                 continue;
               }
               content.add(
                 pw.Container(
                   margin: const pw.EdgeInsets.only(bottom: 8),
-                  child: pw.Image(pw.MemoryImage(bytes)),
+                  child: pw.Image(PdfFileImage(path)),
                 ),
               );
               final comment = meta.comment?.trim() ?? '';
@@ -354,6 +344,6 @@ Assumptions: ${job.assumption.replaceAll('\n', ' ')}'''),
 
   final output = await Directory.systemTemp.createTemp('task_approval_pdf_');
   final file = File('${output.path}/task_approval_${approval.id}.pdf');
-  await file.writeAsBytes(await pdf.save());
+  await Isolate.run(() => writePdfToFile(pdf, file.path));
   return file;
 }

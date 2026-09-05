@@ -12,6 +12,7 @@
 */
 
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:money2/money2.dart';
 import 'package:path_provider/path_provider.dart';
@@ -25,6 +26,7 @@ import '../../../entity/entity.g.dart';
 import '../../../util/dart/format.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../../util/dart/tax_display_text.dart';
+import '../../pdf/pdf_file_output.dart';
 import '../../pdf/pdf_page_band_layout.dart';
 
 Future<File> generateInvoicePdf(
@@ -421,7 +423,7 @@ Future<File> generateInvoicePdf(
 
   final output = await getTemporaryDirectory();
   final file = File('${output.path}/invoice_${invoice.bestNumber}.pdf');
-  await file.writeAsBytes(await pdf.save());
+  await Isolate.run(() => writePdfToFile(pdf, file.path));
   return file;
 }
 
