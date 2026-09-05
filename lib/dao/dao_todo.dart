@@ -37,6 +37,15 @@ class DaoToDo extends Dao<ToDo> {
     whereParts.add('status = ?');
     args.add(status.name);
 
+    // Hide held jobs without changing their todos; resuming reveals them again.
+    whereParts.add('''
+NOT EXISTS (
+  SELECT 1 FROM job j
+  WHERE j.id = to_do.parent_id AND to_do.parent_type = ? AND j.status_id = ?
+)
+''');
+    args.addAll([ToDoParentType.job.name, JobStatus.onHold.id]);
+
     final whereSql = whereParts.isEmpty
         ? ''
         : 'WHERE ${whereParts.join(' AND ')}';
@@ -164,7 +173,8 @@ SELECT td.*
    AND td.due_date <= ?
    AND (
         td.parent_type != ?
-        OR j.status_id NOT IN (?, ?)
+        OR j.id IS NULL
+        OR j.status_id NOT IN (?, ?, ?)
    )
  ORDER BY td.due_date ASC, td.created_date ASC
 ''',
@@ -175,6 +185,7 @@ SELECT td.*
         ToDoParentType.job.name,
         JobStatus.rejected.id,
         JobStatus.completed.id,
+        JobStatus.onHold.id,
       ],
     );
 
@@ -191,7 +202,11 @@ SELECT td.*
         .toIso8601String();
 
     final finalisedStatuses = JobStatus.values
-        .where((status) => status.stage == JobStatusStage.finalised)
+        .where(
+          (status) =>
+              status.stage == JobStatusStage.finalised ||
+              status == JobStatus.onHold,
+        )
         .map((status) => status.id)
         .toList();
     final placeholders = List.filled(finalisedStatuses.length, '?').join(',');
