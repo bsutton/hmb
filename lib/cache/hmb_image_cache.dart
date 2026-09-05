@@ -95,6 +95,8 @@ class HMBImageCache {
   late ImageCacheConfig _config;
   late String _cacheDir;
 
+  final _compressionJobs = <Key, Future<void>>{};
+
   var _initialised = false;
 
   factory HMBImageCache() {
@@ -204,10 +206,7 @@ class HMBImageCache {
   Path pathForVariant(ImageVariant variant) =>
       p.join(_cacheDir, variant.cacheFileName);
 
-  void _copyFileIfNeeded({
-    required Path src,
-    required Path dst,
-  }) {
+  void _copyFileIfNeeded({required Path src, required Path dst}) {
     if (src == dst || exists(dst)) {
       return;
     }
@@ -374,13 +373,21 @@ class HMBImageCache {
       return pathForVariant(downloadVariant);
     }
 
-    // non-blocking background compress
-    unawaited(
-      _compressAsync(src: pathForVariant(downloadVariant), variant: variant),
-    );
+    final rawPath = pathForVariant(downloadVariant);
+    if (variant.variant == ImageVariantType.general) {
+      // Screen rendering can use the original while the display variant is
+      // prepared. PDF and thumbnail callers require the requested variant so
+      // they never accidentally load a full-resolution original.
+      unawaited(_compressAsync(src: rawPath, variant: variant));
+      return rawPath;
+    }
 
-    /// we don't wait for the compression just return the raw image.
-    return pathForVariant(downloadVariant);
+    await _compressAsync(src: rawPath, variant: variant);
+    final targetPath = pathForVariant(variant);
+    if (!exists(targetPath)) {
+      throw StateError('Unable to create ${variant.variant.name} image');
+    }
+    return targetPath;
   }
 
   Future<List<int>> getVariantBytes({
@@ -493,6 +500,26 @@ class HMBImageCache {
     if (exists(targetPath)) {
       return;
     }
+    final existing = _compressionJobs[variant.key];
+    if (existing != null) {
+      await existing;
+      return;
+    }
+
+    final job = _runCompression(src: src, variant: variant);
+    _compressionJobs[variant.key] = job;
+    try {
+      await job;
+    } finally {
+      final _ = _compressionJobs.remove(variant.key);
+    }
+  }
+
+  Future<void> _runCompression({
+    required Path src,
+    required ImageVariant variant,
+  }) async {
+    final targetPath = pathForVariant(variant);
     final res = await compute(
       _config.compressor,
       CompressJob(srcPath: src, targetPath: targetPath, variant: variant),

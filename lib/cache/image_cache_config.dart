@@ -38,10 +38,10 @@ class ImageCacheConfig {
   static const generalKeepExif = true;
 
   // PDF: smaller, encoder-friendly. JPEG.
-  // 1600px long edge ≈ good on A4 at typical image sizes.
-  static const pdfLongEdge = 1600;
+  // 1400px long edge is about 200 DPI at the appendix's printable width.
+  static const pdfLongEdge = 1400;
 
-  static const pdfJpegQuality = 70;
+  static const pdfJpegQuality = 65;
 
   // Thumbnail: small grid/list previews. JPEG.
   static const thumbWidth = 200;

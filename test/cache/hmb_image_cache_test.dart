@@ -188,6 +188,52 @@ void main() {
       expect(bytes, isNotEmpty);
     });
 
+    test('PDF requests wait for and return the compressed variant', () async {
+      final original = await _makeOriginal(
+        name: 'photo-pdf.jpg',
+        contents: 'FULL-SIZE-ORIGINAL',
+      );
+      final meta = await _metaFrom(id: 313, absolutePath: original.path);
+      final pdf = ImageVariant(meta, ImageVariantType.pdf);
+
+      final path = await cache.getVariantPathForMeta(
+        meta: meta,
+        imageVariant: ImageVariantType.pdf,
+      );
+
+      expect(p.normalize(path), p.normalize(cache.pathForVariant(pdf)));
+      expect(File(path).existsSync(), isTrue);
+      expect(
+        utf8.decode(await File(path).readAsBytes()),
+        contains('|COMP:pdf'),
+      );
+    });
+
+    test('concurrent PDF requests share the completed variant', () async {
+      final original = await _makeOriginal(
+        name: 'photo-pdf-concurrent.jpg',
+        contents: 'FULL-SIZE-ORIGINAL',
+      );
+      final meta = await _metaFrom(id: 314, absolutePath: original.path);
+
+      final paths = await Future.wait(
+        List<Future<String>>.generate(
+          8,
+          (_) => cache.getVariantPathForMeta(
+            meta: meta,
+            imageVariant: ImageVariantType.pdf,
+          ),
+        ),
+      );
+
+      expect(paths.toSet(), hasLength(1));
+      expect(File(paths.first).existsSync(), isTrue);
+      expect(
+        utf8.decode(await File(paths.first).readAsBytes()),
+        contains('|COMP:pdf'),
+      );
+    });
+
     test(
       'store(meta) copies RAW, compresses to general & thumb, then evicts RAW',
       () async {
