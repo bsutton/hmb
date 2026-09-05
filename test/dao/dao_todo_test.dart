@@ -1,5 +1,6 @@
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
+import 'package:hmb/util/dart/local_date.dart';
 import 'package:money2/money2.dart';
 import 'package:test/test.dart';
 
@@ -14,6 +15,64 @@ void main() {
   tearDown(() async {
     await tearDownTestDb();
   });
+
+  test(
+    'held job todos disappear from lists and reminders until resumed',
+    () async {
+      final job = await createJob(
+        DateTime.now(),
+        BillingType.timeAndMaterial,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+      );
+      final due = DateTime.now();
+      final todo = ToDo.forInsert(
+        title: 'Held job todo',
+        dueDate: due,
+        remindAt: due.add(const Duration(hours: 1)),
+        parentType: ToDoParentType.job,
+        parentId: job.id,
+      );
+      final personal = ToDo.forInsert(
+        title: 'Personal todo',
+        dueDate: due,
+        remindAt: due.add(const Duration(hours: 1)),
+      );
+      await DaoToDo().insert(todo);
+      await DaoToDo().insert(personal);
+      job.status = JobStatus.onHold;
+      await DaoJob().update(job);
+      expect(
+        (await DaoToDo().getFiltered(status: ToDoStatus.open)).map((t) => t.id),
+        [personal.id],
+      );
+      expect(
+        await DaoToDo().getFiltered(status: ToDoStatus.open, filter: 'Held'),
+        isEmpty,
+      );
+      expect(
+        (await DaoToDo().getDueByDate(LocalDate.today())).map((t) => t.id),
+        [personal.id],
+      );
+      expect((await DaoToDo().getOpenWithReminders()).map((t) => t.id), [
+        personal.id,
+      ]);
+      expect((await DaoToDo().getByJob(job.id)).single.status, ToDoStatus.open);
+      job.status = JobStatus.inProgress;
+      await DaoJob().update(job);
+      expect(
+        (await DaoToDo().getFiltered(status: ToDoStatus.open)).map((t) => t.id),
+        contains(todo.id),
+      );
+      expect(
+        (await DaoToDo().getDueByDate(LocalDate.today())).map((t) => t.id),
+        contains(todo.id),
+      );
+      expect(
+        (await DaoToDo().getOpenWithReminders()).map((t) => t.id),
+        contains(todo.id),
+      );
+    },
+  );
 
   test('persists closed todo status', () async {
     final id = await DaoToDo().insert(
