@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/crud/job/estimator/edit_job_estimate_screen.dart';
+import 'package:hmb/ui/quoting/quote_details_screen.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:toastification/toastification.dart';
@@ -20,6 +21,56 @@ void main() {
   });
 
   tearDown(tearDownTestDb);
+
+  testWidgets('raising a completed estimate opens its new quote', (
+    tester,
+  ) async {
+    late Job job;
+    await tester.runAsync(() async {
+      job = await createJobWithCustomer(
+        billingType: BillingType.fixedPrice,
+        hourlyRate: MoneyEx.dollars(100),
+        bookingFee: MoneyEx.dollars(50),
+        summary: 'Ready estimate',
+      );
+      await DaoTask().insert(
+        Task.forInsert(
+          jobId: job.id,
+          name: 'Completed scope',
+          description: '',
+          status: TaskStatus.awaitingApproval,
+          estimateComplete: true,
+        ),
+      );
+    });
+    await tester.pumpWidget(
+      ToastificationWrapper(
+        child: MaterialApp(home: JobEstimateBuilderScreen(job: job)),
+      ),
+    );
+    await _pumpUntilFound(tester, find.text('Raise Quote'));
+    await tester.tap(find.text('Raise Quote'));
+    await _pumpUntilFound(tester, find.text('Bill booking Fee'));
+    final booking = tester.widget<CheckboxListTile>(
+      find.widgetWithText(CheckboxListTile, 'Bill booking Fee'),
+    );
+    if (booking.value != true) {
+      await tester.tap(find.text('Bill booking Fee'));
+      await tester.pump();
+    }
+    await tester.tap(find.text('OK'));
+    await _pumpUntilFound(tester, find.byType(QuoteDetailsScreen));
+    final screen = tester.widget<QuoteDetailsScreen>(
+      find.byType(QuoteDetailsScreen),
+    );
+    await tester.runAsync(() async {
+      final quote = (await DaoQuote().getById(screen.quoteId))!;
+      expect(quote.jobId, job.id);
+      expect(quote.totalAmount, MoneyEx.dollars(50));
+    });
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 10));
+  });
 
   testWidgets('raising a quote requires every estimate to be complete', (
     tester,

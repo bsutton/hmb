@@ -35,6 +35,7 @@ import '../../../../util/dart/units.dart';
 import '../../../dialog/hmb_comfirm_delete_dialog.dart';
 import '../../../dialog/hmb_dialog.dart';
 import '../../../invoicing/dialog_select_tasks.dart';
+import '../../../quoting/quote_details_screen.dart';
 import '../../../widgets/blocking_ui.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_search.dart';
@@ -409,11 +410,18 @@ class _JobEstimateBuilderScreenState
     }
 
     try {
-      await BlockingUI().runAndWait(
+      final quote = await BlockingUI().runAndWait(
         label: 'Creating Quote',
         () => DaoQuote().create(widget.job, options),
       );
-      HMBToast.info('Quote created successfully.');
+      if (!mounted) {
+        return;
+      }
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => QuoteDetailsScreen(quoteId: quote.id),
+        ),
+      );
     } catch (e) {
       HMBToast.error(
         'Failed to create quote: $e',
