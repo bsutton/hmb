@@ -23,9 +23,11 @@ import '../../../util/dart/photo_meta.dart';
 import '../desktop_back_gesture_suppress.dart';
 import '../icons/hmb_close_icon.dart';
 import '../icons/hmb_copy_icon.dart';
+import '../icons/hmb_icon_button.dart';
 import '../layout/layout.g.dart';
 import '../text/hmb_text_themes.dart';
 import 'copy_image_to_clipboard.dart';
+import 'full_screen_photo_view.dart';
 
 class PhotoCarousel extends StatefulWidget {
   final List<PhotoMeta> photos;
@@ -231,6 +233,20 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
   Row _buildCopyClose(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
+      HMBIconButton(
+        hint: 'Zoom photo',
+        icon: const Icon(Icons.zoom_in, color: Colors.white),
+        onPressed: () async {
+          final photo = widget.photos[_currentIndex];
+          await FullScreenPhotoViewer.show(
+            context: context,
+            imagePath:
+                widget.photoPaths[photo.photo.id] ?? photo.absolutePathTo,
+            title: photo.title,
+            comment: photo.comment,
+          );
+        },
+      ),
       HMBCopyIcon(
         onPressed: () async {
           try {
