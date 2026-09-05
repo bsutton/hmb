@@ -72,6 +72,7 @@ class _JobEstimateBuilderScreenState
   Money _totalCombinedCost = MoneyEx.zero;
   Percentage _estimateMargin = Percentage.zero;
   var _estimateComplete = false;
+  var _showCostDetails = false;
 
   var _showToBeEstimated = true;
   var _showCompleted = false;
@@ -330,15 +331,18 @@ class _JobEstimateBuilderScreenState
 
     return Surface(
       elevation: SurfaceElevation.e0,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: HMBColumn(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 0,
         children: [
-          Row(
+          Wrap(
+            spacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Expanded(
-                child: Text(
-                  'Estimate Complete: ${_estimateComplete ? 'Yes' : 'No'}',
-                ),
+              Text(
+                'Total: $total',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
               HMBButton.small(
                 label: 'Raise Quote',
@@ -347,19 +351,33 @@ class _JobEstimateBuilderScreenState
               ),
             ],
           ),
-          Text('Labour: $_totalLabourCost'),
-          Text('Materials: $_totalMaterialsCost'),
-          Row(
+          Wrap(
+            spacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Expanded(child: Text('Margin: $marginAmount ($_estimateMargin)')),
-              IconButton(
-                tooltip: 'Edit estimate margin',
-                onPressed: _showEditMarginDialog,
-                icon: const Icon(Icons.edit),
+              Text('Estimate Complete: ${_estimateComplete ? 'Yes' : 'No'}'),
+              HMBButton.small(
+                label: _showCostDetails ? 'Hide costs' : 'Show costs',
+                hint: 'Show or hide labour, materials and margin',
+                onPressed: () =>
+                    setState(() => _showCostDetails = !_showCostDetails),
               ),
             ],
           ),
-          Text('Total: $total'),
+          if (_showCostDetails)
+            Wrap(
+              spacing: 12,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text('Labour: $_totalLabourCost'),
+                Text('Materials: $_totalMaterialsCost'),
+                Text('Margin: $marginAmount ($_estimateMargin)'),
+                HMBEditIcon(
+                  onPressed: _showEditMarginDialog,
+                  hint: 'Edit estimate margin',
+                ),
+              ],
+            ),
         ],
       ),
     );
