@@ -15,7 +15,6 @@ import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
 import '../api/xero/models/xero_invoice.dart';
-import '../api/xero/models/xero_line_item.dart';
 import '../dao/dao.g.dart';
 import '../dao/invoice_billing_contact.dart';
 import '../util/dart/exceptions.dart';
@@ -187,8 +186,7 @@ You must set the Account Code and Item Code in System | Integration before you c
       dueDate: invoice.dueDate,
       lineItems: filteredLines
           .map(
-            (line) => _toXeroLineItem(
-              line,
+            (line) => line.toXeroLineItem(
               accountCode: system.invoiceLineRevenueAccountCode!,
               itemCode: system.invoiceLineInventoryItemCode!,
             ),
@@ -253,36 +251,6 @@ You must set the Account Code and Item Code in System | Integration before you c
     return lineList
         .where((line) => !suppressedLineIds.contains(line.id))
         .toList();
-  }
-
-  XeroLineItem _toXeroLineItem(
-    InvoiceLine line, {
-    required String accountCode,
-    required String itemCode,
-  }) {
-    var quantity = line.quantity;
-    var unitAmount = line.unitPrice;
-    if (unitAmount.isNegative) {
-      unitAmount = -unitAmount;
-    }
-
-    if (line.lineTotal.isNegative && quantity.compareTo(Fixed.zero) > 0) {
-      quantity = -quantity;
-    } else if (line.lineTotal.isPositive &&
-        quantity.compareTo(Fixed.zero) < 0) {
-      quantity = -quantity;
-    }
-
-    return XeroLineItem(
-      description: line.description,
-      quantity: quantity,
-      unitAmount: unitAmount,
-      lineTotal: line.lineTotal,
-      taxAmount: line.taxAmount,
-      taxType: line.taxType,
-      accountCode: accountCode,
-      itemCode: itemCode,
-    );
   }
 
   /// true if the invoice has been uploaded to the external

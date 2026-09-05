@@ -120,9 +120,68 @@ void main() {
 
     expect(xeroB.lineItems.length, equals(1));
     expect(xeroB.lineItems.single.lineTotal, equals(-MoneyEx.fromInt(1125)));
-    expect(xeroB.lineItems.single.unitAmount, equals(MoneyEx.fromInt(1125)));
-    expect(xeroB.lineItems.single.quantity, equals(-Fixed.one));
+    expect(xeroB.lineItems.single.unitAmount, equals(-MoneyEx.fromInt(1125)));
+    expect(xeroB.lineItems.single.quantity, equals(Fixed.one));
+    expect(xeroB.lineItems.single.toJson()['Quantity'], '1.00');
+    expect(xeroB.lineItems.single.toJson()['UnitAmount'], '-11.25');
   });
+
+  for (final negativeQuantity in [false, true]) {
+    test('exports a partial return with positive fractional quantity '
+        '(legacy negative quantity: $negativeQuantity)', () async {
+      final fixture = await _createFixture();
+      final invoice = await _createInvoice(fixture.job, fixture.contact);
+      final group = await _createLineGroup(invoice, 'Materials');
+      final quantity = Fixed.parse('2.25');
+      final original = InvoiceLine.forInsert(
+        invoiceId: invoice.id,
+        invoiceLineGroupId: group.id,
+        description: 'Material: Paint',
+        quantity: Fixed.fromInt(4),
+        unitPrice: MoneyEx.dollars(8),
+        lineTotal: MoneyEx.dollars(32),
+      );
+      await DaoInvoiceLine().insert(original);
+      final sourceItem = await _insertMaterialTaskItem(fixture.task);
+      await DaoTaskItem().markAsBilled(sourceItem, original.id);
+      final returned = InvoiceLine.forInsert(
+        invoiceId: invoice.id,
+        invoiceLineGroupId: group.id,
+        description: 'Returned: Paint',
+        quantity: negativeQuantity ? -quantity : quantity,
+        unitPrice: MoneyEx.dollars(negativeQuantity ? 8 : -8),
+        lineTotal: MoneyEx.dollars(-18),
+        taxAmount: MoneyEx.fromInt(-164),
+        taxType: 'OUTPUT',
+      );
+      await DaoInvoiceLine().insert(returned);
+      final returnItem = await _insertReturnTaskItem(sourceItem);
+      await DaoTaskItem().markAsBilled(returnItem, returned.id);
+
+      final exported = await invoice.toXeroInvoice(invoice);
+
+      expect(exported.lineItems, hasLength(2));
+      final debit = exported.lineItems.singleWhere(
+        (line) => line.description == original.description,
+      );
+      expect(debit.quantity, Fixed.fromInt(4));
+      expect(debit.unitAmount, MoneyEx.dollars(8));
+      final credit = exported.lineItems.singleWhere(
+        (line) => line.description == returned.description,
+      );
+      expect(credit.quantity, quantity);
+      expect(credit.unitAmount, MoneyEx.dollars(-8));
+      expect(credit.toJson(), containsPair('Quantity', quantity.toString()));
+      expect(credit.toJson(), containsPair('UnitAmount', '-8'));
+      expect(credit.toJson(), containsPair('LineAmount', '-18'));
+      expect(credit.toJson(), containsPair('TaxAmount', '-1.64'));
+      expect(credit.taxType, 'OUTPUT');
+      expect(debit.lineTotal + credit.lineTotal, MoneyEx.dollars(14));
+      final stored = (await DaoInvoiceLine().getById(returned.id))!;
+      expect(stored.quantity, returned.quantity);
+      expect(stored.unitPrice, returned.unitPrice);
+    });
+  }
 
   test(
     'uses the invoice billing contact rather than the job contact',

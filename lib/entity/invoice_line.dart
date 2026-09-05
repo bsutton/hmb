@@ -144,14 +144,26 @@ class InvoiceLine extends Entity<InvoiceLine> {
   XeroLineItem toXeroLineItem({
     required String accountCode,
     required String itemCode,
-  }) => XeroLineItem(
-    description: description,
-    quantity: quantity,
-    unitAmount: unitPrice,
-    lineTotal: lineTotal,
-    taxAmount: taxAmount,
-    taxType: taxType,
-    accountCode: accountCode, // '240',
-    itemCode: itemCode, // 'IHS-Labour',
-  );
+  }) {
+    // Keep return quantities positive for Xero and credit the unit price,
+    // including older lines stored with a negative quantity.
+    final xeroQuantity = quantity.compareTo(Fixed.zero) < 0
+        ? -quantity
+        : quantity;
+    var xeroUnitPrice = unitPrice.isNegative ? -unitPrice : unitPrice;
+    if (lineTotal.isNegative) {
+      xeroUnitPrice = -xeroUnitPrice;
+    }
+
+    return XeroLineItem(
+      description: description,
+      quantity: xeroQuantity,
+      unitAmount: xeroUnitPrice,
+      lineTotal: lineTotal,
+      taxAmount: taxAmount,
+      taxType: taxType,
+      accountCode: accountCode,
+      itemCode: itemCode,
+    );
+  }
 }
