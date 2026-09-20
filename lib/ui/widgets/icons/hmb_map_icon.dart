@@ -93,7 +93,8 @@ class HMBMapIcon extends StatelessWidget {
         job: selectedJob,
         site: site,
       );
-      if (result == ExternalCalendarSyncResult.unavailable) {
+      if (result == ExternalCalendarSyncResult.unavailable ||
+          result == ExternalCalendarSyncResult.signInRequired) {
         HMBToast.info(
           'Directions opened, but Google Calendar is not signed in.',
         );
