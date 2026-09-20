@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:june/june.dart';
 
+import '../billing_attention_cache.dart';
 import '../dao.g.dart';
 import 'notifiers.dart';
 
@@ -115,6 +116,7 @@ class DaoJuneBuilder {
   };
 
   static void notify(DaoBase dao, [int? entityId]) {
+    BillingAttentionCache.instance.invalidateTable(dao.tablename);
     final entry = _registry[dao.tablename];
     if (entry == null) {
       return;

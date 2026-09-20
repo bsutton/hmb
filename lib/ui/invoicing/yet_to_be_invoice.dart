@@ -17,6 +17,7 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../dao/billing_attention_cache.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../../util/flutter/app_title.dart';
@@ -24,7 +25,7 @@ import '../crud/job/full_page_list_job_card.dart';
 import '../widgets/hmb_link_internal.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/text/text.g.dart';
-import '../widgets/widgets.g.dart' show HMBButton;
+import '../widgets/widgets.g.dart' show BlockingUI, HMBButton, HMBToast;
 import 'create_invoice_ui.dart';
 
 class YetToBeInvoicedScreen extends StatefulWidget {
@@ -46,23 +47,45 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
   }
 
   Future<void> _loadJobs() async {
-    _jobs = await _fetchReadyJobs();
-    setState(() {});
+    await BlockingUI().runAndWait(() async {
+      _jobs = await _fetchReadyJobs();
+    });
+    if (mounted) {
+      setState(() {});
+    }
   }
 
-  Future<List<ToBeInvoicedJob>> _fetchReadyJobs([String? filter]) async {
-    final jobs = await DaoJob().readyToBeInvoiced(filter);
+  Future<void> _reloadAfterAction() async {
+    if (!mounted) {
+      return;
+    }
+    try {
+      await _loadJobs();
+    } catch (error) {
+      HMBToast.error('Could not refresh billing attention. Reopen to retry.');
+    }
+  }
+
+  Future<List<ToBeInvoicedJob>> _fetchReadyJobs() async {
+    final cache = BillingAttentionCache.instance;
+    await cache.refresh();
+    if (cache.error != null) {
+      throw StateError(
+        'Could not refresh billing attention. Please try again.',
+      );
+    }
     final unsentJobIds = (await DaoInvoice().getUnsent())
         .map((invoice) => invoice.jobId)
         .toSet();
 
     final ready = <ToBeInvoicedJob>[];
-    for (final job in jobs) {
+    for (final readiness in cache.entries!) {
+      final job = readiness.job;
       ready.add(
         ToBeInvoicedJob(
           job: job,
           hasUnsentInvoice: unsentJobIds.contains(job.id),
-          readiness: await JobBillingReadinessService().evaluate(job),
+          readiness: readiness,
         ),
       );
     }
@@ -72,6 +95,12 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
+    waitingBuilder: (_) => const SizedBox.shrink(),
+    errorBuilder: (_, error) => const Center(
+      child: Text(
+        'Could not load billing attention. Reopen this screen to retry.',
+      ),
+    ),
     builder: (context) => HMBListPage(
       emptyMessage: 'No jobs yet to invoice.',
 
@@ -81,7 +110,9 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
         final job = item.job;
 
         return FutureBuilderEx(
-          future: DaoCustomer().getByJob(job.id),
+          future: DaoCustomer().getById(job.customerId),
+          waitingBuilder: (_) => const SizedBox.shrink(),
+          errorBuilder: (_, error) => const Text('Could not load customer.'),
           builder: (context, customer) => HMBListCard(
             title: 'Customer: ${customer?.name ?? '—'}',
             actions: [
@@ -93,6 +124,7 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
                 onPressed: () async {
                   if (item.readiness.canInvoice) {
                     await createInvoiceFor(job, context);
+                    await _reloadAfterAction();
                     return;
                   }
                   await Navigator.of(context).push(
@@ -100,6 +132,7 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
                       builder: (_) => FullPageListJobCard(job),
                     ),
                   );
+                  await _reloadAfterAction();
                 },
               ),
             ],

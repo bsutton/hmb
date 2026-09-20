@@ -24,6 +24,7 @@ import '../../../widgets/widgets.g.dart';
 import '../dashboard.dart';
 import '../dashlet_card.dart';
 import '../sync_warnings.dart';
+import 'billing_attention_count.dart';
 import 'invoices.dart';
 import 'receipt.dart';
 
@@ -60,11 +61,12 @@ class _AccountingDashboardPageState extends State<AccountingDashboardPage> {
         value: getQuoteValue,
         route: '/home/accounting/quotes',
       ),
-      DashletCard<int>.route(
+      DashletCard<void>.route(
         label: 'To Be Invoiced',
-        hint: 'List of Jobs that have unbilled hours',
+        hint: 'Jobs with unbilled work or billing setup needing attention',
         icon: Icons.attach_money,
-        value: getYetToBeInvoiced,
+        value: () async => const DashletValue.empty(),
+        valueBuilder: (_, _) => const BillingAttentionCount(),
         route: '/home/accounting/to_be_invoiced',
       ),
       const InvoiceDashlet(),
@@ -208,19 +210,5 @@ class _AccountingDashboardPageState extends State<AccountingDashboardPage> {
       }
     }
     return DashletValue(total.format('S#'));
-  }
-
-  Future<DashletValue<int>> getYetToBeInvoiced() async {
-    final jobs = await DaoJob().readyToBeInvoiced(null);
-    final count = jobs.length;
-    var total = MoneyEx.zero;
-    for (final job in jobs) {
-      final hourlyRate = job.hourlyRate;
-      final statistics = await DaoJob().getJobStatistics(job);
-      total +=
-          statistics.completedMaterialCost +
-          (hourlyRate!.multiplyByFixed(statistics.workedHours));
-    }
-    return DashletValue(count, total.format('S#'));
   }
 }

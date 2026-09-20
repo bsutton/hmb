@@ -22,6 +22,54 @@ void main() {
     await tearDownTestDb();
   });
 
+  for (final showOld in [false, true]) {
+    testWidgets('completed unbilled work uses old filter: $showOld', (
+      tester,
+    ) async {
+      FlutterSecureStorage.setMockInitialValues({
+        'job_list_filter_show_current': 'true',
+        'job_list_filter_show_old': '$showOld',
+      });
+      late Job completed;
+      await tester.runAsync(() async {
+        await createJobWithCustomer(
+          billingType: BillingType.timeAndMaterial,
+          hourlyRate: MoneyEx.zero,
+          summary: 'Recent job 3',
+        );
+        completed = await createJobWithCustomer(
+          billingType: BillingType.fixedPrice,
+          hourlyRate: MoneyEx.zero,
+          summary: 'Completed but not billed',
+          status: JobStatus.completed,
+        );
+      });
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: JobListScreen())),
+      );
+      final listFinder = find.byType(EntityListScreen<Job>);
+      for (var attempt = 0; attempt < 100; attempt++) {
+        await tester.pump();
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        if (listFinder.evaluate().isNotEmpty &&
+            tester
+                .state<EntityListScreenState<Job>>(listFinder)
+                .entityList
+                .isNotEmpty) {
+          break;
+        }
+      }
+      final entries = tester
+          .state<EntityListScreenState<Job>>(find.byType(EntityListScreen<Job>))
+          .entityList;
+      expect(entries, isNotEmpty);
+      expect(entries.any((job) => job.id == completed.id), showOld);
+      await _disposeHarness(tester);
+    });
+  }
+
   testWidgets('returning to recent jobs resets the scroll position', (
     tester,
   ) async {
