@@ -31,6 +31,7 @@ import 'dao.dart';
 import 'dao_contact.dart';
 import 'dao_customer.dart';
 import 'dao_invoice.dart';
+import 'dao_job_party.dart';
 import 'dao_job_source_email.dart';
 import 'dao_quote.dart';
 import 'dao_system.dart';
@@ -56,6 +57,16 @@ class DaoJob extends Dao<Job> {
   DaoJob() : super(tableName);
 
   @override
+  Future<int> insert(Job entity, [Transaction? transaction]) async {
+    if (transaction == null) {
+      return db.transaction((txn) => insert(entity, txn));
+    }
+    final id = await super.insert(entity, transaction);
+    await DaoJobParty().syncLegacyFields(entity, null, transaction);
+    return id;
+  }
+
+  @override
   Future<int> delete(int id, [Transaction? transaction]) async {
     if (await isStockJobId(id, transaction: transaction)) {
       throw HMBException('The Stock job cannot be deleted.');
@@ -76,6 +87,7 @@ class DaoJob extends Dao<Job> {
     await DaoQuote().deleteByJob(id, transaction: transaction);
     await DaoToDo().deleteByJob(id, transaction: transaction);
     await DaoJobSourceEmail().deleteByJob(id, transaction: transaction);
+    await db.delete('job_party', where: 'job_id = ?', whereArgs: [id]);
 
     // Delete the job itself
     return db.delete(tableName, where: 'id = ?', whereArgs: [id]);
@@ -86,6 +98,9 @@ class DaoJob extends Dao<Job> {
 
   @override
   Future<int> update(Job entity, [Transaction? transaction]) async {
+    if (transaction == null) {
+      return db.transaction((txn) => update(entity, txn));
+    }
     final existing = await getById(entity.id, transaction);
     if (existing != null && existing.status != entity.status) {
       throw const LifecycleException(
@@ -93,6 +108,19 @@ class DaoJob extends Dao<Job> {
       );
     }
     entity.modifiedDate = DateTime.now();
+    if (existing != null &&
+        entity.billingParty != existing.billingParty &&
+        entity.billToCustomerId == existing.billToCustomerId) {
+      entity.billToCustomerId = entity.billingParty == BillingParty.referrer
+          ? entity.referrerCustomerId
+          : entity.customerId;
+      entity.legacyBillingContactId = null;
+    }
+    if (existing != null &&
+        (entity.billingContactId != existing.billingContactId ||
+            entity.billingCustomerId != existing.billingCustomerId)) {
+      entity.legacyBillingContactId = null;
+    }
     final values = entity.toMap()
       ..remove('status_id')
       ..remove('resume_status_id');
@@ -100,6 +128,7 @@ class DaoJob extends Dao<Job> {
       transaction,
     ).update(tableName, values, where: 'id = ?', whereArgs: [entity.id]);
     assert(count == 1, 'A job update must affect exactly one row.');
+    await DaoJobParty().syncLegacyFields(entity, existing, transaction);
     Dao.notifier(this, entity.id);
     return entity.id;
   }
@@ -498,8 +527,9 @@ where q.id=?
 
     if (bestPhone == null) {
       final customer = await DaoCustomer().getByJob(job.id);
-      bestPhone = (await DaoContact().getPrimaryForCustomer(customer!.id))
-          ?.bestPhone;
+      bestPhone = (await DaoContact().getPrimaryForCustomer(
+        customer!.id,
+      ))?.bestPhone;
     }
     return bestPhone;
   }
@@ -512,8 +542,9 @@ where q.id=?
 
     if (bestEmail == null) {
       final customer = await DaoCustomer().getByJob(job.id);
-      bestEmail = (await DaoContact().getPrimaryForCustomer(customer!.id))
-          ?.bestEmail;
+      bestEmail = (await DaoContact().getPrimaryForCustomer(
+        customer!.id,
+      ))?.bestEmail;
     }
     return bestEmail;
   }

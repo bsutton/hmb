@@ -39,6 +39,12 @@ class DaoCustomer extends Dao<Customer> {
       entityName: 'Customer',
       id: id,
       references: const [
+        DaoReference('job', 'bill_to_customer_id', 'job billing customers'),
+        DaoReference(
+          'invoice',
+          'billing_customer_id',
+          'invoice billing customers',
+        ),
         DaoReference('job', 'customer_id', 'jobs'),
         DaoReference('job', 'referrer_customer_id', 'job referrals'),
         DaoReference(

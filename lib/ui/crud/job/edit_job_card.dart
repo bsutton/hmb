@@ -57,11 +57,13 @@ import '../../widgets/select/hmb_select_site.dart';
 import '../../widgets/text/hmb_expanding_text_block.dart';
 import '../../widgets/text/hmb_text.dart';
 import 'fsm_status_picker.dart';
+import 'job_edit_section.dart';
 import 'list_job_screen.dart';
 
 class EditJobCard extends StatefulWidget {
   final Job? job;
   final Customer? customer;
+  final JobEditSection? section;
 
   // Controllers
   final TextEditingController summaryController;
@@ -100,6 +102,7 @@ class EditJobCard extends StatefulWidget {
     required this.bookingFeeFocusNode,
     required this.selectedBillingType,
     required this.onBillingTypeChanged,
+    this.section,
     super.key,
   });
 
@@ -131,31 +134,74 @@ class _EditJobCardState extends DeferredState<EditJobCard> {
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
-    builder: (context) => HMBColumn(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        HMBFormSection(
-          children: [
-            _showSummary(),
-            _buildPartiesSection(),
-            _chooseStatus(job),
-            if (job != null) _buildScheduleButtons(),
-            _chooseSite(),
-            _chooseBillingType(),
-            _showHourlyRate(),
-            _showBookingFee(),
-            _buildDescription(),
-            _buildNotes(),
-            _buildAssumption(),
-            if (job != null) _buildJobNotes(),
-            if (job != null) _buildAttachments(),
-          ],
-        ),
-        if (job != null) PhotoGallery.forJob(job: job!),
-      ],
-    ),
+    waitingBuilder: (_) => const SizedBox.shrink(),
+    errorBuilder: (_, error) => const Text('Could not load job editor.'),
+    builder: (context) => widget.section != null
+        ? HMBFormSection(children: _sectionFields(widget.section!))
+        : HMBColumn(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              HMBFormSection(
+                children: [
+                  _showSummary(),
+                  _buildPartiesSection(),
+                  _chooseStatus(job),
+                  if (job != null) _buildScheduleButtons(),
+                  _chooseSite(),
+                  _chooseBillingType(),
+                  _showHourlyRate(),
+                  _showBookingFee(),
+                  _buildDescription(),
+                  _buildNotes(),
+                  _buildAssumption(),
+                  if (job != null) _buildJobNotes(),
+                  if (job != null) _buildAttachments(),
+                ],
+              ),
+              if (job != null) PhotoGallery.forJob(job: job!),
+            ],
+          ),
   );
+
+  List<Widget> _sectionFields(JobEditSection section) => switch (section) {
+    JobEditSection.summary => [
+      _showSummary(),
+      HMBTextArea(
+        labelText: 'Description',
+        controller: widget.descriptionController,
+        focusNode: widget.descriptionFocusNode,
+      ),
+    ],
+    JobEditSection.customer => [_chooseCustomer(), _chooseReferrerCustomer()],
+    JobEditSection.parties => [],
+    JobEditSection.billing => [
+      _chooseBillingType(),
+      _showHourlyRate(),
+      _showBookingFee(),
+    ],
+    JobEditSection.site => [_chooseSite()],
+    JobEditSection.internalNotes => [
+      const Text('Not shown on quotes or invoices.'),
+      HMBTextArea(
+        labelText: 'Internal notes',
+        controller: widget.notesController,
+        focusNode: widget.notesFocusNode,
+      ),
+    ],
+    JobEditSection.assumptions => [
+      const Text('Assumptions are shown on the quote.'),
+      HMBTextArea(
+        labelText: 'Assumptions',
+        controller: widget.assumptionController,
+        focusNode: widget.assumptionFocusNode,
+      ),
+    ],
+    JobEditSection.schedule => [_buildScheduleButtons()],
+    JobEditSection.notes => [_buildJobNotes()],
+    JobEditSection.attachments => [_buildAttachments()],
+    JobEditSection.photos => [PhotoGallery.forJob(job: job!)],
+  };
 
   // --- Field builders -------------------------------------------------------
 
@@ -272,6 +318,9 @@ You can set a default booking fee from System | Billing screen''');
   Widget _chooseBillingContact() => JuneBuilder(
     SelectedBillingParty.new,
     builder: (billingPartyState) => FutureBuilderEx<Customer?>(
+      waitingBuilder: (_) => const SizedBox.shrink(),
+      errorBuilder: (_, error) =>
+          const Text('Could not load billing customer.'),
       future: billingPartyState.billingParty == BillingParty.referrer
           ? DaoCustomer().getById(
               June.getState(SelectedReferrerCustomer.new).customerId,
@@ -293,6 +342,8 @@ You can set a default booking fee from System | Billing screen''');
   );
 
   Widget _chooseContact() => FutureBuilderEx<List<Contact>>(
+    waitingBuilder: (_) => const SizedBox.shrink(),
+    errorBuilder: (_, error) => const Text('Could not load contacts.'),
     future: _primaryContactChoices(),
     builder: (context, contacts) => JuneBuilder(
       SelectedContact.new,
@@ -360,6 +411,7 @@ You can set a default booking fee from System | Billing screen''');
       initialSite: state,
       customer: widget.customer,
       associatedJob: job,
+      autoSelect: widget.section == null,
       onSelected: (site) {
         June.getState(SelectedSite.new).siteId = site?.id;
       },
@@ -371,6 +423,10 @@ You can set a default booking fee from System | Billing screen''');
     selectedCustomer: June.getState(SelectedCustomer.new),
     onSelected: (customer) {
       June.getState(SelectedCustomer.new).customerId = customer?.id;
+      if (widget.section == JobEditSection.customer) {
+        setState(() {});
+        return;
+      }
 
       // Clear dependent selections
       June.getState(SelectedSite.new).siteId = null;
@@ -402,6 +458,10 @@ You can set a default booking fee from System | Billing screen''');
     required: false,
     onChanged: (customer) {
       June.getState(SelectedReferrerCustomer.new).customerId = customer?.id;
+      if (widget.section == JobEditSection.customer) {
+        setState(() {});
+        return;
+      }
       June.getState(SelectedReferrerContact.new).contactId = null;
       if (June.getState(SelectedBillingParty.new).billingParty ==
           BillingParty.referrer) {
@@ -413,6 +473,8 @@ You can set a default booking fee from System | Billing screen''');
   );
 
   Widget _chooseReferrerContact() => FutureBuilderEx<Customer?>(
+    waitingBuilder: (_) => const SizedBox.shrink(),
+    errorBuilder: (_, error) => const Text('Could not load referrer.'),
     future: DaoCustomer().getById(
       June.getState(SelectedReferrerCustomer.new).customerId,
     ),
@@ -432,6 +494,8 @@ You can set a default booking fee from System | Billing screen''');
   );
 
   Widget _chooseTenantContact() => FutureBuilderEx<Customer?>(
+    waitingBuilder: (_) => const SizedBox.shrink(),
+    errorBuilder: (_, error) => const Text('Could not load customer.'),
     future: DaoCustomer().getById(
       June.getState(SelectedCustomer.new).customerId ?? widget.customer?.id,
     ),
@@ -583,6 +647,8 @@ You can set a default booking fee from System | Billing screen''');
     ActivityJobsState.new,
     builder: (context) => FutureBuilderEx<List<JobActivity>>(
       future: DaoJobActivity().getByJob(job!.id),
+      waitingBuilder: (_) => const SizedBox.shrink(),
+      errorBuilder: (_, error) => const Text('Could not load visits.'),
       builder: (context, activities) {
         final jobActivities = activities ?? [];
         final nextActivity = _nextActivity(jobActivities);
@@ -795,6 +861,8 @@ You can set a default booking fee from System | Billing screen''');
   );
 
   Widget _buildJobNotes() => FutureBuilderEx<List<Activity>>(
+    waitingBuilder: (_) => const SizedBox.shrink(),
+    errorBuilder: (_, error) => const Text('Could not load job notes.'),
     key: ValueKey(_notesVersion),
     future: DaoActivity().getByJob(job!.id, type: ActivityType.note),
     builder: (context, notes) => HMBColumn(
@@ -912,6 +980,8 @@ You can set a default booking fee from System | Billing screen''');
   }
 
   Widget _buildAttachments() => FutureBuilderEx<List<JobAttachment>>(
+    waitingBuilder: (_) => const SizedBox.shrink(),
+    errorBuilder: (_, error) => const Text('Could not load attachments.'),
     future: DaoJobAttachment().getByJob(job!.id),
     builder: (context, attachments) => HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.start,

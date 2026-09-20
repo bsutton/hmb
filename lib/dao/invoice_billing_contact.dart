@@ -71,8 +71,5 @@ Future<Contact> requireInvoiceBillingContact(
   return contact;
 }
 
-Future<Customer?> getBillingCustomerForJob(Job job) => DaoCustomer().getById(
-  job.billingParty == BillingParty.referrer
-      ? job.referrerCustomerId
-      : job.customerId,
-);
+Future<Customer?> getBillingCustomerForJob(Job job) =>
+    DaoCustomer().getById(job.billingCustomerId);

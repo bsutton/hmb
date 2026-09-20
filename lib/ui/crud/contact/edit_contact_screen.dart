@@ -25,9 +25,9 @@ import '../../dialog/source_context.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_name_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
-import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../base_nested/edit_nested_screen.dart';
+import 'contact_roles_screen.dart';
 
 class ContactEditScreen<P extends Entity<P>> extends StatefulWidget {
   final DaoJoinAdaptor daoJoin;
@@ -60,7 +60,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
   late TextEditingController _officeNumberController;
   late TextEditingController _emailaddressController;
   late TextEditingController _alternateEmailController;
-  late TextEditingController _roleDescriptionController;
+  int? _defaultRoleId;
   late FocusNode _firstNameFocusNode;
 
   @override
@@ -95,9 +95,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
     _alternateEmailController = TextEditingController(
       text: currentEntity?.alternateEmail,
     );
-    _roleDescriptionController = TextEditingController(
-      text: currentEntity?.roleDescription,
-    );
+    _defaultRoleId = currentEntity?.defaultRoleId;
 
     _firstNameFocusNode = FocusNode();
   }
@@ -111,7 +109,6 @@ class _ContactEditScreenState extends State<ContactEditScreen>
     _officeNumberController.dispose();
     _emailaddressController.dispose();
     _alternateEmailController.dispose();
-    _roleDescriptionController.dispose();
     _firstNameFocusNode.dispose();
     super.dispose();
   }
@@ -146,10 +143,9 @@ class _ContactEditScreenState extends State<ContactEditScreen>
           labelText: 'Surname',
           keyboardType: TextInputType.name,
         ),
-        HMBTextField(
-          controller: _roleDescriptionController,
-          labelText: 'Role / Description',
-          textCapitalization: TextCapitalization.sentences,
+        ContactRoleSelector(
+          roleId: _defaultRoleId,
+          onChanged: (role) => setState(() => _defaultRoleId = role?.id),
         ),
         HMBPhoneField(
           controller: _mobileNumberController,
@@ -186,7 +182,9 @@ class _ContactEditScreenState extends State<ContactEditScreen>
       landLine: _landlineController.text,
       officeNumber: _officeNumberController.text,
       emailAddress: _emailaddressController.text.toLowerCase(),
-      roleDescription: _roleDescriptionController.text.trim(),
+      roleDescription: '',
+      defaultRoleId: _defaultRoleId,
+      clearDefaultRole: _defaultRoleId == null,
       alternateEmail: alternateEmail,
       clearAlternateEmail: alternateEmail == null,
     );
@@ -200,7 +198,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
     landLine: _landlineController.text,
     officeNumber: _officeNumberController.text,
     emailAddress: _emailaddressController.text.toLowerCase(),
-    roleDescription: _roleDescriptionController.text.trim(),
+    defaultRoleId: _defaultRoleId,
     alternateEmail: _emailOrNull(_alternateEmailController.text),
   );
 

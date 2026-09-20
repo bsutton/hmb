@@ -20,17 +20,57 @@ import '../entity/contact.dart';
 import '../entity/customer.dart';
 import '../entity/job.dart';
 import '../entity/supplier.dart';
+import '../util/dart/exceptions.dart';
 import 'dao.dart';
 import 'dao_contact_customer.dart';
+import 'dao_contact_role.dart';
 import 'dao_contact_supplier.dart';
-import 'dao_customer.dart';
 import 'dao_job.dart';
 import 'dao_reference_guard.dart';
+import 'job_billing_contact.dart';
 
 class DaoContact extends Dao<Contact> {
   static const tableName = 'contact';
   DaoContact() : super(tableName);
   Future<void> createTable(Database db, int version) async {}
+
+  Future<void> _canonicalRole(Contact contact, Transaction txn) async {
+    // Legacy import callers may still supply a description. Resolve it to a
+    // real role; the database never receives an independent free-form value.
+    if (contact.defaultRoleId == null &&
+        contact.roleDescription.trim().isNotEmpty) {
+      final roles = await DaoContactRole().getAll(txn);
+      final name = contact.roleDescription.trim();
+      final matched = roles
+          .where((role) => role.name.toLowerCase() == name.toLowerCase())
+          .firstOrNull;
+      contact.defaultRoleId =
+          matched?.id ?? await DaoContactRole().create(name, txn);
+    }
+    final role = await DaoContactRole().getById(contact.defaultRoleId, txn);
+    if (contact.defaultRoleId != null && role == null) {
+      throw HMBException('Select an existing contact role.');
+    }
+    contact.roleDescription = role?.name ?? '';
+  }
+
+  @override
+  Future<int> insert(Contact entity, [Transaction? transaction]) async {
+    if (transaction == null) {
+      return db.transaction((txn) => insert(entity, txn));
+    }
+    await _canonicalRole(entity, transaction);
+    return super.insert(entity, transaction);
+  }
+
+  @override
+  Future<int> update(Contact entity, [Transaction? transaction]) async {
+    if (transaction == null) {
+      return db.transaction((txn) => update(entity, txn));
+    }
+    await _canonicalRole(entity, transaction);
+    return super.update(entity, transaction);
+  }
 
   @override
   Future<int> delete(int id, [Transaction? transaction]) async {
@@ -39,6 +79,12 @@ class DaoContact extends Dao<Contact> {
       entityName: 'Contact',
       id: id,
       references: const [
+        DaoReference('job_party', 'contact_id', 'job parties'),
+        DaoReference(
+          'job',
+          'legacy_billing_contact_id',
+          'preserved billing contacts',
+        ),
         DaoReference('job', 'contact_id', 'jobs'),
         DaoReference('job', 'billing_contact_id', 'job billing contacts'),
         DaoReference('job', 'referrer_contact_id', 'job referrers'),
@@ -371,99 +417,7 @@ order by c.modifiedDate desc
     return Contact.fromMap(rows.first);
   }
 
-  /// Returns a contact according to this priority:
-  ///  1. The job’s specific billing contact (job.billingContactId)
-  ///  2. The selected billing party's contact preference
-  ///  3. The selected billing party's customer billing contact
-  ///  4. The selected billing party's lowest-ID contact
-  ///  5. The job’s general contact (job.contactId)
-  Future<Contact?> getBillingContactByJob(Job job) async {
-    final db = withoutTransaction();
-
-    // 1) Job-specific billing contact
-    if (job.billingContactId != null) {
-      final rows = await db.query(
-        'contact',
-        where: 'id = ?',
-        whereArgs: [job.billingContactId],
-      );
-      if (rows.isNotEmpty) {
-        return Contact.fromMap(rows.first);
-      }
-    }
-
-    final billingCustomerId = job.billingParty == BillingParty.referrer
-        ? job.referrerCustomerId
-        : job.customerId;
-    final billingCustomer = await DaoCustomer().getById(billingCustomerId);
-
-    if (job.billingParty == BillingParty.referrer &&
-        job.referrerContactId != null) {
-      final rows = await db.query(
-        'contact',
-        where: 'id = ?',
-        whereArgs: [job.referrerContactId],
-      );
-      if (rows.isNotEmpty) {
-        return Contact.fromMap(rows.first);
-      }
-    }
-
-    if (billingCustomer != null) {
-      // 3) Billing customer's billing contact
-      if (billingCustomer.billingContactId != null) {
-        final rows = await db.query(
-          'contact',
-          where: 'id = ?',
-          whereArgs: [billingCustomer.billingContactId],
-        );
-        if (rows.isNotEmpty) {
-          return Contact.fromMap(rows.first);
-        }
-      }
-
-      // 3) Job’s general contact
-      if (job.contactId != null) {
-        final rows = await db.query(
-          'contact',
-          where: 'id = ?',
-          whereArgs: [job.contactId],
-        );
-        if (rows.isNotEmpty) {
-          return Contact.fromMap(rows.first);
-        }
-      }
-
-      // 4) Lowest-ID contact for the selected billing customer.
-      final fallback = await db.rawQuery(
-        '''
-        SELECT c.*
-          FROM contact AS c
-          JOIN customer_contact AS cc
-            ON cc.contact_id = c.id
-         WHERE cc.customer_id = ?
-         ORDER BY c.id ASC
-         LIMIT 1
-        ''',
-        [billingCustomer.id],
-      );
-      if (fallback.isNotEmpty) {
-        return Contact.fromMap(fallback.first);
-      }
-    }
-
-    // 5) Job’s general contact.
-    if (job.contactId != null) {
-      final rows = await db.query(
-        'contact',
-        where: 'id = ?',
-        whereArgs: [job.contactId],
-      );
-      if (rows.isNotEmpty) {
-        return Contact.fromMap(rows.first);
-      }
-    }
-
-    return null;
-  }
+  /// Resolve the visible billing default without changing the Bill To customer.
+  Future<Contact?> getBillingContactByJob(Job job) async =>
+      (await resolveJobBillingContact(job)).contact;
 }

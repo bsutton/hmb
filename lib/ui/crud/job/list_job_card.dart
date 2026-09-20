@@ -15,7 +15,9 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../dao/dao.g.dart';
+import '../../../dao/dao_job_party.dart';
 import '../../../dao/notification/dao_june_builder.dart';
+import '../../../entity/contact_role.dart';
 import '../../../entity/entity.g.dart';
 import '../../../fsm/job_status_fsm.dart';
 import '../../../util/dart/date_time_ex.dart';
@@ -214,28 +216,18 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
       rowsByContactId[contact.id] = row;
     }
 
-    await add(
-      role: 'Primary',
-      contactId: job.contactId,
-      partyCustomer: customer,
-    );
-    await add(
-      role: 'Tenant',
-      contactId: job.tenantContactId,
-      partyCustomer: customer,
-    );
-    await add(
-      role: 'Billing',
-      contactId: job.billingContactId,
-      partyCustomer: job.billingParty == BillingParty.referrer
-          ? referrer
-          : customer,
-    );
-    await add(
-      role: 'Referrer',
-      contactId: job.referrerContactId,
-      partyCustomer: referrer,
-    );
+    final billTo = await DaoCustomer().getById(job.billingCustomerId);
+    for (final party in await DaoJobParty().getByJob(job.id)) {
+      await add(
+        role: party.role.name,
+        contactId: party.contact.id,
+        partyCustomer: switch (party.role.id) {
+          ContactRole.billing => billTo,
+          ContactRole.referrer => referrer,
+          _ => customer,
+        },
+      );
+    }
 
     return rows;
   }

@@ -5,6 +5,7 @@ import 'package:dcli/dcli.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/database/factory/cli_database_factory.dart';
 import 'package:hmb/database/management/backup_providers/dev/dev_backup_provider.dart';
+import 'package:hmb/database/management/db_utility.dart';
 import 'package:hmb/database/versions/db_upgrade.dart';
 import 'package:hmb/database/versions/implementations/project_script_source.dart';
 import 'package:path/path.dart';
@@ -28,7 +29,7 @@ CREATE TABLE job (
 
       // Model an installed v211 database. The manifest-driven upgrader must
       // select v212 without replaying the already-shipped v211 task repair.
-      final source = ProjectScriptSource();
+      final source = _LifecycleScriptSource();
       final versionSql = await source.loadSQL(
         'assets/sql/upgrade_scripts/v71.sql',
       );
@@ -84,4 +85,12 @@ CREATE TABLE job (
       delete(dbPath);
     }
   });
+}
+
+// This regression models only the v211 schema required by v212.
+class _LifecycleScriptSource extends ProjectScriptSource {
+  @override
+  Future<List<String>> upgradeScripts() async => (await super.upgradeScripts())
+      .where((path) => extractVerionForSQLUpgradeScript(path) <= 212)
+      .toList();
 }
