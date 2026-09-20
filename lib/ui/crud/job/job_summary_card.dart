@@ -39,6 +39,9 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
   var _attachments = 0;
   var _photos = 0;
 
+  int get _contactCount =>
+      _parties.map((party) => party.contact.id).toSet().length;
+
   @override
   Future<void> asyncInitState() async {
     await BlockingUI().runAndWait(() async {
@@ -66,12 +69,21 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
 
   Widget _section(JobEditSection section, Widget body, {String? title}) =>
       SurfaceCardWithActions(
+        summary: true,
+        padding: const EdgeInsets.all(16),
         title: title ?? section.title,
         body: body,
         actions: [
           HMBButtonSecondary(
+            quiet: true,
             key: ValueKey('edit-job-section-${section.name}'),
-            label: section.immediate ? 'Open' : 'Edit',
+            label: section == JobEditSection.parties
+                ? 'Manage'
+                : section == JobEditSection.billing
+                ? 'Change'
+                : section.immediate
+                ? 'Open'
+                : 'Edit',
             hint: 'Open ${section.title.toLowerCase()}',
             onPressed: () => widget.onEdit(section),
           ),
@@ -90,23 +102,23 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
     waitingBuilder: (_) => const SizedBox.shrink(),
     errorBuilder: (_, error) => const Text('Could not load job details.'),
     builder: (context) => HMBColumn(
+      spacing: 16,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _section(
           JobEditSection.summary,
+          title: widget.job.summary,
           HMBColumn(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                widget.job.summary,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
               Text(_customer?.name ?? 'No customer selected'),
               _text(widget.job.description, 'No description'),
             ],
           ),
         ),
         Surface(
+          rounded: true,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Wrap(
             spacing: 12,
             runSpacing: 8,
@@ -120,6 +132,7 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
                 onPressed: widget.onActions,
               ),
               HMBButtonSecondary(
+                quiet: true,
                 label: 'Schedule',
                 hint: 'Manage job visits',
                 onPressed: () => widget.onEdit(JobEditSection.schedule),
@@ -141,8 +154,17 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
               if (_referrer != null) Text('Referred by: ${_referrer!.name}'),
               if (_parties.isEmpty) const Text('No contacts assigned'),
               for (final party in _parties)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withSafeOpacity(0.12),
+                      ),
+                    ),
+                  ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -154,6 +176,12 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
                     ],
                   ),
                 ),
+              Text(
+                '$_contactCount ${_contactCount == 1 ? 'contact' : 'contacts'}'
+                ' · ${_parties.length} '
+                '${_parties.length == 1 ? 'role' : 'roles'}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
           ),
         ),

@@ -15,6 +15,7 @@ import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../util/flutter/hmb_theme.dart';
+import '../color_ex.dart';
 import '../text/hmb_text_themes.dart';
 import 'hmb_column.dart';
 import 'hmb_row.dart';
@@ -128,6 +129,9 @@ class SurfaceCardWithActions extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final int titleMaxLines;
 
+  /// Opt-in compact layout for summary cards, not existing edit forms.
+  final bool summary;
+
   const SurfaceCardWithActions({
     required this.title,
     required this.body,
@@ -137,36 +141,89 @@ class SurfaceCardWithActions extends StatelessWidget {
     this.elevation = SurfaceElevation.e4,
     this.padding = const EdgeInsets.all(HMBTheme.padding),
     this.titleMaxLines = 2,
+    this.summary = false,
     super.key,
   });
 
   @override
-  Widget build(BuildContext context) => Container(
-    height: height,
-    color: elevation.color,
-    padding: padding,
-    child: HMBColumn(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 8),
-          child: Text(
-            title,
-            style: const TextStyle(
-              color: HMBColors.textPrimary,
-              fontSize: HMBTextHeadline2.fontSize,
-              fontWeight: FontWeight.w500,
+  Widget build(BuildContext context) => summary
+      ? Material(
+          color: elevation.color,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withSafeOpacity(0.12),
             ),
-            maxLines: titleMaxLines,
-            overflow: TextOverflow.ellipsis,
-            softWrap: true,
           ),
-        ),
-        if (height == null) body else Expanded(child: body),
-        if (actions.isNotEmpty)
-          HMBRow(mainAxisAlignment: MainAxisAlignment.end, children: actions),
-      ],
-    ),
-  );
+          child: Padding(
+            padding: padding ?? const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                        maxLines: titleMaxLines,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    ...actions,
+                  ],
+                ),
+                Divider(
+                  height: 20,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withSafeOpacity(0.12),
+                ),
+                Theme(
+                  data: Theme.of(context).copyWith(
+                    dividerColor: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withSafeOpacity(0.12),
+                  ),
+                  child: body,
+                ),
+              ],
+            ),
+          ),
+        )
+      : Container(
+          height: height,
+          color: elevation.color,
+          padding: padding,
+          child: HMBColumn(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 8),
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: HMBColors.textPrimary,
+                    fontSize: HMBTextHeadline2.fontSize,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: titleMaxLines,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: true,
+                ),
+              ),
+              if (height == null) body else Expanded(child: body),
+              if (actions.isNotEmpty)
+                HMBRow(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: actions,
+                ),
+            ],
+          ),
+        );
 }
