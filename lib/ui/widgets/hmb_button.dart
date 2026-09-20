@@ -171,16 +171,31 @@ class HMBButtonSecondary extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final String hint;
+  final bool quiet;
 
   const HMBButtonSecondary({
     required this.label,
     required this.onPressed,
     required this.hint,
+    this.quiet = false,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (quiet) {
+      return HMBTooltip(
+        hint: hint,
+        child: TextButton(
+          onPressed: onPressed,
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.deepPurple.shade200,
+            minimumSize: const Size(48, 48),
+          ),
+          child: Text(label),
+        ),
+      );
+    }
     final btn = ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(

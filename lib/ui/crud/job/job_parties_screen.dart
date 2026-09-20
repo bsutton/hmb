@@ -94,6 +94,8 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
   @override
   Widget build(BuildContext context) => HMBFullPageChildScreen(
     title: 'Job parties',
+    subdued: true,
+    maxContentWidth: 800,
     child: DeferredBuilder(
       this,
       waitingBuilder: (_) => const SizedBox.shrink(),
@@ -101,56 +103,100 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
       builder: (context) => ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Customer: ${_customer?.name ?? 'Not selected'}'),
-          if (_referrer != null) Text('Referred by: ${_referrer!.name}'),
-          HMBButtonSecondary(
-            label: 'Edit customer links',
-            hint: 'Change the job customer or referring customer',
-            onPressed: () async {
-              await widget.editCustomers();
-              await _load();
-            },
+          Text(
+            widget.job.summary,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 16),
-          HMBButtonPrimary(
-            label: 'Add party',
-            hint: 'Assign a contact and role',
-            onPressed: _job == null ? null : _edit,
+          SurfaceCardWithActions(
+            summary: true,
+            padding: const EdgeInsets.all(16),
+            title: 'Customer',
+            actions: [
+              HMBButtonSecondary(
+                quiet: true,
+                label: 'Change',
+                hint: 'Change the job customer or referring customer',
+                onPressed: () async {
+                  await widget.editCustomers();
+                  await _load();
+                },
+              ),
+            ],
+            body: HMBColumn(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_customer?.name ?? 'Not selected'),
+                if (_referrer != null)
+                  Text(
+                    'Referred by: ${_referrer!.name}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Job contacts',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              HMBButtonPrimary(
+                label: 'Add party',
+                hint: 'Assign a contact and role',
+                onPressed: _job == null ? null : _edit,
+              ),
+            ],
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Each row assigns one role. A contact may have several roles.',
-          ),
           if (_parties.isEmpty) const Text('No contacts assigned.'),
           for (final party in _parties)
-            ListTile(
-              title: Text(party.contact.fullname.trim()),
-              subtitle: Text(party.role.name),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    tooltip: 'Edit ${party.role.name}',
-                    icon: const Icon(Icons.edit),
-                    onPressed: () => _edit(party),
-                  ),
-                  IconButton(
-                    tooltip: 'Remove ${party.role.name}',
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: () => _remove(party),
-                  ),
-                ],
+            Surface(
+              rounded: true,
+              padding: EdgeInsets.zero,
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                title: Text(party.contact.fullname.trim()),
+                subtitle: Text(party.role.name),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: 'Edit ${party.role.name}',
+                      icon: const Icon(Icons.edit),
+                      onPressed: () => _edit(party),
+                    ),
+                    IconButton(
+                      tooltip: 'Remove ${party.role.name}',
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () => _remove(party),
+                    ),
+                  ],
+                ),
               ),
             ),
-          HMBButtonSecondary(
-            label: 'Manage role types',
-            hint: 'View standard roles and manage custom roles',
-            onPressed: () async {
-              await Navigator.of(context).push<void>(
-                MaterialPageRoute(builder: (_) => const ContactRolesScreen()),
-              );
-              await _load();
-            },
+          const SizedBox(height: 8),
+          Text(
+            'Each row assigns one role. A contact may have several roles.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: HMBButtonSecondary(
+              quiet: true,
+              label: 'Manage role types',
+              hint: 'View standard roles and manage custom roles',
+              onPressed: () async {
+                await Navigator.of(context).push<void>(
+                  MaterialPageRoute(builder: (_) => const ContactRolesScreen()),
+                );
+                await _load();
+              },
+            ),
           ),
         ],
       ),
@@ -292,6 +338,8 @@ class _PartyAssignmentEditorState extends State<_PartyAssignmentEditor> {
   @override
   Widget build(BuildContext context) => HMBFullPageChildScreen(
     title: widget.party == null ? 'Add party' : 'Edit party',
+    subdued: true,
+    maxContentWidth: 600,
     child: Form(
       key: _form,
       child: ListView(
@@ -327,16 +375,23 @@ class _PartyAssignmentEditorState extends State<_PartyAssignmentEditor> {
             'Changing this assignment only affects this job.',
           ),
           const SizedBox(height: 16),
-          HMBButtonPrimary(
-            label: 'Save',
-            hint: 'Save this assignment',
-            enabled: !_saving,
-            onPressed: _save,
-          ),
-          HMBButtonSecondary(
-            label: 'Cancel',
-            hint: 'Discard assignment changes',
-            onPressed: () => Navigator.pop(context),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 12,
+            children: [
+              HMBButtonSecondary(
+                quiet: true,
+                label: 'Cancel',
+                hint: 'Discard assignment changes',
+                onPressed: () => Navigator.pop(context),
+              ),
+              HMBButtonPrimary(
+                label: 'Save',
+                hint: 'Save this assignment',
+                enabled: !_saving,
+                onPressed: _save,
+              ),
+            ],
           ),
         ],
       ),

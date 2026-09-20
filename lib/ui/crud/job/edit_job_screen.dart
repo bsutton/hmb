@@ -168,8 +168,10 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
       if (currentEntity != null && section == null) {
         return HMBFullPageChildScreen(
           title: 'Job #${currentEntity!.id}',
+          subdued: true,
+          maxContentWidth: 800,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(16),
             child: JobSummaryCard(
               key: ValueKey(_revision),
               job: currentEntity!,
@@ -205,6 +207,8 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
                 : _editor(customer);
             return HMBFullPageChildScreen(
               title: section!.title,
+              subdued: true,
+              maxContentWidth: 800,
               child: Form(
                 key: _formKey,
                 child: ListView(
