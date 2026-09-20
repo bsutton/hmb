@@ -6,6 +6,8 @@ import '../../../dao/dao_job_party.dart';
 import '../../../dao/job_billing_contact.dart';
 import '../../../entity/entity.g.dart';
 import '../../../entity/job_party.dart';
+import '../../dialog/source_context.dart';
+import '../../widgets/hmb_contact_actions.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/hmb_site_text.dart';
 import '../../widgets/widgets.g.dart';
@@ -165,13 +167,28 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
                       ),
                     ),
                   ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Column(
                     children: [
-                      Expanded(child: Text(party.contact.fullname.trim())),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(party.role.name, textAlign: TextAlign.end),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: Text(party.contact.fullname.trim())),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              party.role.name,
+                              textAlign: TextAlign.end,
+                            ),
+                          ),
+                        ],
+                      ),
+                      HMBContactActions(
+                        sourceContext: SourceContext(
+                          contact: party.contact,
+                          job: widget.job,
+                          customer: _customer,
+                          site: _site,
+                        ),
                       ),
                     ],
                   ),
