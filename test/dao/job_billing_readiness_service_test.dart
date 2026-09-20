@@ -1,3 +1,4 @@
+import 'package:hmb/dao/billing_attention_cache.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/money_ex.dart';
@@ -41,8 +42,19 @@ void main() {
         (await DaoJob().readyToBeInvoiced(null)).map((item) => item.id),
         contains(job.id),
       );
+      final cache = BillingAttentionCache();
+      addTearDown(cache.dispose);
+      await cache.refresh();
+      expect(cache.error, isNull);
+      expect(cache.entries!.map((entry) => entry.job.id), contains(job.id));
 
       await DaoTimeEntry().update(entry.copyWith(billed: true));
+      cache.invalidateTable(DaoTimeEntry.tableName);
+      await cache.refresh();
+      expect(
+        cache.entries!.map((entry) => entry.job.id),
+        isNot(contains(job.id)),
+      );
       readiness = await JobBillingReadinessService().evaluate(job);
       expect(readiness.needsAttention, isFalse);
     },

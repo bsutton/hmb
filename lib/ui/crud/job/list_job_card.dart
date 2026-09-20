@@ -51,13 +51,11 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
   late final JobActivity? nextActivity;
   late Customer? customer;
   late Contact? primaryContact;
-  late JobBillingReadiness billingReadiness;
 
   @override
   Future<void> asyncInitState() async {
     job = widget.job;
     nextActivity = await DaoJobActivity().getNextActivityByJob(job.id);
-    billingReadiness = await JobBillingReadinessService().evaluate(job);
     await _loadCustomerDetails();
   }
 
@@ -117,12 +115,6 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
             HMBText('Status: ${jobStatus?.displayName ?? 'Status Unknown'}'),
           ],
         ),
-        if (job.status == JobStatus.completed &&
-            billingReadiness.needsAttention)
-          HMBChip(
-            label: 'Billing attention: ${billingReadiness.summary}',
-            tone: HMBChipTone.warning,
-          ),
         _buildNextActivity(),
         const HMBText('Description:', bold: true),
         HMBTextBlock(job.description, maxLines: 1),
