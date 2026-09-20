@@ -6,6 +6,8 @@ import '../../../dao/dao_job_party.dart';
 import '../../../dao/join_adaptors/join_adaptor_customer_contact.dart';
 import '../../../entity/entity.g.dart';
 import '../../../entity/job_party.dart';
+import '../../dialog/source_context.dart';
+import '../../widgets/hmb_contact_actions.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/widgets.g.dart';
@@ -30,6 +32,7 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
   Job? _job;
   Customer? _customer;
   Customer? _referrer;
+  Site? _site;
 
   @override
   Future<void> asyncInitState() => _load();
@@ -39,6 +42,7 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
       _job = await DaoJob().getById(widget.job.id);
       _customer = await DaoCustomer().getById(_job?.customerId);
       _referrer = await DaoCustomer().getById(_job?.referrerCustomerId);
+      _site = await DaoSite().getById(_job?.siteId);
       _parties = await DaoJobParty().getByJob(widget.job.id);
     });
     if (mounted) {
@@ -158,24 +162,39 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
               rounded: true,
               padding: EdgeInsets.zero,
               margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                title: Text(party.contact.fullname.trim()),
-                subtitle: Text(party.role.name),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      tooltip: 'Edit ${party.role.name}',
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => _edit(party),
+              child: Column(
+                children: [
+                  ListTile(
+                    title: Text(party.contact.fullname.trim()),
+                    subtitle: Text(party.role.name),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Edit ${party.role.name}',
+                          icon: const Icon(Icons.edit),
+                          onPressed: () => _edit(party),
+                        ),
+                        IconButton(
+                          tooltip: 'Remove ${party.role.name}',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () => _remove(party),
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      tooltip: 'Remove ${party.role.name}',
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () => _remove(party),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: HMBContactActions(
+                      sourceContext: SourceContext(
+                        contact: party.contact,
+                        job: _job,
+                        customer: _customer,
+                        site: _site,
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           const SizedBox(height: 8),
