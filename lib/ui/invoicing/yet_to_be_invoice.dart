@@ -40,10 +40,37 @@ class YetToBeInvoicedScreen extends StatefulWidget {
 
 class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
   late List<ToBeInvoicedJob> _jobs;
+  Set<int> _unsentJobIds = {};
 
   @override
   Future<void> asyncInitState() async {
     await _loadJobs();
+    if (mounted) {
+      BillingAttentionCache.instance.addListener(_billingChanged);
+    }
+  }
+
+  void _billingChanged() {
+    final cache = BillingAttentionCache.instance;
+    if (!mounted || cache.entries == null || cache.error != null) {
+      return;
+    }
+    setState(() => _jobs = _snapshot());
+  }
+
+  List<ToBeInvoicedJob> _snapshot() => [
+    for (final readiness in BillingAttentionCache.instance.entries!)
+      ToBeInvoicedJob(
+        job: readiness.job,
+        readiness: readiness,
+        hasUnsentInvoice: _unsentJobIds.contains(readiness.job.id),
+      ),
+  ];
+
+  @override
+  void dispose() {
+    BillingAttentionCache.instance.removeListener(_billingChanged);
+    super.dispose();
   }
 
   Future<void> _loadJobs() async {
@@ -74,22 +101,11 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
         'Could not refresh billing attention. Please try again.',
       );
     }
-    final unsentJobIds = (await DaoInvoice().getUnsent())
+    _unsentJobIds = (await DaoInvoice().getUnsent())
         .map((invoice) => invoice.jobId)
         .toSet();
 
-    final ready = <ToBeInvoicedJob>[];
-    for (final readiness in cache.entries!) {
-      final job = readiness.job;
-      ready.add(
-        ToBeInvoicedJob(
-          job: job,
-          hasUnsentInvoice: unsentJobIds.contains(job.id),
-          readiness: readiness,
-        ),
-      );
-    }
-    return ready;
+    return _snapshot();
   }
 
   @override

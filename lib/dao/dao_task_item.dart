@@ -140,13 +140,7 @@ where ti.task_id = ?
   Future<void> deleteByTask(int id, [Transaction? transaction]) async {
     final db = withinTransaction(transaction);
 
-    await db.rawDelete(
-      '''
-DELETE FROM task_item
-WHERE task_id = ?
-''',
-      [id],
-    );
+    await db.delete(tableName, where: 'task_id = ?', whereArgs: [id]);
   }
 
   Future<void> markAsCompleted({

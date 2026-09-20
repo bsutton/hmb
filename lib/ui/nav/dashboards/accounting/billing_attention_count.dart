@@ -12,6 +12,14 @@ class BillingAttentionCount extends StatelessWidget {
 
   BillingAttentionCache get _cache => cache ?? BillingAttentionCache.instance;
 
+  String get _count {
+    if (_cache.initializing) {
+      return '…';
+    }
+    return _cache.entries?.length.toString() ??
+        (_cache.error == null ? '…' : '—');
+  }
+
   @override
   Widget build(BuildContext context) => JuneBuilder(
     DashboardReloaded.new,
@@ -22,13 +30,12 @@ class BillingAttentionCount extends StatelessWidget {
         builder: (context, _) => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Jobs to bill: '
-              '${_cache.entries?.length ?? (_cache.error == null ? '…' : '—')}',
-            ),
-            if (_cache.error != null)
+            Text('Jobs to bill: $_count'),
+            if (_cache.error != null ||
+                _cache.checkFailed ||
+                _cache.workerFailed)
               const HMBTooltip(
-                hint: 'Billing count unavailable. Reopen Accounting to retry.',
+                hint: 'Billing check failed; retrying in the background.',
                 child: Icon(Icons.warning_amber_rounded, size: 14),
               )
             else if (_cache.updating && _cache.entries != null)

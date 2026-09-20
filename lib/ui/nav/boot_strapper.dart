@@ -32,6 +32,7 @@ import '../../api/xero/handyman/app_starts_logging.dart';
 import '../../api/xero/xero_invoice_payment_sync_service.dart';
 import '../../cache/hmb_image_cache.dart';
 import '../../cache/image_compressor.dart';
+import '../../dao/billing_worker.dart';
 import '../../dao/dao.g.dart';
 import '../../dao/notification/dao_june_builder.dart';
 import '../../database/factory/factory.g.dart';
@@ -176,6 +177,7 @@ class BootStrapper {
     /// remove rich text fields.
 
     await postv134Upgrade(DatabaseHelper().database);
+    BillingWorker.instance.start();
   }
 
   Future<void> resyncNotifications() async {

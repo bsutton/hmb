@@ -63,17 +63,14 @@ class DaoMilestone extends Dao<Milestone> {
 
     await db.update(
       tableName,
-      {
-        'voided': 1,
-        'modified_date': DateTime.now().toIso8601String(),
-      },
+      {'voided': 1, 'modified_date': DateTime.now().toIso8601String()},
       where: 'quote_id = ? AND voided = 0',
       whereArgs: [quoteId],
     );
   }
 
   Future<void> detachFromInvoice(int invoiceId) async {
-    await db.update(
+    await withoutTransaction().update(
       'milestone',
       {'invoice_id': null}, // Set invoice_id to NULL
       where: 'invoice_id = ?',

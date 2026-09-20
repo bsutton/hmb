@@ -407,7 +407,7 @@ SELECT
     await DaoTimeEntry().deleteByTask(id, transaction);
     await DaoTaskItem().deleteByTask(id, transaction);
     await deleteTaskPhotos(id, transaction: transaction);
-    await super.delete(id);
+    await super.delete(id, transaction);
     return id;
   }
 

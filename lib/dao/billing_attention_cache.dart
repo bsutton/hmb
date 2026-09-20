@@ -3,13 +3,11 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../entity/entity.g.dart';
+import '../util/dart/money_ex.dart';
 import 'dao.dart';
-import 'dao_job.dart';
 import 'job_billing_readiness_service.dart';
 
-/// Session-local derived data, never an authoritative billing/job status.
-/// Concurrent consumers share one scan. Changes during a scan trigger another
-/// pass before publishing, and a failed refresh retains the last good result.
+/// UI snapshot of persisted billing flags. Never evaluates remaining work.
 class BillingAttentionCache extends ChangeNotifier {
   static final instance = BillingAttentionCache();
 
@@ -23,34 +21,82 @@ class BillingAttentionCache extends ChangeNotifier {
   Timer? _timer;
   var _dirty = true;
   var _disposed = false;
+  var pending = false;
+  var initializing = false;
+  var checkFailed = false;
+  var workerFailed = false;
+
+  void reportWorkerFailure({required bool failed}) {
+    if (workerFailed != failed) {
+      workerFailed = failed;
+      notifyListeners();
+    }
+  }
 
   BillingAttentionCache({
     Future<List<JobBillingReadiness>> Function()? load,
     Object? Function()? databaseIdentity,
-  }) : _load = load ?? _loadReadyJobs,
-       _databaseIdentity = databaseIdentity ?? _currentDatabase;
+  }) : _load = load ?? (() async => []),
+       _databaseIdentity = databaseIdentity ?? _currentDatabase,
+       _usesStoredFlags = load == null;
 
-  bool get updating => _running != null || _timer != null;
+  final bool _usesStoredFlags;
+
+  bool get updating => pending || _running != null || _timer != null;
 
   static Object? _currentDatabase() => DatabaseHelper.instance.isOpen()
       ? DatabaseHelper.instance.database
       : null;
 
-  static Future<List<JobBillingReadiness>> _loadReadyJobs() async {
+  Future<List<JobBillingReadiness>> _loadReadyJobs() async {
+    final db = DatabaseHelper.instance.database;
+    final states = await db.rawQuery('''
+SELECT job.*, b.reason, b.billing_required, b.revision, b.checked_revision,
+       b.checked_at, b.failed
+FROM job_billing_state b JOIN job ON job.id = b.job_id
+WHERE job.is_stock = 0
+ORDER BY job.modified_date DESC
+''');
+    pending = states.any((row) => row['revision'] != row['checked_revision']);
+    initializing = states.any((row) => row['checked_at'] == null);
+    checkFailed = states.any((row) => row['failed'] == 1);
     final ready = <JobBillingReadiness>[];
-    for (final job in await DaoJob().getByFilter(null)) {
-      if (job.isStock ||
-          job.billingType == BillingType.nonBillable ||
-          job.status.stage == JobStatusStage.preStart ||
+    for (final row in states) {
+      if (row['billing_required'] != 1) {
+        continue;
+      }
+      final job = Job.fromMap(row);
+      if (job.status.stage == JobStatusStage.preStart ||
           job.status == JobStatus.rejected) {
         continue;
       }
-      final result = await JobBillingReadinessService().evaluate(job);
-      if (result.needsAttention) {
-        ready.add(result);
-      }
-      // Yield to input/painting between jobs, even with a warm database cache.
-      await Future<void>.delayed(Duration.zero);
+      final code = JobBillingReasonCode.values
+          .where((code) => code.name == row['reason'])
+          .firstOrNull;
+      final label = switch (code) {
+        JobBillingReasonCode.unbilledTimeAndMaterials => 'Unbilled work',
+        JobBillingReasonCode.unbilledBookingFee => 'Unbilled booking fee',
+        JobBillingReasonCode.uninvoicedMilestone => 'Uninvoiced milestone',
+        JobBillingReasonCode.unallocatedQuoteAmount => 'Set up milestones',
+        JobBillingReasonCode.missingApprovedQuote => 'Set up quote billing',
+        _ => 'Billing check pending',
+      };
+      ready.add(
+        JobBillingReadiness(
+          job: job,
+          reasons: [
+            JobBillingReason(
+              code: code ?? JobBillingReasonCode.unbilledTimeAndMaterials,
+              label: label,
+              amount: MoneyEx.zero,
+              count: 1,
+              invoiceable:
+                  code != JobBillingReasonCode.unallocatedQuoteAmount &&
+                  code != JobBillingReasonCode.missingApprovedQuote,
+            ),
+          ],
+        ),
+      );
     }
     return ready;
   }
@@ -129,7 +175,7 @@ class BillingAttentionCache extends ChangeNotifier {
           _dirty = false;
           error = null;
           notifyListeners();
-          final loaded = await _load();
+          final loaded = await (_usesStoredFlags ? _loadReadyJobs() : _load());
           if (_disposed) {
             return;
           }

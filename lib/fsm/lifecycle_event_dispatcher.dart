@@ -1,5 +1,6 @@
 import 'package:sqflite_common/sqlite_api.dart';
 
+import '../dao/billing_executor.dart';
 import '../dao/dao.g.dart';
 import '../entity/entity.g.dart';
 import 'job_events.dart';
@@ -238,7 +239,7 @@ class LifecycleEventDispatcher {
     final resumeChanged = resumeStatus != job.resumeStatus;
 
     if (changed || resumeChanged) {
-      await transaction
+      await BillingExecutor(transaction)
           .update(
             DaoJob.tableName,
             {
@@ -327,7 +328,7 @@ class LifecycleEventDispatcher {
         values['date_approved'] = now;
       }
 
-      final count = await transaction.update(
+      final count = await BillingExecutor(transaction).update(
         DaoQuote.tableName,
         values,
         where: 'id = ? AND state = ?',
@@ -572,7 +573,7 @@ class LifecycleEventDispatcher {
         transaction,
       );
       await DaoMilestone().voidByQuoteId(quote.id, transaction: transaction);
-      await transaction.update(
+      await BillingExecutor(transaction).update(
         DaoQuote.tableName,
         {
           'state': QuoteState.rejected.name,
