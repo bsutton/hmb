@@ -124,15 +124,13 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
 
     return HMBTooltip(
       hint: widget.hint,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => unawaited(_handleTap(context)),
-        child: Card(
-          color: theme.colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 4,
+      child: Card(
+        color: theme.colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 4,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => unawaited(_handleTap(context)),
           child: LayoutBuilder(
             builder: (context, constraints) {
               const padding = 8.0;

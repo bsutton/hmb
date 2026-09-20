@@ -69,6 +69,10 @@ void main() {
   });
 
   group('isRecoverablePhotoSyncError', () {
+    test('retries when the shared database is temporarily closed', () {
+      expect(isRecoverablePhotoSyncError("The database isn't open"), isTrue);
+      expect(isRecoverablePhotoSyncError('database_closed'), isTrue);
+    });
     test('matches transient network and sleep interruption messages', () {
       expect(
         isRecoverablePhotoSyncError(

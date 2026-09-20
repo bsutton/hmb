@@ -17,7 +17,8 @@
 /// flutter or cli.
 library;
 
-import 'package:dcli_core/dcli_core.dart';
+import 'dart:io';
+
 import 'package:path/path.dart' as p;
 
 typedef Path = String;
@@ -29,8 +30,13 @@ Path? _jobAttachmentsRootPath;
 /// Device specific to where all photos are stored for HMB.
 Future<Path> getPhotosRootPath() async => throw UnimplementedError();
 
-Future<Path> getTemporaryDirectory() async =>
-    _tempDirectory ??= createTempDir();
+Future<Path> getTemporaryDirectory() async {
+  final path = _tempDirectory ??= (await Directory.systemTemp.createTemp(
+    'hmb_',
+  )).path;
+  await Directory(path).create(recursive: true);
+  return path;
+}
 
 Future<Path> getSettingsPath() async =>
     _settingsPath ??= p.join(await getTemporaryDirectory(), 'settings');

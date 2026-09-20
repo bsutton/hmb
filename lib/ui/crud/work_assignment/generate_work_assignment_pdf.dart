@@ -25,7 +25,8 @@ import '../../../cache/hmb_image_cache.dart';
 import '../../../cache/image_cache_config.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/flutter/flutter_util.g.dart';
+import '../../../util/dart/paths.dart' as paths;
+import '../../../util/flutter/flutter_util.g.dart' hide getTemporaryDirectory;
 import '../../pdf/pdf_file_output.dart';
 
 /// Internal data holder for task plus its resolved photos
@@ -292,7 +293,7 @@ Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
   );
 
   // --- Write out the PDF ---
-  final dir = await getTemporaryDirectory();
+  final dir = await paths.getTemporaryDirectory();
   final out = File('$dir/assignment_${assignment.id}.pdf');
   await Isolate.run(() => writePdfToFile(pdf, out.path));
   return out;
