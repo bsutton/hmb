@@ -103,7 +103,10 @@ pw.Widget _label({
         pw.Text(
           recipient.contactName,
           maxLines: 1,
-          style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+          style: const pw.TextStyle(
+            fontSize: 10,
+            fontWeight: pw.FontWeight.bold,
+          ),
         ),
         pw.Text(recipient.addressLine1, maxLines: 1),
         if (recipient.addressLine2.trim().isNotEmpty)

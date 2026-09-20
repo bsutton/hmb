@@ -101,7 +101,7 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
             alignment: pw.Alignment.centerLeft,
             child: pw.Text(
               'Task Approval',
-              style: pw.TextStyle(
+              style: const pw.TextStyle(
                 fontSize: 14,
                 fontWeight: pw.FontWeight.bold,
                 color: PdfColors.white,
@@ -225,7 +225,10 @@ Assumptions: ${job.assumption.replaceAll('\n', ' ')}'''),
         final content = <pw.Widget>[
           pw.Text(
             'Task Summary',
-            style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+            style: const pw.TextStyle(
+              fontSize: 16,
+              fontWeight: pw.FontWeight.bold,
+            ),
           ),
           pw.SizedBox(height: 8),
         ];
@@ -244,7 +247,7 @@ Assumptions: ${job.assumption.replaceAll('\n', ' ')}'''),
                 children: [
                   pw.Text(
                     '${i + 1}. ${data.task.name}',
-                    style: pw.TextStyle(
+                    style: const pw.TextStyle(
                       fontSize: 13,
                       fontWeight: pw.FontWeight.bold,
                     ),
@@ -285,7 +288,10 @@ Assumptions: ${job.assumption.replaceAll('\n', ' ')}'''),
             pw.NewPage(),
             pw.Text(
               'Appendix - Task Photos',
-              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+              style: const pw.TextStyle(
+                fontSize: 16,
+                fontWeight: pw.FontWeight.bold,
+              ),
             ),
             pw.SizedBox(height: 8),
           ]);
@@ -294,7 +300,10 @@ Assumptions: ${job.assumption.replaceAll('\n', ' ')}'''),
           content.add(
             pw.Text(
               'Task: ${data.task.name}',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+              style: const pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+              ),
             ),
           );
           if (data.task.description.isNotEmpty) {

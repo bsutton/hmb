@@ -177,7 +177,7 @@ Future<Uint8List> buildReportPdfBytes({
                 ? pw.Text('No report data.')
                 : pw.TableHelper.fromTextArray(
                     data: rows,
-                    headerStyle: pw.TextStyle(
+                    headerStyle: const pw.TextStyle(
                       color: PdfColors.white,
                       fontWeight: pw.FontWeight.bold,
                     ),
@@ -297,7 +297,7 @@ pw.Widget _reportHeader({
     children: [
       pw.Text(
         title,
-        style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+        style: const pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
       ),
       pw.SizedBox(height: 4),
       pw.Text(
@@ -327,7 +327,7 @@ pw.PageTheme _reportPageTheme({
           alignment: pw.Alignment.centerLeft,
           child: pw.Text(
             businessName,
-            style: pw.TextStyle(
+            style: const pw.TextStyle(
               fontSize: 18,
               fontWeight: pw.FontWeight.bold,
               color: PdfColors.white,

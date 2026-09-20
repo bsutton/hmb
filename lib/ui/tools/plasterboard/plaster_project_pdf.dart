@@ -39,7 +39,10 @@ Future<File> generatePlasterProjectPdf({
         build: (_) => [
           pw.Text(
             project.name,
-            style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
+            style: const pw.TextStyle(
+              fontSize: 20,
+              fontWeight: pw.FontWeight.bold,
+            ),
           ),
           pw.SizedBox(height: 8),
           if (job != null) pw.Text('Job: ${job.summary}'),
@@ -50,7 +53,10 @@ Future<File> generatePlasterProjectPdf({
           for (final shape in roomShapes) ...[
             pw.Text(
               shape.room.name,
-              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+              style: const pw.TextStyle(
+                fontSize: 16,
+                fontWeight: pw.FontWeight.bold,
+              ),
             ),
             pw.SizedBox(height: 4),
             pw.Text('Ceiling height: ${_pdfCeilingHeight(shape)}'),
@@ -60,7 +66,10 @@ Future<File> generatePlasterProjectPdf({
           ],
           pw.Text(
             'Sheet Layout',
-            style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+            style: const pw.TextStyle(
+              fontSize: 16,
+              fontWeight: pw.FontWeight.bold,
+            ),
           ),
           pw.SizedBox(height: 8),
           for (final layout in layouts)
@@ -105,7 +114,10 @@ Future<File> generatePlasterProjectPdf({
           pw.SizedBox(height: 8),
           pw.Text(
             'Takeoff Summary',
-            style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+            style: const pw.TextStyle(
+              fontSize: 16,
+              fontWeight: pw.FontWeight.bold,
+            ),
           ),
           pw.SizedBox(height: 8),
           pw.TableHelper.fromTextArray(
@@ -152,7 +164,7 @@ Future<File> generatePlasterProjectPdf({
                 '${takeoff.corniceCementKg.toStringAsFixed(1)} kg',
               ],
             ],
-            headerStyle: pw.TextStyle(
+            headerStyle: const pw.TextStyle(
               color: PdfColors.white,
               fontWeight: pw.FontWeight.bold,
             ),

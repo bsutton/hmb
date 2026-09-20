@@ -176,7 +176,7 @@ Future<File> generateQuotePdf(
                       children: [
                         pw.Text(
                           'Fixed Price Quote: ${quote.bestNumber}',
-                          style: pw.TextStyle(
+                          style: const pw.TextStyle(
                             fontSize: 18,
                             fontWeight: pw.FontWeight.bold,
                           ),
@@ -193,7 +193,7 @@ Future<File> generateQuotePdf(
                 pw.Divider(),
                 pw.Text(
                   'Business Details:',
-                  style: pw.TextStyle(
+                  style: const pw.TextStyle(
                     fontSize: 16,
                     fontWeight: pw.FontWeight.bold,
                   ),
@@ -212,7 +212,7 @@ Future<File> generateQuotePdf(
                   pw.SizedBox(height: 10),
                   pw.Text(
                     'Summary:',
-                    style: pw.TextStyle(
+                    style: const pw.TextStyle(
                       fontSize: 16,
                       fontWeight: pw.FontWeight.bold,
                     ),
@@ -226,7 +226,7 @@ Future<File> generateQuotePdf(
                   pw.SizedBox(height: 8),
                   pw.Text(
                     'Description:',
-                    style: pw.TextStyle(
+                    style: const pw.TextStyle(
                       fontSize: 16,
                       fontWeight: pw.FontWeight.bold,
                     ),
@@ -257,7 +257,10 @@ Future<File> generateQuotePdf(
             pw.SizedBox(height: 4),
             pw.Text(
               'Assumptions:',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+              style: const pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+              ),
             ),
             pw.Text(quote.assumption),
             pw.Divider(),
@@ -274,7 +277,7 @@ Future<File> generateQuotePdf(
                 children: [
                   pw.Text(
                     group.group.name,
-                    style: pw.TextStyle(
+                    style: const pw.TextStyle(
                       fontSize: 14,
                       fontWeight: pw.FontWeight.bold,
                     ),
@@ -282,7 +285,7 @@ Future<File> generateQuotePdf(
                   if (displayCosts)
                     pw.Text(
                       group.total.toString(),
-                      style: pw.TextStyle(
+                      style: const pw.TextStyle(
                         fontSize: 14,
                         fontWeight: pw.FontWeight.bold,
                       ),
@@ -311,7 +314,7 @@ Future<File> generateQuotePdf(
                   padding: const pw.EdgeInsets.only(left: 8, top: 2),
                   child: pw.Text(
                     'Assumptions: ${group.group.assumption}',
-                    style: pw.TextStyle(
+                    style: const pw.TextStyle(
                       fontStyle: pw.FontStyle.italic,
                       fontSize: 12,
                     ),
@@ -346,11 +349,11 @@ Future<File> generateQuotePdf(
             children: [
               pw.Text(
                 'Total:',
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                style: const pw.TextStyle(fontWeight: pw.FontWeight.bold),
               ),
               pw.Text(
                 totalAmount.toString(),
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                style: const pw.TextStyle(fontWeight: pw.FontWeight.bold),
               ),
             ],
           ),
@@ -362,7 +365,7 @@ Future<File> generateQuotePdf(
             ..add(
               pw.Text(
                 'Payment Details:',
-                style: pw.TextStyle(
+                style: const pw.TextStyle(
                   fontSize: 16,
                   fontWeight: pw.FontWeight.bold,
                 ),
@@ -416,7 +419,7 @@ Future<File> generateQuotePdf(
                 if (showAppendixTitle) ...[
                   pw.Text(
                     'Appendix: Task Photos',
-                    style: pw.TextStyle(
+                    style: const pw.TextStyle(
                       fontSize: 16,
                       fontWeight: pw.FontWeight.bold,
                     ),
@@ -425,7 +428,7 @@ Future<File> generateQuotePdf(
                 ],
                 pw.Text(
                   section.taskName,
-                  style: pw.TextStyle(
+                  style: const pw.TextStyle(
                     fontSize: 14,
                     fontWeight: pw.FontWeight.bold,
                   ),

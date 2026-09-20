@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
+import 'package:hmb/dao/dao.g.dart';
 import 'package:june/june.dart';
 
-import '../../lib/dao/dao.g.dart';
 import 'notifiers.dart';
 
 typedef NotifierFactory<T extends JuneState> = T Function();

@@ -116,7 +116,7 @@ Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
             alignment: pw.Alignment.centerLeft,
             child: pw.Text(
               'Work Assignment',
-              style: pw.TextStyle(
+              style: const pw.TextStyle(
                 fontSize: 14,
                 fontWeight: pw.FontWeight.bold,
                 color: PdfColors.white,
@@ -169,7 +169,10 @@ Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
           content.addAll([
             pw.Text(
               'Task: ${data.task.name}',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+              style: const pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+              ),
             ),
             pw.SizedBox(height: 4),
           ]);
@@ -196,7 +199,7 @@ Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
               ..add(
                 pw.Text(
                   'Materials:',
-                  style: pw.TextStyle(
+                  style: const pw.TextStyle(
                     fontSize: 12,
                     fontWeight: pw.FontWeight.bold,
                   ),
@@ -234,7 +237,7 @@ Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
                     padding: const pw.EdgeInsets.only(left: 20, bottom: 4),
                     child: pw.Text(
                       item.purpose,
-                      style: pw.TextStyle(
+                      style: const pw.TextStyle(
                         fontSize: 10,
                         fontStyle: pw.FontStyle.italic,
                       ),

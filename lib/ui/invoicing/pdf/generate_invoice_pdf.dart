@@ -93,7 +93,7 @@ Future<File> generateInvoicePdf(
                     children: [
                       pw.Text(
                         system.businessName ?? '',
-                        style: pw.TextStyle(
+                        style: const pw.TextStyle(
                           fontSize: 18,
                           fontWeight: pw.FontWeight.bold,
                           color: PdfColors.white,
@@ -183,7 +183,7 @@ Future<File> generateInvoicePdf(
                         pw.SizedBox(height: 16),
                         pw.Text(
                           'Tax Invoice: ${invoice.bestNumber}',
-                          style: pw.TextStyle(
+                          style: const pw.TextStyle(
                             fontSize: 18,
                             fontWeight: pw.FontWeight.bold,
                           ),
@@ -199,7 +199,7 @@ Future<File> generateInvoicePdf(
                           pw.SizedBox(height: 6),
                           pw.Text(
                             'VOIDED',
-                            style: pw.TextStyle(
+                            style: const pw.TextStyle(
                               fontSize: 14,
                               fontWeight: pw.FontWeight.bold,
                               color: PdfColors.red,
@@ -221,7 +221,7 @@ Future<File> generateInvoicePdf(
                         if (customer != null)
                           pw.Text(
                             'To: ${customer.name}',
-                            style: pw.TextStyle(
+                            style: const pw.TextStyle(
                               fontSize: 14,
                               fontWeight: pw.FontWeight.bold,
                             ),
@@ -255,7 +255,7 @@ Future<File> generateInvoicePdf(
                         children: [
                           pw.Text(
                             system.businessName ?? '',
-                            style: pw.TextStyle(
+                            style: const pw.TextStyle(
                               fontSize: 16,
                               fontWeight: pw.FontWeight.bold,
                             ),
@@ -284,7 +284,7 @@ Future<File> generateInvoicePdf(
                 // Job details
                 pw.Text(
                   'Job: #${job.id}',
-                  style: pw.TextStyle(
+                  style: const pw.TextStyle(
                     fontSize: 16,
                     fontWeight: pw.FontWeight.bold,
                   ),
@@ -317,7 +317,7 @@ Future<File> generateInvoicePdf(
                   children: [
                     pw.Text(
                       group.key == null ? 'Ungrouped' : group.title,
-                      style: pw.TextStyle(
+                      style: const pw.TextStyle(
                         fontSize: 14,
                         fontWeight: pw.FontWeight.bold,
                       ),
@@ -325,7 +325,7 @@ Future<File> generateInvoicePdf(
                     if (displayCosts)
                       pw.Text(
                         group.total.toString(),
-                        style: pw.TextStyle(
+                        style: const pw.TextStyle(
                           fontSize: 14,
                           fontWeight: pw.FontWeight.bold,
                         ),
@@ -368,11 +368,11 @@ Future<File> generateInvoicePdf(
             children: [
               pw.Text(
                 'Total:',
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                style: const pw.TextStyle(fontWeight: pw.FontWeight.bold),
               ),
               pw.Text(
                 totalAmount.toString(),
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                style: const pw.TextStyle(fontWeight: pw.FontWeight.bold),
               ),
             ],
           ),

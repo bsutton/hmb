@@ -387,7 +387,7 @@ Future<File> _generateJobCompletionReportPdf(
             alignment: pw.Alignment.centerLeft,
             child: pw.Text(
               'Job Completion Report',
-              style: pw.TextStyle(
+              style: const pw.TextStyle(
                 fontSize: 14,
                 fontWeight: pw.FontWeight.bold,
                 color: PdfColors.white,
@@ -426,7 +426,10 @@ Future<File> _generateJobCompletionReportPdf(
         final content = <pw.Widget>[
           pw.Text(
             'Task Details',
-            style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+            style: const pw.TextStyle(
+              fontSize: 16,
+              fontWeight: pw.FontWeight.bold,
+            ),
           ),
           pw.SizedBox(height: 8),
         ];
@@ -556,7 +559,10 @@ List<pw.Widget> _buildTaskReportSection({
         children: [
           pw.Text(
             '$number. ${task.name}',
-            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+            style: const pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+            ),
           ),
           pw.Text('Status: ${task.status.name}'),
           if (task.description.isNotEmpty)

@@ -94,7 +94,7 @@ pw.Widget _background(
         alignment: pw.Alignment.centerLeft,
         child: pw.Text(
           system.businessName ?? '',
-          style: pw.TextStyle(
+          style: const pw.TextStyle(
             fontSize: 18,
             fontWeight: pw.FontWeight.bold,
             color: PdfColors.white,
@@ -148,7 +148,7 @@ pw.Widget _header(
           pw.SizedBox(height: 10),
           pw.Text(
             report.customerName,
-            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            style: const pw.TextStyle(fontWeight: pw.FontWeight.bold),
           ),
         ],
       ),
@@ -178,7 +178,7 @@ pw.Widget _header(
           pw.Text(
             system.businessName ?? '',
             textAlign: pw.TextAlign.right,
-            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            style: const pw.TextStyle(fontWeight: pw.FontWeight.bold),
           ),
           if (system.address.isNotEmpty)
             pw.Text(system.address, textAlign: pw.TextAlign.right),
@@ -194,7 +194,7 @@ pw.Widget _header(
 pw.Widget _labelValue(String label, String value) => pw.Column(
   crossAxisAlignment: pw.CrossAxisAlignment.start,
   children: [
-    pw.Text(label, style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+    pw.Text(label, style: const pw.TextStyle(fontWeight: pw.FontWeight.bold)),
     pw.Text(value),
   ],
 );
@@ -251,7 +251,10 @@ pw.Widget _headerCell(String text, {bool alignRight = false}) => pw.Container(
   alignment: alignRight ? pw.Alignment.centerRight : pw.Alignment.centerLeft,
   child: pw.Text(
     text,
-    style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+    style: const pw.TextStyle(
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.white,
+    ),
   ),
 );
 
@@ -286,12 +289,12 @@ pw.Widget _balanceDue(Money balance) => pw.Row(
   children: [
     pw.Text(
       'BALANCE DUE',
-      style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+      style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
     ),
     pw.SizedBox(width: 12),
     pw.Text(
       balance.toString(),
-      style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+      style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
     ),
   ],
 );
@@ -346,7 +349,7 @@ pw.Widget _howToPay(SystemConfiguration system) {
     children: [
       pw.Text(
         'How to pay',
-        style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+        style: const pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
       ),
       pw.SizedBox(height: 4),
       ...rows,

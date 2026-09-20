@@ -103,11 +103,6 @@ class DaoSystem extends Dao<System> {
     return id;
   }
 
-  @override
-  @Deprecated('Use updateConfiguration so secret handling remains explicit.')
-  Future<int> update(System entity, [Transaction? transaction]) =>
-      updateConfiguration(entity, transaction);
-
   Future<int> updateConfiguration(
     System entity, [
     Transaction? transaction,

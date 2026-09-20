@@ -19,8 +19,8 @@ import '../api/external_accounting.dart';
 import '../entity/credit_note.dart';
 import '../entity/debtor_adjustment.dart';
 import '../entity/invoice.dart';
-import '../entity/job_status.dart';
 import '../entity/job.dart';
+import '../entity/job_status.dart';
 import '../entity/task_item.dart';
 import '../entity/task_item_type.dart';
 import '../entity/tax_code.dart';
@@ -878,9 +878,7 @@ ORDER BY
       );
     }
 
-    return MaterialBillingReport(
-      rows: materialRows,
-    );
+    return MaterialBillingReport(rows: materialRows);
   }
 
   BillingType _parseBillingType(Object? value) {
