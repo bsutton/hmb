@@ -20,10 +20,10 @@ import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
 import '../../util/flutter/notifications/local_notifs.dart';
 import '../dialog/send_notice_for_job_dialog.dart';
-import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_toast.dart';
 import 'job_activity_dialog.dart';
 import 'job_activity_ex.dart';
+import 'sync_schedule_calendar.dart';
 
 typedef JobAddNotice = void Function(JobActivityEx jobActivityEx);
 typedef JobUpdateNotice =
@@ -38,12 +38,15 @@ mixin ScheduleHelper {
   ) async {
     // Show the edit dialog for this activity
     final jobActivityAction = await JobActivityDialog.showEdit(context, event);
+    if (!context.mounted) {
+      return;
+    }
 
     switch (jobActivityAction.action) {
       case EditAction.update:
-        await _editExistingActivity(event, jobActivityAction.jobActivity!);
+        await _editExistingActivity(context, jobActivityAction.jobActivity!);
       case EditAction.delete:
-        await _deleteActivity(event.event!);
+        await _deleteActivity(context, event.event!);
       case EditAction.cancel:
     }
   }
@@ -68,7 +71,11 @@ mixin ScheduleHelper {
         );
         jobActivityAction.jobActivity!.jobActivity.id = newId;
         await _syncActivityReminder(jobActivityAction.jobActivity!);
-        await _syncExternalCalendar(
+        if (!context.mounted) {
+          return;
+        }
+        await syncScheduleWithGoogleCalendar(
+          context,
           () => GoogleCalendarSyncService().upsertActivity(
             activity: jobActivityAction.jobActivity!.jobActivity,
             job: jobActivityAction.jobActivity!.job,
@@ -124,7 +131,7 @@ mixin ScheduleHelper {
 
   /// If the user updated an existing activity
   Future<void> _editExistingActivity(
-    CalendarEventData<JobActivityEx> oldEvent,
+    BuildContext context,
     JobActivityEx updated,
   ) async {
     final dao = DaoJobActivity();
@@ -132,7 +139,11 @@ mixin ScheduleHelper {
     // 1) Update DB
     await dao.update(updated.jobActivity);
     await _syncActivityReminder(updated);
-    await _syncExternalCalendar(
+    if (!context.mounted) {
+      return;
+    }
+    await syncScheduleWithGoogleCalendar(
+      context,
       () => GoogleCalendarSyncService().upsertActivity(
         activity: updated.jobActivity,
         job: updated.job,
@@ -141,29 +152,20 @@ mixin ScheduleHelper {
   }
 
   /// Delete an existing activity from the DB
-  Future<void> _deleteActivity(JobActivityEx activity) async {
+  Future<void> _deleteActivity(
+    BuildContext context,
+    JobActivityEx activity,
+  ) async {
     final dao = DaoJobActivity();
     await dao.delete(activity.jobActivity.id);
     await LocalNotifs().cancelForJobActivity(activity.jobActivity.id);
-    await _syncExternalCalendar(
+    if (!context.mounted) {
+      return;
+    }
+    await syncScheduleWithGoogleCalendar(
+      context,
       () => GoogleCalendarSyncService().deleteActivity(activity.jobActivity),
     );
-  }
-
-  Future<void> _syncExternalCalendar(
-    Future<ExternalCalendarSyncResult> Function() operation,
-  ) async {
-    try {
-      final result = await BlockingUI().runAndWait(
-        operation,
-        label: 'Syncing Google Calendar',
-      );
-      if (result == ExternalCalendarSyncResult.unavailable) {
-        HMBToast.info('Schedule saved, but Google Calendar is not signed in.');
-      }
-    } catch (error) {
-      HMBToast.error('Schedule saved, but Google Calendar sync failed: $error');
-    }
   }
 
   Future<void> _syncActivityReminder(JobActivityEx activity) async {

@@ -9,6 +9,37 @@ import 'package:material_ui/material_ui.dart';
 void main() {
   setUpAll(() => Log.configure(Directory.current.path));
 
+  testWidgets('fast failures reach the caller without an overlay error', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    final result = BlockingUI().runAndWait<void>(
+      () async => throw StateError('fast failure'),
+    );
+    await expectLater(result, throwsA(isA<StateError>()));
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('nested failures can be handled by the outer action', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    var caught = false;
+    await BlockingUI().runAndWait(() async {
+      try {
+        await BlockingUI().runAndWait<void>(
+          () async => throw Exception('nested failure'),
+        );
+      } on Exception {
+        caught = true;
+      }
+    });
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(caught, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
   test(
     'slow action forwards an error without leaking an uncaught future',
     () async {

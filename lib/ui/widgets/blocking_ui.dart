@@ -366,10 +366,12 @@ class BlockingOverlayState extends JuneState {
     /// start the action.
     actionRunner.start();
 
-    /// Rebuild the future that lets us monitor all runners.
+    // The overlay observes completion only. Errors are delivered through the
+    // original action future to its caller, not through a second unhandled
+    // future when an action fails before the delayed overlay appears.
     _waitForAllActions = Future.wait<dynamic>(
       actions.stack.map((runner) => runner.completer.future).toList(),
-    );
+    ).then<void>((_) {}, onError: (Object error, StackTrace stackTrace) {});
     rebuildOverlay();
   }
 
@@ -392,7 +394,7 @@ class BlockingOverlayState extends JuneState {
     } else {
       _waitForAllActions = Future.wait<dynamic>(
         actions.stack.map((runner) => runner.completer.future).toList(),
-      );
+      ).then<void>((_) {}, onError: (Object error, StackTrace stackTrace) {});
     }
 
     /// refresh so the label can be updated or if there are

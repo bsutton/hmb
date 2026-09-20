@@ -23,7 +23,12 @@ import '../../entity/job_activity.dart';
 import '../../entity/site.dart';
 import '../../util/dart/app_settings.dart';
 
-enum ExternalCalendarSyncResult { synced, disabled, unavailable }
+enum ExternalCalendarSyncResult {
+  synced,
+  disabled,
+  unavailable,
+  signInRequired,
+}
 
 class ExternalCalendarEventDraft {
   const ExternalCalendarEventDraft({
@@ -176,7 +181,7 @@ class GoogleCalendarSyncService {
     final auth = await GoogleDriveAuth.instance();
     final headers = await auth.authHeadersOrNull();
     if (headers == null) {
-      return ExternalCalendarSyncResult.unavailable;
+      return ExternalCalendarSyncResult.signInRequired;
     }
 
     final gateway = GoogleCalendarGateway.fromHeaders(headers);
