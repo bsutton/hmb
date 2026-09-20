@@ -24,6 +24,7 @@ class Contact extends Entity<Contact> {
   String officeNumber;
   String emailAddress; // primary (non-null)
   String roleDescription;
+  int? defaultRoleId;
   String? alternateEmail;
   String? xeroContactId;
 
@@ -39,6 +40,7 @@ class Contact extends Entity<Contact> {
     required super.createdDate,
     required super.modifiedDate,
     this.alternateEmail,
+    this.defaultRoleId,
     this.xeroContactId,
   }) : super();
 
@@ -50,6 +52,7 @@ class Contact extends Entity<Contact> {
     required this.officeNumber,
     required this.emailAddress,
     this.roleDescription = '',
+    this.defaultRoleId,
     this.xeroContactId,
     this.alternateEmail,
   }) : super.forInsert();
@@ -62,6 +65,8 @@ class Contact extends Entity<Contact> {
     String? officeNumber,
     String? emailAddress,
     String? roleDescription,
+    int? defaultRoleId,
+    bool clearDefaultRole = false,
     String? xeroContactId,
     String? alternateEmail,
     bool clearAlternateEmail = false,
@@ -73,7 +78,12 @@ class Contact extends Entity<Contact> {
     landLine: landLine ?? this.landLine,
     officeNumber: officeNumber ?? this.officeNumber,
     emailAddress: emailAddress ?? this.emailAddress,
-    roleDescription: roleDescription ?? this.roleDescription,
+    roleDescription: clearDefaultRole
+        ? ''
+        : roleDescription ?? this.roleDescription,
+    defaultRoleId: clearDefaultRole
+        ? null
+        : defaultRoleId ?? this.defaultRoleId,
     alternateEmail: clearAlternateEmail
         ? null
         : alternateEmail ?? this.alternateEmail,
@@ -91,6 +101,7 @@ class Contact extends Entity<Contact> {
     officeNumber: map['officeNumber'] as String,
     emailAddress: map['emailAddress'] as String,
     roleDescription: map['role_description'] as String? ?? '',
+    defaultRoleId: map['default_role_id'] as int?,
     alternateEmail: map['alternateEmail'] as String?, // NEW
     xeroContactId: map['xeroContactId'] as String?,
     createdDate: DateTime.parse(map['createdDate'] as String),
@@ -109,6 +120,7 @@ class Contact extends Entity<Contact> {
     'officeNumber': officeNumber,
     'emailAddress': emailAddress,
     'role_description': roleDescription,
+    'default_role_id': defaultRoleId,
     'alternateEmail': alternateEmail, // NEW
     'xeroContactId': xeroContactId,
     'createdDate': createdDate.toIso8601String(),

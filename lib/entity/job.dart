@@ -72,6 +72,12 @@ class Job extends Entity<Job> {
   int? referrerContactId;
   int? tenantContactId;
   BillingParty billingParty;
+  int? billToCustomerId;
+  int? legacyBillingContactId;
+
+  int? get billingCustomerId =>
+      billToCustomerId ??
+      (billingParty == BillingParty.referrer ? referrerCustomerId : customerId);
   Percentage estimateMargin;
 
   Job._({
@@ -97,6 +103,8 @@ class Job extends Entity<Job> {
     required super.modifiedDate,
     this.isStock = false,
     this.resumeStatus,
+    this.billToCustomerId,
+    this.legacyBillingContactId,
     this.billingType = BillingType.timeAndMaterial,
     this.bookingFeeInvoiced = false,
   }) : super();
@@ -116,6 +124,8 @@ class Job extends Entity<Job> {
     this.referrerContactId,
     this.tenantContactId,
     this.billingParty = BillingParty.customer,
+    this.billToCustomerId,
+    this.legacyBillingContactId,
     Percentage? estimateMargin,
     this.isStock = false,
     this.assumption = '',
@@ -147,6 +157,8 @@ class Job extends Entity<Job> {
     int? referrerContactId,
     int? tenantContactId,
     BillingParty? billingParty,
+    int? billToCustomerId,
+    int? legacyBillingContactId,
     Percentage? estimateMargin,
   }) => Job._(
     id: id,
@@ -167,6 +179,9 @@ class Job extends Entity<Job> {
     referrerContactId: referrerContactId ?? this.referrerContactId,
     tenantContactId: tenantContactId ?? this.tenantContactId,
     billingParty: billingParty ?? this.billingParty,
+    billToCustomerId: billToCustomerId ?? this.billToCustomerId,
+    legacyBillingContactId:
+        legacyBillingContactId ?? this.legacyBillingContactId,
     estimateMargin: estimateMargin ?? this.estimateMargin,
     lastActive: lastActive ?? this.lastActive,
     createdDate: createdDate,
@@ -201,6 +216,8 @@ class Job extends Entity<Job> {
     referrerContactId: map['referrer_contact_id'] as int?,
     tenantContactId: map['tenant_contact_id'] as int?,
     billingParty: BillingParty.fromName(map['billing_party'] as String?),
+    billToCustomerId: map['bill_to_customer_id'] as int?,
+    legacyBillingContactId: map['legacy_billing_contact_id'] as int?,
     estimateMargin: Percentage.fromInt(
       map['estimate_margin'] as int? ?? 0,
       decimalDigits: 3,
@@ -230,6 +247,8 @@ class Job extends Entity<Job> {
     'referrer_contact_id': referrerContactId,
     'tenant_contact_id': tenantContactId,
     'billing_party': billingParty.name,
+    'bill_to_customer_id': billToCustomerId,
+    'legacy_billing_contact_id': legacyBillingContactId,
     'estimate_margin': estimateMargin.threeDigits().minorUnits.toInt(),
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),

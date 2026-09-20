@@ -33,12 +33,14 @@ class HMBSelectSite extends StatefulWidget {
   final Customer? customer;
   final SelectedSite initialSite;
   final Job? associatedJob;
+  final bool autoSelect;
   final void Function(Site? site)? onSelected;
 
   const HMBSelectSite({
     required this.initialSite,
     required this.customer,
     this.associatedJob,
+    this.autoSelect = true,
     super.key,
     this.onSelected,
   });
@@ -51,6 +53,9 @@ class HMBSelectSiteState extends State<HMBSelectSite> {
   Future<Site?> _getInitialSite() async {
     if (widget.initialSite.siteId != null) {
       return DaoSite().getById(widget.initialSite.siteId);
+    }
+    if (!widget.autoSelect) {
+      return null;
     }
 
     final sites = await DaoSite().getByFilter(widget.customer?.id, null);

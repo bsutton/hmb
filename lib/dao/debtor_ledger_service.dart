@@ -102,7 +102,7 @@ class DebtorLedgerService {
 
     final job = await DaoJob().getById(invoice.jobId);
     final transaction = DebtorTransaction.forInsert(
-      debtorCustomerId: job?.customerId,
+      debtorCustomerId: invoice.billingCustomerId ?? job?.billingCustomerId,
       debtorContactId: invoice.billingContactId,
       jobId: invoice.jobId,
       transactionType: DebtorTransactionType.invoice,
@@ -129,7 +129,7 @@ class DebtorLedgerService {
     final invoice = await _requireInvoice(invoiceId);
     final job = await DaoJob().getById(invoice.jobId);
     final payment = DebtorPayment.forInsert(
-      customerId: job?.customerId,
+      customerId: invoice.billingCustomerId ?? job?.billingCustomerId,
       contactId: invoice.billingContactId,
       paymentDate: paymentDate ?? DateTime.now(),
       amount: amount,
@@ -275,7 +275,7 @@ class DebtorLedgerService {
     final invoice = await _requireInvoice(invoiceId);
     final job = await DaoJob().getById(invoice.jobId);
     final creditNote = CreditNote.forInsert(
-      customerId: job?.customerId,
+      customerId: invoice.billingCustomerId ?? job?.billingCustomerId,
       contactId: invoice.billingContactId,
       jobId: invoice.jobId,
       relatedInvoiceId: invoice.id,
@@ -405,7 +405,7 @@ class DebtorLedgerService {
     final invoice = await _requireInvoice(invoiceId);
     final job = await DaoJob().getById(invoice.jobId);
     final adjustment = DebtorAdjustment.forInsert(
-      customerId: job?.customerId,
+      customerId: invoice.billingCustomerId ?? job?.billingCustomerId,
       contactId: invoice.billingContactId,
       jobId: invoice.jobId,
       invoiceId: invoice.id,
@@ -567,7 +567,8 @@ class DebtorLedgerService {
       return;
     }
     final job = await DaoJob().getById(invoice.jobId);
-    if (job?.customerId != payment.customerId) {
+    if ((invoice.billingCustomerId ?? job?.billingCustomerId) !=
+        payment.customerId) {
       throw HMBException(
         'Payment ${payment.id} does not belong to the invoice customer.',
       );

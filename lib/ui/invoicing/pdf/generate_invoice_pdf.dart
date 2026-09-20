@@ -57,8 +57,10 @@ Future<File> generateInvoicePdf(
   final job = (await DaoJob().getById(invoice.jobId))!;
   final site = job.siteId == null ? null : await DaoSite().getById(job.siteId);
 
-  // Retrieve the customer for the job and the primary contact for the job.
-  final customer = await DaoCustomer().getByJob(invoice.jobId);
+  // Use the invoice's saved billing identity, not the job's current customer.
+  final customer = await DaoCustomer().getById(
+    invoice.billingCustomerId ?? job.billingCustomerId,
+  );
   final billingContact = (await resolveInvoiceBillingContact(
     invoice,
     job: job,

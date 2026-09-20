@@ -83,6 +83,7 @@ class Invoice extends Entity<Invoice> {
   InvoiceExternalSyncStatus externalSyncStatus;
   InvoicePaymentSource paymentSource;
   int? billingContactId;
+  int? billingCustomerId;
   String? voidDescription;
 
   Invoice._({
@@ -93,6 +94,7 @@ class Invoice extends Entity<Invoice> {
     required super.modifiedDate,
     required this.invoiceNum,
     required this.billingContactId,
+    this.billingCustomerId,
     this.externalInvoiceId,
     LocalDate? dueDate,
     this.sent = false,
@@ -112,6 +114,7 @@ class Invoice extends Entity<Invoice> {
     required this.dueDate,
     required this.totalAmount,
     required this.billingContactId,
+    this.billingCustomerId,
     this.externalInvoiceId,
     this.sent = false,
     this.paid = false,
@@ -133,6 +136,7 @@ class Invoice extends Entity<Invoice> {
     InvoiceExternalSyncStatus? externalSyncStatus,
     InvoicePaymentSource? paymentSource,
     int? billingContactId,
+    int? billingCustomerId,
     String? voidDescription,
   }) => Invoice._(
     id: id,
@@ -147,6 +151,7 @@ class Invoice extends Entity<Invoice> {
     externalSyncStatus: externalSyncStatus ?? this.externalSyncStatus,
     paymentSource: paymentSource ?? this.paymentSource,
     billingContactId: billingContactId ?? this.billingContactId,
+    billingCustomerId: billingCustomerId ?? this.billingCustomerId,
     voidDescription: voidDescription ?? this.voidDescription,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
@@ -316,6 +321,7 @@ You must set the Account Code and Item Code in System | Integration before you c
           ? InvoicePaymentSource.xero
           : InvoicePaymentSource.unknown,
       billingContactId: map['billing_contact_id'] as int?,
+      billingCustomerId: map['billing_customer_id'] as int?,
       voidDescription: map['void_description'] as String?,
     );
   }
@@ -336,6 +342,7 @@ You must set the Account Code and Item Code in System | Integration before you c
     'external_sync_status': externalSyncStatus.ordinal,
     'payment_source': paymentSource.ordinal,
     'billing_contact_id': billingContactId,
+    'billing_customer_id': billingCustomerId,
     'void_description': voidDescription,
   };
 }

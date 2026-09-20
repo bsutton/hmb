@@ -583,7 +583,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   }
 
   Future<void> _applyPayment(InvoiceDetails details) async {
-    final customerId = details.job.customerId;
+    final customerId = details.billingCustomer?.id;
     if (customerId == null) {
       HMBToast.error('The invoice job does not have a customer.');
       return;

@@ -128,7 +128,9 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
       final filtered = <Invoice>[];
       for (final invoice in invoices) {
         final job = await DaoJob().getById(invoice.jobId);
-        if (job?.customerId == selectedCustomer!.id) {
+        if (job?.customerId == selectedCustomer!.id ||
+            (invoice.billingCustomerId ?? job?.billingCustomerId) ==
+                selectedCustomer!.id) {
           filtered.add(invoice);
         }
       }

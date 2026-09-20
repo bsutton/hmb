@@ -1,264 +1,394 @@
-/*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
-
- Note: This software is licensed under the GNU General Public License,
-         with the following exceptions:
-   • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products 
-      for third parties is strictly prohibited.
-
- See the full license on GitHub:
- https://github.com/bsutton/hmb/blob/main/LICENSE
-*/
-
-import 'dart:async';
-
-import 'package:calendar_view/calendar_view.dart';
 import 'package:deferred_state/deferred_state.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:money2/money2.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
-import '../../../entity/flutter_extensions/job_activity_status_ex.dart';
-import '../../../util/dart/date_time_ex.dart';
-import '../../../util/dart/format.dart';
-import '../../../util/dart/local_date.dart';
 import '../../../util/dart/money_ex.dart';
-import '../../widgets/icons/circle.dart';
+import '../../widgets/form_validation.dart';
 import '../../widgets/layout/layout.g.dart';
+import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/select/hmb_select_customer.dart';
 import '../../widgets/select/hmb_select_site.dart';
+import '../../widgets/widgets.g.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 import 'edit_job_card.dart';
+import 'fsm_status_picker.dart';
+import 'job_edit_section.dart';
+import 'job_parties_screen.dart';
+import 'job_summary_card.dart';
 
 class JobEditScreen extends StatefulWidget {
   final Job? job;
+  final JobEditSection? section;
 
-  const JobEditScreen({super.key, this.job});
+  const JobEditScreen({super.key, this.job, this.section});
   @override
-  _JobEditScreenState createState() => _JobEditScreenState();
+  State<JobEditScreen> createState() => _JobEditScreenState();
 }
 
 class _JobEditScreenState extends DeferredState<JobEditScreen>
     implements EntityState<Job> {
-  late TextEditingController _summaryController;
-  late TextEditingController _descriptionController;
-  late TextEditingController _notesController;
-  late TextEditingController _assumptionController;
-  late TextEditingController _hourlyRateController;
-  late TextEditingController _bookingFeeController;
-
-  late FocusNode _summaryFocusNode;
-  late FocusNode _descriptionFocusNode;
-  late FocusNode _notesFocusNode;
-  late FocusNode _assumptionFocusNode;
-  late FocusNode _hourlyRateFocusNode;
-  late FocusNode _bookingFeeFocusNode;
-
-  BillingType _selectedBillingType = BillingType.timeAndMaterial;
-  late final ScrollController scrollController;
+  final _summaryController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _notesController = TextEditingController();
+  final _assumptionController = TextEditingController();
+  final _hourlyRateController = TextEditingController();
+  final _bookingFeeController = TextEditingController();
+  final _summaryFocusNode = FocusNode();
+  final _descriptionFocusNode = FocusNode();
+  final _notesFocusNode = FocusNode();
+  final _assumptionFocusNode = FocusNode();
+  final _hourlyRateFocusNode = FocusNode();
+  final _bookingFeeFocusNode = FocusNode();
+  final _formKey = GlobalKey<FormState>();
+  BillingType _billingType = BillingType.timeAndMaterial;
+  int? _billToId;
+  int? _billingContactId;
+  var _billToChosen = false;
+  var _useCurrentBillingDefaults = false;
+  var _revision = 0;
+  var _saving = false;
 
   @override
   Job? currentEntity;
 
-  late final JobStatus originalJobStatus;
-
-  @override
-  void initState() {
-    super.initState();
-    currentEntity ??= widget.job;
-    originalJobStatus = currentEntity?.status ?? JobStatus.startingStatus;
-    scrollController = ScrollController();
-
-    _summaryController = TextEditingController(text: widget.job?.summary ?? '');
-    _descriptionController = TextEditingController(
-      text: widget.job?.description ?? '',
-    );
-    _notesController = TextEditingController(
-      text: widget.job?.internalNotes ?? '',
-    );
-    _assumptionController = TextEditingController(
-      text: widget.job?.assumption ?? '',
-    );
-    _hourlyRateController = TextEditingController(
-      text: widget.job?.hourlyRate?.toString() ?? '',
-    );
-    _bookingFeeController = TextEditingController(
-      text: widget.job?.bookingFee?.toString() ?? '',
-    );
-
-    _summaryFocusNode = FocusNode();
-    _descriptionFocusNode = FocusNode();
-    _notesFocusNode = FocusNode();
-    _assumptionFocusNode = FocusNode();
-    _hourlyRateFocusNode = FocusNode();
-    _bookingFeeFocusNode = FocusNode();
-  }
-
   @override
   Future<void> asyncInitState() async {
-    // existing selections
-    June.getState(SelectedCustomer.new).customerId = widget.job?.customerId;
+    await BlockingUI().runAndWait(() async {
+      if (widget.job != null) {
+        await DaoJob().markLastActive(widget.job!.id);
+        currentEntity = await DaoJob().getById(widget.job!.id);
+        if (currentEntity == null) {
+          throw StateError('This job no longer exists.');
+        }
+      }
+      await _hydrate();
+    });
+  }
+
+  Future<void> _hydrate() async {
+    final job = currentEntity;
+    _summaryController.text = job?.summary ?? '';
+    _descriptionController.text = job?.description ?? '';
+    _notesController.text = job?.internalNotes ?? '';
+    _assumptionController.text = job?.assumption ?? '';
+    _billingType = job?.billingType ?? BillingType.timeAndMaterial;
+    _hourlyRateController.text = job?.hourlyRate?.toString() ?? '0.00';
+    _bookingFeeController.text = job?.bookingFee?.toString() ?? '0.00';
+    _billToId = job?.billingCustomerId;
+    _billToChosen = job?.billToCustomerId != null;
+    _useCurrentBillingDefaults = false;
+    _billingContactId = job?.billingContactId;
+    June.getState(SelectedCustomer.new).customerId = job?.customerId;
     June.getState(SelectedReferrerCustomer.new).customerId =
-        widget.job?.referrerCustomerId;
-    June.getState(SelectJobStatus.new).jobStatus = widget.job?.status;
-    June.getState(SelectedSite.new).siteId = widget.job?.siteId;
-    June.getState(SelectedContact.new).contactId = widget.job?.contactId;
-    June.getState(SelectedTenantContact.new).contactId =
-        widget.job?.tenantContactId;
+        job?.referrerCustomerId;
+    June.getState(SelectJobStatus.new).jobStatus = job?.status;
+    June.getState(SelectedSite.new).siteId = job?.siteId;
+    June.getState(SelectedContact.new).contactId = job?.contactId;
+    June.getState(SelectedTenantContact.new).contactId = job?.tenantContactId;
     June.getState(SelectedReferrerContact.new).contactId =
-        widget.job?.referrerContactId;
+        job?.referrerContactId;
     June.getState(SelectedBillingParty.new).billingParty =
-        widget.job?.billingParty ?? BillingParty.customer;
-    _selectedBillingType =
-        widget.job?.billingType ?? BillingType.timeAndMaterial;
-
-    // Handle billing contact default
-    final billingState = June.getState(JobBillingContact.new);
-    var initial = widget.job?.billingContactId;
-    if (initial == null && widget.job?.customerId != null) {
-      final cust = await DaoCustomer().getById(widget.job!.customerId);
-      initial = cust?.billingContactId;
-    }
-    billingState
-      ..contactId = initial
-      ..setState();
-
-    // new‐job defaults
-    if (widget.job == null) {
+        job?.billingParty ?? BillingParty.customer;
+    June.getState(JobBillingContact.new).contactId = job?.billingContactId;
+    if (job == null) {
       final system = await DaoSystem().get();
-      setState(() {
-        _hourlyRateController.text =
-            system.defaultHourlyRate?.amount.toString() ?? '0.00';
-        _bookingFeeController.text =
-            system.defaultBookingFee?.amount.toString() ?? '0.00';
-      });
-      June.getState(SelectJobStatus.new).jobStatus = JobStatus.startingStatus;
-      June.getState(SelectedBillingParty.new).billingParty =
-          BillingParty.customer;
+      _hourlyRateController.text =
+          system.defaultHourlyRate?.amount.toString() ?? '0';
+      _bookingFeeController.text =
+          system.defaultBookingFee?.amount.toString() ?? '0';
     }
   }
+
+  Future<void> _refresh() async {
+    await BlockingUI().runAndWait(() async {
+      currentEntity = await DaoJob().getById(currentEntity!.id);
+      if (currentEntity == null) {
+        throw StateError('This job no longer exists.');
+      }
+      await _hydrate();
+    });
+    if (mounted) {
+      setState(() => _revision++);
+    }
+  }
+
+  Future<void> _open(JobEditSection section) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => JobEditScreen(job: currentEntity, section: section),
+      ),
+    );
+    if (mounted) {
+      await _refresh();
+    }
+  }
+
+  Future<void> _actions() async {
+    await showJobStatusDialog(context, currentEntity!);
+    if (mounted) {
+      await _refresh();
+    }
+  }
+
+  Widget _editor(Customer? customer) => EditJobCard(
+    key: ValueKey(_revision),
+    job: currentEntity,
+    customer: customer,
+    section: widget.section,
+    summaryController: _summaryController,
+    descriptionController: _descriptionController,
+    notesController: _notesController,
+    assumptionController: _assumptionController,
+    hourlyRateController: _hourlyRateController,
+    bookingFeeController: _bookingFeeController,
+    summaryFocusNode: _summaryFocusNode,
+    descriptionFocusNode: _descriptionFocusNode,
+    notesFocusNode: _notesFocusNode,
+    assumptionFocusNode: _assumptionFocusNode,
+    hourlyRateFocusNode: _hourlyRateFocusNode,
+    bookingFeeFocusNode: _bookingFeeFocusNode,
+    selectedBillingType: _billingType,
+    onBillingTypeChanged: (type) => setState(() => _billingType = type),
+  );
 
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
-    builder: (context) => JuneBuilder(
-      SelectedCustomer.new,
-      builder: (selectedCustomer) => FutureBuilderEx<Customer?>(
-        future: DaoCustomer().getById(selectedCustomer.customerId),
-        builder: (context, customer) => EntityEditScreen<Job>(
-          entityName: 'Job',
-          dao: DaoJob(),
-          scrollController: scrollController,
-          entityState: this,
-
-          editor: (job, {required isNew}) => EditJobCard(
-            job: job,
-            customer: customer,
-            summaryController: _summaryController,
-            descriptionController: _descriptionController,
-            notesController: _notesController,
-            assumptionController: _assumptionController,
-            hourlyRateController: _hourlyRateController,
-            bookingFeeController: _bookingFeeController,
-
-            summaryFocusNode: _summaryFocusNode,
-            descriptionFocusNode: _descriptionFocusNode,
-            notesFocusNode: _notesFocusNode,
-            assumptionFocusNode: _assumptionFocusNode,
-            hourlyRateFocusNode: _hourlyRateFocusNode,
-            bookingFeeFocusNode: _bookingFeeFocusNode,
-            selectedBillingType: _selectedBillingType,
-            onBillingTypeChanged: (b) {
-              setState(() {
-                _selectedBillingType = b;
-              });
-            },
-          ),
-        ),
-      ),
+    waitingBuilder: (_) => const SizedBox.shrink(),
+    errorBuilder: (_, error) => HMBFullPageChildScreen(
+      title: 'Job',
+      child: Text('Could not load job: $error'),
     ),
+    builder: (context) {
+      final section = widget.section;
+      if (currentEntity != null && section == null) {
+        return HMBFullPageChildScreen(
+          title: 'Job #${currentEntity!.id}',
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(8),
+            child: JobSummaryCard(
+              key: ValueKey(_revision),
+              job: currentEntity!,
+              onEdit: _open,
+              onActions: _actions,
+            ),
+          ),
+        );
+      }
+      if (section == JobEditSection.parties) {
+        return JobPartiesScreen(
+          job: currentEntity!,
+          editCustomers: () => _open(JobEditSection.customer),
+        );
+      }
+      return JuneBuilder(
+        SelectedCustomer.new,
+        builder: (selection) => FutureBuilderEx<Customer?>(
+          future: DaoCustomer().getById(selection.customerId),
+          waitingBuilder: (_) => const SizedBox.shrink(),
+          errorBuilder: (_, error) => const Text('Could not load customer.'),
+          builder: (context, customer) {
+            if (currentEntity == null) {
+              return EntityEditScreen<Job>(
+                entityName: 'Job',
+                dao: DaoJob(),
+                entityState: this,
+                editor: (_, {required isNew}) => _editor(customer),
+              );
+            }
+            final content = section == JobEditSection.billing
+                ? _billingFields(customer)
+                : _editor(customer);
+            return HMBFullPageChildScreen(
+              title: section!.title,
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    if (!section.immediate) ...[
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          HMBButtonPrimary(
+                            label: 'Save',
+                            hint: 'Save this section',
+                            enabled: !_saving,
+                            onPressed: _saveSection,
+                          ),
+                          HMBButtonSecondary(
+                            label: 'Cancel',
+                            hint: 'Discard changes to this section',
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    content,
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    },
   );
 
-  Future<JobActivity?> showActivityDialog(List<JobActivity> activities) {
-    final today = DateTime.now().withoutTime;
-    return showDialog<JobActivity>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: const Text('Open an Activity'),
-        children: [
-          SimpleDialogOption(
-            onPressed: () =>
-                Navigator.of(context).pop(_nextAcitivty(activities)),
-            child: Text('Next Activity: ${_nextAcctivityWhen(activities)}'),
-          ),
-          for (final jobActivity in activities)
-            SimpleDialogOption(
-              onPressed: () => Navigator.of(context).pop(jobActivity),
-              child: HMBRow(
-                children: [
-                  Circle(
-                    color: jobActivity.status.color,
-                    child: const Text(''),
-                  ),
-                  Text(
-                    _activityDisplay(jobActivity),
-                    style: TextStyle(
-                      decoration: jobActivity.start.isBefore(today)
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
+  Widget _billingFields(Customer? customer) => HMBColumn(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      HMBDroplist<Customer>(
+        title: 'Bill To customer',
+        selectedItem: () => DaoCustomer().getById(_billToId),
+        items: (filter) => DaoCustomer().getByFilter(filter),
+        format: (value) => value.name,
+        onChanged: (value) => setState(() {
+          _billToId = value?.id;
+          _billToChosen = value != null;
+        }),
       ),
-    );
-  }
+      HMBDroplist<Contact>(
+        title: 'Billing Contact (optional)',
+        required: false,
+        selectedItem: () => DaoContact().getById(_billingContactId),
+        items: (filter) async => (await DaoContact().getAll())
+            .where(
+              (value) => value.fullname.toLowerCase().contains(
+                (filter ?? '').toLowerCase(),
+              ),
+            )
+            .toList(),
+        format: (value) => value.fullname.trim(),
+        onChanged: (value) async {
+          _billingContactId = value?.id;
+          if (!_billToChosen && value != null) {
+            final links = await BlockingUI().runAndWait(
+              () => DatabaseHelper.instance.database.query(
+                'customer_contact',
+                columns: ['customer_id'],
+                distinct: true,
+                where: 'contact_id = ?',
+                whereArgs: [value.id],
+              ),
+            );
+            if (links.length == 1) {
+              _billToId = links.single['customer_id']! as int;
+            }
+          }
+          if (mounted) {
+            setState(() {});
+          }
+        },
+      ),
+      if (currentEntity?.legacyBillingContactId != null &&
+          _billingContactId == null &&
+          !_useCurrentBillingDefaults) ...[
+        const Text(
+          'This job keeps its previous billing recipient until you choose '
+          'a new contact, change Bill To, or use the current defaults.',
+        ),
+        HMBButtonSecondary(
+          label: 'Use current defaults',
+          hint: 'Use automatic recipient selection when you save',
+          onPressed: () => setState(() => _useCurrentBillingDefaults = true),
+        ),
+      ],
+      const Text(
+        'Leave the contact blank to use the Bill To customer’s '
+        'default billing contact, then the job’s Primary Contact, then '
+        'the only contact on the job. Otherwise invoicing asks you '
+        'to select one.',
+      ),
+      // Retain shared HMB billing-type and rate controls.
+      _editor(customer),
+    ],
+  );
 
-  String _nextAcctivityWhen(List<JobActivity> activities) {
-    final next = _nextAcitivty(activities);
-    return next == null ? '' : formatDateTimeAM(next.start);
-  }
-
-  JobActivity? _nextAcitivty(List<JobActivity> jobActivities) {
-    final today = LocalDate.today();
-    for (final e in jobActivities) {
-      final ld = e.start.toLocalDate();
-      if (ld.isAfter(today) || ld == today) {
-        return e;
+  Future<void> _saveSection() async {
+    if (_saving || !validateFormAndRevealErrors(_formKey)) {
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      final updated = await BlockingUI().runAndWait(
+        () => DatabaseHelper.instance.database.transaction((txn) async {
+          final latest = await DaoJob().getById(currentEntity!.id, txn);
+          if (latest == null) {
+            throw StateError('This job no longer exists.');
+          }
+          _applySection(latest);
+          await DaoJob().update(latest, txn);
+          return latest;
+        }),
+      );
+      if (mounted) {
+        Navigator.pop(context, updated);
+      }
+    } catch (error) {
+      HMBToast.error(error.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
       }
     }
-    return null;
   }
 
-  String _activityDisplay(JobActivity e) => formatDateTimeAM(e.start);
+  void _applySection(Job job) {
+    switch (widget.section!) {
+      case JobEditSection.summary:
+        job
+          ..summary = _summaryController.text.trim()
+          ..description = _descriptionController.text;
+      case JobEditSection.customer:
+        job
+          ..customerId = June.getState(SelectedCustomer.new).customerId
+          ..referrerCustomerId = June.getState(
+            SelectedReferrerCustomer.new,
+          ).customerId;
+      case JobEditSection.site:
+        job.siteId = June.getState(SelectedSite.new).siteId;
+      case JobEditSection.billing:
+        final rate = Money.tryParse(_hourlyRateController.text, isoCode: 'AUD');
+        final fee = Money.tryParse(_bookingFeeController.text, isoCode: 'AUD');
+        if (rate == null || fee == null || rate.isNegative || fee.isNegative) {
+          throw StateError('Enter valid non-negative rates.');
+        }
+        if (_useCurrentBillingDefaults) {
+          job.legacyBillingContactId = null;
+        }
+        job
+          ..billToCustomerId = _billToId
+          ..billingContactId = _billingContactId
+          ..billingType = _billingType
+          ..hourlyRate = rate
+          ..bookingFee = fee;
+      case JobEditSection.internalNotes:
+        job.internalNotes = _notesController.text;
+      case JobEditSection.assumptions:
+        job.assumption = _assumptionController.text;
+      case JobEditSection.parties ||
+          JobEditSection.schedule ||
+          JobEditSection.notes ||
+          JobEditSection.attachments ||
+          JobEditSection.photos:
+        throw StateError('This section saves its own records.');
+    }
+  }
 
   @override
-  Future<Job> forUpdate(Job job) async => job.copyWith(
-    customerId: June.getState(SelectedCustomer.new).customerId,
-    referrerCustomerId: June.getState(SelectedReferrerCustomer.new).customerId,
-    summary: _summaryController.text,
-    description: _descriptionController.text,
-    notes: _notesController.text,
-    assumption: _assumptionController.text,
-    siteId: June.getState(SelectedSite.new).siteId,
-    contactId: June.getState(SelectedContact.new).contactId,
-    status:
-        June.getState(SelectJobStatus.new).jobStatus ??
-        JobStatus.startingStatus,
-    hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
-    bookingFee: MoneyEx.tryParse(_bookingFeeController.text),
-    bookingFeeInvoiced: job.bookingFeeInvoiced,
-    billingType: _selectedBillingType,
-    billingContactId: June.getState(JobBillingContact.new).contactId,
-    referrerContactId: June.getState(SelectedReferrerContact.new).contactId,
-    tenantContactId: June.getState(SelectedTenantContact.new).contactId,
-    billingParty: June.getState(SelectedBillingParty.new).billingParty,
-  );
+  Future<Job> forUpdate(Job job) async {
+    final latest = (await DaoJob().getById(job.id))!;
+    if (widget.section != null) {
+      _applySection(latest);
+    }
+    return latest;
+  }
 
   @override
   Future<Job> forInsert() async => Job.forInsert(
@@ -270,12 +400,10 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     assumption: _assumptionController.text,
     siteId: June.getState(SelectedSite.new).siteId,
     contactId: June.getState(SelectedContact.new).contactId,
-    status:
-        June.getState(SelectJobStatus.new).jobStatus ??
-        JobStatus.startingStatus,
+    status: JobStatus.startingStatus,
     hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
     bookingFee: MoneyEx.tryParse(_bookingFeeController.text),
-    billingType: _selectedBillingType,
+    billingType: _billingType,
     billingContactId: June.getState(JobBillingContact.new).contactId,
     referrerContactId: June.getState(SelectedReferrerContact.new).contactId,
     tenantContactId: June.getState(SelectedTenantContact.new).contactId,
@@ -283,25 +411,35 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
   );
 
   @override
-  void dispose() {
-    scrollController.dispose();
-    _summaryController.dispose();
-    _descriptionController.dispose();
-    _notesController.dispose();
-    _descriptionFocusNode.dispose();
-    _notesFocusNode.dispose();
-    _assumptionController.dispose();
-    _hourlyRateController.dispose();
-    _bookingFeeController.dispose();
-    _summaryFocusNode.dispose();
-    _assumptionFocusNode.dispose();
-    _hourlyRateFocusNode.dispose();
-    _bookingFeeFocusNode.dispose();
-    super.dispose();
+  Future<void> postSave(Job entity) async {
+    currentEntity = entity;
+    if (mounted) {
+      setState(() => _revision++);
+    }
   }
 
   @override
-  Future<void> postSave(Job entity) async {
-    setState(() {});
+  void dispose() {
+    for (final controller in [
+      _summaryController,
+      _descriptionController,
+      _notesController,
+      _assumptionController,
+      _hourlyRateController,
+      _bookingFeeController,
+    ]) {
+      controller.dispose();
+    }
+    for (final node in [
+      _summaryFocusNode,
+      _descriptionFocusNode,
+      _notesFocusNode,
+      _assumptionFocusNode,
+      _hourlyRateFocusNode,
+      _bookingFeeFocusNode,
+    ]) {
+      node.dispose();
+    }
+    super.dispose();
   }
 }

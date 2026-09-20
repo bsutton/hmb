@@ -55,7 +55,9 @@ class InvoiceDetails {
     final customer = job.customerId != null
         ? await DaoCustomer().getById(job.customerId)
         : null;
-    final billingCustomer = await getBillingCustomerForJob(job);
+    final billingCustomer = invoice.billingCustomerId == null
+        ? await getBillingCustomerForJob(job)
+        : await DaoCustomer().getById(invoice.billingCustomerId);
     final billingContact = await resolveInvoiceBillingContact(
       invoice,
       job: job,

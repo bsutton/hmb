@@ -26,11 +26,28 @@ import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
 import 'dao_job.dart';
 import 'dao_milestone.dart';
+import 'job_billing_contact.dart';
 
 class DaoInvoice extends Dao<Invoice> {
   static const tableName = 'invoice ';
   static const discountGroupName = 'Discounts';
   DaoInvoice() : super(tableName);
+
+  @override
+  Future<int> insert(Invoice entity, [Transaction? transaction]) async {
+    if (transaction == null) {
+      return db.transaction((txn) => insert(entity, txn));
+    }
+    final job = await DaoJob().getById(entity.jobId, transaction);
+    if (job != null) {
+      entity.billingCustomerId ??= job.billingCustomerId;
+      entity.billingContactId ??= (await resolveJobBillingContact(
+        job,
+        transaction,
+      )).contact?.id;
+    }
+    return super.insert(entity, transaction);
+  }
 
   @override
   Invoice fromMap(Map<String, dynamic> map) => Invoice.fromMap(map);
@@ -373,8 +390,9 @@ ORDER BY modified_date DESC
   }
 
   Future<void> deleteByJob(int jobId, {Transaction? transaction}) async {
-    await withinTransaction(transaction)
-        .delete(tableName, where: 'job_id = ?', whereArgs: [jobId]);
+    await withinTransaction(
+      transaction,
+    ).delete(tableName, where: 'job_id = ?', whereArgs: [jobId]);
   }
 
   Future<void> recalculateTotal(int invoiceId) async {
