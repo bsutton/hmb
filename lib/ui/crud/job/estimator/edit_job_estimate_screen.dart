@@ -35,7 +35,7 @@ import '../../../../util/dart/units.dart';
 import '../../../dialog/hmb_comfirm_delete_dialog.dart';
 import '../../../dialog/hmb_dialog.dart';
 import '../../../invoicing/dialog_select_tasks.dart';
-import '../../../quoting/quote_details_screen.dart';
+import '../../../quoting/list_quote_screen.dart';
 import '../../../widgets/blocking_ui.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_search.dart';
@@ -345,19 +345,24 @@ class _JobEstimateBuilderScreenState
                 'Total: $total',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              HMBButton.small(
+              Text('Estimate Complete: ${_estimateComplete ? 'Yes' : 'No'}'),
+            ],
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              HMBButtonPrimary(
                 label: 'Raise Quote',
                 hint: 'Create a fixed price quote from this estimate',
                 onPressed: () => unawaited(_raiseQuote()),
               ),
-            ],
-          ),
-          Wrap(
-            spacing: 12,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Text('Estimate Complete: ${_estimateComplete ? 'Yes' : 'No'}'),
-              HMBButton.small(
+              HMBButtonSecondary(
+                label: 'Quotes',
+                hint: 'View and send quotes for this job',
+                onPressed: _showQuotes,
+              ),
+              HMBButtonSecondary(
                 label: _showCostDetails ? 'Hide costs' : 'Show costs',
                 hint: 'Show or hide labour, materials and margin',
                 onPressed: () =>
@@ -410,18 +415,14 @@ class _JobEstimateBuilderScreenState
     }
 
     try {
-      final quote = await BlockingUI().runAndWait(
+      await BlockingUI().runAndWait(
         label: 'Creating Quote',
         () => DaoQuote().create(widget.job, options),
       );
       if (!mounted) {
         return;
       }
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute(
-          builder: (_) => QuoteDetailsScreen(quoteId: quote.id),
-        ),
-      );
+      await _showQuotes();
     } catch (e) {
       HMBToast.error(
         'Failed to create quote: $e',
@@ -429,6 +430,10 @@ class _JobEstimateBuilderScreenState
       );
     }
   }
+
+  Future<void> _showQuotes() => Navigator.of(context).push<void>(
+    MaterialPageRoute(builder: (_) => QuoteListScreen(job: widget.job)),
+  );
 
   Future<void> _saveEstimateMargin(Percentage parsed) async {
     final updated = widget.job.copyWith(estimateMargin: parsed);
@@ -464,7 +469,20 @@ class _JobEstimateBuilderScreenState
         child: HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            HMBTextHeadline2(task.name, maxLines: null),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                task.name,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+              ),
+            ),
             Wrap(
               spacing: 4,
               children: [

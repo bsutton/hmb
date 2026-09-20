@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/crud/job/estimator/edit_job_estimate_screen.dart';
-import 'package:hmb/ui/quoting/quote_details_screen.dart';
+import 'package:hmb/ui/quoting/list_quote_screen.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:toastification/toastification.dart';
@@ -22,7 +22,7 @@ void main() {
 
   tearDown(tearDownTestDb);
 
-  testWidgets('raising a completed estimate opens its new quote', (
+  testWidgets('raising a completed estimate opens the job quote list', (
     tester,
   ) async {
     late Job job;
@@ -59,15 +59,15 @@ void main() {
       await tester.pump();
     }
     await tester.tap(find.text('OK'));
-    await _pumpUntilFound(tester, find.byType(QuoteDetailsScreen));
-    final screen = tester.widget<QuoteDetailsScreen>(
-      find.byType(QuoteDetailsScreen),
-    );
+    await _pumpUntilFound(tester, find.byType(QuoteListScreen));
+    final screen = tester.widget<QuoteListScreen>(find.byType(QuoteListScreen));
+    expect(screen.job?.id, job.id);
     await tester.runAsync(() async {
-      final quote = (await DaoQuote().getById(screen.quoteId))!;
+      final quote = (await DaoQuote().getByJobId(job.id)).single;
       expect(quote.jobId, job.id);
       expect(quote.totalAmount, MoneyEx.dollars(50));
     });
+    await _pumpUntilFound(tester, find.text('Send...'));
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 10));
   });
@@ -121,6 +121,16 @@ void main() {
     );
     expect(find.text('Tasks for Quote'), findsNothing);
     toastification.dismissAll();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Quotes'));
+    await _pumpUntilFound(tester, find.byType(QuoteListScreen));
+    expect(
+      tester.widget<QuoteListScreen>(find.byType(QuoteListScreen)).job?.id,
+      job.id,
+    );
+    await tester.runAsync(() async {
+      expect(await DaoQuote().getByJobId(job.id), isEmpty);
+    });
     await tester.pumpWidget(const SizedBox.shrink());
     // Drain the diagnostic timers retained by asynchronous helpers.
     await tester.pump(const Duration(seconds: 10));
