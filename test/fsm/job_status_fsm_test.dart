@@ -19,6 +19,25 @@ void main() {
   });
 
   group('Job FSM hydration', () {
+    test('prospecting job can be accepted without recording payment', () async {
+      final job = await _insertJob(JobStatus.prospecting);
+      final machine = await buildJobMachine(job);
+      final actions = await nextFromFsm(machine: machine, job: job);
+      final accept = actions.singleWhere((action) => action.event is AcceptJob);
+      expect(accept.label, 'Accept job');
+      await accept.fire(machine);
+      expect((await DaoJob().getById(job.id))!.status, JobStatus.toBeScheduled);
+      expect(await DaoToDo().getOpenByJob(job.id), hasLength(1));
+    });
+
+    test('prospecting job can be selected and scheduled', () async {
+      final job = await _insertJob(JobStatus.prospecting);
+      expect(JobStatus.canBeScheduled(), contains(JobStatus.prospecting));
+      final updated = await transitionJob(job, ScheduleJob.new);
+      expect(updated.status, JobStatus.scheduled);
+      expect((await DaoJob().getById(job.id))!.status, JobStatus.scheduled);
+    });
+
     test('no job state declares or offers a self-transition', () async {
       for (final status in JobStatus.values) {
         final job = await _insertJob(status);

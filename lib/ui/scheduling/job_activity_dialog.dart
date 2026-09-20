@@ -540,7 +540,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     // Next, check the job’s status
     final job = await DaoJob().getById(_selectedJob.jobId);
     if (job != null) {
-      (await buildJobMachine(job)).applyEvent(ScheduleJob(job));
+      await transitionJob(job, ScheduleJob.new);
     }
   }
 

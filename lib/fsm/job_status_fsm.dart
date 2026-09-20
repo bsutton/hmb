@@ -81,6 +81,8 @@ Future<StateMachine> buildJobMachine(Job job) async {
       ..state<Prospecting>(
         (b) => b
           ..on<StartQuoting, Quoting>()
+          ..on<AcceptJob, ToBeScheduled>()
+          ..on<ScheduleJob, Scheduled>()
           ..on<PaymentReceived, ToBeScheduled>()
           ..on<StartWork, InProgress>()
           ..on<PauseJob, OnHold>()

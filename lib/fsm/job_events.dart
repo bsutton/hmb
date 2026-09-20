@@ -10,6 +10,7 @@ sealed class JobEvent extends Event {
   /// Describe the action performed, rather than its destination status.
   String get label => switch (this) {
     StartQuoting() => 'Start quoting',
+    AcceptJob() => 'Accept job',
     SubmitQuote() => 'Mark quote sent',
     ApproveQuote() =>
       job.status == JobStatus.rejected ? 'Accept job' : 'Mark quote approved',
@@ -28,6 +29,10 @@ sealed class JobEvent extends Event {
 
 class StartQuoting extends JobEvent {
   StartQuoting(super.job);
+}
+
+class AcceptJob extends JobEvent {
+  AcceptJob(super.job);
 }
 
 class SubmitQuote extends JobEvent {
@@ -83,6 +88,7 @@ class RejectJob extends JobEvent {
 /// checking & firing.
 final Map<Type, JobEvent Function(Job)> eventFactory = {
   StartQuoting: StartQuoting.new,
+  AcceptJob: AcceptJob.new,
   SubmitQuote: SubmitQuote.new,
   ApproveQuote: ApproveQuote.new,
   PaymentReceived: PaymentReceived.new,
@@ -100,6 +106,7 @@ final Map<Type, JobEvent Function(Job)> eventFactory = {
 JobEvent createEvent<T extends JobEvent>(Job job, T eventType) =>
     switch (eventType) {
       StartQuoting() => StartQuoting(job),
+      AcceptJob() => AcceptJob(job),
       SubmitQuote() => SubmitQuote(job),
       ApproveQuote() => ApproveQuote(job),
       PaymentReceived() => PaymentReceived(job),

@@ -21,7 +21,7 @@ enum JobStatus {
     description: 'A customer has contacted us about a potential job',
     colorCode: '#ADD8E6',
     stage: JobStatusStage.preStart,
-    schedulingAllowed: false,
+    schedulingAllowed: true,
     ordinal: 1,
   ),
   quoting(
