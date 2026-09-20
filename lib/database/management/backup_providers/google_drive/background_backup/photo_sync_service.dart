@@ -27,6 +27,7 @@ import '../../../../../dao/dao_photo_delete_queue.dart';
 import '../../../../../entity/entity.g.dart' show Photo;
 import '../../../../../util/dart/log.dart';
 import '../../../../../util/dart/paths.dart';
+import '../../../database_helper.dart';
 import '../../progress_update.dart';
 import '../google_drive_api.dart';
 import '../google_drive_auth.dart';
@@ -98,6 +99,7 @@ class PhotoSyncService {
   var _waitingForSignIn = false;
   var _wakeLockHeld = false;
   var _retryOnFailure = true;
+  var _starting = false;
   String? _lastErrorSummary;
 
   final StreamController<ProgressUpdate> _controller =
@@ -125,29 +127,37 @@ class PhotoSyncService {
 
   /// Kick off the sync and listen for both progress and payload messages.
   Future<void> start({bool retryOnFailure = true}) async {
+    if (_starting || isRunning) {
+      return;
+    }
     if (!GoogleDriveAuth.isAuthSupported()) {
       _stopAutomaticRetry();
       await _releaseWakeLock();
       return;
     }
-    final photos = await DaoPhoto().getUnsyncedPhotos();
-    final deletes = (await DaoPhotoDeleteQueue().getPendingDeleteIds())
-        .map(
-          (photoDeleteQueue) => PhotoDeletePayload(
-            photoDeleteQueueId: photoDeleteQueue.id,
-            photoId: photoDeleteQueue.photoId,
-          ),
-        )
-        .toList();
-    if (photos.isEmpty && deletes.isEmpty) {
-      _waitingForSignIn = false;
-      _autoRetryAttempts = 0;
-      _lastErrorSummary = null;
-      await _releaseWakeLock();
-      return;
-    }
-
+    _starting = true;
+    _retryOnFailure = retryOnFailure;
     try {
+      if (!await DatabaseHelper().waitUntilOpen()) {
+        throw StateError("The database isn't open for photo sync");
+      }
+      final photos = await DaoPhoto().getUnsyncedPhotos();
+      final deletes = (await DaoPhotoDeleteQueue().getPendingDeleteIds())
+          .map(
+            (photoDeleteQueue) => PhotoDeletePayload(
+              photoDeleteQueueId: photoDeleteQueue.id,
+              photoId: photoDeleteQueue.photoId,
+            ),
+          )
+          .toList();
+      if (photos.isEmpty && deletes.isEmpty) {
+        _waitingForSignIn = false;
+        _autoRetryAttempts = 0;
+        _lastErrorSummary = null;
+        await _releaseWakeLock();
+        return;
+      }
+
       final headers = await (await GoogleDriveAuth.instance())
           .authHeadersOrNull(allowAutomaticSignIn: false);
       if (headers == null) {
@@ -173,6 +183,7 @@ class PhotoSyncService {
       _cleanup();
       _handleStartupFailure(error, stackTrace, retryOnFailure: retryOnFailure);
     } finally {
+      _starting = false;
       if (!isRunning && !(_retryTimer?.isActive ?? false)) {
         await _releaseWakeLock();
       }
@@ -599,6 +610,8 @@ properties has { key='photoId' and value='$idStr' } and trashed=false''';
 bool isRecoverablePhotoSyncError(String message) {
   final lowerMessage = message.toLowerCase();
   return lowerMessage.contains('timeout') ||
+      lowerMessage.contains("database isn't open") ||
+      lowerMessage.contains('database_closed') ||
       lowerMessage.contains('timed out') ||
       lowerMessage.contains('socketexception') ||
       lowerMessage.contains('clientexception') ||
