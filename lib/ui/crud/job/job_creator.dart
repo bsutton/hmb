@@ -933,14 +933,16 @@ class _JobCreatorState extends State<JobCreator> {
           );
           await daoCustomer.insert(customer, transaction);
 
-          contact = Contact.forInsert(
-            firstName: _firstName.text,
-            surname: _surname.text,
-            mobileNumber: _mobileNo.text,
-            landLine: '',
-            officeNumber: '',
-            emailAddress: _email.text,
-          );
+          contact =
+              _draftPrimaryContactForCurrentFields() ??
+              Contact.forInsert(
+                firstName: _firstName.text,
+                surname: _surname.text,
+                mobileNumber: _mobileNo.text,
+                landLine: '',
+                officeNumber: '',
+                emailAddress: _email.text,
+              );
           await daoContact.insert(contact!, transaction);
           await DaoContactCustomer().insertJoin(
             contact!,
