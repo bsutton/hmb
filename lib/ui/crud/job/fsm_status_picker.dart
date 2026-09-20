@@ -26,16 +26,20 @@ Future<void> showJobStatusDialog(BuildContext context, Job job) async {
           children: [
             Text('Job actions', style: Theme.of(context).textTheme.titleLarge),
             // The picker runs side-effects and calls back on success.
-            FsmStatusPicker(
-              job: job,
-              onStatusChanged: () {
-                Navigator.of(context).pop(); // close on success
-              },
+            Flexible(
+              child: SingleChildScrollView(
+                child: FsmStatusPicker(
+                  job: job,
+                  onStatusChanged: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                HMBButton(
+                HMBButtonSecondary(
                   onPressed: () => Navigator.of(context).pop(),
                   label: 'Close',
                   hint: 'Close job actions',
@@ -178,33 +182,15 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
               return const Text('No actions available.');
             } else {
               return HMBColumn(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Actions:'),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _next
-                        .map(
-                          (n) => HMBColumn(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              HMBButton(
-                                enabled: !_firing,
-                                onPressed: () => _moveTo(n),
-                                label: n.label,
-                                hint: 'Changes status to ${n.to.displayName}',
-                              ),
-                              Text(
-                                'Status: ${n.to.displayName}',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        )
-                        .toList(),
-                  ),
+                  for (final step in _next)
+                    HMBButtonPrimary(
+                      enabled: !_firing,
+                      onPressed: () => _moveTo(step),
+                      label: '${step.label} - ${step.to.displayName}',
+                      hint: 'Changes status to ${step.to.displayName}',
+                    ),
                 ],
               );
             }
