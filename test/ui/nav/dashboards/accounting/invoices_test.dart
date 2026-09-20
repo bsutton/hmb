@@ -107,10 +107,10 @@ void main() {
       ),
     );
 
-    expect(find.text('12'), findsOneWidget);
-    expect(find.text('Outstanding'), findsOneWidget);
-    expect(find.text('5 overdue, 2 7+ days'), findsOneWidget);
-    expect(find.textContaining('paid'), findsNothing);
+    expect(find.text('12 unpaid invoices'), findsOneWidget);
+    expect(find.text('5 of these overdue'), findsOneWidget);
+    expect(find.text('5 overdue, 2 7+ days'), findsNothing);
+    expect(find.textContaining('34'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }
