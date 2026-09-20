@@ -35,7 +35,8 @@ class FlutterDatabaseFactory implements local.HMBDatabaseFactory {
 
   FlutterDatabaseFactory._();
 
-  void initDatabaseFactory({required bool isWeb}) {
+  /// Disable [useFfiIsolate] only when already running in a worker isolate.
+  void initDatabaseFactory({required bool isWeb, bool useFfiIsolate = true}) {
     if (isWeb) {
       _databaseFactory = databaseFactoryFfiWeb;
     } else {
@@ -44,7 +45,9 @@ class FlutterDatabaseFactory implements local.HMBDatabaseFactory {
       } else if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
         /// required for non-mobile platforms.
         sqfliteFfiInit();
-        _databaseFactory = databaseFactoryFfi;
+        _databaseFactory = useFfiIsolate
+            ? databaseFactoryFfi
+            : databaseFactoryFfiNoIsolate;
       } else {
         throw UnsupportedError(
           'Unsupported platform for database factory: '

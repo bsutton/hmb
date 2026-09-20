@@ -77,8 +77,12 @@ WHERE revision != checked_revision AND retry_after <= ? LIMIT 1
       BackgroundIsolateBinaryMessenger.ensureInitialized(request.$2!);
     }
     var checked = 0;
+    // We already own an isolate. Avoid spawning an additional long-lived
+    // FFI server for every batch on desktop.
+    final factory = FlutterDatabaseFactory()
+      ..initDatabaseFactory(isWeb: false, useFfiIsolate: false);
     await DatabaseHelper.instance.withOpenDatabase(
-      FlutterDatabaseFactory(),
+      factory,
       request.$1,
       () async {
         checked = await BillingQueue(DatabaseHelper.instance.database).drain();

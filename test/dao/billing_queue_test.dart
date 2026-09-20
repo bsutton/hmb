@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/billing_attention_cache.dart';
 import 'package:hmb/dao/billing_executor.dart';
@@ -316,7 +317,10 @@ void main() {
     () async {
       final job = await _job();
       await _entry(await _task(job));
-      await BillingWorker.runBatch(testDbPath);
+      await BillingWorker.runBatch(
+        testDbPath,
+        token: RootIsolateToken.instance,
+      );
       expect((await _state(job.id))['checked_at'], isNotNull);
       expect(testDb!.isOpen, isTrue);
       // Alter a source outside the DAO to prove the UI does not scan.
