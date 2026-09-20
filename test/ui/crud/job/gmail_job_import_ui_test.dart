@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/integrations/gmail/gmail_import_service.dart';
 import 'package:hmb/ui/crud/job/gmail_job_import_screen.dart';
 import 'package:hmb/ui/crud/job/job_creation_email_source.dart';
@@ -15,8 +16,10 @@ import 'package:hmb/ui/widgets/hmb_button.dart';
 import 'package:hmb/ui/widgets/icons/hmb_add_button.dart';
 import 'package:june/june.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:toastification/toastification.dart';
 
 import '../../../database/management/db_utility_test_helper.dart';
+import '../../../util/settings_test_helper.dart';
 
 void main() {
   setUp(() async {
@@ -25,6 +28,72 @@ void main() {
   });
 
   tearDown(tearDownTestDb);
+
+  testWidgets('new customer import persists the draft primary contact', (
+    tester,
+  ) async {
+    await prepareSettingsTest();
+    await tester.binding.setSurfaceSize(const Size(1200, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final source = JobCreationEmailSource(
+      accountEmail: 'owner@example.com',
+      messageId: 'primary-contact-import',
+      threadId: null,
+      senderName: 'Casey Customer',
+      senderEmail: 'casey@example.com',
+      subject: 'Repair the tap',
+      body: 'Please repair the tap.',
+      receivedAt: DateTime.utc(2026, 8, 14),
+      hasAttachments: false,
+    );
+    await tester.pumpWidget(
+      ToastificationWrapper(
+        child: MaterialApp(
+          home: Scaffold(body: JobCreator(emailSource: source)),
+        ),
+      ),
+    );
+    await _pumpAsyncWork(tester);
+    for (var step = 0; step < 4; step++) {
+      await tester.tap(find.text('Next'));
+      await _pumpAsyncWork(tester);
+      await tester.pumpAndSettle();
+    }
+    expect(find.text('Primary Contact'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Job Summary'),
+      source.subject,
+    );
+    await tester.tap(find.text('Done'));
+    await _pumpAsyncWork(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Skip'));
+    await _pumpAsyncWork(tester);
+    await tester.pumpAndSettle();
+    await _pumpAsyncWork(tester);
+
+    await tester.runAsync(() async {
+      final imported = await DaoJobSourceEmail().getByMessage(
+        accountEmail: source.accountEmail,
+        messageId: source.messageId,
+      );
+      expect(
+        imported,
+        isNotNull,
+        reason: tester
+            .widgetList<Text>(find.byType(Text))
+            .map((text) => text.data)
+            .join('\n'),
+      );
+      final job = (await DaoJob().getById(imported!.jobId))!;
+      final contact = await DaoContact().getById(job.contactId);
+      expect(contact, isNotNull);
+      expect(contact!.emailAddress, source.senderEmail);
+      expect(job.billingContactId, contact.id);
+    });
+    // Let the wizard's completed transition timeout timers expire.
+    await tester.pump(const Duration(seconds: 11));
+  });
 
   test('Gmail attachment local names are readable and bounded', () {
     const original = 'Plinth board repair to front timber fence.pdf';
