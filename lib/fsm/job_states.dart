@@ -61,9 +61,6 @@ Future<Type> currentState(StateMachine m) async {
   if (await m.isInState<Completed>()) {
     return Completed;
   }
-  if (await m.isInState<ToBeBilled>()) {
-    return ToBeBilled;
-  }
   if (await m.isInState<Rejected>()) {
     return Rejected;
   }
@@ -81,7 +78,6 @@ const _allStates = <JobState>[
   OnHold(),
   AwaitingMaterials(),
   Completed(),
-  ToBeBilled(),
   Rejected(),
 ];
 
@@ -127,10 +123,6 @@ final class AwaitingMaterials extends JobState {
 
 final class Completed extends JobState {
   const Completed() : super(visible: true, status: JobStatus.completed);
-}
-
-final class ToBeBilled extends JobState {
-  const ToBeBilled() : super(visible: true, status: JobStatus.toBeBilled);
 }
 
 final class Rejected extends JobState {

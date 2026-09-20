@@ -7,6 +7,7 @@ Future<Job> createJobWithCustomer({
   required Money hourlyRate,
   Money? bookingFee,
   String summary = 'Test Job',
+  JobStatus status = JobStatus.prospecting,
 }) async {
   final unique = DateTime.now().microsecondsSinceEpoch;
   final contactId = await DaoContact().insert(
@@ -47,7 +48,7 @@ Future<Job> createJobWithCustomer({
       description: 'Widget test job',
       siteId: siteId,
       contactId: contactId,
-      status: JobStatus.startingStatus,
+      status: status,
       hourlyRate: hourlyRate,
       bookingFee: bookingFee,
       billingType: billingType,

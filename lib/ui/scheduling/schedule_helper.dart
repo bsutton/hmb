@@ -15,6 +15,8 @@ import 'package:calendar_view/calendar_view.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../dao/dao.g.dart';
+import '../../fsm/lifecycle_event_dispatcher.dart';
+import '../../fsm/lifecycle_models.dart';
 import '../../integrations/google_calendar/google_calendar_sync.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
@@ -63,11 +65,11 @@ mixin ScheduleHelper {
       when: date,
     );
 
-    final dao = DaoJobActivity();
     switch (jobActivityAction.action) {
       case AddAction.add:
-        final newId = await dao.insert(
+        final newId = await LifecycleEventDispatcher().scheduleActivity(
           jobActivityAction.jobActivity!.jobActivity,
+          context: LifecycleContext(source: 'schedule.add'),
         );
         jobActivityAction.jobActivity!.jobActivity.id = newId;
         await _syncActivityReminder(jobActivityAction.jobActivity!);
@@ -134,10 +136,11 @@ mixin ScheduleHelper {
     BuildContext context,
     JobActivityEx updated,
   ) async {
-    final dao = DaoJobActivity();
-
     // 1) Update DB
-    await dao.update(updated.jobActivity);
+    await LifecycleEventDispatcher().updateScheduledActivity(
+      updated.jobActivity,
+      context: LifecycleContext(source: 'schedule.update'),
+    );
     await _syncActivityReminder(updated);
     if (!context.mounted) {
       return;
@@ -156,8 +159,10 @@ mixin ScheduleHelper {
     BuildContext context,
     JobActivityEx activity,
   ) async {
-    final dao = DaoJobActivity();
-    await dao.delete(activity.jobActivity.id);
+    await LifecycleEventDispatcher().deleteScheduledActivity(
+      activity.jobActivity.id,
+      context: LifecycleContext(source: 'schedule.delete'),
+    );
     await LocalNotifs().cancelForJobActivity(activity.jobActivity.id);
     if (!context.mounted) {
       return;

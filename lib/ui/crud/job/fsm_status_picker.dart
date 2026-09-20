@@ -9,6 +9,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../entity/entity.g.dart';
 import '../../../fsm/job_status_fsm.dart'
     show Next, buildJobMachine, nextFromFsm;
+import '../../../fsm/lifecycle_models.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
 import 'edit_job_card.dart';
@@ -124,11 +125,17 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
     if (_machine == null || _firing) {
       return;
     }
+    if (!await _confirmAction(step.action) || !mounted) {
+      return;
+    }
     setState(() {
       _firing = true;
     });
     try {
-      await BlockingUI().runAndWait(() => step.fire(_machine!));
+      final updated = await BlockingUI().runAndWait(step.fire);
+      widget.job
+        ..status = updated.status
+        ..resumeStatus = updated.resumeStatus;
       if (!mounted) {
         return;
       }
@@ -146,6 +153,32 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
         });
       }
     }
+  }
+
+  Future<bool> _confirmAction(LifecycleAction action) async {
+    if (!action.requiresConfirmation) {
+      return true;
+    }
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(action.label),
+            content: Text(action.hint),
+            actions: [
+              HMBButtonSecondary(
+                label: 'Cancel',
+                hint: 'Keep the current job status',
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+              HMBButtonPrimary(
+                label: 'Continue',
+                hint: action.hint,
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   @override
@@ -188,8 +221,8 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
                     HMBButtonPrimary(
                       enabled: !_firing,
                       onPressed: () => _moveTo(step),
-                      label: '${step.label} - ${step.to.displayName}',
-                      hint: 'Changes status to ${step.to.displayName}',
+                      label: '${step.action.label} - ${step.to.displayName}',
+                      hint: step.action.hint,
                     ),
                 ],
               );

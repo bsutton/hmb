@@ -1,5 +1,7 @@
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
+import 'package:hmb/fsm/job_events.dart';
+import 'package:hmb/fsm/job_status_fsm.dart';
 import 'package:hmb/util/dart/local_date.dart';
 import 'package:money2/money2.dart';
 import 'package:test/test.dart';
@@ -39,8 +41,7 @@ void main() {
       );
       await DaoToDo().insert(todo);
       await DaoToDo().insert(personal);
-      job.status = JobStatus.onHold;
-      await DaoJob().update(job);
+      await transitionJobById(job.id, PauseJob.new);
       expect(
         (await DaoToDo().getFiltered(status: ToDoStatus.open)).map((t) => t.id),
         [personal.id],
@@ -57,8 +58,7 @@ void main() {
         personal.id,
       ]);
       expect((await DaoToDo().getByJob(job.id)).single.status, ToDoStatus.open);
-      job.status = JobStatus.inProgress;
-      await DaoJob().update(job);
+      await transitionJobById(job.id, ResumeJob.new);
       expect(
         (await DaoToDo().getFiltered(status: ToDoStatus.open)).map((t) => t.id),
         contains(todo.id),
@@ -140,8 +140,7 @@ void main() {
         BillingType.timeAndMaterial,
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
       );
-      job.status = status;
-      await DaoJob().update(job);
+      await setJobStatusForTest(job, status);
       await DaoToDo().insert(
         ToDo.forInsert(
           title: status.name,

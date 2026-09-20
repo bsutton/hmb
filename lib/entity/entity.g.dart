@@ -32,6 +32,7 @@ export 'job_attachment.dart';
 export 'job_source_email.dart';
 export 'job_status.dart';
 export 'job_status_stage.dart';
+export 'lifecycle_transition.dart';
 export 'mailing.dart';
 export 'mailing_recipient.dart';
 export 'manufacturer.dart';

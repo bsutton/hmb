@@ -52,8 +52,7 @@ void main() {
         bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
         summary: 'Packing Move Job',
       );
-      job.status = JobStatus.scheduled;
-      await DaoJob().update(job);
+      await setJobStatusForTest(job, JobStatus.scheduled);
 
       final task = Task.forInsert(
         jobId: job.id,

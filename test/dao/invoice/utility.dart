@@ -166,6 +166,7 @@ Future<Job> createJob(
   Contact? contact,
   Money? bookingFee,
   String summary = 'Time and Materials Job',
+  JobStatus status = JobStatus.prospecting,
 }) async {
   // Insert a job with time and materials billing type
   final job = Job.forInsert(
@@ -174,7 +175,7 @@ Future<Job> createJob(
     description: 'This is a T&M job',
     siteId: 1, // Assuming a site ID
     contactId: contact?.id ?? 1, // Assuming a contact ID
-    status: JobStatus.startingStatus, // Assuming a job status ID
+    status: status,
     hourlyRate: hourlyRate, // $50 per hour
     bookingFee: bookingFee, // $100 Booking Fee
     billingType: billingType,

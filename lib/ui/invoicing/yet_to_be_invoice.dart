@@ -56,14 +56,17 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
         .map((invoice) => invoice.jobId)
         .toSet();
 
-    return jobs
-        .map(
-          (job) => ToBeInvoicedJob(
-            job: job,
-            hasUnsentInvoice: unsentJobIds.contains(job.id),
-          ),
-        )
-        .toList();
+    final ready = <ToBeInvoicedJob>[];
+    for (final job in jobs) {
+      ready.add(
+        ToBeInvoicedJob(
+          job: job,
+          hasUnsentInvoice: unsentJobIds.contains(job.id),
+          readiness: await JobBillingReadinessService().evaluate(job),
+        ),
+      );
+    }
+    return ready;
   }
 
   @override
@@ -83,10 +86,20 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
             title: 'Customer: ${customer?.name ?? '—'}',
             actions: [
               HMBButton(
-                label: 'Invoice',
-                hint: 'Create an invoice for this job',
+                label: item.readiness.canInvoice ? 'Invoice' : 'Set up billing',
+                hint: item.readiness.canInvoice
+                    ? 'Create an invoice for this job'
+                    : 'Open the quote and milestone billing setup',
                 onPressed: () async {
-                  await createInvoiceFor(job, context);
+                  if (item.readiness.canInvoice) {
+                    await createInvoiceFor(job, context);
+                    return;
+                  }
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => FullPageListJobCard(job),
+                    ),
+                  );
                 },
               ),
             ],
@@ -98,6 +111,10 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
               ),
               const HMBSpacer(height: true),
               HMBText('Type: ${job.billingType.display}'),
+              HMBText(
+                'Attention: ${item.readiness.summary}',
+                color: Colors.orange,
+              ),
               if (item.hasUnsentInvoice)
                 const HMBText(
                   'Pending invoice exists and has not been sent yet.',
@@ -114,6 +131,11 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
 class ToBeInvoicedJob {
   final Job job;
   final bool hasUnsentInvoice;
+  final JobBillingReadiness readiness;
 
-  const ToBeInvoicedJob({required this.job, required this.hasUnsentInvoice});
+  const ToBeInvoicedJob({
+    required this.job,
+    required this.hasUnsentInvoice,
+    required this.readiness,
+  });
 }

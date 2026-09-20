@@ -62,6 +62,7 @@ class Job extends Entity<Job> {
   int? siteId;
   int? contactId;
   JobStatus status;
+  JobStatus? resumeStatus;
   Money? hourlyRate;
   Money? bookingFee;
   bool lastActive;
@@ -95,6 +96,7 @@ class Job extends Entity<Job> {
     required super.createdDate,
     required super.modifiedDate,
     this.isStock = false,
+    this.resumeStatus,
     this.billingType = BillingType.timeAndMaterial,
     this.bookingFeeInvoiced = false,
   }) : super();
@@ -110,6 +112,7 @@ class Job extends Entity<Job> {
     required this.bookingFee,
     required this.billingContactId,
     this.referrerCustomerId,
+    this.resumeStatus,
     this.referrerContactId,
     this.tenantContactId,
     this.billingParty = BillingParty.customer,
@@ -134,6 +137,7 @@ class Job extends Entity<Job> {
     int? siteId,
     int? contactId,
     JobStatus? status,
+    JobStatus? resumeStatus,
     Money? hourlyRate,
     Money? bookingFee,
     bool? lastActive,
@@ -156,6 +160,7 @@ class Job extends Entity<Job> {
     siteId: siteId ?? this.siteId,
     contactId: contactId ?? this.contactId,
     status: status ?? this.status,
+    resumeStatus: resumeStatus ?? this.resumeStatus,
     hourlyRate: hourlyRate ?? this.hourlyRate,
     bookingFee: bookingFee ?? this.bookingFee,
     billingContactId: billingContactId ?? this.billingContactId,
@@ -182,6 +187,9 @@ class Job extends Entity<Job> {
     siteId: map['site_id'] as int?,
     contactId: map['contact_id'] as int?,
     status: JobStatus.fromId(map['status_id'] as String),
+    resumeStatus: map['resume_status_id'] == null
+        ? null
+        : JobStatus.fromId(map['resume_status_id'] as String),
     hourlyRate: Money.fromInt(map['hourly_rate'] as int? ?? 0, isoCode: 'AUD'),
     bookingFee: Money.fromInt(map['booking_fee'] as int? ?? 0, isoCode: 'AUD'),
     createdDate: DateTime.parse(map['created_date'] as String),
@@ -212,6 +220,7 @@ class Job extends Entity<Job> {
     'site_id': siteId,
     'contact_id': contactId,
     'status_id': status.id,
+    'resume_status_id': resumeStatus?.id,
     'hourly_rate': hourlyRate?.minorUnits.toInt(),
     'booking_fee': bookingFee?.minorUnits.toInt(),
     'last_active': lastActive ? 1 : 0,

@@ -87,7 +87,6 @@ class DaoTaskItem extends Dao<TaskItem> {
     JobStatus.onHold.id,
     JobStatus.awaitingPayment.id,
     JobStatus.completed.id,
-    JobStatus.toBeBilled.id,
   ];
   static final List<int> _inactiveTaskStatusIds = [
     TaskStatus.onHold.id,
@@ -246,8 +245,7 @@ SELECT ti.*
       '${JobStatus.rejected.id}',
       '${JobStatus.onHold.id}',
       '${JobStatus.awaitingPayment.id}',
-      '${JobStatus.completed.id}',
-      '${JobStatus.toBeBilled.id}'
+      '${JobStatus.completed.id}'
    )
    $jobClause
    $supplierClause
@@ -531,8 +529,7 @@ SELECT ti.*
       '${JobStatus.rejected.id}',
       '${JobStatus.onHold.id}',
       '${JobStatus.awaitingPayment.id}',
-      '${JobStatus.completed.id}',
-      '${JobStatus.toBeBilled.id}'
+      '${JobStatus.completed.id}'
     )
 ''');
     }
@@ -591,8 +588,7 @@ SELECT ti.*
       '${JobStatus.rejected.id}',
       '${JobStatus.onHold.id}',
       '${JobStatus.awaitingPayment.id}',
-      '${JobStatus.completed.id}',
-      '${JobStatus.toBeBilled.id}'
+      '${JobStatus.completed.id}'
     )
 ''');
     }
@@ -640,8 +636,7 @@ SELECT ti.*
       '${JobStatus.rejected.id}',
       '${JobStatus.onHold.id}',
       '${JobStatus.awaitingPayment.id}',
-      '${JobStatus.completed.id}',
-      '${JobStatus.toBeBilled.id}'
+      '${JobStatus.completed.id}'
     )
 ''');
 

@@ -40,7 +40,9 @@ void main() {
     await tearDownTestDb();
   });
 
-  testWidgets('reject dialog can reject quote and job', (tester) async {
+  testWidgets('reject dialog offers quote-only and whole-job scopes', (
+    tester,
+  ) async {
     final quote = await tester.runAsync(() async {
       final job = await createJobWithCustomer(
         billingType: BillingType.fixedPrice,
@@ -79,7 +81,7 @@ void main() {
     await tester.tap(find.text('Reject'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Reject Quote'), findsOneWidget);
+    expect(find.text('Reject quote'), findsOneWidget);
     expect(find.text('Quote Only'), findsOneWidget);
     expect(find.text('Quote + Job'), findsOneWidget);
 
@@ -91,7 +93,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Reject Quote'), findsNothing);
+    expect(find.text('Reject quote'), findsNothing);
   });
 
   testWidgets('unapprove button rolls approved quote back to sent', (
@@ -132,9 +134,22 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'Unapprove'));
     await tester.pumpAndSettle();
 
-    final updatedQuote = await tester.runAsync(
-      () => DaoQuote().getById(quote.id),
-    );
+    final updatedQuote = await tester.runAsync(() async {
+      Quote? updated;
+      for (var attempt = 0; attempt < 20; attempt++) {
+        updated = await DaoQuote().getById(quote.id);
+        if (updated?.state == QuoteState.sent) {
+          break;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      // The database state commits before the button callback reloads the
+      // quote and posts its confirmation toast.
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      return updated;
+    });
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 7));
     expect(updatedQuote?.state, QuoteState.sent);
   });
 

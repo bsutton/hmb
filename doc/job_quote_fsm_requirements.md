@@ -193,26 +193,54 @@ Phase 5: hardening
 5. Full lifecycle test suite passes, including guard and side-effect cases.
 6. Transition audit records are written for all successful transitions.
 
-## 11. Open Design Decisions
+## 11. Resolved Design Decisions
 
-1. Single combined lifecycle engine vs separate job/quote engines with
-   cross-dispatch.
-2. Event sourcing-lite (append-only transition log) vs simple audit table.
-3. Whether to expose transition history in UI immediately or later.
-
-## 12. Job Action Picker and Recovery
-
-- Show the current status separately from the available actions.
-- Label controls with actions such as `Start work`, `Pause job`, and
-  `Mark work complete`; show the resulting status as secondary information.
-- Preserve distinct events even when they lead to the same status.
-- Do not offer a transition back to the current status.
-- Wait for the event and its persistence to finish before reporting success.
-- `Reopen job` moves a completed or to-be-billed job back to `In Progress`.
-  This resumes work; it does not restore todos closed by completion or undo
-  earlier quote, billing, or task changes.
-- A general `Undo last action` requires recorded transition history and
-  enough information to reverse its side effects safely. It is not yet
-  implemented by the job action picker.
-- Labels must describe what an action actually does. `Mark for billing`
-  changes the job status; it does not generate or send an invoice.
+1. Job and quote have separate pure `fsm2` graphs and share one transactional
+   dispatcher. Quote events may couple to a job event without allowing an
+   already-active job to regress.
+2. Successful commands append to `lifecycle_transition`. There is no backfill;
+   the table is an audit log, not the source of truth.
+3. Lifecycle audit rows are shown read-only in the existing Job Activity
+   Timeline alongside editable manual activities.
+4. Quote approval moves a job from `AwaitingApproval` to `AwaitingPayment`.
+   `PaymentReceived` or the explicit `ProceedToScheduling` override moves it to
+   `ToBeScheduled`.
+5. `AwaitingMaterials` is reachable from `Scheduled`, `InProgress`, and
+   `OnHold`; materials arriving returns the job to the stage saved when the
+   material wait began (or `InProgress` for legacy rows).
+6. Restoring a rejected job returns it to `Prospecting`; reopening a completed
+   job returns it to `InProgress`.
+7. `ToBeBilled` is retired. Upgrade v212 maps it to `Completed`. Billing
+   readiness is calculated independently so repeated time-and-materials
+   invoicing does not misuse lifecycle state.
+8. A completed job with billing attention remains in Current Jobs and Ready to
+   Invoice. Once that attention is cleared it appears only in Old Jobs.
+9. Fixed-price billing attention includes uninvoiced active milestones,
+   approved quote value not allocated to milestones, and missing approved quote
+   setup on completed work. Mixed jobs also include unbilled T&M variations.
+10. Opening or navigating to a job only changes recency; starting work always
+    requires an explicit lifecycle action.
+11. The application currently has no user identity, so `actor_id` is nullable.
+    Ledger payments do not imply a deposit and therefore do not automatically
+    dispatch `PaymentReceived`.
+12. Holding a job records `resume_status_id`. `ResumeJob` and
+    `MaterialsArrived` return to that saved workflow stage rather than always
+    skipping forward to `InProgress`. Legacy rows without a saved stage fall
+    back to `InProgress`.
+13. Quote-only rejection is distinct from rejecting the whole job. Removing
+    the last viable quote from an approval/payment workflow returns the job to
+    `Quoting`; remaining sent or approved alternatives keep the corresponding
+    job stage active.
+14. Scheduled, held, and materials-blocked jobs may be completed explicitly
+    without manufacturing a false work-start event. Completed work may reopen
+    either to `InProgress` or `ToBeScheduled`.
+15. Transition tests must cover the `fsm2` graph, dispatcher persistence,
+    audit record, blocked-event rollback, and presence of a user recovery
+    action for every persisted job state.
+16. Creating or moving a scheduling activity and advancing the job are one
+    transaction. Removing or moving the last activity from a `Scheduled` job
+    dispatches `ScheduleRemoved` and returns it to `ToBeScheduled`.
+17. Scheduling from any pre-work stage follows its explicit
+    `ProceedToScheduling` path. Scheduling completed work reopens it for
+    scheduling, while scheduling rejected work is rejected atomically. Editing
+    an existing completed job's historical activity does not reopen the job.

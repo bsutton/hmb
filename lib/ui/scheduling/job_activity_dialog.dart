@@ -25,8 +25,6 @@ import '../../entity/contact.dart';
 import '../../entity/flutter_extensions/job_activity_status_ex.dart';
 import '../../entity/job.dart';
 import '../../entity/job_activity.dart';
-import '../../fsm/job_events.dart';
-import '../../fsm/job_status_fsm.dart';
 import '../../util/dart/date_time_ex.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
@@ -471,8 +469,6 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     }
     final jobEventEx = await JobActivityEx.fromActivity(jobEvent);
 
-    await _updateJobStatus();
-
     if (mounted) {
       if (widget.isEditing) {
         Navigator.of(
@@ -534,14 +530,6 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
       }
     }
     return null;
-  }
-
-  Future<void> _updateJobStatus() async {
-    // Next, check the job’s status
-    final job = await DaoJob().getById(_selectedJob.jobId);
-    if (job != null) {
-      await transitionJob(job, ScheduleJob.new);
-    }
   }
 
   Future<void> _showContactOptions() async {

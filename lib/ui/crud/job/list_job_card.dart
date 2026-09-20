@@ -17,6 +17,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../dao/dao.g.dart';
 import '../../../dao/notification/dao_june_builder.dart';
 import '../../../entity/entity.g.dart';
+import '../../../fsm/job_status_fsm.dart';
 import '../../../util/dart/date_time_ex.dart';
 import '../../../util/dart/format.dart';
 import '../../../util/dart/local_date.dart';
@@ -48,11 +49,13 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
   late final JobActivity? nextActivity;
   late Customer? customer;
   late Contact? primaryContact;
+  late JobBillingReadiness billingReadiness;
 
   @override
   Future<void> asyncInitState() async {
     job = widget.job;
     nextActivity = await DaoJobActivity().getNextActivityByJob(job.id);
+    billingReadiness = await JobBillingReadinessService().evaluate(job);
     await _loadCustomerDetails();
   }
 
@@ -102,7 +105,7 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
           label: '',
           job: job,
           onMapClicked: () async {
-            await DaoJob().markActive(job.id);
+            await markJobActive(job.id);
             await DaoActivity().recordNavigatedToJob(jobId: job.id);
           },
         ),
@@ -112,6 +115,12 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
             HMBText('Status: ${jobStatus?.displayName ?? 'Status Unknown'}'),
           ],
         ),
+        if (job.status == JobStatus.completed &&
+            billingReadiness.needsAttention)
+          HMBChip(
+            label: 'Billing attention: ${billingReadiness.summary}',
+            tone: HMBChipTone.warning,
+          ),
         _buildNextActivity(),
         const HMBText('Description:', bold: true),
         HMBTextBlock(job.description, maxLines: 1),

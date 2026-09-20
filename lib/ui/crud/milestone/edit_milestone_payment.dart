@@ -22,6 +22,9 @@ import 'package:money2/money2.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/milestone.dart';
 import '../../../entity/quote.dart';
+import '../../../fsm/lifecycle_event_dispatcher.dart';
+import '../../../fsm/lifecycle_models.dart';
+import '../../../fsm/quote_events.dart';
 import '../../../util/dart/list_ex.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../quoting/select_billing_contact_dialog.dart';
@@ -340,8 +343,11 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
       milestone.invoiceId = invoice.id;
       await DaoMilestone().update(milestone);
 
-      quoteForMilestone.state = QuoteState.invoiced;
-      await DaoQuote().update(quoteForMilestone);
+      await LifecycleEventDispatcher().dispatchQuote(
+        quoteForMilestone.id,
+        QuoteInvoiced.new,
+        context: LifecycleContext(source: 'milestone.invoice'),
+      );
 
       // Refresh data
       await _loadData();

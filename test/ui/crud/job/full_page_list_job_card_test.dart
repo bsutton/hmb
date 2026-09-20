@@ -29,11 +29,11 @@ void main() {
     ) async {
       late Job job;
       await tester.runAsync(() async {
-        job = (await createJobWithCustomer(
+        job = await createJobWithCustomer(
           billingType: BillingType.fixedPrice,
           hourlyRate: MoneyEx.zero,
-        ))..status = status;
-        await DaoJob().update(job);
+        );
+        await setJobStatusForTest(job, status);
       });
       await tester.pumpWidget(MaterialApp(home: FullPageListJobCard(job)));
       for (var attempt = 0; attempt < 30; attempt++) {

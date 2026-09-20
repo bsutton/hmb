@@ -1,122 +1,162 @@
 import 'package:fsm2/fsm2.dart';
 
-import '../entity/entity.g.dart';
+import '../entity/job.dart';
+import '../entity/task.dart';
+import '../entity/time_entry.dart';
 
-/// --- Events (user actions) ---
+/// A domain action which may move a job through its lifecycle.
 sealed class JobEvent extends Event {
   final Job job;
+
   JobEvent(this.job);
 
-  /// Describe the action performed, rather than its destination status.
-  String get label => switch (this) {
-    StartQuoting() => 'Start quoting',
-    AcceptJob() => 'Accept job',
-    SubmitQuote() => 'Mark quote sent',
-    ApproveQuote() =>
-      job.status == JobStatus.rejected ? 'Accept job' : 'Mark quote approved',
-    PaymentReceived() => 'Confirm payment received',
-    ScheduleJob() => 'Request scheduling',
-    StartWork() => 'Start work',
-    PauseJob() => 'Pause job',
-    ResumeJob() => 'Resume work',
-    MaterialsArrived() => 'Confirm materials arrived',
-    CompleteJob() => 'Mark work complete',
-    RaiseInvoice() => 'Mark for billing',
-    RejectJob() => 'Reject job',
-    ReopenJob() => 'Reopen job',
-  };
-}
-
-class StartQuoting extends JobEvent {
-  StartQuoting(super.job);
+  String get name;
 }
 
 class AcceptJob extends JobEvent {
   AcceptJob(super.job);
+  @override
+  String get name => 'AcceptJob';
+}
+
+class StartQuoting extends JobEvent {
+  StartQuoting(super.job);
+  @override
+  String get name => 'StartQuoting';
 }
 
 class SubmitQuote extends JobEvent {
   SubmitQuote(super.job);
+  @override
+  String get name => 'QuoteSubmitted';
 }
 
 class ApproveQuote extends JobEvent {
   ApproveQuote(super.job);
+  @override
+  String get name => 'QuoteApproved';
+}
+
+class QuoteUnapproved extends JobEvent {
+  QuoteUnapproved(super.job);
+  @override
+  String get name => 'QuoteUnapproved';
+}
+
+class QuoteNeedsRevision extends JobEvent {
+  QuoteNeedsRevision(super.job);
+  @override
+  String get name => 'QuoteNeedsRevision';
 }
 
 class PaymentReceived extends JobEvent {
   PaymentReceived(super.job);
+  @override
+  String get name => 'PaymentReceived';
+}
+
+class ProceedToScheduling extends JobEvent {
+  ProceedToScheduling(super.job);
+  @override
+  String get name => 'ProceedToScheduling';
 }
 
 class ScheduleJob extends JobEvent {
   ScheduleJob(super.job);
+  @override
+  String get name => 'ScheduleCreated';
+}
+
+class ScheduleRemoved extends JobEvent {
+  ScheduleRemoved(super.job);
+  @override
+  String get name => 'ScheduleRemoved';
 }
 
 class StartWork extends JobEvent {
-  StartWork(super.job);
+  final Task? task;
+  final TimeEntry? timeEntry;
+
+  StartWork(super.job, {this.task, this.timeEntry});
+  @override
+  String get name => 'StartWork';
 }
 
 class PauseJob extends JobEvent {
   PauseJob(super.job);
+  @override
+  String get name => 'Hold';
 }
 
 class ResumeJob extends JobEvent {
   ResumeJob(super.job);
+  @override
+  String get name => 'Resume';
+}
+
+class WaitForMaterials extends JobEvent {
+  WaitForMaterials(super.job);
+  @override
+  String get name => 'WaitForMaterials';
 }
 
 class MaterialsArrived extends JobEvent {
   MaterialsArrived(super.job);
+  @override
+  String get name => 'MaterialsArrived';
 }
 
 class CompleteJob extends JobEvent {
   CompleteJob(super.job);
+  @override
+  String get name => 'CompleteJob';
 }
 
-class RaiseInvoice extends JobEvent {
-  RaiseInvoice(super.job);
+class ReopenWork extends JobEvent {
+  ReopenWork(super.job);
+  @override
+  String get name => 'ReopenWork';
 }
 
-/// Resume work after completion; this does not undo earlier side effects.
-class ReopenJob extends JobEvent {
-  ReopenJob(super.job);
+class ReopenForScheduling extends JobEvent {
+  ReopenForScheduling(super.job);
+  @override
+  String get name => 'ReopenForScheduling';
 }
 
 class RejectJob extends JobEvent {
   RejectJob(super.job);
+  @override
+  String get name => 'RejectJob';
 }
 
-/// Event factories so we can build real Event instances for guard
-/// checking & firing.
-final Map<Type, JobEvent Function(Job)> eventFactory = {
-  StartQuoting: StartQuoting.new,
+class RestoreJob extends JobEvent {
+  RestoreJob(super.job);
+  @override
+  String get name => 'RestoreJob';
+}
+
+typedef BuildEvent = JobEvent Function(Job job);
+
+final Map<Type, BuildEvent> eventFactory = {
   AcceptJob: AcceptJob.new,
+  StartQuoting: StartQuoting.new,
   SubmitQuote: SubmitQuote.new,
   ApproveQuote: ApproveQuote.new,
+  QuoteUnapproved: QuoteUnapproved.new,
+  QuoteNeedsRevision: QuoteNeedsRevision.new,
   PaymentReceived: PaymentReceived.new,
+  ProceedToScheduling: ProceedToScheduling.new,
   ScheduleJob: ScheduleJob.new,
+  ScheduleRemoved: ScheduleRemoved.new,
   StartWork: StartWork.new,
   PauseJob: PauseJob.new,
   ResumeJob: ResumeJob.new,
+  WaitForMaterials: WaitForMaterials.new,
   MaterialsArrived: MaterialsArrived.new,
   CompleteJob: CompleteJob.new,
-  RaiseInvoice: RaiseInvoice.new,
+  ReopenWork: ReopenWork.new,
+  ReopenForScheduling: ReopenForScheduling.new,
   RejectJob: RejectJob.new,
-  ReopenJob: ReopenJob.new,
+  RestoreJob: RestoreJob.new,
 };
-
-JobEvent createEvent<T extends JobEvent>(Job job, T eventType) =>
-    switch (eventType) {
-      StartQuoting() => StartQuoting(job),
-      AcceptJob() => AcceptJob(job),
-      SubmitQuote() => SubmitQuote(job),
-      ApproveQuote() => ApproveQuote(job),
-      PaymentReceived() => PaymentReceived(job),
-      ScheduleJob() => ScheduleJob(job),
-      StartWork() => StartWork(job),
-      PauseJob() => PauseJob(job),
-      ResumeJob() => ResumeJob(job),
-      MaterialsArrived() => MaterialsArrived(job),
-      CompleteJob() => CompleteJob(job),
-      RaiseInvoice() => RaiseInvoice(job),
-      RejectJob() => RejectJob(job),
-      ReopenJob() => ReopenJob(job),
-    };

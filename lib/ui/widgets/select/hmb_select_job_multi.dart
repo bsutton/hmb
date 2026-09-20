@@ -149,8 +149,7 @@ class CustomerAndJob {
       job.status != JobStatus.rejected &&
       job.status != JobStatus.onHold &&
       job.status != JobStatus.awaitingPayment &&
-      job.status != JobStatus.completed &&
-      job.status != JobStatus.toBeBilled;
+      job.status != JobStatus.completed;
 
   static Future<List<CustomerAndJob>> fromList(List<Job> jobs) async {
     final list = <CustomerAndJob>[];

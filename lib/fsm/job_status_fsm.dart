@@ -4,297 +4,366 @@ import '../dao/dao.g.dart';
 import '../entity/entity.g.dart';
 import 'job_events.dart';
 import 'job_states.dart';
+import 'lifecycle_event_dispatcher.dart';
+import 'lifecycle_models.dart';
+import 'lifecycle_rules.dart';
 
-/// An available action, its resulting status, and a way to perform it.
+/// A user-facing domain action. Multiple actions may lead to the same state.
 class Next {
-  final JobEvent event;
-
-  String get label => event.label;
-
-  /// The target status the user would be moving to.
   final JobStatus to;
+  final LifecycleAction action;
+  final Future<Job> Function() fire;
 
-  /// Fire the underlying fsm2 event to do the transition.
-  final Future<void> Function(StateMachine machine) fire;
-
-  const Next({required this.event, required this.to, required this.fire});
+  const Next({required this.to, required this.action, required this.fire});
 }
 
-typedef BuildEvent = JobEvent Function(Job job);
+Future<Job> transitionJobById(int jobId, BuildEvent buildEvent) async =>
+    (await LifecycleEventDispatcher().dispatchJob(
+      jobId,
+      buildEvent,
+      context: LifecycleContext(source: 'application'),
+    )).entity;
 
-/// Transitions the [Job] and then returns the updated [Job]
-Future<Job> transitionJobById(int jobid, BuildEvent buildEvent) async {
-  final job = await DaoJob().getById(jobid);
-  final event = buildEvent(job!);
-  final machine = await buildJobMachine(job);
+Future<Job> transitionJob(Job job, BuildEvent buildEvent) =>
+    transitionJobById(job.id, buildEvent);
 
-  machine.applyEvent(event);
-  await machine.complete;
-
-  return (await DaoJob().getById(jobid))!;
+/// Navigation records recency only; opening a job must not start work.
+Future<Job> markJobActive(int jobId) async {
+  await DaoJob().markLastActive(jobId);
+  return (await DaoJob().getById(jobId))!;
 }
 
-/// Transitions the [Job] and then returns the updated [Job]
-Future<Job> transitionJob(Job job, BuildEvent buildEvent) async {
-  final machine = await buildJobMachine(job);
-  final event = buildEvent(job);
-  machine.applyEvent(event);
-  await machine.complete;
-  return (await DaoJob().getById(job.id))!;
+Future<Job> startJobQuoting(int jobId) async {
+  final job = (await DaoJob().getById(jobId))!;
+  if (job.status != JobStatus.prospecting) {
+    await DaoJob().markLastActive(jobId);
+    return (await DaoJob().getById(jobId))!;
+  }
+  return await transitionJobById(jobId, StartQuoting.new);
 }
 
-/// Build the job FSM (wire transitions once).
+Future<Job> submitJobQuote(int jobId) =>
+    transitionJobById(jobId, SubmitQuote.new);
 
-Future<StateMachine> buildJobMachine(Job job) async {
-  final machine = await StateMachine.create(production: true, (g) {
-    // Hydrate the state from the job
-    switch (job.status) {
-      case JobStatus.prospecting:
-        g.initialState<Prospecting>();
-      case JobStatus.quoting:
-        g.initialState<Quoting>();
-      case JobStatus.awaitingApproval:
-        g.initialState<AwaitingApproval>();
-      case JobStatus.awaitingPayment:
-        g.initialState<AwaitingPayment>();
-      case JobStatus.toBeScheduled:
-        g.initialState<ToBeScheduled>();
-      case JobStatus.scheduled:
-        g.initialState<Scheduled>();
-      case JobStatus.inProgress:
-        g.initialState<InProgress>();
-      case JobStatus.onHold:
-        g.initialState<OnHold>();
-      case JobStatus.awaitingMaterials:
-        g.initialState<AwaitingMaterials>();
-      case JobStatus.completed:
-        g.initialState<Completed>();
-      case JobStatus.toBeBilled:
-        g.initialState<ToBeBilled>();
-      case JobStatus.rejected:
-        g.initialState<Rejected>();
-    }
+Future<Job> rejectJob(int jobId) => transitionJobById(jobId, RejectJob.new);
 
-    // Super/parent state via nesting
-    g
-      // children (inherit RejectJob → Rejected)
-      ..state<Prospecting>(
-        (b) => b
-          ..on<StartQuoting, Quoting>()
-          ..on<AcceptJob, ToBeScheduled>()
-          ..on<ScheduleJob, Scheduled>()
-          ..on<PaymentReceived, ToBeScheduled>()
-          ..on<StartWork, InProgress>()
-          ..on<PauseJob, OnHold>()
-          ..on<RejectJob, Rejected>(),
-      )
-      ..state<Quoting>(
-        (b) => b
-          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.quoting))
-          ..on<SubmitQuote, AwaitingApproval>()
-          ..on<StartWork, InProgress>()
-          ..on<PauseJob, OnHold>()
-          ..on<RejectJob, Rejected>(),
-      )
-      ..state<AwaitingApproval>(
-        (b) => b
-          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.awaitingApproval))
-          ..on<ApproveQuote, AwaitingPayment>()
-          ..on<PauseJob, OnHold>()
-          ..on<RejectJob, Rejected>(),
-      )
-      ..state<AwaitingPayment>(
-        (b) => b
-          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.awaitingPayment))
-          ..on<PaymentReceived, ToBeScheduled>()
-          ..on<StartWork, InProgress>()
-          ..on<ScheduleJob, Scheduled>()
-          ..on<PauseJob, OnHold>()
-          ..on<RejectJob, Rejected>(),
-      )
-      ..state<ToBeScheduled>(
-        (b) => b
-          ..onEnter((_, _) async {
-            await _updateJobStatus(job, JobStatus.toBeScheduled);
-            await _ensureScheduleTodo(job);
-            await _approveTasks(job);
-          })
-          ..on<ScheduleJob, Scheduled>()
-          ..on<StartWork, InProgress>()
-          ..on<PauseJob, OnHold>()
-          ..on<RejectJob, Rejected>(),
-      )
-      ..state<Scheduled>(
-        (b) => b
-          ..onEnter((_, _) async {
-            await DaoJob().markScheduled(job);
-            await _approveTasks(job);
-          })
-          ..on<StartWork, InProgress>()
-          ..on<PauseJob, OnHold>()
-          ..on<RejectJob, Rejected>(),
-      )
-      ..state<InProgress>(
-        (b) => b
-          ..onEnter((_, _) => _inProgress(job))
-          ..on<CompleteJob, Completed>()
-          ..on<PauseJob, OnHold>()
-          ..on<RejectJob, Rejected>(),
-      )
-      ..state<OnHold>(
-        (b) => b
-          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.onHold))
-          ..on<ResumeJob, InProgress>()
-          ..on<ScheduleJob, ToBeScheduled>()
-          ..on<MaterialsArrived, InProgress>()
-          ..on<RejectJob, Rejected>(),
-      )
-      ..state<AwaitingMaterials>(
-        (b) => b
-          ..onEnter(
-            (_, _) => _updateJobStatus(job, JobStatus.awaitingMaterials),
-          )
-          ..on<ResumeJob, InProgress>()
-          ..on<PauseJob, OnHold>()
-          ..on<RejectJob, Rejected>(),
-      )
-      ..state<Completed>(
-        (b) => b
-          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.completed))
-          ..on<ReopenJob, InProgress>()
-          ..on<RaiseInvoice, ToBeBilled>()
-          ..on<RejectJob, Rejected>(),
-      )
-      ..state<ToBeBilled>(
-        (b) => b
-          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.toBeBilled))
-          ..on<CompleteJob, Completed>()
-          ..on<ReopenJob, InProgress>(),
-      )
-      ..state<Rejected>(
-        (b) => b
-          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.rejected))
-          ..on<ApproveQuote, AwaitingPayment>(),
-      );
-  });
+/// Builds a side-effect-free fsm2 representation of the job workflow.
+Future<StateMachine> buildJobMachine(Job job) =>
+    StateMachine.create(production: true, (graph) {
+      switch (job.status) {
+        case JobStatus.prospecting:
+          graph.initialState<Prospecting>();
+        case JobStatus.quoting:
+          graph.initialState<Quoting>();
+        case JobStatus.awaitingApproval:
+          graph.initialState<AwaitingApproval>();
+        case JobStatus.awaitingPayment:
+          graph.initialState<AwaitingPayment>();
+        case JobStatus.toBeScheduled:
+          graph.initialState<ToBeScheduled>();
+        case JobStatus.scheduled:
+          graph.initialState<Scheduled>();
+        case JobStatus.inProgress:
+          graph.initialState<InProgress>();
+        case JobStatus.onHold:
+          graph.initialState<OnHold>();
+        case JobStatus.awaitingMaterials:
+          graph.initialState<AwaitingMaterials>();
+        case JobStatus.completed:
+          graph.initialState<Completed>();
+        case JobStatus.rejected:
+          graph.initialState<Rejected>();
+      }
 
-  return machine;
-}
+      graph
+        ..state<Prospecting>(
+          (state) => state
+            ..on<AcceptJob, ToBeScheduled>()
+            ..on<StartQuoting, Quoting>()
+            ..on<SubmitQuote, AwaitingApproval>()
+            ..on<ProceedToScheduling, ToBeScheduled>()
+            ..on<StartWork, InProgress>()
+            ..on<PauseJob, OnHold>()
+            ..on<RejectJob, Rejected>(),
+        )
+        ..state<Quoting>(
+          (state) => state
+            ..on<SubmitQuote, AwaitingApproval>()
+            ..on<ProceedToScheduling, ToBeScheduled>()
+            ..on<StartWork, InProgress>()
+            ..on<PauseJob, OnHold>()
+            ..on<RejectJob, Rejected>(),
+        )
+        ..state<AwaitingApproval>(
+          (state) => state
+            ..on<ApproveQuote, AwaitingPayment>()
+            ..on<QuoteNeedsRevision, Quoting>()
+            ..on<ProceedToScheduling, ToBeScheduled>()
+            ..on<StartWork, InProgress>()
+            ..on<PauseJob, OnHold>()
+            ..on<RejectJob, Rejected>(),
+        )
+        ..state<AwaitingPayment>(
+          (state) => state
+            ..on<PaymentReceived, ToBeScheduled>()
+            ..on<ProceedToScheduling, ToBeScheduled>()
+            ..on<QuoteUnapproved, AwaitingApproval>()
+            ..on<QuoteNeedsRevision, Quoting>()
+            ..on<StartWork, InProgress>()
+            ..on<PauseJob, OnHold>()
+            ..on<RejectJob, Rejected>(),
+        )
+        ..state<ToBeScheduled>(
+          (state) => state
+            ..on<ScheduleJob, Scheduled>()
+            ..on<StartWork, InProgress>()
+            ..on<PauseJob, OnHold>()
+            ..on<RejectJob, Rejected>(),
+        )
+        ..state<Scheduled>(
+          (state) => state
+            ..on<ScheduleRemoved, ToBeScheduled>()
+            ..on<StartWork, InProgress>()
+            ..on<WaitForMaterials, AwaitingMaterials>()
+            ..on<PauseJob, OnHold>()
+            ..on<CompleteJob, Completed>()
+            ..on<RejectJob, Rejected>(),
+        )
+        ..state<InProgress>(
+          (state) => state
+            ..on<StartWork, InProgress>()
+            ..on<WaitForMaterials, AwaitingMaterials>()
+            ..on<PauseJob, OnHold>()
+            ..on<CompleteJob, Completed>()
+            ..on<RejectJob, Rejected>(),
+        )
+        ..state<OnHold>((state) {
+          _registerResumeTransition(state, resumeTarget(job.resumeStatus));
+          state
+            ..on<WaitForMaterials, AwaitingMaterials>()
+            ..on<ProceedToScheduling, ToBeScheduled>()
+            ..on<CompleteJob, Completed>()
+            ..on<RejectJob, Rejected>();
+        })
+        ..state<AwaitingMaterials>((state) {
+          _registerMaterialResumeTransitions(
+            state,
+            resumeTarget(job.resumeStatus),
+          );
+          state
+            ..on<PauseJob, OnHold>()
+            ..on<ProceedToScheduling, ToBeScheduled>()
+            ..on<CompleteJob, Completed>()
+            ..on<RejectJob, Rejected>();
+        })
+        ..state<Completed>(
+          (state) => state
+            ..on<ReopenWork, InProgress>()
+            ..on<ReopenForScheduling, ToBeScheduled>(),
+        )
+        ..state<Rejected>((state) => state..on<RestoreJob, Prospecting>());
+    });
 
-Future<void> _inProgress(Job job) async {
-  await DaoJob().markActive(job.id);
-  await _updateJobStatus(job, JobStatus.inProgress);
-  await _approveTasks(job);
-}
-
-Future<void> _approveTasks(Job job) async {
-  final daoTask = DaoTask();
-  final tasks = await daoTask.getTasksByJob(job.id);
-
-  for (final task in tasks) {
-    await daoTask.jobHasBeenApproved(task);
+void _registerResumeTransition(StateBuilder<OnHold> state, JobStatus target) {
+  switch (target) {
+    case JobStatus.prospecting:
+      state.on<ResumeJob, Prospecting>();
+    case JobStatus.quoting:
+      state.on<ResumeJob, Quoting>();
+    case JobStatus.awaitingApproval:
+      state.on<ResumeJob, AwaitingApproval>();
+    case JobStatus.awaitingPayment:
+      state.on<ResumeJob, AwaitingPayment>();
+    case JobStatus.toBeScheduled:
+      state.on<ResumeJob, ToBeScheduled>();
+    case JobStatus.scheduled:
+      state.on<ResumeJob, Scheduled>();
+    case JobStatus.inProgress ||
+        JobStatus.onHold ||
+        JobStatus.awaitingMaterials ||
+        JobStatus.completed ||
+        JobStatus.rejected:
+      state.on<ResumeJob, InProgress>();
   }
 }
 
-Future<void> _updateJobStatus(Job job, JobStatus status) async {
-  job.status = status;
-
-  await DaoJob().update(job);
-}
-
-Future<void> _ensureScheduleTodo(Job job) async {
-  final openTodos = await DaoToDo().getOpenByJob(job.id);
-  final alreadyExists = openTodos.any(
-    (todo) => todo.title.trim().toLowerCase() == 'schedule job',
-  );
-  if (alreadyExists) {
-    return;
+void _registerMaterialResumeTransitions(
+  StateBuilder<AwaitingMaterials> state,
+  JobStatus target,
+) {
+  switch (target) {
+    case JobStatus.prospecting:
+      state
+        ..on<MaterialsArrived, Prospecting>()
+        ..on<ResumeJob, Prospecting>();
+    case JobStatus.quoting:
+      state
+        ..on<MaterialsArrived, Quoting>()
+        ..on<ResumeJob, Quoting>();
+    case JobStatus.awaitingApproval:
+      state
+        ..on<MaterialsArrived, AwaitingApproval>()
+        ..on<ResumeJob, AwaitingApproval>();
+    case JobStatus.awaitingPayment:
+      state
+        ..on<MaterialsArrived, AwaitingPayment>()
+        ..on<ResumeJob, AwaitingPayment>();
+    case JobStatus.toBeScheduled:
+      state
+        ..on<MaterialsArrived, ToBeScheduled>()
+        ..on<ResumeJob, ToBeScheduled>();
+    case JobStatus.scheduled:
+      state
+        ..on<MaterialsArrived, Scheduled>()
+        ..on<ResumeJob, Scheduled>();
+    case JobStatus.inProgress ||
+        JobStatus.onHold ||
+        JobStatus.awaitingMaterials ||
+        JobStatus.completed ||
+        JobStatus.rejected:
+      state
+        ..on<MaterialsArrived, InProgress>()
+        ..on<ResumeJob, InProgress>();
   }
-
-  await DaoToDo().insert(
-    ToDo.forInsert(
-      title: 'Schedule job',
-      parentType: ToDoParentType.job,
-      parentId: job.id,
-      priority: ToDoPriority.high,
-    ),
-  );
 }
 
-/// Return permitted user actions, preserving events with the same destination.
+const _pickerActions = <LifecycleAction>[
+  LifecycleAction(
+    eventType: AcceptJob,
+    label: 'Accept job',
+    hint: 'Accept the job without a quote and arrange a visit',
+  ),
+  LifecycleAction(
+    eventType: StartQuoting,
+    label: 'Start quoting',
+    hint: 'Begin preparing a quote',
+  ),
+  LifecycleAction(
+    eventType: PaymentReceived,
+    label: 'Payment received',
+    hint: 'Record that the required payment was received',
+  ),
+  LifecycleAction(
+    eventType: QuoteNeedsRevision,
+    label: 'Revise quote',
+    hint: 'Return the job to quoting and prepare another option',
+    requiresConfirmation: true,
+  ),
+  LifecycleAction(
+    eventType: ProceedToScheduling,
+    label: 'Proceed to scheduling',
+    hint: 'Proceed without waiting for payment or a quote',
+    requiresConfirmation: true,
+  ),
+  LifecycleAction(
+    eventType: StartWork,
+    label: 'Start work',
+    hint: 'Record that work has begun',
+    requiresConfirmation: true,
+  ),
+  LifecycleAction(
+    eventType: PauseJob,
+    label: 'Pause job',
+    hint: 'Pause the job',
+  ),
+  LifecycleAction(
+    eventType: ResumeJob,
+    label: 'Resume work',
+    hint: 'Resume work on the job',
+  ),
+  LifecycleAction(
+    eventType: WaitForMaterials,
+    label: 'Wait for materials',
+    hint: 'Pause work until materials arrive',
+  ),
+  LifecycleAction(
+    eventType: MaterialsArrived,
+    label: 'Materials arrived',
+    hint: 'Resume work now that materials are available',
+  ),
+  LifecycleAction(
+    eventType: CompleteJob,
+    label: 'Mark work complete',
+    hint: 'Mark work as complete',
+    requiresConfirmation: true,
+  ),
+  LifecycleAction(
+    eventType: ReopenWork,
+    label: 'Reopen job',
+    hint: 'Return the completed job to work in progress',
+    requiresConfirmation: true,
+  ),
+  LifecycleAction(
+    eventType: ReopenForScheduling,
+    label: 'Reopen for scheduling',
+    hint: 'Reopen the completed job and arrange another visit',
+    requiresConfirmation: true,
+  ),
+  LifecycleAction(
+    eventType: RejectJob,
+    label: 'Reject job',
+    hint: 'Reject the job and its active quotes',
+    requiresConfirmation: true,
+  ),
+  LifecycleAction(
+    eventType: RestoreJob,
+    label: 'Restore job',
+    hint: 'Restore the rejected job to prospecting',
+    requiresConfirmation: true,
+  ),
+];
+
 Future<List<Next>> nextFromFsm({
   required StateMachine machine,
   required Job job,
 }) async {
-  // Build a lookup of state type -> definition
-  final defs = <Type, StateDefinition<State>>{};
-  await machine.traverseTree((sd, _) {
-    defs[sd.stateType] = sd;
-  });
-
-  final activeType = await currentState(machine);
-  final def = defs[activeType];
-  if (def == null) {
-    return const [];
+  final hydrated = stateFromType(await currentState(machine)).status;
+  if (hydrated != job.status) {
+    throw StateError(
+      'Job FSM is ${hydrated.name}, but job ${job.id} is ${job.status.name}.',
+    );
   }
-
-  final out = <Next>[];
-  final seenEvents = <Type>{};
-
-  // All static (i.e., declared) transitions, including those
-  //inherited from parents.
-  final transitions = def.getTransitions();
-
-  for (final td in transitions) {
-    // td.eventType and td.toState.stateType are available on
-    // TransitionDefinition.
-    final factory = eventFactory[td.triggerEvents.first];
-    if (factory == null) {
-      continue; // unknown or internal event
-    }
-
+  final next = <Next>[];
+  for (final action in _pickerActions) {
+    final factory = eventFactory[action.eventType]!;
     final event = factory(job);
-
-    // Ask fsm2 if this event would actually trigger from the active
-    //state *right now*.
-    final triggerable = await def.findTriggerableTransition(activeType, event);
-    if (triggerable == null) {
+    final target = targetForJobEvent(job.status, event);
+    if (target == null) {
       continue;
     }
-
-    final toType = stateFromType(triggerable.targetStates.first);
-
-    if (!toType.visible) {
-      continue;
-    }
-    final toStatus = statusFromType(toType);
-    if (toStatus == statusFromType(stateFromType(activeType)) ||
-        !seenEvents.add(event.runtimeType)) {
-      continue;
-    }
-
-    out.add(
+    final returnsToSavedStage =
+        (action.eventType == ResumeJob ||
+            action.eventType == MaterialsArrived) &&
+        target != JobStatus.inProgress;
+    final displayAction = returnsToSavedStage
+        ? LifecycleAction(
+            eventType: action.eventType,
+            label: action.eventType == MaterialsArrived
+                ? 'Materials arrived — ${target.displayName}'
+                : 'Resume ${target.displayName.toLowerCase()}',
+            hint: 'Return the job to ${target.displayName}',
+            requiresConfirmation: action.requiresConfirmation,
+          )
+        : action;
+    next.add(
       Next(
-        event: event,
-        to: toStatus,
-        fire: (m) async {
-          m.applyEvent(event);
-          await m.complete;
-        },
+        to: target,
+        action: displayAction,
+        fire: () async => (await LifecycleEventDispatcher().dispatchJob(
+          job.id,
+          factory,
+          context: LifecycleContext(source: 'job.statusPicker'),
+        )).entity,
       ),
     );
   }
-
-  // Keep your original UI order, if you like.
-  out.sort((a, b) => a.to.ordinal.compareTo(b.to.ordinal));
-  return out;
+  return next;
 }
 
-/// Convenience for just the statuses (for your dropdown etc.)
 Future<List<JobStatus>> nextStatusesOnly({
   required StateMachine machine,
   required Job job,
-}) async {
-  final next = await nextFromFsm(machine: machine, job: job);
-  return next.map((n) => n.to).toSet().toList();
-}
+}) async => (await nextFromFsm(
+  machine: machine,
+  job: job,
+)).map((next) => next.to).toList();

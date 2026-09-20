@@ -13,6 +13,9 @@
 
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
+import 'package:hmb/fsm/job_events.dart';
+import 'package:hmb/fsm/lifecycle_event_dispatcher.dart';
+import 'package:hmb/fsm/lifecycle_models.dart';
 import 'package:hmb/util/dart/local_date.dart';
 import 'package:money2/money2.dart';
 import 'package:test/test.dart';
@@ -169,8 +172,11 @@ void main() {
         summary: 'Inactive Job Test',
       );
 
-      inactiveJob.status = JobStatus.rejected;
-      await DaoJob().update(inactiveJob);
+      await LifecycleEventDispatcher().dispatchJob(
+        inactiveJob.id,
+        RejectJob.new,
+        context: LifecycleContext(source: 'test'),
+      );
 
       final activeJobs = await DaoJob().getActiveJobs('Active Job Test');
       expect(activeJobs.length, equals(1));
@@ -229,6 +235,7 @@ void main() {
         BillingType.timeAndMaterial,
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
         bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+        status: JobStatus.inProgress,
       );
 
       await DaoToDo().insert(
@@ -240,8 +247,11 @@ void main() {
       );
       expect((await DaoToDo().getByJob(job.id)).length, 1);
 
-      job.status = JobStatus.completed;
-      await DaoJob().update(job);
+      await LifecycleEventDispatcher().dispatchJob(
+        job.id,
+        CompleteJob.new,
+        context: LifecycleContext(source: 'test'),
+      );
 
       final todos = await DaoToDo().getByJob(job.id);
       expect(todos.length, 1);
@@ -278,8 +288,11 @@ void main() {
           ),
         );
 
-        job.status = JobStatus.rejected;
-        await DaoJob().update(job);
+        await LifecycleEventDispatcher().dispatchJob(
+          job.id,
+          RejectJob.new,
+          context: LifecycleContext(source: 'test'),
+        );
 
         final quote1 = await DaoQuote().getById(quote1Id);
         final quote2 = await DaoQuote().getById(quote2Id);
@@ -369,9 +382,8 @@ void main() {
         BillingType.timeAndMaterial,
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
         bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+        status: JobStatus.awaitingApproval,
       );
-      job.status = JobStatus.awaitingApproval;
-      await DaoJob().update(job);
       await createTask(job, 'Awaiting approval task');
 
       final ready = await DaoJob().readyToBeInvoiced(null);

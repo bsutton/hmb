@@ -17,6 +17,7 @@ import 'package:dcli/dcli.dart';
 import 'package:hmb/database/factory/cli_database_factory.dart';
 import 'package:hmb/database/management/database_helper.dart';
 import 'package:hmb/database/versions/implementations/project_script_source.dart';
+import 'package:hmb/entity/entity.g.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common/sqflite.dart';
 
@@ -88,4 +89,15 @@ Future<void> tearDownTestDb() async {
   }
 
   testDb = null;
+}
+
+/// Seeds lifecycle state without exercising production transition behavior.
+Future<void> setJobStatusForTest(Job job, JobStatus status) async {
+  await testDb!.update(
+    'job',
+    {'status_id': status.id, 'modified_date': DateTime.now().toIso8601String()},
+    where: 'id = ?',
+    whereArgs: [job.id],
+  );
+  job.status = status;
 }

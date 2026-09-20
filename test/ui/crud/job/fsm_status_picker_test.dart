@@ -65,6 +65,8 @@ void main() {
     expect(find.text('Move to:'), findsNothing);
 
     await tester.tap(find.text('Mark work complete - Completed'));
+    await _pumpUntil(tester, find.text('Continue'));
+    await tester.tap(find.text('Continue'));
     await _pumpUntil(tester, find.text('Reopen job - In Progress'));
     await tester.runAsync(() async {
       expect((await DaoJob().getById(job.id))!.status, JobStatus.completed);
