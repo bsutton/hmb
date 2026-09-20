@@ -2,6 +2,7 @@ import 'package:june/june.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../../dao/billing_attention_cache.dart';
+import '../../../widgets/hmb_tooltip.dart';
 import '../dashboard.dart';
 
 /// Non-blocking dashboard data: deliberately does not use BlockingUI.
@@ -18,15 +19,23 @@ class BillingAttentionCount extends StatelessWidget {
       _cache.requestRefresh();
       return ListenableBuilder(
         listenable: _cache,
-        builder: (context, _) => Column(
+        builder: (context, _) => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Jobs to bill: ${_cache.entries?.length ?? '—'}'),
+            Text(
+              'Jobs to bill: '
+              '${_cache.entries?.length ?? (_cache.error == null ? '…' : '—')}',
+            ),
             if (_cache.error != null)
-              const Text('Billing count unavailable — reopen to retry'),
-            if (_cache.updating ||
-                (_cache.entries == null && _cache.error == null))
-              const Text('Updating billing…'),
+              const HMBTooltip(
+                hint: 'Billing count unavailable. Reopen Accounting to retry.',
+                child: Icon(Icons.warning_amber_rounded, size: 14),
+              )
+            else if (_cache.updating && _cache.entries != null)
+              const HMBTooltip(
+                hint: 'Updating billing count',
+                child: Icon(Icons.sync, size: 14),
+              ),
           ],
         ),
       );

@@ -18,6 +18,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../../dao/dao.g.dart';
 import '../../../../util/dart/local_date.dart';
+import '../../../widgets/hmb_tooltip.dart';
 import '../dashlet_card.dart';
 
 class InvoiceDashlet extends StatelessWidget {
@@ -92,17 +93,11 @@ Widget buildInvoiceCountSummary(
   mainAxisSize: MainAxisSize.min,
   children: [
     Text(
-      '${summary.outstanding}',
+      '${summary.outstanding} unpaid '
+      '${summary.outstanding == 1 ? 'invoice' : 'invoices'}',
       style: Theme.of(
         context,
       ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-    ),
-    const SizedBox(height: 2),
-    Text(
-      summary.outstanding == 1 ? 'Outstanding invoice' : 'Outstanding',
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: Theme.of(context).textTheme.bodySmall,
     ),
     const SizedBox(height: 4),
     _buildOverdueLine(context, summary),
@@ -111,20 +106,21 @@ Widget buildInvoiceCountSummary(
 
 Widget _buildOverdueLine(BuildContext context, InvoiceCountSummary summary) {
   final theme = Theme.of(context);
-  if (summary.overdueSevenDays > 0) {
-    return Text(
-      '${summary.overdue} overdue, ${summary.overdueSevenDays} 7+ days',
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: theme.textTheme.bodySmall?.copyWith(color: Colors.red.shade400),
-    );
-  }
   if (summary.overdue > 0) {
-    return Text(
-      '${summary.overdue} overdue',
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: theme.textTheme.bodySmall?.copyWith(color: Colors.orange.shade700),
+    return HMBTooltip(
+      hint:
+          '${summary.overdueSevenDays} unpaid invoices are '
+          'at least 7 days overdue.',
+      child: Text(
+        '${summary.overdue} of these overdue',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: summary.overdueSevenDays > 0
+              ? Colors.red.shade400
+              : Colors.orange.shade700,
+        ),
+      ),
     );
   }
   return Text(

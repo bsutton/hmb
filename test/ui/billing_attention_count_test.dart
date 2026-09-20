@@ -34,16 +34,13 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump();
-    expect(find.text('Updating billing…'), findsOneWidget);
-    expect(find.text('Jobs to bill: —'), findsOneWidget);
+    expect(find.text('Updating billing…'), findsNothing);
+    expect(find.text('Jobs to bill: …'), findsOneWidget);
     await tester.tap(find.text('Jobs'));
     expect(taps, 1);
     pending.completeError(StateError('Unavailable'));
     await tester.pump();
-    expect(
-      find.text('Billing count unavailable — reopen to retry'),
-      findsOneWidget,
-    );
+    expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
     expect(find.text('Jobs to bill: 0'), findsNothing);
     await tester.tap(find.text('Jobs'));
     expect(taps, 2);

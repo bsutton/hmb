@@ -39,7 +39,7 @@ class AccountingDashlet extends StatelessWidget {
         const SizedBox(height: 6),
         FutureBuilderEx<InvoiceCountSummary>(
           future: loadInvoiceCountSummary(),
-          waitingBuilder: (_) => const Text('Updating invoices…'),
+          waitingBuilder: (_) => const SizedBox.shrink(),
           errorBuilder: (_, error) => const Text('Invoice count unavailable'),
           builder: (context, summary) => _invoiceSummary(context, summary!),
         ),
