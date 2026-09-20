@@ -109,10 +109,12 @@ Widget _buildOverdueLine(BuildContext context, InvoiceCountSummary summary) {
   if (summary.overdue > 0) {
     return HMBTooltip(
       hint:
-          '${summary.overdueSevenDays} unpaid invoices are '
-          'at least 7 days overdue.',
+          '${summary.overdue - summary.overdueSevenDays} invoices are '
+          '1–6 days overdue; ${summary.overdueSevenDays} are '
+          'at least 7 days overdue. These groups do not overlap.',
       child: Text(
-        '${summary.overdue} of these overdue',
+        '${summary.overdue - summary.overdueSevenDays} overdue, '
+        '${summary.overdueSevenDays} 7+ days',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: theme.textTheme.bodySmall?.copyWith(
