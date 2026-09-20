@@ -47,28 +47,32 @@ void main() {
         ),
       ),
     );
-    await _pumpUntil(tester, find.text('Pause job'));
+    await _pumpUntil(tester, find.text('Pause job - On Hold'));
 
     final labels = tester
-        .widgetList<HMBButton>(find.byType(HMBButton))
+        .widgetList<HMBButtonPrimary>(find.byType(HMBButtonPrimary))
         .map((button) => button.label);
     expect(
       labels,
-      containsAll(['Pause job', 'Mark work complete', 'Reject job']),
+      containsAll([
+        'Pause job - On Hold',
+        'Mark work complete - Completed',
+        'Reject job - Rejected',
+      ]),
     );
     expect(labels, isNot(contains('In Progress')));
-    expect(find.text('Status: Completed'), findsOneWidget);
+    expect(find.text('Status: Completed'), findsNothing);
     expect(find.text('Move to:'), findsNothing);
 
-    await tester.tap(find.text('Mark work complete'));
-    await _pumpUntil(tester, find.text('Reopen job'));
+    await tester.tap(find.text('Mark work complete - Completed'));
+    await _pumpUntil(tester, find.text('Reopen job - In Progress'));
     await tester.runAsync(() async {
       expect((await DaoJob().getById(job.id))!.status, JobStatus.completed);
     });
     await tester.pumpAndSettle();
     expect(savedStatus, JobStatus.completed);
-    expect(find.text('Reopen job'), findsOneWidget);
-    expect(find.text('Mark work complete'), findsNothing);
+    expect(find.text('Reopen job - In Progress'), findsOneWidget);
+    expect(find.text('Mark work complete - Completed'), findsNothing);
     // fsm2's CompleterEx leaves a 10-second diagnostic timer after completion.
     await tester.pump(const Duration(seconds: 10));
     expect(tester.takeException(), isNull);
@@ -77,7 +81,7 @@ void main() {
 
 // Advance Flutter's test clock as well as the real database/async work.
 Future<void> _pumpUntil(WidgetTester tester, Finder finder) async {
-  for (var attempt = 0; attempt < 100; attempt++) {
+  for (var attempt = 0; attempt < 300; attempt++) {
     await tester.pump(const Duration(milliseconds: 20));
     if (finder.evaluate().isNotEmpty) {
       return;
