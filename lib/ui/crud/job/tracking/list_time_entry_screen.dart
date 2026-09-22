@@ -225,6 +225,12 @@ class TimeEntryTile extends StatelessWidget {
         if (timeEntry.note != null && timeEntry.note!.isNotEmpty)
           Text('Note: ${timeEntry.note}'),
         Text('Billed: ${timeEntry.billed ? "Yes" : "No"}'),
+        if (!timeEntry.billable)
+          Text(
+            timeEntry.showOnInvoice
+                ? 'Non-billable · show on invoice'
+                : 'Non-billable · hidden from invoice',
+          ),
       ],
     ),
   );

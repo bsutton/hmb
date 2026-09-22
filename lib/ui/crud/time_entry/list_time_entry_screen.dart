@@ -45,6 +45,12 @@ class TimeEntryListScreen extends StatelessWidget {
     details: (timeEntry, details) => HMBRow(
       children: [
         Text('Billed: ${timeEntry.billed}'),
+        if (!timeEntry.billable)
+          Text(
+            timeEntry.showOnInvoice
+                ? 'Non-billable · show on invoice'
+                : 'Non-billable · hidden from invoice',
+          ),
         Text(
           '''Duration: ${timeEntry.endTime == null ? 'running' : formatDuration(timeEntry.endTime!.difference(timeEntry.startTime))}''',
         ),

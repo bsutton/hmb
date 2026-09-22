@@ -24,6 +24,7 @@ import '../../../widgets/fields/fields.g.dart';
 import '../../../widgets/hmb_toast.dart';
 import '../../../widgets/layout/hmb_column.dart';
 import '../../../widgets/select/select.g.dart';
+import '../../../widgets/time_entry_billing_fields.dart';
 import '../../base_nested/edit_nested_screen.dart';
 
 class TimeEntryEditScreen extends StatefulWidget {
@@ -58,6 +59,8 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
   final _dateFormat = DateFormat('yyyy-MM-dd');
   final _timeFormat = DateFormat('hh:mm a');
   var _hasUserEditedEndDate = false;
+  var _billable = true;
+  var _showOnInvoice = false;
 
   @override
   TimeEntry? currentEntity;
@@ -79,6 +82,8 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
   void initState() {
     super.initState();
     currentEntity ??= widget.timeEntry;
+    _billable = currentEntity?.billable ?? true;
+    _showOnInvoice = currentEntity?.showOnInvoice ?? false;
 
     final now = DateTime.now();
     // Start date/time
@@ -327,6 +332,16 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
             focusNode: _noteFocusNode,
             labelText: 'Note',
           ),
+          TimeEntryBillingFields(
+            billable: _billable,
+            showOnInvoice: _showOnInvoice,
+            locked:
+                (currentEntity?.billed ?? false) ||
+                currentEntity?.invoiceLineId != null,
+            onBillableChanged: (value) => setState(() => _billable = value),
+            onShowOnInvoiceChanged: (value) =>
+                setState(() => _showOnInvoice = value),
+          ),
         ],
       ),
     ),
@@ -334,6 +349,8 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
 
   @override
   Future<TimeEntry> forUpdate(TimeEntry timeEntry) async => timeEntry.copyWith(
+    billable: _billable,
+    showOnInvoice: _showOnInvoice,
     taskId: _selectedTask!.id,
     supplierId: _selectedSupplier.selected,
     startTime: _combine(_startDateController.text, _startTimeController.text),
@@ -343,6 +360,8 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
 
   @override
   Future<TimeEntry> forInsert() async => TimeEntry.forInsert(
+    billable: _billable,
+    showOnInvoice: _showOnInvoice,
     taskId: _selectedTask!.id,
     supplierId: _selectedSupplier.selected,
     startTime: _combine(_startDateController.text, _startTimeController.text)!,

@@ -143,7 +143,17 @@ Future<List<TaskSelector>> taskSelectorsForInvoice({
     }
     final earned = await value.earned;
     if (earned.isZero) {
-      continue;
+      final entries = await DaoTimeEntry().getByTask(value.task.id);
+      if (!entries.any(
+        (entry) =>
+            !entry.billable &&
+            entry.showOnInvoice &&
+            !entry.billed &&
+            entry.endTime != null &&
+            !entry.hours.isZero,
+      )) {
+        continue;
+      }
     }
     selectors.add(TaskSelector(value.task, value.task.name, earned));
   }
