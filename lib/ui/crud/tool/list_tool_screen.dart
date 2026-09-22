@@ -90,6 +90,9 @@ class _ToolListScreenState extends State<ToolListScreen> {
               HMBTextBody('Purchased: ${formatDate(tool.datePurchased!)}'),
             if (tool.description != null)
               HMBTextBody('Description: ${tool.description}'),
+            if (tool.location.isNotEmpty)
+              HMBTextBody('Location: ${tool.location}'),
+            if (tool.lentTo.isNotEmpty) HMBTextBody('Lent to: ${tool.lentTo}'),
             if (tool.serialNumber != null)
               HMBTextBody('Serial No.: ${tool.serialNumber}'),
             if (tool.warrantyPeriod != null)

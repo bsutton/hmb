@@ -50,6 +50,8 @@ class ToolEditScreen extends StatefulWidget {
 class _ToolEditScreenState extends DeferredState<ToolEditScreen>
     implements EntityState<Tool> {
   late TextEditingController _nameController;
+  late TextEditingController _locationController;
+  late TextEditingController _lentToController;
   late TextEditingController _descriptionController;
   late TextEditingController _serialNumberController;
   late TextEditingController _warrantyPeriodController;
@@ -72,6 +74,8 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
     currentEntity ??= widget.tool;
 
     _nameController = TextEditingController(text: currentEntity?.name);
+    _locationController = TextEditingController(text: currentEntity?.location);
+    _lentToController = TextEditingController(text: currentEntity?.lentTo);
     _descriptionController = TextEditingController(
       text: currentEntity?.description,
     );
@@ -126,6 +130,14 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
                 selectedCategory.categoryId = category?.id;
               });
             },
+          ),
+          HMBTextField(
+            controller: _locationController,
+            labelText: 'Current location (site, vehicle or storage)',
+          ),
+          HMBTextField(
+            controller: _lentToController,
+            labelText: 'Lent to (clear when returned)',
           ),
           HMBTextArea(
             controller: _descriptionController,
@@ -229,6 +241,13 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
     ),
   );
 
+  @override
+  void dispose() {
+    _locationController.dispose();
+    _lentToController.dispose();
+    super.dispose();
+  }
+
   Widget _buildPhotoField(
     BuildContext context, {
     required String title,
@@ -282,6 +301,8 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
   Future<Tool> forUpdate(Tool tool) async {
     await _photoController.save();
     return tool.copyWith(
+      location: _locationController.text.trim(),
+      lentTo: _lentToController.text.trim(),
       name: _nameController.text,
       categoryId: selectedCategory.categoryId,
       description: _descriptionController.text,
@@ -300,6 +321,8 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
   @override
   Future<Tool> forInsert() async {
     final tool = Tool.forInsert(
+      location: _locationController.text.trim(),
+      lentTo: _lentToController.text.trim(),
       name: _nameController.text,
       categoryId: selectedCategory.categoryId,
       description: _descriptionController.text,

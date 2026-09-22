@@ -52,15 +52,17 @@ class DaoTool extends Dao<Tool> {
         '''
 select t.* 
 from tool t
-join category c
+left join category c
 on t.categoryId = c.id
 where t.name like ?
 or c.name like ?
 or t.serialNumber like ?
 or t.description like ?
+or t.location like ?
+or t.lent_to like ?
 order by t.name
 ''',
-        [like, like, like, like],
+        [like, like, like, like, like, like],
       ),
     );
   }
