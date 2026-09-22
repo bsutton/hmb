@@ -175,7 +175,7 @@ class _EditJobCardState extends DeferredState<EditJobCard> {
         focusNode: widget.descriptionFocusNode,
       ),
     ],
-    JobEditSection.customer => [_chooseCustomer(), _chooseReferrerCustomer()],
+    JobEditSection.customer => [_chooseCustomer()],
     JobEditSection.parties => [],
     JobEditSection.billing => [
       _chooseBillingType(),

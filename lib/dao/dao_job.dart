@@ -55,6 +55,30 @@ class DaoJob extends Dao<Job> {
 
   DaoJob() : super(tableName);
 
+  /// Change the referring business without changing the billing customer.
+  Future<void> setReferringCustomer(int jobId, int? customerId) async {
+    await db.transaction((transaction) async {
+      final job = await getById(jobId, transaction);
+      if (job == null) {
+        throw HMBException('Job no longer exists.');
+      }
+      if (customerId != null &&
+          await DaoCustomer().getById(customerId, transaction) == null) {
+        throw HMBException('Referring customer no longer exists.');
+      }
+      if (job.referrerCustomerId == customerId) {
+        return;
+      }
+      // Older jobs derive Bill To from the referrer. Preserve that selection
+      // when the referral changes; billing is edited separately.
+      if (job.billingParty == BillingParty.referrer) {
+        job.billToCustomerId ??= job.billingCustomerId;
+      }
+      job.referrerCustomerId = customerId;
+      await update(job, transaction);
+    });
+  }
+
   @override
   Future<int> insert(Job entity, [Transaction? transaction]) async {
     if (transaction == null) {

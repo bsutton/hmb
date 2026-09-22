@@ -42,6 +42,43 @@ void main() {
     ),
   );
 
+  testWidgets('business referral is a removable party, not a customer field', (
+    tester,
+  ) async {
+    final job = await seed(tester);
+    await tester.runAsync(() async {
+      await DaoJob().setReferringCustomer(job.id, job.customerId);
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (_, child) =>
+            Stack(children: [child!, const BlockingOverlay()]),
+        home: JobPartiesScreen(job: job, editCustomers: () async {}),
+      ),
+    );
+    await pumpUntil(tester, find.text('Referrer · Customer/business'));
+    expect(find.textContaining('Referred by:'), findsNothing);
+    await tester.tap(find.byTooltip('Remove referring business'));
+    await pumpUntil(tester, find.text('Remove referring business?'));
+    await tester.tap(find.text('Remove'));
+    await pumpUntil(tester, find.text('Add referring business'));
+    await tester.runAsync(() async {
+      final saved = (await DaoJob().getById(job.id))!;
+      expect(saved.referrerCustomerId, isNull);
+      expect(saved.customerId, job.customerId);
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (_, child) =>
+            Stack(children: [child!, const BlockingOverlay()]),
+        home: JobEditScreen(job: job, section: JobEditSection.customer),
+      ),
+    );
+    await pumpUntil(tester, find.byType(HMBDroplist<Customer>));
+    expect(find.byType(HMBDroplist<Customer>), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'party defaults are suggestions and Cancel creates no assignment',
     (tester) async {
