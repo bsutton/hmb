@@ -88,6 +88,34 @@ ORDER BY t.modifiedDate DESC
     return task;
   }
 
+  /// Prefer the only open task, otherwise the last open task used for a
+  /// shopping or packing item. Never select another job's or a closed task.
+  Future<Task?> defaultTaskForMaterials(int jobId) async {
+    final tasks = await getOpenTasksByJob(jobId);
+    if (tasks.length == 1) {
+      return tasks.single;
+    }
+    if (tasks.isEmpty) {
+      return null;
+    }
+    final rows = await withoutTransaction().rawQuery(
+      '''
+SELECT t.* FROM task t
+JOIN task_item i ON i.task_id = t.id
+WHERE t.job_id = ? AND t.task_status_id NOT IN (?, ?)
+  AND i.item_type_id != ?
+ORDER BY i.created_date DESC, i.id DESC LIMIT 1
+''',
+      [
+        jobId,
+        TaskStatus.completed.id,
+        TaskStatus.cancelled.id,
+        TaskItemType.labour.id,
+      ],
+    );
+    return rows.isEmpty ? null : fromMap(rows.single);
+  }
+
   //   Future<Task> getTaskForCheckListItem(CheckListItem item) async {
   //     final db = withoutTransaction();
 
