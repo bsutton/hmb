@@ -131,6 +131,7 @@ class _QuickBooksState extends DeferredState<QuickBooksIntegrationScreen> {
     body: DeferredBuilder(
       this,
       waitingBuilder: (_) => const SizedBox.shrink(),
+      errorBuilder: (_, _) => const Text('Could not load QuickBooks settings.'),
       builder: (_) => ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -153,21 +154,24 @@ class _QuickBooksState extends DeferredState<QuickBooksIntegrationScreen> {
             controller: _redirect,
             labelText: 'Registered redirect URI',
           ),
-          SwitchListTile(
-            title: const Text('Sandbox (test company)'),
-            value: _sandbox,
-            onChanged: _connecting
-                ? null
-                : (value) => setState(() => _sandbox = value),
-          ),
+          if (_connecting)
+            Text(_sandbox ? 'Sandbox company' : 'Live company')
+          else
+            HMBToggle(
+              label: 'Sandbox (test company)',
+              hint: 'Use a QuickBooks test company',
+              initialValue: _sandbox,
+              onToggled: (value) => setState(() => _sandbox = value),
+            ),
           HMBTextField(
             controller: _item,
             labelText: 'QuickBooks product/service item ID',
           ),
-          SwitchListTile(
-            title: const Text('US sales tax model'),
-            value: _us,
-            onChanged: (value) => setState(() => _us = value),
+          HMBToggle(
+            label: 'US sales tax model',
+            hint: 'Use US sales tax codes',
+            initialValue: _us,
+            onToggled: (value) => setState(() => _us = value),
           ),
           const Text(
             'Enter tax codes from the connected company. Every line must '
@@ -188,12 +192,12 @@ class _QuickBooksState extends DeferredState<QuickBooksIntegrationScreen> {
               controller: _transactionTax,
               labelText: 'US transaction tax code ID',
             ),
-          HMBButton(
+          HMBButtonSecondary(
             label: 'Save settings',
             hint: 'Save without contacting QuickBooks',
             onPressed: () => _run(_save),
           ),
-          HMBButton(
+          HMBButtonPrimary(
             label: 'Connect to QuickBooks',
             hint: 'Open Intuit authorization',
             onPressed: () => _run(_connect),
@@ -210,7 +214,7 @@ class _QuickBooksState extends DeferredState<QuickBooksIntegrationScreen> {
               labelText: 'Authorization callback URL',
               obscureText: true,
             ),
-            HMBButton(
+            HMBButtonPrimary(
               label: 'Complete connection',
               hint: 'Validate the callback and store tokens securely',
               onPressed: () => _run(() async {
@@ -225,7 +229,7 @@ class _QuickBooksState extends DeferredState<QuickBooksIntegrationScreen> {
             ),
           ],
           if (_connected)
-            HMBButton(
+            HMBButtonSecondary(
               label: 'Disconnect locally',
               hint: 'Remove saved tokens; revoke access separately in Intuit',
               onPressed: () => _run(() async {

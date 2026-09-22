@@ -93,14 +93,14 @@ void main() {
     // The third tile can be below the lazy list's viewport. Wait for the DAO
     // write rather than requiring that off-screen tile to be built.
     for (var attempt = 0; attempt < 100; attempt++) {
-      await tester.runAsync(() =>
-        Future<void>.delayed(const Duration(milliseconds: 20)));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
       await tester.pump();
       final ready = await tester.runAsync(() async {
         final rows = await DaoMilestone().getByQuoteId(quoteId);
-        return rows.length == 3 && rows.every(
-          (row) => row.paymentAmount.minorUnits.toInt() == 10000,
-        );
+        return rows.length == 3 &&
+            rows.every((row) => row.paymentAmount.minorUnits.toInt() == 10000);
       });
       if (ready!) {
         break;

@@ -5,6 +5,7 @@ import '../../api/accounting/quickbooks_invoice_export.dart';
 import '../../dao/dao_quickbooks.dart';
 import '../../entity/invoice.dart';
 import '../widgets/fields/hmb_text_field.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/widgets.g.dart';
 
 class QuickBooksExportScreen extends StatefulWidget {
@@ -55,11 +56,13 @@ class _ExportState extends DeferredState<QuickBooksExportScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Export to QuickBooks')),
-    body: DeferredBuilder(
+  Widget build(BuildContext context) => HMBFullPageChildScreen(
+    title: 'Export to QuickBooks',
+    maxContentWidth: 800,
+    child: DeferredBuilder(
       this,
       waitingBuilder: (_) => const SizedBox.shrink(),
+      errorBuilder: (_, _) => const Text('Could not load export settings.'),
       builder: (_) => ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -97,7 +100,7 @@ class _ExportState extends DeferredState<QuickBooksExportScreen> {
                 _verifiedId = null;
               }),
             ),
-            HMBButton(
+            HMBButtonSecondary(
               label: 'Check customer',
               hint: 'Retrieve the customer name from QuickBooks',
               onPressed: () => _run(() async {
@@ -114,7 +117,7 @@ class _ExportState extends DeferredState<QuickBooksExportScreen> {
                 'Confirm that the customer, currency and tax settings '
                 'are correct before creating the invoice.',
               ),
-              HMBButton(
+              HMBButtonPrimary(
                 label: 'Confirm and export',
                 hint: 'Create this invoice in QuickBooks',
                 onPressed: () => _run(() async {

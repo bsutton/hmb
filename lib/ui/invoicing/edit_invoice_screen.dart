@@ -136,7 +136,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                 ),
                 _buildLedgerSummary(details),
                 if (!invoice.isUploaded() && !readOnlyInvoice)
-                  HMBButton(
+                  HMBButtonSecondary(
                     label: 'QuickBooks export',
                     hint: 'Export an invoice snapshot to QuickBooks (preview)',
                     onPressed: () async {

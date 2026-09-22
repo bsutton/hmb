@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hmb/dao/dao_job.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/main.dart' as app;
 import 'package:hmb/ui/crud/job/edit_job_screen.dart';
@@ -46,6 +47,8 @@ void main() {
             hourlyRate: MoneyEx.dollars(95),
             summary: 'Apartment repairs',
           );
+          await DaoJob().setReferringCustomer(job.id, job.customerId);
+          job = (await DaoJob().getById(job.id))!;
         });
         addTearDown(tearDownTestDb);
         await tester.binding.setSurfaceSize(Size(width, 1100));
@@ -63,6 +66,10 @@ void main() {
         await pumpUntil(tester, find.text(parties ? 'Add party' : 'Manage'));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
+        if (parties) {
+          expect(find.text('Referrer · Customer/business'), findsOneWidget);
+          expect(find.byTooltip('Edit referring business'), findsOneWidget);
+        }
         if (!parties) {
           await pumpUntil(tester, find.text('Next: none'));
           expect(find.text('Schedule'), findsOneWidget);

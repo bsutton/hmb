@@ -57,6 +57,7 @@ class _TaskEffortHistoryScreenState
   @override
   Widget build(BuildContext context) => HMBFullPageChildScreen(
     title: 'Prior work effort',
+    maxContentWidth: 800,
     child: DeferredBuilder(
       this,
       waitingBuilder: (_) => const SizedBox.shrink(),
@@ -95,7 +96,6 @@ class _TaskEffortHistoryScreenState
                       final task = record.task;
                       final rate = record.hoursPerUnit?.toStringAsFixed(2);
                       return Surface(
-                        rounded: true,
                         margin: const EdgeInsets.only(bottom: 8),
                         child: ListTile(
                           title: Text(task.name),

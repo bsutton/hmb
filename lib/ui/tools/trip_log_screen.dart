@@ -333,7 +333,6 @@ class _TripLogScreenState extends DeferredState<TripLogScreen> {
             ),
             for (final trip in _trips)
               Surface(
-                rounded: true,
                 margin: const EdgeInsets.only(bottom: 8),
                 child: ListTile(
                   title: Text(

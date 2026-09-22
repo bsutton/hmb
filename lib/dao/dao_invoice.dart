@@ -400,8 +400,9 @@ ORDER BY modified_date DESC
   }
 
   Future<void> deleteByJob(int jobId, {Transaction? transaction}) async {
-    await withinTransaction(transaction)
-        .delete(tableName, where: 'job_id = ?', whereArgs: [jobId]);
+    await withinTransaction(
+      transaction,
+    ).delete(tableName, where: 'job_id = ?', whereArgs: [jobId]);
   }
 
   Future<void> recalculateTotal(int invoiceId) async {

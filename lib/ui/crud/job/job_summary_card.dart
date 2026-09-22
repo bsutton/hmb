@@ -162,8 +162,9 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
-                        color: Theme.of(context).colorScheme.onSurface
-                            .withSafeOpacity(0.12),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withSafeOpacity(0.12),
                       ),
                     ),
                   ),

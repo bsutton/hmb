@@ -157,8 +157,9 @@ class DaoJob extends Dao<Job> {
     final values = entity.toMap()
       ..remove('status_id')
       ..remove('resume_status_id');
-    final count = await withinTransaction(transaction)
-        .update(tableName, values, where: 'id = ?', whereArgs: [entity.id]);
+    final count = await withinTransaction(
+      transaction,
+    ).update(tableName, values, where: 'id = ?', whereArgs: [entity.id]);
     assert(count == 1, 'A job update must affect exactly one row.');
     await DaoJobParty().syncLegacyFields(entity, existing, transaction);
     Dao.notifier(this, entity.id);
@@ -559,8 +560,9 @@ where q.id=?
 
     if (bestPhone == null) {
       final customer = await DaoCustomer().getByJob(job.id);
-      bestPhone = (await DaoContact().getPrimaryForCustomer(customer!.id))
-          ?.bestPhone;
+      bestPhone = (await DaoContact().getPrimaryForCustomer(
+        customer!.id,
+      ))?.bestPhone;
     }
     return bestPhone;
   }
@@ -573,8 +575,9 @@ where q.id=?
 
     if (bestEmail == null) {
       final customer = await DaoCustomer().getByJob(job.id);
-      bestEmail = (await DaoContact().getPrimaryForCustomer(customer!.id))
-          ?.bestEmail;
+      bestEmail = (await DaoContact().getPrimaryForCustomer(
+        customer!.id,
+      ))?.bestEmail;
     }
     return bestEmail;
   }

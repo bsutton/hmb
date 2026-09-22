@@ -63,8 +63,10 @@ class _JobCreatorState extends State<JobCreator> {
   final _suburb = TextEditingController();
   final _state = TextEditingController();
   final _postcode = TextEditingController();
-  final List<TextEditingController> _siteAddress =
-      List.generate(5, (_) => TextEditingController());
+  final List<TextEditingController> _siteAddress = List.generate(
+    5,
+    (_) => TextEditingController(),
+  );
   var _sameSiteAddress = true;
   final _jobSummary = TextEditingController();
   final _jobDescription = TextEditingController();
