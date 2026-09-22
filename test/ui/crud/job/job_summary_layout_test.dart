@@ -55,7 +55,31 @@ void main() {
         addTearDown(() => tester.binding.setSurfaceSize(null));
         await tester.pumpWidget(
           MaterialApp(
-            theme: app.theme,
+            // Flutter's test theme explicitly uses Ahem. Override it only
+            // when rendering optional screenshots with the loaded font.
+            // ignore: do_not_use_environment
+            theme: const String.fromEnvironment('HMB_VISUAL_FONT').isEmpty
+                ? app.theme
+                : app.theme.copyWith(
+                    textTheme: app.theme.textTheme.apply(fontFamily: 'Roboto'),
+                    primaryTextTheme: app.theme.primaryTextTheme.apply(
+                      fontFamily: 'Roboto',
+                    ),
+                    appBarTheme: app.theme.appBarTheme.copyWith(
+                      titleTextStyle: app.theme.textTheme.titleLarge?.copyWith(
+                        fontFamily: 'Roboto',
+                      ),
+                    ),
+                    elevatedButtonTheme: ElevatedButtonThemeData(
+                      style: app.theme.elevatedButtonTheme.style?.copyWith(
+                        textStyle: WidgetStatePropertyAll(
+                          app.theme.textTheme.labelLarge?.copyWith(
+                            fontFamily: 'Roboto',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
             builder: (_, child) =>
                 Stack(children: [child!, const BlockingOverlay()]),
             home: parties
