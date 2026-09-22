@@ -19,6 +19,72 @@ void main() {
     await tearDownTestDb();
   });
 
+  test('material task default uses sole open task and recent items', () async {
+    final first = await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.inProgress,
+      itemType: TaskItemType.materialsBuy,
+      completed: false,
+    );
+    final job = await _jobForItem(first);
+    expect((await DaoTask().defaultTaskForMaterials(job.id))?.id, first.taskId);
+    final second = await _insertTaskItemForExistingJob(
+      jobId: job.id,
+      itemType: TaskItemType.toolsOwn,
+      completed: false,
+    );
+    expect(
+      (await DaoTask().defaultTaskForMaterials(job.id))?.id,
+      second.taskId,
+    );
+    // A newer labour item must not affect shopping/packing defaults.
+    await _insertTaskItemForExistingJob(
+      jobId: job.id,
+      itemType: TaskItemType.labour,
+      completed: false,
+    );
+    expect(
+      (await DaoTask().defaultTaskForMaterials(job.id))?.id,
+      second.taskId,
+    );
+    final task = (await DaoTask().getById(second.taskId))!;
+    await DaoTask().update(task.copyWith(status: TaskStatus.cancelled));
+    expect((await DaoTask().defaultTaskForMaterials(job.id))?.id, first.taskId);
+    await DaoTask().update(
+      (await DaoTask().getById(
+        first.taskId,
+      ))!.copyWith(status: TaskStatus.completed),
+    );
+    final remaining = await DaoTask().getOpenTasksByJob(job.id);
+    expect(
+      (await DaoTask().defaultTaskForMaterials(job.id))?.id,
+      remaining.single.id,
+    );
+    await DaoTask().update(
+      remaining.single.copyWith(status: TaskStatus.completed),
+    );
+    expect(await DaoTask().defaultTaskForMaterials(job.id), isNull);
+  });
+
+  test(
+    'material task default does not invent a choice without history',
+    () async {
+      final item = await _insertTaskItemForJob(
+        jobStatus: JobStatus.inProgress,
+        taskStatus: TaskStatus.inProgress,
+        itemType: TaskItemType.labour,
+        completed: false,
+      );
+      final job = await _jobForItem(item);
+      await _insertTaskItemForExistingJob(
+        jobId: job.id,
+        itemType: TaskItemType.labour,
+        completed: false,
+      );
+      expect(await DaoTask().defaultTaskForMaterials(job.id), isNull);
+    },
+  );
+
   test('shopping history ranges calculate rolling cutoffs', () {
     final reference = DateTime(2026, 7, 24, 12);
 

@@ -22,6 +22,7 @@ import '../../entity/helpers/charge_mode.dart';
 import '../../util/dart/measurement_type.dart';
 import '../../util/dart/units.dart';
 import '../task_items/material_price_editor.dart';
+import '../widgets/blocking_ui.dart';
 import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/layout/layout.g.dart';
@@ -45,6 +46,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
         : null,
   );
   final formKey = GlobalKey<FormState>();
+  var selectionRevision = 0;
 
   await showDialog<void>(
     context: context,
@@ -65,22 +67,34 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
                   selectedJob: selectedJob,
                   required: true,
                   items: (filter) => DaoJob().getActiveJobs(filter),
-                  onSelected: (job) {
+                  onSelected: (job) async {
+                    final revision = ++selectionRevision;
                     setState(() {
                       selectedJob.jobId = job?.id;
                       selectedTask = null; // Reset task selection
                     });
+                    if (job == null) {
+                      return;
+                    }
+                    final task = await BlockingUI().runAndWait(
+                      () => DaoTask().defaultTaskForMaterials(job.id),
+                    );
+                    if (context.mounted && revision == selectionRevision) {
+                      setState(() => selectedTask = task);
+                    }
                   },
                 ),
                 // Task Selection Dropdown (dependent on selected job)
                 if (selectedJob.jobId != null)
                   HMBDroplist<Task>(
+                    key: ValueKey((selectedJob.jobId, selectedTask?.id)),
                     title: 'Select Task',
                     selectedItem: () async => selectedTask,
                     items: (filter) =>
                         DaoTask().getOpenTasksByJob(selectedJob.jobId!, filter),
                     format: (task) => task.name,
                     onChanged: (task) {
+                      selectionRevision++;
                       setState(() {
                         selectedTask = task;
                       });
