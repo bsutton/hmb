@@ -266,8 +266,9 @@ class EntityListScreenState<T extends Entity<T>>
       }
       if (widget.canAdd) {
         return Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               const Text('Click'),
               HMBButtonAdd(
@@ -282,8 +283,9 @@ class EntityListScreenState<T extends Entity<T>>
         );
       } else {
         return Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text('No ${widget.entityNamePlural} found. Check the Filter '),
               HMBFilterIcon(

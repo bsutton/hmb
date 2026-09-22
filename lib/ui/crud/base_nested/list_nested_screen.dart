@@ -225,8 +225,9 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
           }
           if (list!.isEmpty) {
             return Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   const Text('Click'),
                   HMBButtonAdd(

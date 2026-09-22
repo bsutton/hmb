@@ -36,73 +36,76 @@ class AssignmentListScreen extends StatefulWidget {
 
 class _AssignmentListScreenState extends State<AssignmentListScreen> {
   @override
-  Widget build(BuildContext context) =>
-      NestedEntityListScreen<WorkAssignment, Job>(
-        title: (assignment) => Text('Assignment #${assignment.id}'),
-        parent: widget.parent,
-        parentTitle: 'Job',
-        entityNamePlural: 'Supplier Assignments',
-        entityNameSingular: 'Supplier Assignment',
-        dao: DaoWorkAssignment(),
-        fetchList: () => DaoWorkAssignment().getByJob(widget.parent.parent!.id),
-        details: (assignment, details) => FutureBuilderEx(
-          future: SupplierAndTasks.get(assignment),
-          builder: (context, supplierAndTasks) => HMBColumn(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Supplier : ${supplierAndTasks!.supplier.name}'),
-              Row(
+  Widget build(BuildContext context) => SingleChildScrollView(
+    child: NestedEntityListScreen<WorkAssignment, Job>(
+      title: (assignment) => Text('Assignment #${assignment.id}'),
+      parent: widget.parent,
+      parentTitle: 'Job',
+      entityNamePlural: 'Supplier Assignments',
+      entityNameSingular: 'Supplier Assignment',
+      dao: DaoWorkAssignment(),
+      fetchList: () => DaoWorkAssignment().getByJob(widget.parent.parent!.id),
+      details: (assignment, details) => FutureBuilderEx(
+        future: SupplierAndTasks.get(assignment),
+        builder: (context, supplierAndTasks) => HMBColumn(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Supplier : ${supplierAndTasks!.supplier.name}'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text('Contact : ${supplierAndTasks.contact.fullname}'),
+                ),
+                HMBPhoneIcon(
+                  supplierAndTasks.contact.bestPhone,
+                  sourceContext: SourceContext(
+                    supplier: supplierAndTasks.supplier,
+                    contact: supplierAndTasks.contact,
+                  ),
+                ),
+                HMBMailToIcon(supplierAndTasks.contact.emailAddress),
+              ],
+            ),
+            BuildSendAssignmentButton(
+              context: context,
+              mounted: context.mounted,
+              assignment: assignment,
+            ),
+            const SizedBox(height: 8),
+            const Text('Assigned Tasks:'),
+            ...supplierAndTasks.tasks.map(
+              (task) => Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Contact : ${supplierAndTasks.contact.fullname}'),
-                  HMBPhoneIcon(
-                    supplierAndTasks.contact.bestPhone,
-                    sourceContext: SourceContext(
-                      supplier: supplierAndTasks.supplier,
-                      contact: supplierAndTasks.contact,
+                  Expanded(
+                    child: Text(
+                      '${task.name} (${task.status.name})',
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  HMBMailToIcon(supplierAndTasks.contact.emailAddress),
+                  TextButton(
+                    onPressed: () => _toggleTaskRejected(task),
+                    child: Text(
+                      task.status == TaskStatus.cancelled
+                          ? 'Unreject'
+                          : 'Reject',
+                    ),
+                  ),
                 ],
               ),
-              BuildSendAssignmentButton(
-                context: context,
-                mounted: context.mounted,
-                assignment: assignment,
-              ),
-              const SizedBox(height: 8),
-              const Text('Assigned Tasks:'),
-              ...supplierAndTasks.tasks.map(
-                (task) => Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '${task.name} (${task.status.name})',
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => _toggleTaskRejected(task),
-                      child: Text(
-                        task.status == TaskStatus.cancelled
-                            ? 'Unreject'
-                            : 'Reject',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-        onEdit: (assignment) => AssignmentEditScreen(
-          job: widget.parent.parent!,
-          assignment: assignment,
-        ),
-        onDelete: (assignment) => DaoWorkAssignment().delete(assignment.id),
-        cardHeight: 300,
-      );
+      ),
+      onEdit: (assignment) => AssignmentEditScreen(
+        job: widget.parent.parent!,
+        assignment: assignment,
+      ),
+      onDelete: (assignment) => DaoWorkAssignment().delete(assignment.id),
+      extended: true,
+    ),
+  );
 
   Future<void> _toggleTaskRejected(Task task) async {
     if (task.status == TaskStatus.cancelled) {

@@ -41,8 +41,9 @@ class ListTodoCard extends StatelessWidget {
                         format: (customer) => customer.name,
                       )),
         ),
-      HMBRow(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
         children: [
           if (todo.parentType == null) const HMBChip(label: 'Personal'),
           if (todo.parentType == ToDoParentType.customer)
@@ -71,7 +72,9 @@ class ListTodoCard extends StatelessWidget {
           ),
         ),
 
-      HMBRow(
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
         children: [
           if (todo.dueDate != null)
             HMBChip(
