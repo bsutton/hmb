@@ -19,6 +19,7 @@ import '../../../../ui/widgets/hmb_button.dart';
 import '../../../../ui/widgets/hmb_toast.dart';
 import '../../../../ui/widgets/layout/layout.g.dart';
 import '../../../../util/flutter/app_title.dart';
+import '../../../../util/flutter/hmb_theme.dart';
 import '../../../factory/flutter_database_factory.dart';
 import '../../../versions/implementations/asset_script_source.dart';
 import '../backup.dart';
@@ -84,7 +85,7 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+                  color: HMBColors.textPrimary,
                 ),
                 textAlign: TextAlign.center,
               ),

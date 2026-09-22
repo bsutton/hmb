@@ -1,7 +1,5 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../text/text.g.dart';
-
 class HMBFullPageChildScreen extends StatelessWidget {
   final Widget child;
   final String title;
@@ -18,13 +16,7 @@ class HMBFullPageChildScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      leading: const BackButton(),
-      title: subdued ? Text(title) : HMBTextHeadline(title),
-      backgroundColor: subdued
-          ? Theme.of(context).colorScheme.surface
-          : Colors.purple,
-    ),
+    appBar: AppBar(leading: const BackButton(), title: Text(title)),
     body: maxContentWidth == null
         ? child
         : Align(

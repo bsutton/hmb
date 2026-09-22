@@ -334,7 +334,6 @@ class _BookingRequestReviewDialogState
                     controller: _jobDescription,
                     decoration: const InputDecoration(
                       labelText: 'Job Description',
-                      border: OutlineInputBorder(),
                     ),
                     maxLines: 5,
                   ),
@@ -422,10 +421,7 @@ class _BookingRequestReviewDialogState
               Expanded(
                 child: TextFormField(
                   controller: controller,
-                  decoration: InputDecoration(
-                    labelText: 'Task ${index + 1}',
-                    border: const OutlineInputBorder(),
-                  ),
+                  decoration: InputDecoration(labelText: 'Task ${index + 1}'),
                 ),
               ),
               IconButton(
@@ -752,7 +748,6 @@ class _BookingRequestReviewDialogState
                 maxLines: 4,
                 decoration: const InputDecoration(
                   labelText: 'Reason (required)',
-                  border: OutlineInputBorder(),
                 ),
               ),
             ],

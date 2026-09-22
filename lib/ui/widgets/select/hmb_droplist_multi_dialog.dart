@@ -15,6 +15,7 @@ import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
 
+import '../../../util/flutter/hmb_theme.dart';
 import '../color_ex.dart';
 import '../hmb_button.dart';
 import '../icons/hmb_clear_icon.dart';
@@ -105,14 +106,15 @@ class _HMBDroplistMultiSelectDialogState<T>
 
   @override
   Widget build(BuildContext context) => Dialog(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     child: HMBColumn(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+          decoration: const BoxDecoration(
+            color: HMBColors.surface4dp,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(HMBTheme.cornerRadius),
+            ),
           ),
           width: double.infinity,
           padding: const EdgeInsets.all(16),
@@ -122,9 +124,7 @@ class _HMBDroplistMultiSelectDialogState<T>
               Expanded(
                 child: Text(
                   widget.title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(color: Colors.white),
+                  style: Theme.of(context).textTheme.titleLarge,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -185,9 +185,6 @@ class _HMBDroplistMultiSelectDialogState<T>
             controller: _searchController,
             decoration: InputDecoration(
               labelText: 'Search',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
               suffixIcon: HMBClearIcon(
                 onPressed: () async {
                   _searchController.clear();

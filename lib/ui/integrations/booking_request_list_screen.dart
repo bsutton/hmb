@@ -119,7 +119,6 @@ class _BookingRequestListScreenState extends State<BookingRequestListScreen> {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Surface(
-                          rounded: true,
                           child: Row(
                             children: [
                               const Icon(

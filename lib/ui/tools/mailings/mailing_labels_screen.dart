@@ -326,10 +326,7 @@ class _MailingLabelsScreenState extends State<MailingLabelsScreen> {
           const HMBSpacer(height: true),
           DropdownButtonFormField<LabelLayout>(
             initialValue: layout,
-            decoration: const InputDecoration(
-              labelText: 'Label layout',
-              border: OutlineInputBorder(),
-            ),
+            decoration: const InputDecoration(labelText: 'Label layout'),
             items: _layouts
                 .map(
                   (layout) =>
@@ -361,7 +358,6 @@ class _MailingLabelsScreenState extends State<MailingLabelsScreen> {
                   ? 'Use route order when delivering labels in person.'
                   : 'Optimise the route first to print labels '
                         'in delivery order.',
-              border: const OutlineInputBorder(),
             ),
             items: [
               DropdownMenuItem(
@@ -387,7 +383,6 @@ class _MailingLabelsScreenState extends State<MailingLabelsScreen> {
             decoration: InputDecoration(
               labelText: 'Used labels on first sheet',
               helperText: 'Use this when printing onto a partly used sheet.',
-              border: const OutlineInputBorder(),
               suffixText: 'of ${layout.labelsPerPage - 1}',
             ),
           ),

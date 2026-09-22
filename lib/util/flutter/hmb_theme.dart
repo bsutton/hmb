@@ -50,6 +50,11 @@ class HMBTheme {
       secondary: HMBColors.primary,
       onSecondary: HMBColors.onPrimary,
       surface: HMBColors.surface4dp,
+      surfaceContainerLowest: HMBColors.defaultBackground,
+      surfaceContainerLow: HMBColors.surface2dp,
+      surfaceContainer: HMBColors.surface4dp,
+      surfaceContainerHigh: HMBColors.surface8dp,
+      surfaceContainerHighest: HMBColors.surface12dp,
       onSurface: HMBColors.textPrimary,
       onSurfaceVariant: HMBColors.textSecondary,
       outline: HMBColors.outline,
@@ -205,6 +210,46 @@ class HMBTheme {
         shape: controlShape,
         labelStyle: textTheme.bodySmall?.copyWith(color: HMBColors.textPrimary),
       ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: HMBColors.surface4dp,
+        surfaceTintColor: Colors.transparent,
+        shape: cardShape,
+        textStyle: textTheme.bodyMedium,
+      ),
+      datePickerTheme: const DatePickerThemeData(
+        backgroundColor: HMBColors.surface4dp,
+        surfaceTintColor: Colors.transparent,
+        shape: cardShape,
+        headerBackgroundColor: HMBColors.surface4dp,
+        headerForegroundColor: HMBColors.textPrimary,
+      ),
+      timePickerTheme: const TimePickerThemeData(
+        backgroundColor: HMBColors.surface4dp,
+        shape: cardShape,
+        dialBackgroundColor: HMBColors.surface8dp,
+        hourMinuteColor: HMBColors.primaryContainer,
+        hourMinuteTextColor: HMBColors.primary,
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: HMBColors.primary,
+        foregroundColor: HMBColors.onPrimary,
+        elevation: 0,
+        shape: controlShape,
+      ),
+      toggleButtonsTheme: const ToggleButtonsThemeData(
+        color: HMBColors.textSecondary,
+        selectedColor: HMBColors.primary,
+        fillColor: HMBColors.primaryContainer,
+        borderColor: HMBColors.outline,
+        selectedBorderColor: HMBColors.primary,
+        borderRadius: BorderRadius.all(Radius.circular(controlRadius)),
+      ),
+      tabBarTheme: const TabBarThemeData(
+        labelColor: HMBColors.primary,
+        unselectedLabelColor: HMBColors.textSecondary,
+        indicatorColor: HMBColors.primary,
+        dividerColor: HMBColors.outline,
+      ),
       snackBarTheme: const SnackBarThemeData(
         backgroundColor: HMBColors.surface8dp,
         actionTextColor: HMBColors.primary,
@@ -226,6 +271,9 @@ class HMBColors {
   static const primaryContainer = Color(0xFF3D2E51);
   static const outline = Color(0xFF414145);
   static const textSecondary = Color(0xFFB9B7BE);
+  static const success = Color(0xFF8DCEA1);
+  static const warning = Color(0xFFFFC477);
+  static const warningContainer = Color(0xFF493B25);
 
   /// Colors created by creating two layers in gimp
   /// bottom layer is Colors.green.
@@ -272,7 +320,7 @@ class HMBColors {
     184,
   ); // 0xFFBA68C8); // Colors.purple[300];
   static const Color listCardBackgroundInActive = green20;
-  static const Color listCardText = Colors.black;
+  static const Color listCardText = textPrimary;
 
   /// When displaying an alert this should be used
   /// as the background color for the title.
@@ -310,7 +358,7 @@ class HMBColors {
   /// colors are based on:
   /// https://material.io/design/color/dark-theme.html#ui-application
 
-  static const surface0dp = Color(0xFF000000); // Pure black
+  static const Color surface0dp = defaultBackground;
   static const surface1dp = Color(0xFF121212);
   static const surface2dp = Color(0xFF1d1d1d);
   static const surface3dp = Color(0xFF222222);

@@ -55,17 +55,16 @@ class Surface extends StatelessWidget {
     this.elevation = SurfaceElevation.e4,
     this.padding = const EdgeInsets.all(HMBTheme.padding),
     this.margin = EdgeInsets.zero,
-    this.rounded = false,
+    this.rounded = true,
     super.key,
   });
   @override
   Widget build(BuildContext context) {
-    final decoration = rounded
+    final decoration = rounded && elevation != SurfaceElevation.e0
         ? HMBTheme.surfaceDecoration(elevation.color)
         : BoxDecoration(color: elevation.color);
     return Container(
       decoration: decoration,
-
       margin: margin,
       padding: padding,
       child: child,
@@ -186,7 +185,7 @@ class SurfaceCardWithActions extends StatelessWidget {
                   style: const TextStyle(
                     color: HMBColors.textPrimary,
                     fontSize: HMBCardHeading.fontSize,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                   maxLines: titleMaxLines,
                   overflow: TextOverflow.ellipsis,

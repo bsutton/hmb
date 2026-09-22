@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../util/dart/types.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import 'hmb_icon_button.dart';
 
 class HMBDeleteIcon extends StatelessWidget {
@@ -17,7 +18,7 @@ class HMBDeleteIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => HMBIconButton(
-    icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+    icon: const Icon(Icons.delete, size: 20, color: HMBColors.errorBackground),
     showBackground: false,
     hint: hint,
     enabled: enabled,

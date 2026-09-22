@@ -44,10 +44,7 @@ class HMBTextArea extends StatelessWidget {
         controller: controller,
         focusNode: focusNode,
         onChanged: onChanged?.call,
-        decoration: InputDecoration(
-          labelText: labelText,
-          border: const OutlineInputBorder(),
-        ),
+        decoration: InputDecoration(labelText: labelText),
       ),
     ],
   );

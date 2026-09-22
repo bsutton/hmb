@@ -61,10 +61,7 @@ Future<InvoiceAdjustmentRequest?> showRecordInvoiceAdjustmentDialog({
               ),
               DropdownButtonFormField<DebtorAdjustmentType>(
                 initialValue: adjustmentType,
-                decoration: const InputDecoration(
-                  labelText: 'Type',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Type'),
                 items: [
                   for (final type in DebtorAdjustmentType.values)
                     DropdownMenuItem(

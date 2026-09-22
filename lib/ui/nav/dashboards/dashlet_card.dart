@@ -19,6 +19,7 @@ import 'package:june/june.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../util/flutter/app_title.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import '../../widgets/hmb_tooltip.dart';
 import 'dashboard.dart';
 
@@ -126,10 +127,8 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
       hint: widget.hint,
       child: Card(
         color: theme.colorScheme.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 4,
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(HMBTheme.cornerRadius),
           onTap: () => unawaited(_handleTap(context)),
           child: LayoutBuilder(
             builder: (context, constraints) {

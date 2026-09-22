@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 
+import '../../util/flutter/hmb_theme.dart';
 import '../widgets/hmb_button.dart';
 
 bool includesOwnEmail({
@@ -37,19 +38,19 @@ class EmailSelfWarning extends StatelessWidget {
       margin: const EdgeInsets.only(top: 8, bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.amber.shade100,
-        border: Border.all(color: Colors.amber.shade700),
+        color: HMBColors.warningContainer,
+        border: Border.all(color: HMBColors.warning),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.warning_amber, color: Colors.amber.shade900),
+          const Icon(Icons.warning_amber, color: HMBColors.warning),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'You are sending this email to your own address ($ownEmail).',
-              style: const TextStyle(color: Colors.black),
+              style: const TextStyle(color: HMBColors.textPrimary),
             ),
           ),
         ],

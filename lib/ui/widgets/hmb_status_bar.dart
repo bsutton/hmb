@@ -17,6 +17,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../dao/dao_job.dart';
 import '../../entity/task.dart';
 import '../../entity/time_entry.dart';
+import '../../util/flutter/hmb_theme.dart';
 import 'hmb_start_time_entry.dart';
 import 'layout/layout.g.dart';
 
@@ -38,7 +39,7 @@ class HMBStatusBar extends StatelessWidget {
       return Container();
     }
     return ColoredBox(
-      color: Colors.purpleAccent,
+      color: HMBColors.primaryContainer,
       child: HMBRow(
         children: [
           HMBStartTimeEntry(
@@ -53,7 +54,7 @@ class HMBStatusBar extends StatelessWidget {
               builder: (context, job) => Text(
                 '${task!.name} - ${job!.summary}',
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: HMBColors.textPrimary),
               ),
             ),
           ),

@@ -159,7 +159,6 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
           if (_parties.isEmpty) const Text('No contacts assigned.'),
           for (final party in _parties)
             Surface(
-              rounded: true,
               padding: EdgeInsets.zero,
               margin: const EdgeInsets.only(bottom: 8),
               child: Column(

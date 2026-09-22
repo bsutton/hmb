@@ -428,7 +428,7 @@ class WizardState extends State<Wizard> {
   Widget _buildLine(bool visible) => Container(
     width: visible ? 2.0 : 0.0,
     height: 11,
-    color: Colors.grey.shade400,
+    color: HMBColors.outline,
   );
 
   /// Show the step's build if it's the current step; otherwise
@@ -501,7 +501,7 @@ class WizardState extends State<Wizard> {
                 child: Center(
                   child: SizedBox(
                     width: isLastVisible(index) ? 0.0 : 2.0,
-                    child: Container(color: Colors.grey.shade400),
+                    child: Container(color: HMBColors.outline),
                   ),
                 ),
               ),

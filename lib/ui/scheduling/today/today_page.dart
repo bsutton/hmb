@@ -251,7 +251,6 @@ class TodayPageState extends DeferredState<TodayPage> {
     onFalse: GestureDetector(
       onTap: () => context.go('/home/backup'),
       child: Surface(
-        rounded: true,
         child: Row(
           children: [
             const Icon(Icons.warning_amber_rounded, color: Colors.amber),
@@ -285,7 +284,6 @@ class TodayPageState extends DeferredState<TodayPage> {
     onFalse: GestureDetector(
       onTap: () => context.go('/home/settings/storage'),
       child: Surface(
-        rounded: true,
         child: Row(
           children: [
             const Icon(Icons.warning_amber_rounded, color: Colors.amber),
@@ -422,7 +420,6 @@ class ToDoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Surface(
-    rounded: true,
     child: ListTodoCard(todo: todo, onChange: onChange),
   );
 }
@@ -437,7 +434,6 @@ class ShoppingCard extends StatelessWidget {
   Widget build(BuildContext context) => FutureBuilderEx(
     future: JobAndTask.fetch(taskItem),
     builder: (context, jobAndCustomer) => Surface(
-      rounded: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -460,7 +456,6 @@ class PackingCard extends StatelessWidget {
   Widget build(BuildContext context) => FutureBuilderEx(
     future: JobAndTask.fetch(taskItem),
     builder: (context, jobAndCustomer) => Surface(
-      rounded: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -483,7 +478,6 @@ class QuotingCard extends StatelessWidget {
   Widget build(BuildContext context) => FutureBuilderEx(
     future: JobAndCustomer.fetch(job),
     builder: (context, jobAndCustomer) => Surface(
-      rounded: true,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -510,7 +504,6 @@ class InvoiceCard extends StatelessWidget {
   Widget build(BuildContext context) => FutureBuilderEx(
     future: JobAndCustomer.fetch(invoicingJob.job),
     builder: (context, jobAndCustomer) => Surface(
-      rounded: true,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -604,7 +597,6 @@ class Listing<T> extends StatelessWidget {
           children: list
               .map(
                 (entity) => Surface(
-                  rounded: true,
                   padding: EdgeInsets.zero,
                   child: onTap == null
                       ? cardBuilder(entity)

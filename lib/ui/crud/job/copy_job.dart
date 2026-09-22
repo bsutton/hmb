@@ -252,7 +252,6 @@ class _DialogMoveTasksState extends DeferredState<DialogMoveTasks> {
                   controller: _summaryController,
                   maxLines: 4,
                   decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
                     hintText: 'Enter summary for the new job',
                   ),
                 ),

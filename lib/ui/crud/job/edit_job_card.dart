@@ -32,6 +32,7 @@ import '../../../util/dart/date_time_ex.dart';
 import '../../../util/dart/format.dart';
 import '../../../util/dart/local_date.dart';
 import '../../../util/flutter/app_title.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import '../../../util/flutter/platform_ex.dart';
 import '../../dialog/hmb_comfirm_delete_dialog.dart';
 import '../../dialog/hmb_file_picker_linux.dart';
@@ -655,7 +656,7 @@ You can set a default booking fee from System | Billing screen''');
         final nextWhen = nextActivity == null
             ? ''
             : formatDateTimeAM(nextActivity.start);
-        return ElevatedButton(
+        return OutlinedButton(
           onPressed: () async {
             final selected = await _showActivityDialog(jobActivities);
             if (!context.mounted || selected == null) {
@@ -686,8 +687,8 @@ You can set a default booking fee from System | Billing screen''');
                 'Next: $nextWhen',
                 style: TextStyle(
                   color: nextActivity != null && _isToday(nextActivity.start)
-                      ? Colors.orangeAccent
-                      : Colors.white,
+                      ? HMBColors.warning
+                      : HMBColors.primary,
                 ),
               ),
             ],

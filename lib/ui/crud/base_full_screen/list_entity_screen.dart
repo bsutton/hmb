@@ -236,7 +236,6 @@ class EntityListScreenState<T extends Entity<T>>
           },
           key: _filterSheetKey,
         ),
-
         onReset: _resetFilters,
         onSheetClosed: widget.onFilterSheetClosed,
         isActive: () => widget.isFilterActive?.call() ?? false,
@@ -250,7 +249,6 @@ class EntityListScreenState<T extends Entity<T>>
       padding: EdgeInsets.zero,
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: SurfaceElevation.e0.color,
           toolbarHeight: 80,
           titleSpacing: 0,
           title: titleRow,
@@ -278,7 +276,6 @@ class EntityListScreenState<T extends Entity<T>>
                 hint: 'Not this one',
                 onAdd: () async {},
               ),
-
               Text('to add ${widget.entityNamePlural}.'),
             ],
           ),

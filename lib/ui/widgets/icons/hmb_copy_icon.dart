@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../util/dart/types.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import 'hmb_icon_button.dart';
 
 class HMBCopyIcon extends StatelessWidget {
@@ -19,7 +20,7 @@ class HMBCopyIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => HMBIconButton(
-    icon: const Icon(Icons.copy, size: 20, color: Colors.white),
+    icon: const Icon(Icons.copy, size: 20, color: HMBColors.textSecondary),
     size: small ? HMBIconButtonSize.small : HMBIconButtonSize.standard,
     showBackground: false,
     hint: hint,

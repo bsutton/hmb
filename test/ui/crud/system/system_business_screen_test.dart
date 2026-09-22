@@ -57,7 +57,13 @@ void main() {
     final toggle = tester.widget<ToggleButtons>(find.byType(ToggleButtons));
 
     expect(toggle.color, HMBColors.textPrimary);
-    expect(toggle.selectedColor, Colors.black);
+    expect(toggle.selectedColor, HMBColors.onPrimary);
+    final foregroundLuminance = toggle.selectedColor!.computeLuminance();
+    final backgroundLuminance = toggle.fillColor!.computeLuminance();
+    expect(
+      (backgroundLuminance + 0.05) / (foregroundLuminance + 0.05),
+      greaterThanOrEqualTo(4.5),
+    );
     expect(toggle.fillColor, HMBColors.primary);
   });
 }

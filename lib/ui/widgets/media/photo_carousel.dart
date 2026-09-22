@@ -20,6 +20,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:photo_view/photo_view.dart';
 
 import '../../../util/dart/photo_meta.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import '../desktop_back_gesture_suppress.dart';
 import '../icons/hmb_close_icon.dart';
 import '../icons/hmb_copy_icon.dart';
@@ -174,10 +175,11 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
         onPressed: _currentIndex == 0
             ? null
             : () => unawaited(_scrollToIndex(_currentIndex - 1)),
-        backgroundColor: _currentIndex == 0 ? Colors.grey[700] : Colors.purple,
+        backgroundColor: _currentIndex == 0
+            ? Colors.grey[700]
+            : HMBColors.primaryContainer,
         child: const Icon(Icons.arrow_back),
       ),
-
       // The new count Text, e.g. "2/5"
       Text(
         '${_currentIndex + 1}/${widget.photos.length}',
@@ -187,7 +189,6 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
           fontWeight: FontWeight.bold,
         ),
       ),
-
       // Next button
       FloatingActionButton(
         heroTag: 'nextPhotoBtn',
@@ -196,7 +197,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
             : () => unawaited(_scrollToIndex(_currentIndex + 1)),
         backgroundColor: _currentIndex == widget.photos.length - 1
             ? Colors.grey[700]
-            : Colors.purple,
+            : HMBColors.primaryContainer,
         child: const Icon(Icons.arrow_forward),
       ),
     ],

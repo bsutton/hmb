@@ -94,7 +94,6 @@ class _GoogleMapsIntegrationScreenState
                       controller: _apiKeyController,
                       decoration: const InputDecoration(
                         labelText: 'Google Maps API Key',
-                        border: OutlineInputBorder(),
                       ),
                       obscureText: true,
                     ),

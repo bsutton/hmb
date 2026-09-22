@@ -14,6 +14,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 
+import '../../../util/flutter/hmb_theme.dart';
 import '../layout/layout.g.dart';
 
 class HMBFixed extends StatelessWidget {
@@ -34,7 +35,7 @@ class HMBFixed extends StatelessWidget {
     children: [
       Text(
         '$label $amount',
-        style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+        style: const TextStyle(fontSize: 14, color: HMBColors.textSecondary),
       ),
     ],
   );

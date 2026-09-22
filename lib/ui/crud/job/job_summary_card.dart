@@ -119,7 +119,6 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
           ),
         ),
         Surface(
-          rounded: true,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Wrap(
             spacing: 12,

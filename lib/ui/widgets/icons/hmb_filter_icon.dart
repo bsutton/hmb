@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../util/dart/types.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import 'hmb_icon_button.dart';
 
 class HMBFilterIcon extends StatelessWidget {
@@ -21,7 +22,7 @@ class HMBFilterIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => HMBIconButton(
-    icon: Icon(Icons.tune, size: 20, color: active ? Colors.blue : null),
+    icon: Icon(Icons.tune, size: 20, color: active ? HMBColors.primary : null),
     size: small ? HMBIconButtonSize.small : HMBIconButtonSize.standard,
     showBackground: false,
     hint: hint,

@@ -9,6 +9,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../entity/plaster_room.dart';
 import '../../../entity/plaster_room_line.dart';
 import '../../../util/dart/plaster_geometry.dart';
+import '../../../util/flutter/hmb_theme.dart';
 
 class PlasterRoomPreview extends StatelessWidget {
   final PlasterRoom room;
@@ -32,7 +33,7 @@ class PlasterRoomPreview extends StatelessWidget {
         height: height,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.white24),
+          border: Border.all(color: HMBColors.outline),
           borderRadius: BorderRadius.circular(8),
         ),
         child: const Text('No diagram'),
@@ -44,7 +45,7 @@ class PlasterRoomPreview extends StatelessWidget {
       height: height,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.white24),
+        border: Border.all(color: HMBColors.outline),
         borderRadius: BorderRadius.circular(8),
       ),
       child: CustomPaint(
@@ -58,10 +59,7 @@ class _PlasterRoomPreviewPainter extends CustomPainter {
   final PlasterRoom room;
   final List<PlasterRoomLine> lines;
 
-  const _PlasterRoomPreviewPainter({
-    required this.room,
-    required this.lines,
-  });
+  const _PlasterRoomPreviewPainter({required this.room, required this.lines});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -93,10 +91,8 @@ class _PlasterRoomPreviewPainter extends CustomPainter {
       (size.width - padding * 2) / shapeWidth,
       (size.height - padding * 2) / shapeHeight,
     );
-    final offsetX =
-        (size.width - shapeWidth * scale) / 2 - minX * scale;
-    final offsetY =
-        (size.height - shapeHeight * scale) / 2 - minY * scale;
+    final offsetX = (size.width - shapeWidth * scale) / 2 - minX * scale;
+    final offsetY = (size.height - shapeHeight * scale) / 2 - minY * scale;
 
     Offset toCanvas(int x, int y) =>
         Offset(x * scale + offsetX, y * scale + offsetY);
@@ -129,10 +125,7 @@ class _PlasterRoomPreviewPainter extends CustomPainter {
       final start = toCanvas(line.startX, line.startY);
       final endPoint = PlasterGeometry.lineEnd(lines, i);
       final end = toCanvas(endPoint.x, endPoint.y);
-      final midpoint = Offset(
-        (start.dx + end.dx) / 2,
-        (start.dy + end.dy) / 2,
-      );
+      final midpoint = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
       final dx = end.dx - start.dx;
       final dy = end.dy - start.dy;
       final length = sqrt(dx * dx + dy * dy);
@@ -168,10 +161,7 @@ class _PlasterRoomPreviewPainter extends CustomPainter {
         ),
         const Radius.circular(6),
       );
-      canvas.drawRRect(
-        rect,
-        Paint()..color = const Color(0xCC1E1E1E),
-      );
+      canvas.drawRRect(rect, Paint()..color = const Color(0xCC1E1E1E));
       painter.paint(canvas, textOffset);
     }
   }

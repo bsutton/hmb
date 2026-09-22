@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../util/dart/types.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import 'hmb_icon_button.dart';
 
 class HMBEditIcon extends StatelessWidget {
@@ -18,7 +19,7 @@ class HMBEditIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) => HMBIconButton(
     buttonKey: key,
-    icon: const Icon(Icons.edit, size: 20, color: Colors.blue),
+    icon: const Icon(Icons.edit, size: 20, color: HMBColors.primary),
     showBackground: false,
     hint: hint,
     enabled: enabled,

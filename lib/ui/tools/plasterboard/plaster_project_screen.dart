@@ -20,6 +20,7 @@ import '../../../util/dart/log.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/plaster_geometry.dart';
 import '../../../util/dart/plaster_sheet_direction.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import '../../crud/base_nested/list_nested_screen.dart';
 import '../../dialog/email_dialog.dart';
 import '../../nav/nav.g.dart';
@@ -3024,7 +3025,7 @@ class _SurfaceLayoutDiagram extends StatelessWidget {
       height: height,
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.white24),
+        border: Border.all(color: HMBColors.outline),
         borderRadius: BorderRadius.circular(8),
       ),
       child: CustomPaint(
@@ -3540,7 +3541,7 @@ class _LegendChip extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
     decoration: BoxDecoration(
-      border: Border.all(color: Colors.white24),
+      border: Border.all(color: HMBColors.outline),
       borderRadius: BorderRadius.circular(20),
     ),
     child: Row(
@@ -3638,7 +3639,7 @@ class _ProjectSheetCard extends StatelessWidget {
       width: 280,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.white24),
+        border: Border.all(color: HMBColors.outline),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(

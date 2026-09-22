@@ -451,7 +451,6 @@ class _HMBStylePreviewState extends State<HMBStylePreview> {
       ]) ...[
         Surface(
           elevation: elevation,
-          rounded: true,
           padding: const EdgeInsets.all(12),
           child: Text('Surface ${elevation.name}'),
         ),

@@ -34,6 +34,7 @@ import 'ui/nav/dashboards/sync_warnings.dart';
 import 'ui/nav/nav.g.dart';
 import 'ui/widgets/blocking_ui.dart';
 import 'ui/widgets/desktop_back_gesture.dart';
+import 'ui/widgets/hmb_material_adapter.dart';
 import 'ui/widgets/layout/layout.g.dart';
 import 'util/dart/log.dart';
 import 'util/flutter/hmb_theme.dart';
@@ -229,7 +230,9 @@ class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
                     color: isMobile ? Colors.black : Colors.white,
                   ),
                 ),
-                child: mainAppWindow ?? const HMBEmpty(),
+                child: HMBMaterialAdapter(
+                  child: mainAppWindow ?? const HMBEmpty(),
+                ),
               ),
 
               //  an overlay for blocking UI during long operations

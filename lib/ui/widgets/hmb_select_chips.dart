@@ -5,6 +5,7 @@
 
 import 'package:material_ui/material_ui.dart';
 
+import '../../util/flutter/hmb_theme.dart';
 import 'color_ex.dart';
 import 'hmb_chip.dart';
 import 'layout/layout.g.dart';
@@ -66,18 +67,17 @@ class HMBSelectChips<T> extends StatelessWidget {
             label: Text(format(item)),
             selected: selected,
             onSelected: (_) => onChanged(item),
-            checkmarkColor: Colors.white,
+            checkmarkColor: _selectedTextColor(context),
             selectedColor: _selectedColor(context),
-            labelStyle: TextStyle(
+            labelStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: selected
                   ? _selectedTextColor(context)
                   : Theme.of(context).textTheme.bodyMedium?.color,
             ),
-            backgroundColor: Theme.of(
-              context,
-            ).chipTheme.backgroundColor?.withSafeOpacity(0.15),
-            shape: const StadiumBorder(
-              side: BorderSide(color: Colors.white, width: 1.5),
+            backgroundColor: Theme.of(context).chipTheme.backgroundColor,
+            shape: HMBTheme.controlShape,
+            side: BorderSide(
+              color: selected ? HMBColors.primary : HMBColors.outline,
             ),
           );
         }).toList(),
@@ -95,7 +95,7 @@ class HMBSelectChips<T> extends StatelessWidget {
         return Colors.orange.withSafeOpacity(0.15);
       case HMBChipTone.neutral:
         // Slightly stronger tint for better white text contrast
-        return Theme.of(context).colorScheme.primary.withSafeOpacity(0.25);
+        return Theme.of(context).colorScheme.primaryContainer;
     }
   }
 
@@ -106,7 +106,7 @@ class HMBSelectChips<T> extends StatelessWidget {
       case HMBChipTone.danger:
         return Colors.red.shade400;
       case HMBChipTone.warning:
-        return Colors.orange.shade700;
+        return HMBColors.warning;
       case HMBChipTone.neutral:
         // White text for stronger contrast
         return Colors.white;

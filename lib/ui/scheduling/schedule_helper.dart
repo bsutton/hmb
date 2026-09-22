@@ -20,6 +20,7 @@ import '../../fsm/lifecycle_models.dart';
 import '../../integrations/google_calendar/google_calendar_sync.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
+import '../../util/flutter/hmb_theme.dart';
 import '../../util/flutter/notifications/local_notifs.dart';
 import '../dialog/send_notice_for_job_dialog.dart';
 import '../widgets/hmb_toast.dart';
@@ -190,18 +191,19 @@ mixin ScheduleHelper {
 
   /// header style
   HeaderStyle headerStyle() => const HeaderStyle(
-    leftIconConfig: IconDataConfig(color: Colors.white),
-    rightIconConfig: IconDataConfig(color: Colors.white),
+    leftIconConfig: IconDataConfig(color: HMBColors.textPrimary),
+    rightIconConfig: IconDataConfig(color: HMBColors.textPrimary),
     headerTextStyle: TextStyle(
-      color: Colors.white, // Set the text color for the header
+      color: HMBColors.textPrimary, // Set the text color for the header
       fontSize: 16,
       fontWeight: FontWeight.bold,
     ),
     decoration: BoxDecoration(
-      color: Colors.black, // Set the background color for the header
+      color: HMBColors
+          .defaultBackground, // Set the background color for the header
       border: Border(
         bottom: BorderSide(
-          color: Colors.white, // Colors.grey[800]!, // Add a bottom border
+          color: HMBColors.outline, // Header divider
         ),
       ),
     ),

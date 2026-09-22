@@ -154,7 +154,6 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
               decoration: const InputDecoration(
                 labelText: 'Search',
                 prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
               ),
             ),
           ),
@@ -192,7 +191,6 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
 
   Widget _buildJobCard(CustomerAndJob current) => Card(
     semanticContainer: false,
-    elevation: 2,
     margin: const EdgeInsets.only(bottom: 10),
     child: InkWell(
       onTap: () => _onPressed(current),

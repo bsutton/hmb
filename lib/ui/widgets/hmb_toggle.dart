@@ -46,8 +46,9 @@ class _HMBToggleState extends State<HMBToggle> {
 
   @override
   Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
     children: [
-      HMBTextLabel(widget.label),
+      Flexible(child: HMBTextLabel(widget.label)),
       IconButton(
         tooltip: widget.hint,
         onPressed: () {

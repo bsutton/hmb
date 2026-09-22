@@ -203,8 +203,8 @@ class _BlockingOverlayWidgetState extends State<_BlockingOverlayWidget> {
                                   'Just a moment: '
                                   '${action.label}',
                                 ),
-                          backgroundColor: Colors.yellow,
-                          elevation: 7,
+                          backgroundColor: HMBColors.primary,
+                          elevation: 0,
                         ),
                         if (action.canCancel)
                           Semantics(

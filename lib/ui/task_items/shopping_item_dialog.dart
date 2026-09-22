@@ -23,6 +23,7 @@ import '../../dao/dao_supplier.dart';
 import '../../dao/dao_task_item.dart';
 import '../../entity/supplier.dart';
 import '../../util/dart/types.dart';
+import '../../util/flutter/hmb_theme.dart';
 import '../widgets/fields/fields.g.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/layout/layout.g.dart';
@@ -107,7 +108,7 @@ Future<void> showShoppingItemDialog(
                         child: Text(
                           url,
                           style: const TextStyle(
-                            color: Colors.blue,
+                            color: HMBColors.primary,
                             decoration: TextDecoration.underline,
                           ),
                         ),

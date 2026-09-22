@@ -182,14 +182,15 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
   @override
   Widget build(BuildContext context) => Dialog(
     insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     child: HMBColumn(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+          decoration: const BoxDecoration(
+            color: HMBColors.surface4dp,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(HMBTheme.cornerRadius),
+            ),
           ),
           width: double.infinity,
           padding: const EdgeInsets.all(16),
@@ -199,9 +200,7 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
               Expanded(
                 child: Text(
                   widget.title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(color: Colors.white),
+                  style: Theme.of(context).textTheme.titleLarge,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -303,9 +302,6 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
               decoration: InputDecoration(
                 labelText: 'Search',
                 labelStyle: const TextStyle(color: HMBColors.inputDecoration),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
                 suffixIcon: HMBClearIcon(
                   onPressed: () async {
                     setState(() {

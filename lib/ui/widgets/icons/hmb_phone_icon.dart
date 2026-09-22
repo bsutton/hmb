@@ -23,6 +23,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../dao/dao_system.dart';
 import '../../../util/flutter/clip_board.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import '../../dialog/message_template_dialog.dart';
 import '../../dialog/source_context.dart';
 import '../hmb_button.dart';
@@ -45,7 +46,7 @@ class HMBPhoneIcon extends StatelessWidget {
         onPressed: () async => Strings.isEmpty(phoneNo)
             ? null
             : await _showOptions(context, phoneNo),
-        color: Strings.isEmpty(phoneNo) ? Colors.grey : Colors.blue,
+        color: Strings.isEmpty(phoneNo) ? Colors.grey : HMBColors.primary,
         tooltip: 'Call or Text',
       ),
       IconButton(
@@ -53,7 +54,7 @@ class HMBPhoneIcon extends StatelessWidget {
         icon: const Icon(Icons.copy),
         onPressed: () async =>
             Strings.isEmpty(phoneNo) ? null : await clipboardCopyTo(phoneNo),
-        color: Strings.isEmpty(phoneNo) ? Colors.grey : Colors.blue,
+        color: Strings.isEmpty(phoneNo) ? Colors.grey : HMBColors.primary,
         tooltip: 'Copy Phone No. to the Clipboard',
       ),
     ],

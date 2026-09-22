@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../../util/flutter/hmb_theme.dart';
 import 'hmb_filter_sheet.dart';
 
 typedef BoolCallback = bool Function();
@@ -46,8 +47,7 @@ class HMBFilterLine extends StatelessWidget {
       IconButton(
         icon: const Icon(icon),
         tooltip: tooltip,
-        color: isActive() ? Colors.blue : Colors.grey,
-
+        color: isActive() ? HMBColors.primary : Colors.grey,
         onPressed: () async {
           await showModalBottomSheet<void>(
             context: context,

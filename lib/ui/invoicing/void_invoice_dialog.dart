@@ -100,10 +100,7 @@ Future<String?> _promptForVoidDescription(
               controller: descriptionController,
               autofocus: true,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Void description',
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(labelText: 'Void description'),
             ),
           ],
         ),

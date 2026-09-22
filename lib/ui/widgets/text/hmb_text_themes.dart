@@ -454,7 +454,7 @@ class HMBTextListItem extends StatelessWidget {
   const HMBTextListItem(
     this.text, {
     super.key,
-    this.color = HMBColors.listCardText,
+    this.color = HMBColors.textPrimary,
   });
 
   @override
@@ -484,7 +484,7 @@ class HMBTextListItemBold extends StatelessWidget {
   const HMBTextListItemBold(
     this.text, {
     super.key,
-    this.color = HMBColors.listCardText,
+    this.color = HMBColors.textPrimary,
   });
 
   @override

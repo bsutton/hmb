@@ -23,9 +23,9 @@ import '../../entity/system.dart';
 import '../../util/dart/date_time_ex.dart';
 import '../../util/dart/format.dart'; // For formatTime() or similar
 import '../../util/dart/local_date.dart';
+import '../../util/flutter/hmb_theme.dart';
 import '../widgets/icons/circle.dart';
 import '../widgets/layout/layout.g.dart';
-import '../widgets/layout/surface.dart';
 import 'job_activity_ex.dart';
 import 'schedule_helper.dart';
 import 'schedule_page.dart';
@@ -182,19 +182,19 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
     bool hideDaysNotInMonth,
   ) {
     final backgroundColour = isToday
-        ? SurfaceElevation.e4.color
+        ? HMBColors.primaryContainer
         : isInMonth
-        ? Colors.black
-        : Colors.grey[350]!;
+        ? HMBColors.defaultBackground
+        : HMBColors.surface4dp;
 
     final colour = isToday
-        ? Colors.yellow
-        : (isInMonth ? Colors.white : Colors.black);
+        ? HMBColors.primary
+        : (isInMonth ? HMBColors.textPrimary : HMBColors.textSecondary);
 
     return DecoratedBox(
       decoration: BoxDecoration(
         color: backgroundColour, // Cell background
-        border: Border.all(color: Colors.grey[700]!), // Optional cell border
+        border: Border.all(color: HMBColors.outline), // Optional cell border
       ),
       child: HMBColumn(
         children: _renderActivities(
@@ -228,7 +228,7 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
           child: Text(
             '${date.day}',
             style: TextStyle(
-              color: isToday ? Colors.purpleAccent : color, // Text color
+              color: isToday ? HMBColors.primary : color, // Text color
             ),
           ),
         ),

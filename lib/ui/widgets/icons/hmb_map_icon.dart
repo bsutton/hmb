@@ -22,6 +22,7 @@ import '../../../integrations/google_calendar/google_calendar_sync.dart';
 import '../../../util/dart/address_format.dart';
 import '../../../util/flutter/clip_board.dart';
 import '../../../util/flutter/google_maps.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import '../hmb_toast.dart';
 
 class HMBMapIcon extends StatelessWidget {
@@ -56,7 +57,9 @@ class HMBMapIcon extends StatelessWidget {
               unawaited(_openMap(context, site!));
             }
           },
-          color: site != null && !site!.isEmpty() ? Colors.blue : Colors.grey,
+          color: site != null && !site!.isEmpty()
+              ? HMBColors.primary
+              : Colors.grey,
           tooltip: 'Get Directions',
         ),
         IconButton(
@@ -71,7 +74,7 @@ class HMBMapIcon extends StatelessWidget {
               }
             }
           },
-          color: Strings.isEmpty(address) ? Colors.grey : Colors.blue,
+          color: Strings.isEmpty(address) ? Colors.grey : HMBColors.primary,
           tooltip: 'Copy Address to the Clipboard',
         ),
       ],

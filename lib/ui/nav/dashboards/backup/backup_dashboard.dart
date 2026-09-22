@@ -142,7 +142,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
           );
         },
       ),
-
       DashletCard<void>.onTap(
         label: 'Restore',
         hint: 'Restore $appName data from your Google Drive Account',
@@ -150,7 +149,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         value: () => Future.value(const DashletValue(null)),
         onTap: _performRestore,
       ),
-
       DashletCard<void>.route(
         label: 'Backup Local',
         hint:
@@ -160,7 +158,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         route: '/home/backup/local/backup',
         valueBuilder: (_, _) => const HMBEmpty(),
       ),
-
       DashletCard<void>.onTap(
         label: 'Sync Photos',
         hint: 'Copy your photos to google drive - including receipts and tools',
@@ -169,7 +166,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         valueBuilder: (_, _) => _syncPhotoBuilder(),
         onTap: (_) => _syncPhotos(),
       ),
-
       DashletCard<void>.onTap(
         label: _auth?.isSignedIn ?? false ? 'Sign Out' : 'Sign In',
         hint: _auth?.isSignedIn ?? false
@@ -324,44 +320,32 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     }
   }
 
-  Widget _buildUnsupportedPlatformMessage(BuildContext context) {
-    final theme = Theme.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary.withSafeOpacity(0.8),
-            HMBColors.accent.withSafeOpacity(0.8),
+  Widget _buildUnsupportedPlatformMessage(BuildContext context) => DecoratedBox(
+    decoration: HMBTheme.surfaceDecoration(HMBColors.surface4dp),
+    child: const Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 32),
+        child: HMBColumn(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '🚫 Not Supported',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            Text(
+              'Google Drive backup is not supported on Linux or Windows.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: HMBColors.textSecondary),
+            ),
           ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
         ),
       ),
-      child: const Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 32),
-          child: HMBColumn(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '🚫 Not Supported',
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                'Google Drive backup is not supported on Linux or Windows.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, color: Colors.white70),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+    ),
+  );
 
   Future<void> signout() async {
     if (_syncRunning || PhotoSyncService().isRunning) {

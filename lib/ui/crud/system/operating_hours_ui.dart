@@ -70,7 +70,7 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
           ToggleButtons(
             isSelected: widget.controller.operatingHours.openList,
             color: HMBColors.textPrimary,
-            selectedColor: Colors.black,
+            selectedColor: HMBColors.onPrimary,
             fillColor: HMBColors.primary,
             borderColor: HMBColors.surface32dp,
             selectedBorderColor: HMBColors.primary,
@@ -115,7 +115,7 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
                     children: [
                       HMBTextLabel(
                         day.dayName.shortName,
-                        color: Colors.purpleAccent,
+                        color: HMBColors.primary,
                       ),
                       Row(
                         children: [

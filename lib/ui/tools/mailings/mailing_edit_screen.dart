@@ -455,7 +455,6 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
                   controller: line1,
                   decoration: const InputDecoration(
                     labelText: 'Address line 1',
-                    border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.streetAddress,
                 ),
@@ -464,17 +463,13 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
                   controller: line2,
                   decoration: const InputDecoration(
                     labelText: 'Address line 2',
-                    border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.streetAddress,
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: suburb,
-                  decoration: const InputDecoration(
-                    labelText: 'Suburb',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: const InputDecoration(labelText: 'Suburb'),
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -482,10 +477,7 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
                     Expanded(
                       child: TextField(
                         controller: state,
-                        decoration: const InputDecoration(
-                          labelText: 'State',
-                          border: OutlineInputBorder(),
-                        ),
+                        decoration: const InputDecoration(labelText: 'State'),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -494,7 +486,6 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
                         controller: postcode,
                         decoration: const InputDecoration(
                           labelText: 'Postcode',
-                          border: OutlineInputBorder(),
                         ),
                       ),
                     ),
@@ -1447,7 +1438,6 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
                               icon: const Icon(Icons.clear),
                               onPressed: _searchController.clear,
                             ),
-                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ),
@@ -1575,10 +1565,7 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
           content: TextField(
             controller: controller,
             autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Mailing name',
-              border: OutlineInputBorder(),
-            ),
+            decoration: const InputDecoration(labelText: 'Mailing name'),
           ),
           actions: [
             TextButton(
@@ -2071,7 +2058,6 @@ class _RecipientTileState extends State<_RecipientTile> {
                 focusColor: colorScheme.primary.withSafeOpacity(0.24),
                 decoration: const InputDecoration(
                   labelText: 'Delivery address',
-                  border: OutlineInputBorder(),
                 ),
                 items: [
                   const DropdownMenuItem<int>(child: Text('Choose address')),

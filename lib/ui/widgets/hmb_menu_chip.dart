@@ -5,6 +5,7 @@
 
 import 'package:material_ui/material_ui.dart';
 
+import '../../util/flutter/hmb_theme.dart';
 import 'color_ex.dart';
 import 'hmb_chip.dart';
 import 'layout/layout.g.dart';
@@ -67,7 +68,7 @@ class HMBMenuChip<T> extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(HMBTheme.controlRadius),
       ),
       child: chipChild,
     );
@@ -103,25 +104,25 @@ class HMBMenuChip<T> extends StatelessWidget {
   Color _bgColor(BuildContext context) {
     switch (tone) {
       case HMBChipTone.accent:
-        return Theme.of(context).colorScheme.primary.withSafeOpacity(0.15);
+        return Theme.of(context).colorScheme.primaryContainer;
       case HMBChipTone.danger:
         return Colors.red.withSafeOpacity(0.15);
       case HMBChipTone.warning:
         return Colors.orange.withSafeOpacity(0.15);
       case HMBChipTone.neutral:
         final c = Theme.of(context).chipTheme.backgroundColor;
-        return (c ?? Colors.grey).withSafeOpacity(0.15);
+        return c ?? HMBColors.surface8dp;
     }
   }
 
   Color _fgColor(BuildContext context) {
     switch (tone) {
       case HMBChipTone.accent:
-        return Colors.white;
+        return Theme.of(context).colorScheme.onPrimaryContainer;
       case HMBChipTone.danger:
         return Colors.red.shade400;
       case HMBChipTone.warning:
-        return Colors.orange.shade700;
+        return HMBColors.warning;
       case HMBChipTone.neutral:
         return Theme.of(context).textTheme.bodyMedium?.color ?? Colors.white;
     }

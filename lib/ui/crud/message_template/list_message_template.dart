@@ -64,7 +64,6 @@ class _MessageTemplateListScreenState extends State<MessageTemplateListScreen> {
     padding: EdgeInsets.zero,
     child: Scaffold(
       appBar: AppBar(
-        backgroundColor: SurfaceElevation.e0.color,
         toolbarHeight: 80,
         titleSpacing: 0,
         title: HMBSearchWithAdd(

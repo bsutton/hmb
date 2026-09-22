@@ -34,7 +34,6 @@ class HomeScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      backgroundColor: Colors.purple,
       // ▶️ Home button replaces the old drawer
       leading: IconButton(
         icon: const Icon(Icons.home),

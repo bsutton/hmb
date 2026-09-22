@@ -4,6 +4,7 @@ library;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/widgets/select/hmb_select_job.dart';
+import 'package:hmb/util/flutter/hmb_theme.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../database/management/db_utility_test_helper.dart';
@@ -89,6 +90,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     final filterIcon = tester.widget<Icon>(find.byIcon(Icons.tune));
-    expect(filterIcon.color, Colors.blue);
+    expect(filterIcon.color, HMBColors.primary);
   });
 }

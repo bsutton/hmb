@@ -125,7 +125,6 @@ class _SelectQuoteDialogState extends State<SelectQuoteDialog> {
               ],
             ),
           ),
-
           // Search bar
           Padding(
             padding: const EdgeInsets.all(16),
@@ -134,11 +133,9 @@ class _SelectQuoteDialogState extends State<SelectQuoteDialog> {
               decoration: const InputDecoration(
                 labelText: 'Search',
                 prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
               ),
             ),
           ),
-
           Expanded(
             child: FutureBuilderEx<List<CustomerAndQuote>>(
               future: _fetchQuotes(),

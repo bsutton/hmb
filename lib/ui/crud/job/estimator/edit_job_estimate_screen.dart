@@ -261,7 +261,6 @@ class _JobEstimateBuilderScreenState
       context: context,
       nameSingular: 'task',
       question: 'Are you sure you want to delete ${task.name}?',
-
       onConfirmed: () async {
         try {
           await DaoTask().delete(task.id);
@@ -465,7 +464,6 @@ class _JobEstimateBuilderScreenState
   Widget _buildTaskCard(Task task) => HMBColumn(
     children: [
       Surface(
-        rounded: true,
         elevation: SurfaceElevation.e2,
         child: HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -580,7 +578,6 @@ class _JobEstimateBuilderScreenState
     Money hourlyRate,
     BillingType billingType,
   ) => Surface(
-    rounded: true,
     elevation: SurfaceElevation.e1,
     margin: const EdgeInsets.only(bottom: 8),
     child: HMBColumn(
@@ -657,7 +654,6 @@ class _JobEstimateBuilderScreenState
       context: context,
       nameSingular: 'Task item',
       question: 'Are you sure you want to delete ${item.description}?',
-
       onConfirmed: () async {
         try {
           await DaoTaskItem().delete(item.id);
@@ -1054,10 +1050,7 @@ class _EstimateMarginDialogState extends State<_EstimateMarginDialog> {
             controller: _percentController,
             keyboardType: TextInputType.number,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              labelText: 'Margin (%)',
-              border: OutlineInputBorder(),
-            ),
+            decoration: const InputDecoration(labelText: 'Margin (%)'),
           ),
           Text('Resulting Margin: $_calculatedAmount'),
         ] else ...[
@@ -1066,10 +1059,7 @@ class _EstimateMarginDialogState extends State<_EstimateMarginDialog> {
             controller: _amountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              labelText: r'Margin ($)',
-              border: OutlineInputBorder(),
-            ),
+            decoration: const InputDecoration(labelText: r'Margin ($)'),
           ),
           Text('Resulting Margin %: $_calculatedPercentFromAmount'),
         ],

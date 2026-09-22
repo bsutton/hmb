@@ -29,6 +29,7 @@ import '../../fsm/lifecycle_event_dispatcher.dart';
 import '../../fsm/lifecycle_models.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/log.dart';
+import '../../util/flutter/hmb_theme.dart';
 import '../dialog/hmb_ask_user_to_continue.dart';
 import '../dialog/start_timer_dialog.dart';
 import '../dialog/stop_timer_dialog.dart';
@@ -173,7 +174,7 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
                 // start / stop icon
                 icon: Icon(
                   isActive ? Icons.stop : Icons.play_arrow,
-                  color: isActive ? Colors.red : Colors.blue,
+                  color: isActive ? Colors.red : HMBColors.primary,
                 ),
                 onPressed: _timerActionInProgress ? null : _handleTimerPressed,
               );

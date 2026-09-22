@@ -119,10 +119,7 @@ Future<PaymentApplicationRequest?> showApplyPaymentToInvoiceDialog({
                 ] else if (!recordNewPayment) ...[
                   DropdownButtonFormField<DebtorPayment>(
                     initialValue: selected,
-                    decoration: const InputDecoration(
-                      labelText: 'Payment',
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: const InputDecoration(labelText: 'Payment'),
                     items: [
                       for (final payment in payments)
                         DropdownMenuItem(

@@ -116,10 +116,7 @@ class ChatGptIntegrationScreenState extends State<ChatGptIntegrationScreen> {
         const HMBSpacer(height: true),
         TextFormField(
           controller: _apiKeyController,
-          decoration: const InputDecoration(
-            labelText: 'OpenAI API Key',
-            border: OutlineInputBorder(),
-          ),
+          decoration: const InputDecoration(labelText: 'OpenAI API Key'),
           obscureText: true,
         ),
       ],

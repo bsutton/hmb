@@ -13,6 +13,7 @@
 
 import 'package:material_ui/material_ui.dart';
 
+import '../../../util/flutter/hmb_theme.dart';
 import 'hmb_text.dart';
 
 class HMBTextClickable extends StatelessWidget {
@@ -25,7 +26,7 @@ class HMBTextClickable extends StatelessWidget {
     required this.text,
     required this.onPressed,
     this.bold = false,
-    this.color = Colors.blue,
+    this.color = HMBColors.primary,
     super.key,
   });
 

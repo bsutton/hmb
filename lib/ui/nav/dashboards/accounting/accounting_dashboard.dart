@@ -141,7 +141,6 @@ class _AccountingDashboardPageState extends State<AccountingDashboardPage> {
                 return Padding(
                   padding: const EdgeInsets.only(top: 12, bottom: 16),
                   child: Surface(
-                    rounded: true,
                     child: Row(
                       children: [
                         const Icon(

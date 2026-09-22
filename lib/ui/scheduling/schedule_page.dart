@@ -18,7 +18,6 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
-// -- Example imports. Adapt for your project:
 import '../../dao/dao.g.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
@@ -27,6 +26,7 @@ import '../../entity/site.dart';
 import '../../util/dart/date_time_ex.dart';
 import '../../util/dart/local_date.dart';
 import '../../util/flutter/app_title.dart';
+import '../../util/flutter/hmb_theme.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/hmb_toggle.dart';
 import '../widgets/layout/layout.g.dart';
@@ -434,17 +434,17 @@ class SchedulePageState extends DeferredState<SchedulePage> {
 
   Widget _todayButton() => TextButton.icon(
     onPressed: onTodayPage,
-    icon: const Icon(Icons.today, color: Colors.blue),
+    icon: const Icon(Icons.today, color: HMBColors.primary),
     label: const Text(
       'Today',
-      style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+      style: TextStyle(color: HMBColors.primary, fontWeight: FontWeight.bold),
     ),
     style: TextButton.styleFrom(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      backgroundColor: Colors.grey[900],
+      backgroundColor: HMBColors.surface4dp,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: Colors.blue.shade300),
+        side: const BorderSide(color: HMBColors.primary),
       ),
     ),
   );

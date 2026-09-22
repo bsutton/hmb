@@ -20,6 +20,7 @@ import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 import '../../../util/flutter/clip_board.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import '../hmb_toast.dart';
 
 class HMBMailToIcon extends StatelessWidget {
@@ -38,7 +39,7 @@ class HMBMailToIcon extends StatelessWidget {
         onPressed: () => Strings.isEmpty(email)
             ? null
             : unawaited(_sendEmail(context, email!)),
-        color: Strings.isEmpty(email) ? Colors.grey : Colors.blue,
+        color: Strings.isEmpty(email) ? Colors.grey : HMBColors.primary,
         tooltip: 'Send an Email',
       ),
       IconButton(
@@ -46,7 +47,7 @@ class HMBMailToIcon extends StatelessWidget {
         icon: const Icon(Icons.copy),
         onPressed: () =>
             Strings.isEmpty(email) ? null : unawaited(clipboardCopyTo(email!)),
-        color: Strings.isEmpty(email) ? Colors.grey : Colors.blue,
+        color: Strings.isEmpty(email) ? Colors.grey : HMBColors.primary,
         tooltip: 'Copy Email address to the Clipboard',
       ),
     ],

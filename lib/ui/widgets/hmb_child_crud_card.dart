@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:material_ui/material_ui.dart';
 
 import 'layout/layout.g.dart';
@@ -31,7 +30,6 @@ class HMBChildCrudCard extends StatelessWidget {
     children: [
       Card(
         margin: const EdgeInsets.only(bottom: 8),
-        color: Colors.deepPurpleAccent,
         child: Padding(
           padding: const EdgeInsets.all(8),
           child: HMBColumn(
@@ -39,10 +37,7 @@ class HMBChildCrudCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (headline != null)
-                Text(
-                  headline!,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
+                Text(headline!, style: Theme.of(context).textTheme.titleMedium),
               crudListScreen,
             ],
           ),

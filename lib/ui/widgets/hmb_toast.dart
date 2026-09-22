@@ -16,6 +16,8 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:toastification/toastification.dart';
 
+import '../../util/flutter/hmb_theme.dart';
+
 class HMBToast {
   static void info(String text) {
     toastification.show(
@@ -36,12 +38,12 @@ class HMBToast {
       description: Text(
         text,
         maxLines: 6,
-        style: const TextStyle(color: Colors.black, fontSize: 18),
+        style: const TextStyle(color: HMBColors.textPrimary, fontSize: 14),
       ),
       icon: const Icon(Icons.error_outline),
       alignment: Alignment.center,
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black, // Sets the close button color to black
+      backgroundColor: HMBColors.surface8dp,
+      foregroundColor: HMBColors.textPrimary,
     );
   }
 }

@@ -162,7 +162,7 @@ class _GoogleDriveBackupScreenState
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue,
+                color: HMBColors.textPrimary,
               ),
               textAlign: TextAlign.center,
             ),

@@ -13,10 +13,12 @@
 
 import 'package:material_ui/material_ui.dart';
 
+import '../../util/flutter/hmb_theme.dart';
+
 class HMBColours {
-  static Color background = Colors.deepPurple[100]!;
+  static Color background = HMBColors.defaultBackground;
 
-  static Color cardBackground = Colors.deepPurple[200]!;
+  static Color cardBackground = HMBColors.surface4dp;
 
-  static Color appBackground = Colors.black;
+  static Color appBackground = HMBColors.defaultBackground;
 }

@@ -29,6 +29,7 @@ import '../../util/dart/date_time_ex.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
 import '../../util/dart/local_time.dart';
+import '../../util/flutter/hmb_theme.dart';
 import '../dialog/send_notice_for_job_dialog.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_date_time_picker.dart';
@@ -171,7 +172,6 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
                 ),
                 // Display event date
                 _buildEventDate(context),
-
                 ..._buildStartEndDates(isSmallScreen),
                 // Display the duration
                 _buildDuration(duration),
@@ -181,7 +181,6 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
                 _buildNotes(),
                 if (_noticeSentDate != null)
                   Text('Notice sent on: ${formatDateTime(_noticeSentDate!)}'),
-
                 // Contact option
                 if (widget.isEditing)
                   HMBButtonSecondary(
@@ -568,7 +567,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
                   contact.method == ContactMethod.email
                       ? Icons.email
                       : Icons.message,
-                  color: contact.isPrimary ? Colors.blue : null,
+                  color: contact.isPrimary ? HMBColors.primary : null,
                 ),
                 title: Text(
                   contact.detail,

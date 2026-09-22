@@ -356,10 +356,7 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
                   controller: _messageController,
                   maxLines: null,
                   expands: true,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Edit Message',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Edit Message'),
                   onChanged: (value) {
                     unawaited(_updateEditedMessage(value));
                   },

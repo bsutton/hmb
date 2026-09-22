@@ -20,6 +20,7 @@ import 'package:sqflite_common/sqflite.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/hmb_column.dart';
 import '../../widgets/select/select.g.dart';
@@ -133,7 +134,6 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
             setState(() {});
           },
         ),
-
         // Supplier-Contact selector
         if (_selectedSupplier != null) ...[
           FutureBuilderEx<List<Contact>>(
@@ -147,7 +147,6 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
             ),
           ),
         ],
-
         // Tasks multi-select
         FutureBuilder<List<Task>>(
           future: DaoTask().getTasksByJob(widget.job.id),
@@ -193,7 +192,7 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
                     value: _selectedTasks.contains(t.id),
                     title: Text(
                       t.name,
-                      style: const TextStyle(color: Colors.blue),
+                      style: const TextStyle(color: HMBColors.primary),
                     ),
                     subtitle: Text(t.assumption),
                     onChanged: (on) => setState(() {

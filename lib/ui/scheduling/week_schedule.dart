@@ -23,6 +23,7 @@ import '../../entity/system.dart';
 import '../../util/dart/date_time_ex.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
+import '../../util/flutter/hmb_theme.dart';
 import '../widgets/layout/layout.g.dart';
 import 'job_activity_ex.dart';
 import 'schedule_helper.dart';
@@ -169,7 +170,6 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
           this,
           builder: (context) => WeekView<JobActivityEx>(
             key: widget.weekKey,
-
             startHour: _getStartHour(),
             endHour: _getEndHour(),
             // key: ValueKey(currentDate),
@@ -183,7 +183,7 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
                 widget.showExtendedHours ||
                 showWeekends ||
                 _hasActivitiesInExtendedHours,
-            backgroundColor: Colors.black,
+            backgroundColor: HMBColors.defaultBackground,
             headerStringBuilder: widget.dateStringBuilder,
             eventTileBuilder: _defaultEventTileBuilder,
             onPageChange: (date, index) => _onPageChange(date),

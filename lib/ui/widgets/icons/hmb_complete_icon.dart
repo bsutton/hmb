@@ -1,5 +1,7 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../../../util/dart/types.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import 'hmb_icon_button.dart';
 
 class HMBCompleteIcon extends StatelessWidget {
@@ -18,7 +20,7 @@ class HMBCompleteIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => HMBIconButton(
-    icon: const Icon(Icons.check, size: 20, color: Colors.green),
+    icon: const Icon(Icons.check, size: 20, color: HMBColors.success),
     size: small ? HMBIconButtonSize.small : HMBIconButtonSize.standard,
     showBackground: false,
     hint: hint,

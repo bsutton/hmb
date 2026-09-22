@@ -51,10 +51,7 @@ class HMBNameField extends StatelessWidget {
         autofocus: autofocus,
         keyboardType: keyboardType,
         textCapitalization: TextCapitalization.words,
-        decoration: InputDecoration(
-          labelText: labelText,
-          border: const OutlineInputBorder(),
-        ),
+        decoration: InputDecoration(labelText: labelText),
         validator: (value) {
           if (required && (value == null || value.isEmpty)) {
             return 'Please enter a $labelText';

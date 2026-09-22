@@ -134,7 +134,6 @@ class _JobActivityTimelineSectionState
 
   @override
   Widget build(BuildContext context) => Surface(
-    rounded: true,
     child: HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -178,7 +177,6 @@ class _JobActivityTimelineSectionState
         : todoById[activity.linkedTodoId];
 
     return Surface(
-      rounded: true,
       elevation: SurfaceElevation.e1,
       margin: const EdgeInsets.only(top: 8),
       child: HMBColumn(
@@ -228,7 +226,6 @@ class _JobActivityTimelineSectionState
   }
 
   Widget _buildTransitionItem(LifecycleTransition transition) => Surface(
-    rounded: true,
     elevation: SurfaceElevation.e1,
     margin: const EdgeInsets.only(top: 8),
     child: HMBColumn(

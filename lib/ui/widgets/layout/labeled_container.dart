@@ -13,6 +13,8 @@
 
 import 'package:material_ui/material_ui.dart';
 
+import '../../../util/flutter/hmb_theme.dart';
+
 class LabeledContainer extends StatelessWidget {
   final String labelText;
   final Widget child;
@@ -35,10 +37,11 @@ class LabeledContainer extends StatelessWidget {
         margin: const EdgeInsets.only(top: 20), // Adjust to prevent clipping
         decoration: BoxDecoration(
           border: Border.all(
-            color: isError ? Theme.of(context).colorScheme.error : Colors.grey,
-            width: 1.5,
+            color: isError
+                ? Theme.of(context).colorScheme.error
+                : Theme.of(context).colorScheme.outline,
           ),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(HMBTheme.controlRadius),
         ),
         child: Padding(padding: const EdgeInsets.all(16), child: child),
       ),
@@ -55,7 +58,7 @@ class LabeledContainer extends StatelessWidget {
               color: isError
                   ? Theme.of(context).colorScheme.error
                   : Theme.of(context).textTheme.bodyLarge?.color ??
-                        Colors.black,
+                        HMBColors.textSecondary,
             ),
           ),
         ),

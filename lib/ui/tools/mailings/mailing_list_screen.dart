@@ -93,10 +93,7 @@ class _MailingListScreenState extends State<MailingListScreen> {
           content: TextField(
             controller: controller,
             autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Mailing name',
-              border: OutlineInputBorder(),
-            ),
+            decoration: const InputDecoration(labelText: 'Mailing name'),
             textInputAction: TextInputAction.done,
             onSubmitted: (value) {
               if (value.trim().isNotEmpty) {

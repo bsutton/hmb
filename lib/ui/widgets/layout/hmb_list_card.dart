@@ -51,7 +51,6 @@ class HMBCrudListCard extends StatelessWidget {
       // child:
       Card(
         semanticContainer: false,
-        elevation: 2,
         child: HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

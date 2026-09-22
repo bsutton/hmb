@@ -234,10 +234,7 @@ class _JobCreatorState extends State<JobCreator> {
               Expanded(
                 child: TextFormField(
                   controller: controller,
-                  decoration: InputDecoration(
-                    labelText: 'Task ${index + 1}',
-                    border: const OutlineInputBorder(),
-                  ),
+                  decoration: InputDecoration(labelText: 'Task ${index + 1}'),
                 ),
               ),
               IconButton(
@@ -403,10 +400,9 @@ class _JobCreatorState extends State<JobCreator> {
     final contacts = await daoContact.getByCustomer(customer.id);
     final sites = await daoSite.getByCustomer(customer.id);
     contacts.sort(
-      (a, b) =>
-          _displayName(a)
-              .toLowerCase()
-              .compareTo(_displayName(b).toLowerCase()),
+      (a, b) => _displayName(
+        a,
+      ).toLowerCase().compareTo(_displayName(b).toLowerCase()),
     );
     if (!mounted || _selectedCustomer?.id != customer.id) {
       return;
@@ -1443,10 +1439,7 @@ class _JobStep extends WizardStep {
           TextFormField(
             key: TestKeys.jobCreatorDescriptionField,
             controller: state._jobDescription,
-            decoration: const InputDecoration(
-              labelText: 'Job Description',
-              border: OutlineInputBorder(),
-            ),
+            decoration: const InputDecoration(labelText: 'Job Description'),
             maxLines: 5,
           ),
           const HMBSpacer(height: true),
