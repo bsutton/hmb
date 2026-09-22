@@ -30,6 +30,8 @@ class Tool extends Entity<Tool> {
   final int? warrantyPeriod;
   final Money? cost;
   final String? description;
+  final String location;
+  final String lentTo;
 
   Tool._({
     required super.id,
@@ -47,6 +49,8 @@ class Tool extends Entity<Tool> {
     this.warrantyPeriod,
     this.cost,
     this.description,
+    this.location = '',
+    this.lentTo = '',
   });
 
   Tool.forInsert({
@@ -62,6 +66,8 @@ class Tool extends Entity<Tool> {
     this.warrantyPeriod,
     this.cost,
     this.description,
+    this.location = '',
+    this.lentTo = '',
   }) : super.forInsert();
 
   Tool copyWith({
@@ -77,6 +83,8 @@ class Tool extends Entity<Tool> {
     int? warrantyPeriod,
     Money? cost,
     String? description,
+    String? location,
+    String? lentTo,
   }) => Tool._(
     id: id,
     name: name ?? this.name,
@@ -93,6 +101,8 @@ class Tool extends Entity<Tool> {
     warrantyPeriod: warrantyPeriod ?? this.warrantyPeriod,
     cost: cost ?? this.cost,
     description: description ?? this.description,
+    location: location ?? this.location,
+    lentTo: lentTo ?? this.lentTo,
   );
 
   factory Tool.fromMap(Map<String, dynamic> map) => Tool._(
@@ -111,6 +121,8 @@ class Tool extends Entity<Tool> {
     warrantyPeriod: map['warrantyPeriod'] as int?,
     cost: MoneyEx.moneyOrNull(map['cost'] as int?),
     description: map['description'] as String?,
+    location: map['location'] as String? ?? '',
+    lentTo: map['lent_to'] as String? ?? '',
     createdDate: DateTime.parse(map['createdDate'] as String),
     modifiedDate: DateTime.parse(map['modifiedDate'] as String),
   );
@@ -130,6 +142,8 @@ class Tool extends Entity<Tool> {
     'warrantyPeriod': warrantyPeriod,
     'cost': cost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
     'description': description,
+    'location': location,
+    'lent_to': lentTo,
     'createdDate': createdDate.toIso8601String(),
     'modifiedDate': modifiedDate.toIso8601String(),
   };

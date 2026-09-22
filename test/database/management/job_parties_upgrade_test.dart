@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/database/factory/cli_database_factory.dart';
 import 'package:hmb/database/management/backup_providers/dev/dev_backup_provider.dart';
+import 'package:hmb/database/management/db_utility.dart';
 import 'package:hmb/database/versions/db_upgrade.dart';
 import 'package:hmb/database/versions/implementations/project_script_source.dart';
 import 'package:hmb/entity/contact.dart';
@@ -19,7 +20,7 @@ void main() {
       options: OpenDatabaseOptions(),
     );
     try {
-      final source = ProjectScriptSource();
+      final source = _JobPartiesScriptSource();
       for (final path in [
         'test/sql/job_parties_v212.sql',
         'assets/sql/upgrade_scripts/v71.sql',
@@ -81,4 +82,12 @@ void main() {
       directory.deleteSync(recursive: true);
     }
   });
+}
+
+// This deliberately minimal fixture models v212 -> v213, not later schemas.
+class _JobPartiesScriptSource extends ProjectScriptSource {
+  @override
+  Future<List<String>> upgradeScripts() async => (await super.upgradeScripts())
+      .where((path) => extractVerionForSQLUpgradeScript(path) <= 213)
+      .toList();
 }
