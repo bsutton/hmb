@@ -16,6 +16,7 @@ environment:
   sdk: ">=3.10.0 <4.0.0"
 
 dependencies:
+  geolocator: ^14.0.3
   android_intent_plus: ^6.1.0
   app_links: ^7.0.0
   archive: ^4.0.4
