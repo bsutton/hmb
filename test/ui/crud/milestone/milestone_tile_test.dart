@@ -40,7 +40,7 @@ void main() {
     );
 
     expect(find.text('Voided'), findsOneWidget);
-    expect(find.byIcon(Icons.add), findsNothing);
+    expect(find.text('Create invoice'), findsNothing);
   });
 
   testWidgets('editable milestone shows invoice button', (tester) async {
@@ -72,6 +72,6 @@ void main() {
       ),
     );
 
-    expect(find.byIcon(Icons.add), findsOneWidget);
+    expect(find.text('Create invoice'), findsOneWidget);
   });
 }
