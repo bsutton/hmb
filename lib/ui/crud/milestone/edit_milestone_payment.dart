@@ -128,14 +128,16 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
     );
 
     // total quote - edited - invoiced
-    final invoicedSum = uninvoicedMilestones.fold<Money>(
+    final invoicedSum = milestones.fold<Money>(
       MoneyEx.zero,
       (sum, m) =>
           sum + ((m.invoiceId != null) ? m.paymentAmount : MoneyEx.zero),
     );
 
-    final remainingForUnedited =
-        quote.totalAmount - allocatedByEdited - invoicedSum;
+    final unallocated = quote.totalAmount - allocatedByEdited - invoicedSum;
+    final remainingForUnedited = unallocated.isNegative
+        ? MoneyEx.zero
+        : unallocated;
 
     if (uneditedMilestones.isEmpty) {
       _calculateTotals();
@@ -166,7 +168,9 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
       (m) => m.invoiceId == null,
     );
 
-    if (lastMilestone != null && !lastMilestone.edited) {
+    if (lastMilestone != null &&
+        !lastMilestone.edited &&
+        !unallocated.isNegative) {
       lastMilestone
         ..paymentAmount = (lastMilestone.paymentAmount) + difference
         ..paymentPercentage = lastMilestone.paymentAmount.percentageOf(
@@ -248,7 +252,7 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
     this,
     builder: (context) => Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Milestones'),
+        title: const Text('Milestone payments'),
         actions: [
           HMBButtonAdd(
             enabled: true,
@@ -261,7 +265,18 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: HMBText('Quote Total: ${quote.totalAmount}'),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                HMBText('Quote Total: ${quote.totalAmount}'),
+                Text('Quote #${quote.bestNumber} — ${quote.summary}'),
+                const Text(
+                  'Split the quote into progress payments. '
+                  'After approval, invoice each milestone when it is due.',
+                ),
+              ],
+            ),
           ),
           if (_errorMessage.isNotEmpty)
             Padding(
