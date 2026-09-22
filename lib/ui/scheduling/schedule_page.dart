@@ -15,6 +15,9 @@ import 'dart:async';
 
 import 'package:calendar_view/calendar_view.dart';
 import 'package:deferred_state/deferred_state.dart';
+// calendar_view still requires the SDK Material ancestor, not material_ui's.
+// ignore: migrate_design_widgets
+import 'package:flutter/material.dart' as flutter;
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -216,7 +219,12 @@ class SchedulePageState extends DeferredState<SchedulePage> {
               onNext: onNextPage,
               onPrevious: onPreviousPage,
               onHome: onTodayPage,
-              child: _buildCalendar(),
+              // calendar_view uses Flutter Material, whereas the surrounding
+              // application uses material_ui's separate Material ancestor.
+              child: flutter.Material(
+                color: Theme.of(context).colorScheme.surface,
+                child: _buildCalendar(),
+              ),
             ),
           ),
         ],

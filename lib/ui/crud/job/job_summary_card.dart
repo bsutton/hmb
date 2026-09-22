@@ -12,6 +12,7 @@ import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/hmb_site_text.dart';
 import '../../widgets/widgets.g.dart';
 import 'job_edit_section.dart';
+import 'job_schedule_actions.dart';
 
 /// The former job edit card is now a summary with independently saved editors.
 /// It deliberately does not contain the list card's dashlets.
@@ -19,11 +20,13 @@ class JobSummaryCard extends StatefulWidget {
   final Job job;
   final Future<void> Function(JobEditSection section) onEdit;
   final Future<void> Function() onActions;
+  final Future<void> Function()? onScheduleChanged;
 
   const JobSummaryCard({
     required this.job,
     required this.onEdit,
     required this.onActions,
+    this.onScheduleChanged,
     super.key,
   });
   @override
@@ -132,11 +135,9 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
                 hint: 'Perform a job action',
                 onPressed: widget.onActions,
               ),
-              HMBButtonSecondary(
-                quiet: true,
-                label: 'Schedule',
-                hint: 'Manage job visits',
-                onPressed: () => widget.onEdit(JobEditSection.schedule),
+              JobScheduleActions(
+                job: widget.job,
+                onChanged: widget.onScheduleChanged,
               ),
             ],
           ),
@@ -160,9 +161,8 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withSafeOpacity(0.12),
+                        color: Theme.of(context).colorScheme.onSurface
+                            .withSafeOpacity(0.12),
                       ),
                     ),
                   ),

@@ -63,6 +63,11 @@ void main() {
         await pumpUntil(tester, find.text(parties ? 'Add party' : 'Manage'));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
+        if (!parties) {
+          await pumpUntil(tester, find.text('Next: none'));
+          expect(find.text('Schedule'), findsOneWidget);
+          expect(find.text('Next: none'), findsOneWidget);
+        }
         for (final element in find.byType(SurfaceCardWithActions).evaluate()) {
           expect(
             tester.getSize(find.byWidget(element.widget)).width,
