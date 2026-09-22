@@ -131,10 +131,11 @@ void main() {
     await tester.pumpAndSettle();
     await waitForText(tester, 'Unapprove');
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Unapprove'));
-    await tester.pumpAndSettle();
-
     final updatedQuote = await tester.runAsync(() async {
+      // Start the database-backed action in the real async zone. Starting
+      // it in FakeAsync can leave its transaction waiting for a pump while
+      // the following real database read waits for that transaction's lock.
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Unapprove'));
       Quote? updated;
       for (var attempt = 0; attempt < 20; attempt++) {
         updated = await DaoQuote().getById(quote.id);

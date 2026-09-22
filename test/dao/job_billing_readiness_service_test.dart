@@ -1,4 +1,5 @@
 import 'package:hmb/dao/billing_attention_cache.dart';
+import 'package:hmb/dao/billing_queue.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/money_ex.dart';
@@ -50,6 +51,7 @@ void main() {
 
       await DaoTimeEntry().update(entry.copyWith(billed: true));
       cache.invalidateTable(DaoTimeEntry.tableName);
+      await BillingQueue(testDb!).drain(limit: 10000);
       await cache.refresh();
       expect(
         cache.entries!.map((entry) => entry.job.id),

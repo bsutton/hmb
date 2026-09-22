@@ -20,8 +20,15 @@ import 'package:path/path.dart';
 
 class TestBackupProvider extends BackupProvider {
   String pathToDatabase;
+  final String? backupDirectory;
+  final String? photosDirectory;
 
-  TestBackupProvider(super.databaseFactory, this.pathToDatabase);
+  TestBackupProvider(
+    super.databaseFactory,
+    this.pathToDatabase, {
+    this.backupDirectory,
+    this.photosDirectory,
+  });
 
   @override
   String get name => 'Test Backup';
@@ -46,11 +53,14 @@ class TestBackupProvider extends BackupProvider {
     required int version,
   }) async {
     final basePath = join(
-      DartProject.self.pathToProjectRoot,
-      'backups',
+      backupDirectory ?? join(DartProject.self.pathToProjectRoot, 'backups'),
       basenameWithoutExtension(pathToZippedBackup),
     );
     final ext = extension(pathToZippedBackup);
+    // Fresh issue worktrees do not already have a backup output directory.
+    if (!exists(dirname(basePath))) {
+      createDir(dirname(basePath), recursive: true);
+    }
 
     var count = 0;
     String pathToBackupFile;
@@ -72,7 +82,7 @@ class TestBackupProvider extends BackupProvider {
 
   @override
   Future<String> get photosRootPath async =>
-      join(DartProject.self.pathToProjectRoot, 'photos');
+      photosDirectory ?? join(DartProject.self.pathToProjectRoot, 'photos');
 
   @override
   Future<String> get databasePath async => pathToDatabase;

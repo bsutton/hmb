@@ -17,6 +17,7 @@ import 'dart:isolate';
 
 import 'package:sqflite_common/sqlite_api.dart' hide DatabaseException;
 
+import '../../dao/billing_mutation.dart';
 import '../../util/dart/exceptions.dart';
 import '../../util/dart/types.dart';
 import '../factory/hmb_database_factory.dart';
@@ -25,6 +26,8 @@ import '../versions/script_source.dart';
 import 'backup_providers/backup_provider.dart';
 
 class DatabaseHelper {
+  Future<void> Function()? beforeClose;
+  void Function()? afterOpen;
   static Database? _database;
   static final instance = DatabaseHelper._();
 
@@ -86,9 +89,15 @@ The database isn't open, if this code is running in an isolate $isolate you will
         ),
       ),
     );
+    // Older schema fixtures and upgrade DAOs must not write to the outbox.
+    if (targetVersion >= 214) {
+      BillingMutation.enable(_database!);
+    }
+    afterOpen?.call();
   }
 
   Future<void> closeDb() async {
+    await beforeClose?.call();
     final db = database;
     _database = null;
     await db.close();
@@ -128,7 +137,7 @@ The database isn't open, if this code is running in an isolate $isolate you will
       if (_database == null) {
         _database = await databaseFactory.openDatabase(
           pathToDb,
-          options: OpenDatabaseOptions(),
+          options: OpenDatabaseOptions(singleInstance: false),
         );
         wasOpen = true;
       }

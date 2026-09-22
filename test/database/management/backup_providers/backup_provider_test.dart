@@ -16,7 +16,6 @@ library;
 
 import 'dart:io';
 
-import 'package:dcli/dcli.dart' hide delete;
 import 'package:dcli_core/dcli_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/database/factory/flutter_database_factory.dart';
@@ -48,6 +47,8 @@ void main() {
     late final BackupProvider backupProvider = TestBackupProvider(
       databaseFactory,
       testDbPath,
+      backupDirectory: join(dirname(testDbPath), 'backups'),
+      photosDirectory: join(dirname(testDbPath), 'photos'),
     );
 
     setUp(() async {
@@ -144,8 +145,12 @@ void main() {
 
   group('Backup file naming', () {
     test('store appends incremental suffixes without stacking', () async {
-      final provider = TestBackupProvider(FlutterDatabaseFactory(), testDbPath);
-      final backupsDir = join(DartProject.self.pathToProjectRoot, 'backups');
+      final backupsDir = join(dirname(testDbPath), 'backups');
+      final provider = TestBackupProvider(
+        FlutterDatabaseFactory(),
+        testDbPath,
+        backupDirectory: backupsDir,
+      );
       if (!exists(backupsDir)) {
         createDir(backupsDir, recursive: true);
       }

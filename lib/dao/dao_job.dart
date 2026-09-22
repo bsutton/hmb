@@ -40,7 +40,6 @@ import 'dao_task_item.dart';
 import 'dao_time_entry.dart';
 import 'dao_todo.dart';
 import 'dao_work_assignment_task.dart';
-import 'job_billing_readiness_service.dart';
 
 enum JobOrder {
   active('Most Recently Accessed'),
@@ -631,18 +630,20 @@ where q.id=?
 
   Future<List<Job>> readyToBeInvoiced(String? filter) async {
     final jobs = await DaoJob().getByFilter(filter);
-    final ready = <Job>[];
-    for (final job in jobs) {
-      if (job.status.stage == JobStatusStage.preStart ||
-          job.status == JobStatus.rejected) {
-        continue;
-      }
-      final readiness = await JobBillingReadinessService().evaluate(job);
-      if (readiness.needsAttention) {
-        ready.add(job);
-      }
-    }
-    return ready;
+    final flagged = (await db.query(
+      'job_billing_state',
+      columns: ['job_id'],
+      where: 'billing_required = 1',
+    )).map((row) => row['job_id']! as int).toSet();
+    return jobs
+        .where(
+          (job) =>
+              flagged.contains(job.id) &&
+              !job.isStock &&
+              job.status.stage != JobStatusStage.preStart &&
+              job.status != JobStatus.rejected,
+        )
+        .toList();
   }
 
   /// Copy a [Job] and move selected [Task]s to the new [Job]

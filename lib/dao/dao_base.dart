@@ -15,6 +15,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.dart';
 import '../util/dart/exceptions.dart' as hmb;
+import 'billing_executor.dart';
 
 class DaoBase<T extends Entity<T>> {
   Database db;
@@ -45,7 +46,7 @@ class DaoBase<T extends Entity<T>> {
   /// Insert [entity] into the database.
   /// Updating the passed in entity so that it has the assigned id.
   Future<int> insert(covariant T entity, [Transaction? transaction]) async {
-    final executor = transaction ?? db;
+    final executor = withinTransaction(transaction);
     final id = await executor.insert(tablename, entity.toMap()..remove('id'));
     if (id == 0) {
       // the insert faield.
@@ -92,7 +93,7 @@ class DaoBase<T extends Entity<T>> {
   }
 
   Future<int> update(covariant T entity, [Transaction? transaction]) async {
-    final executor = transaction ?? db;
+    final executor = withinTransaction(transaction);
     entity.modifiedDate = DateTime.now();
     final count = await executor.update(
       tablename,
@@ -106,9 +107,9 @@ class DaoBase<T extends Entity<T>> {
   }
 
   //// Returns the number of rows deleted.
-  Future<int> delete(int id, [Transaction? transaction]) {
-    final executor = transaction ?? db;
-    final rowsDeleted = executor.delete(
+  Future<int> delete(int id, [Transaction? transaction]) async {
+    final executor = withinTransaction(transaction);
+    final rowsDeleted = await executor.delete(
       tablename,
       where: 'id = ?',
       whereArgs: [id],
@@ -138,9 +139,9 @@ class DaoBase<T extends Entity<T>> {
   /// Allows you to execute a command against the db
   /// optionally within a transaction.
   DatabaseExecutor withinTransaction(Transaction? transaction) =>
-      transaction ?? db;
+      BillingExecutor(transaction ?? db);
 
-  DatabaseExecutor withoutTransaction() => db;
+  DatabaseExecutor withoutTransaction() => BillingExecutor(db);
 
   Future<R> withTransaction<R>(
     Future<R> Function(Transaction transaction) callback,
