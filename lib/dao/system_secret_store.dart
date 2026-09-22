@@ -11,6 +11,8 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'dart:convert';
+
 import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
@@ -21,6 +23,28 @@ import 'system_secret_backend_stub.dart'
     if (dart.library.ui) 'system_secret_backend_flutter.dart';
 
 class SystemSecretStore {
+  Future<QuickBooksCredentials> readQuickBooksCredentials() async {
+    final value = await _read('system.quickbooks_credentials');
+    if (value == null) {
+      return const QuickBooksCredentials();
+    }
+    final map = jsonDecode(value) as Map<String, dynamic>;
+    return QuickBooksCredentials(
+      clientSecret: map['clientSecret'] as String?,
+      tokenJson: map['tokenJson'] as String?,
+      realmId: map['realmId'] as String?,
+    );
+  }
+
+  Future<void> writeQuickBooksCredentials(QuickBooksCredentials value) =>
+      _writeOrThrow(
+        'system.quickbooks_credentials',
+        jsonEncode({
+          'clientSecret': value.clientSecret,
+          'tokenJson': value.tokenJson,
+          'realmId': value.realmId,
+        }),
+      );
   final SystemSecretBackend _backend;
 
   SystemSecretStore({SystemSecretBackend? backend})

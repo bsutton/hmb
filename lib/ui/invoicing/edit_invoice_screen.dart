@@ -50,6 +50,7 @@ import 'apply_payment_to_invoice_dialog.dart';
 import 'edit_invoice_line_dialog.dart';
 import 'invoice_details.dart';
 import 'invoice_send_button.dart';
+import 'quickbooks_export_screen.dart';
 import 'record_invoice_adjustment_dialog.dart';
 import 'record_invoice_payment_dialog.dart';
 import 'void_invoice_dialog.dart';
@@ -134,6 +135,19 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                   ],
                 ),
                 _buildLedgerSummary(details),
+                if (!invoice.isUploaded() && !readOnlyInvoice)
+                  HMBButton(
+                    label: 'QuickBooks export',
+                    hint: 'Export an invoice snapshot to QuickBooks (preview)',
+                    onPressed: () async {
+                      await Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              QuickBooksExportScreen(invoice: invoice),
+                        ),
+                      );
+                    },
+                  ),
                 if (invoice.paymentSource == InvoicePaymentSource.unknown)
                   const Text(
                     'This invoice needs payment tracking review. Convert it '

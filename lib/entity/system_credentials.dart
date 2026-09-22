@@ -14,6 +14,18 @@
 import 'package:meta/meta.dart';
 
 @immutable
+class QuickBooksCredentials {
+  final String? clientSecret;
+  final String? tokenJson;
+  final String? realmId;
+  const QuickBooksCredentials({
+    this.clientSecret,
+    this.tokenJson,
+    this.realmId,
+  });
+}
+
+@immutable
 class XeroCredentials {
   final String? clientSecret;
 
