@@ -25,6 +25,11 @@ import 'dao.dart';
 import 'system_secret_store.dart';
 
 class DaoSystem extends Dao<System> {
+  Future<QuickBooksCredentials> getQuickBooksCredentials() =>
+      _secretStore.readQuickBooksCredentials();
+
+  Future<void> updateQuickBooksCredentials(QuickBooksCredentials credentials) =>
+      _secretStore.writeQuickBooksCredentials(credentials);
   static const tableName = 'system';
   static final defaultProfitMargin = Percentage.fromInt(
     20000,

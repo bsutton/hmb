@@ -32,6 +32,7 @@ import '../crud/system/google_calendar_integration_screen.dart';
 import '../crud/system/google_maps_integration_screen.dart';
 import '../crud/system/ihserver_integration_screen.dart';
 import '../crud/system/plasterboard_layout_settings_screen.dart';
+import '../crud/system/quickbooks_integration_screen.dart';
 import '../crud/system/smtp_integration_screen.dart';
 import '../crud/system/system_billing_screen.dart';
 import '../crud/system/system_business_screen.dart';
@@ -430,6 +431,11 @@ List<GoRoute> settingRoutes() => [
         path: 'xero',
         builder: (_, _) =>
             const HomeScaffold(initialScreen: XeroIntegrationScreen()),
+      ),
+      GoRoute(
+        path: 'quickbooks',
+        builder: (_, _) =>
+            const HomeScaffold(initialScreen: QuickBooksIntegrationScreen()),
       ),
       GoRoute(
         path: 'smtp',

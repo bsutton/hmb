@@ -4,6 +4,7 @@ import 'dart:convert';
 import '../../dao/dao_contact.dart';
 import '../../dao/dao_invoice.dart';
 import '../../dao/dao_job.dart';
+import '../../dao/dao_quickbooks.dart';
 import '../../dao/invoice_billing_contact.dart';
 import '../../entity/invoice.dart';
 import '../../util/dart/exceptions.dart';
@@ -36,6 +37,12 @@ class XeroAccountingAdaptor extends AccountingAdaptor {
   /// Uploads an invoice and returns the new Invoice Number
   ///
   Future<void> uploadInvoice(Invoice invoice) async {
+    if (await DaoQuickBooks().exportFor(invoice.id) != null) {
+      throw InvoiceException(
+        'This invoice has a QuickBooks export attempt. '
+        'Reconcile that export before uploading it to another provider.',
+      );
+    }
     // Fetch the job associated with the invoice
     final job = await DaoJob().getById(invoice.jobId);
 

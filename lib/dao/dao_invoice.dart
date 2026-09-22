@@ -382,6 +382,16 @@ ORDER BY modified_date DESC
 
   @override
   Future<int> delete(int id, [Transaction? transaction]) async {
+    final exports = await withinTransaction(transaction).query(
+      'quickbooks_invoice_export',
+      where: 'invoice_id = ?',
+      whereArgs: [id],
+    );
+    if (exports.isNotEmpty) {
+      throw StateError(
+        'Reconcile this invoice in QuickBooks before deleting it.',
+      );
+    }
     await DaoInvoiceLine().deleteByInvoiceId(id);
     await DaoInvoiceLineGroup().deleteByInvoiceId(id);
     await DaoMilestone().detachFromInvoice(id);
@@ -390,9 +400,8 @@ ORDER BY modified_date DESC
   }
 
   Future<void> deleteByJob(int jobId, {Transaction? transaction}) async {
-    await withinTransaction(
-      transaction,
-    ).delete(tableName, where: 'job_id = ?', whereArgs: [jobId]);
+    await withinTransaction(transaction)
+        .delete(tableName, where: 'job_id = ?', whereArgs: [jobId]);
   }
 
   Future<void> recalculateTotal(int invoiceId) async {

@@ -24,6 +24,13 @@ class IntegrationDashboardPage extends StatelessWidget {
     title: 'Integrations',
     dashlets: [
       DashletCard<void>.route(
+        label: 'QuickBooks',
+        hint: 'Configure QuickBooks Online invoice export (preview)',
+        icon: Icons.account_balance,
+        value: () => Future.value(const DashletValue(null)),
+        route: '/home/settings/integrations/quickbooks',
+      ),
+      DashletCard<void>.route(
         label: 'ihserver',
         hint: 'Import website booking requests into HMB',
         icon: Icons.cloud_download,
