@@ -60,7 +60,10 @@ class RemainingBilling {
         final rate = await DaoTask().getHourlyRate(task);
         if (!rate.isZero) {
           for (final entry in await DaoTimeEntry().getByTask(task.id)) {
-            if (!entry.billed && entry.endTime != null && !entry.hours.isZero) {
+            if (entry.billable &&
+                !entry.billed &&
+                entry.endTime != null &&
+                !entry.hours.isZero) {
               return JobBillingReasonCode.unbilledTimeAndMaterials;
             }
           }

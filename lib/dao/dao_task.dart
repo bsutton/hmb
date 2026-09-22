@@ -196,7 +196,8 @@ WHERE ti.id = ?
     if (billingType == BillingType.timeAndMaterial) {
       final timeEntries = await DaoTimeEntry().getByTask(task.id);
       for (final timeEntry in timeEntries) {
-        if ((includeBilled && timeEntry.billed) || !timeEntry.billed) {
+        if (timeEntry.billable &&
+            ((includeBilled && timeEntry.billed) || !timeEntry.billed)) {
           totalEarnedLabour += hourlyRate.multiplyByFixed(timeEntry.hours);
         }
       }
@@ -281,7 +282,9 @@ WHERE ti.id = ?
     if (billingType == BillingType.timeAndMaterial) {
       // Calculate time entries cost
       final timeEntries = await DaoTimeEntry().getByTask(task.id);
-      for (final entry in timeEntries.where((entry) => !entry.billed)) {
+      for (final entry in timeEntries.where(
+        (entry) => !entry.billed && entry.billable,
+      )) {
         estimatedLabourCharge += entry.calcLabourCharge(hourlyRate);
         estimatedLabourHours += entry.calcHours();
       }

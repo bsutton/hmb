@@ -16,6 +16,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.g.dart';
 import '../util/dart/date_time_ex.dart';
+import '../util/dart/exceptions.dart';
 import '../util/dart/local_date.dart';
 import 'dao.dart';
 import 'dao_activity.dart';
@@ -26,6 +27,20 @@ class DaoTimeEntry extends Dao<TimeEntry> {
   DaoTimeEntry() : super(tableName);
   @override
   TimeEntry fromMap(Map<String, dynamic> map) => TimeEntry.fromMap(map);
+
+  @override
+  Future<int> update(TimeEntry entity, [Transaction? transaction]) async {
+    final existing = await getById(entity.id, transaction);
+    if (existing != null &&
+        (existing.billed || existing.invoiceLineId != null) &&
+        (existing.billable != entity.billable ||
+            existing.showOnInvoice != entity.showOnInvoice)) {
+      throw HMBException(
+        'Remove the time from its invoice before changing billing options.',
+      );
+    }
+    return await super.update(entity, transaction);
+  }
 
   @override
   Future<int> insert(
@@ -136,7 +151,7 @@ class DaoTimeEntry extends Dao<TimeEntry> {
 
     final matched = <TimeEntry>[];
     for (final timeEntry in timeEntries) {
-      if (timeEntry.billed) {
+      if (timeEntry.billed || !timeEntry.billable) {
         continue;
       }
 

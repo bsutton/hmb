@@ -143,12 +143,48 @@ Future<Money> _createInvoiceLinesForSelectedTasks(
     }
   }
 
+  for (final task in selectedTasks) {
+    await _emitNoChargeTime(invoiceId, task);
+  }
   return totalAmount +
       await _emitTimeAndMaterialsMaterials(
         invoiceId,
         job,
         timeAndMaterialsTasks,
       );
+}
+
+Future<void> _emitNoChargeTime(int invoiceId, Task task) async {
+  final entries = (await DaoTimeEntry().getByTask(task.id))
+      .where(
+        (entry) =>
+            !entry.billable &&
+            entry.showOnInvoice &&
+            !entry.billed &&
+            entry.endTime != null &&
+            !entry.hours.isZero,
+      )
+      .toList();
+  if (entries.isEmpty) {
+    return;
+  }
+  final group = InvoiceLineGroup.forInsert(
+    invoiceId: invoiceId,
+    name: task.name,
+  );
+  await DaoInvoiceLineGroup().insert(group);
+  for (final entry in entries) {
+    final line = InvoiceLine.forInsert(
+      invoiceId: invoiceId,
+      invoiceLineGroupId: group.id,
+      description: 'No-charge labour: ${entry.note ?? task.name}',
+      quantity: entry.hours,
+      unitPrice: MoneyEx.zero,
+      lineTotal: MoneyEx.zero,
+    );
+    await DaoInvoiceLine().insert(line);
+    await DaoTimeEntry().markAsBilled(entry, line.id);
+  }
 }
 
 Future<Money> _emitFixedPriceTaskSummary(
@@ -219,7 +255,11 @@ Future<Money> _emitTimeAndMaterialsLabourByTask(
   Task task,
 ) async {
   final timeEntries = await DaoTimeEntry().getByTask(task.id);
-  final unbilledEntries = timeEntries.where((entry) => !entry.billed).toList();
+  final unbilledEntries = timeEntries
+      .where(
+        (entry) => !entry.billed && entry.billable && entry.endTime != null,
+      )
+      .toList();
   if (unbilledEntries.isEmpty) {
     return MoneyEx.zero;
   }
@@ -268,7 +308,9 @@ Future<Money> _emitTimeAndMaterialsLabourByDate(
   final entriesByDate = <LocalDate, List<TimeEntry>>{};
   for (final task in tasks) {
     final timeEntries = await DaoTimeEntry().getByTask(task.id);
-    for (final entry in timeEntries.where((timeEntry) => !timeEntry.billed)) {
+    for (final entry in timeEntries.where(
+      (entry) => !entry.billed && entry.billable && entry.endTime != null,
+    )) {
       final workDate = LocalDate.fromDateTime(entry.startTime);
       entriesByDate.putIfAbsent(workDate, () => []).add(entry);
     }

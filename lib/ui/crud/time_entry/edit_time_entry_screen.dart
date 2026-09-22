@@ -24,6 +24,7 @@ import '../../dialog/long_duration_dialog.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/layout.g.dart' show HMBColumn;
+import '../../widgets/time_entry_billing_fields.dart';
 import '../base_nested/edit_nested_screen.dart';
 
 class TimeEntryEditScreen extends StatefulWidget {
@@ -52,6 +53,8 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
   late FocusNode _noteFocusNode;
   final _dateTimeFormat = DateFormat('yyyy-MM-dd hh:mm a');
   var _hasUserEditedEndDate = false;
+  var _billable = true;
+  var _showOnInvoice = false;
 
   String _formatDateTime(DateTime dateTime) =>
       _dateTimeFormat.format(dateTime.toLocal());
@@ -84,6 +87,8 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
     super.initState();
 
     currentEntity ??= widget.timeEntry;
+    _billable = currentEntity?.billable ?? true;
+    _showOnInvoice = currentEntity?.showOnInvoice ?? false;
     _startTimeController = TextEditingController(
       text: currentEntity != null
           ? _formatDateTime(currentEntity!.startTime)
@@ -243,12 +248,24 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
           focusNode: _noteFocusNode,
           labelText: 'Note',
         ),
+        TimeEntryBillingFields(
+          billable: _billable,
+          showOnInvoice: _showOnInvoice,
+          locked:
+              (currentEntity?.billed ?? false) ||
+              currentEntity?.invoiceLineId != null,
+          onBillableChanged: (value) => setState(() => _billable = value),
+          onShowOnInvoiceChanged: (value) =>
+              setState(() => _showOnInvoice = value),
+        ),
       ],
     ),
   );
 
   @override
   Future<TimeEntry> forUpdate(TimeEntry timeEntry) async => timeEntry.copyWith(
+    billable: _billable,
+    showOnInvoice: _showOnInvoice,
     taskId: widget.task.id,
     startTime: _parseDateTime(_startTimeController.text),
     endTime: _endTimeController.text.isNotEmpty
@@ -259,6 +276,8 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
 
   @override
   Future<TimeEntry> forInsert() async => TimeEntry.forInsert(
+    billable: _billable,
+    showOnInvoice: _showOnInvoice,
     taskId: widget.task.id,
     startTime: _dateTimeFormat.parse(_startTimeController.text),
     endTime: _dateTimeFormat.parse(_endTimeController.text),

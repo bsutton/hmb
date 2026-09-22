@@ -30,6 +30,8 @@ class TimeEntry extends Entity<TimeEntry> {
   DateTime? endTime;
   String? note;
   bool billed;
+  bool billable;
+  bool showOnInvoice;
 
   /// If the time entry has been invoiced then this is the invoice line
   /// that it was billed to.
@@ -47,6 +49,8 @@ class TimeEntry extends Entity<TimeEntry> {
     this.endTime,
     this.note,
     this.billed = false,
+    this.billable = true,
+    this.showOnInvoice = false,
     this.invoiceLineId,
     this.supplierId,
   }) : super();
@@ -60,6 +64,8 @@ class TimeEntry extends Entity<TimeEntry> {
         : null,
     note: map['notes'] as String?,
     billed: map['billed'] == 1,
+    billable: map['billable'] != 0,
+    showOnInvoice: map['show_on_invoice'] == 1,
     invoiceLineId: map['invoice_line_id'] as int?,
     supplierId: map['supplier_id'] as int?,
     createdDate: DateTime.parse(map['created_date'] as String),
@@ -73,6 +79,8 @@ class TimeEntry extends Entity<TimeEntry> {
     this.endTime,
     this.note,
     this.billed = false,
+    this.billable = true,
+    this.showOnInvoice = false,
     this.supplierId,
   }) : super.forInsert();
 
@@ -82,6 +90,8 @@ class TimeEntry extends Entity<TimeEntry> {
     DateTime? endTime,
     String? note,
     bool? billed,
+    bool? billable,
+    bool? showOnInvoice,
     int? invoiceLineId,
     int? supplierId,
   }) => TimeEntry(
@@ -91,6 +101,8 @@ class TimeEntry extends Entity<TimeEntry> {
     endTime: endTime ?? this.endTime,
     note: note ?? this.note,
     billed: billed ?? this.billed,
+    billable: billable ?? this.billable,
+    showOnInvoice: showOnInvoice ?? this.showOnInvoice,
     invoiceLineId: invoiceLineId ?? this.invoiceLineId,
     supplierId: supplierId ?? this.supplierId,
     createdDate: createdDate,
@@ -114,6 +126,8 @@ class TimeEntry extends Entity<TimeEntry> {
     'modified_date': modifiedDate.toIso8601String(),
     'notes': note,
     'billed': billed ? 1 : 0,
+    'billable': billable ? 1 : 0,
+    'show_on_invoice': showOnInvoice ? 1 : 0,
     'invoice_line_id': invoiceLineId,
     'supplier_id': supplierId,
   };
