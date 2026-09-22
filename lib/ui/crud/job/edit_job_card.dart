@@ -58,6 +58,7 @@ import '../../widgets/text/hmb_expanding_text_block.dart';
 import '../../widgets/text/hmb_text.dart';
 import 'fsm_status_picker.dart';
 import 'job_edit_section.dart';
+import 'job_photos.dart';
 import 'list_job_screen.dart';
 
 class EditJobCard extends StatefulWidget {
@@ -200,7 +201,7 @@ class _EditJobCardState extends DeferredState<EditJobCard> {
     JobEditSection.schedule => [_buildScheduleButtons()],
     JobEditSection.notes => [_buildJobNotes()],
     JobEditSection.attachments => [_buildAttachments()],
-    JobEditSection.photos => [PhotoGallery.forJob(job: job!)],
+    JobEditSection.photos => [JobPhotos(job: job!)],
   };
 
   // --- Field builders -------------------------------------------------------

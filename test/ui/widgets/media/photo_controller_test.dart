@@ -20,6 +20,44 @@ void main() {
     await tearDownTestDb();
   });
 
+  test('job photos retain ownership, comments and backup paths', () async {
+    final job = (await DaoJob().getById(1))!;
+    final controller = PhotoController<Job>(
+      parent: job,
+      parentType: ParentType.job,
+    );
+    addTearDown(controller.dispose);
+    final meta = PhotoMeta(
+      photo: Photo.forInsert(
+        parentId: job.id,
+        parentType: ParentType.job,
+        filename: 'job-photo.jpg',
+        comment: '',
+      ),
+      title: job.summary,
+      comment: '',
+    );
+    await controller.addPhoto(meta);
+    controller.commentController(meta).text = 'Site overview';
+    await controller.saveComment(meta);
+    final saved = await DaoPhoto.getMetaByParent(job.id, ParentType.job);
+    expect(saved.single.photo.parentType, ParentType.job);
+    expect(saved.single.comment, 'Site overview');
+    expect(
+      await saved.single.cloudStoragePath,
+      contains('/photos/job-photo.jpg'),
+    );
+    final gallery = await DaoPhoto.getJobGallery(job.id, limit: 1);
+    expect(gallery.single.photo.id, meta.photo.id);
+    expect(
+      (await DaoPhoto().getByParent(
+        job.id,
+        ParentType.task,
+      )).any((photo) => photo.id == meta.photo.id),
+      isFalse,
+    );
+  });
+
   test(
     'pending task photos keep separate comments and save with the task',
     () async {

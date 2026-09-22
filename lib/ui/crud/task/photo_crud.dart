@@ -64,6 +64,8 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
+    waitingBuilder: (_) => const SizedBox.shrink(),
+    errorBuilder: (_, error) => const Text('Could not load photos.'),
     builder: (builder) {
       if (widget.controller.parent == null && !widget.allowPendingPhotos) {
         return Center(
@@ -76,6 +78,8 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
           PhotoLoader.new,
           builder: (context) => FutureBuilderEx(
             future: widget.controller.photos,
+            waitingBuilder: (_) => const SizedBox.shrink(),
+            errorBuilder: (_, error) => const Text('Could not load photos.'),
             builder: (context, photoMetas) => HMBColumn(
               mainAxisSize: MainAxisSize.min,
               children: [
