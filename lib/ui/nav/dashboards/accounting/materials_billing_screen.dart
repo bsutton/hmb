@@ -29,6 +29,7 @@ enum MaterialBillingFilter {
   all('All'),
   unbilled('Not billed'),
   billed('Billed'),
+  noCharge('No charge'),
   missingPrice('Missing price');
 
   const MaterialBillingFilter(this.label);
@@ -125,6 +126,7 @@ class _MaterialsBillingScreenState extends State<MaterialsBillingScreen> {
       runSpacing: 8,
       children: [
         HMBChip(label: '${_report.rows.length} completed'),
+        HMBChip(label: '${_report.noChargeCount} no charge'),
         HMBChip(
           label: '${_report.unbilledCount} not billed',
           tone: _report.unbilledCount == 0
@@ -213,7 +215,7 @@ class _MaterialsBillingScreenState extends State<MaterialsBillingScreen> {
                   label: 'Actual: ${row.actualCost}',
                   tone: HMBChipTone.accent,
                 )
-              else
+              else if (row.missingPrice)
                 const HMBChip(
                   label: 'Actual price missing',
                   tone: HMBChipTone.danger,
@@ -227,6 +229,8 @@ class _MaterialsBillingScreenState extends State<MaterialsBillingScreen> {
                   tone: HMBChipTone.accent,
                   icon: Icons.receipt_long,
                 )
+              else if (row.noCharge)
+                const HMBChip(label: 'No charge', tone: HMBChipTone.accent)
               else
                 const HMBChip(
                   label: 'Not billed',
@@ -247,12 +251,12 @@ class _MaterialsBillingScreenState extends State<MaterialsBillingScreen> {
     }
 
     final statusMatches = switch (_filter) {
-      MaterialBillingFilter.attention =>
-        !row.taskItem.billed || !row.hasActualPrice,
+      MaterialBillingFilter.attention => row.needsBilling || row.missingPrice,
       MaterialBillingFilter.all => true,
-      MaterialBillingFilter.unbilled => !row.taskItem.billed,
+      MaterialBillingFilter.unbilled => row.needsBilling,
+      MaterialBillingFilter.noCharge => row.noCharge,
       MaterialBillingFilter.billed => row.taskItem.billed,
-      MaterialBillingFilter.missingPrice => !row.hasActualPrice,
+      MaterialBillingFilter.missingPrice => row.missingPrice,
     };
     if (!statusMatches || _search.isEmpty) {
       return statusMatches;
@@ -270,7 +274,7 @@ class _MaterialsBillingScreenState extends State<MaterialsBillingScreen> {
   }
 
   String get _emptyMessage => _filter == MaterialBillingFilter.attention
-      ? 'All completed materials have a price and have been billed.'
+      ? 'No completed materials need billing attention.'
       : 'No completed materials match this filter.';
 
   Future<void> _edit(MaterialBillingRow row) async {
@@ -326,7 +330,7 @@ class _MaterialsBillingScreenState extends State<MaterialsBillingScreen> {
         row.taskItem.description,
         row.actualCost?.toString() ?? 'Missing',
         row.charge.toString(),
-        if (row.taskItem.billed) 'Billed' else 'Not billed',
+        row.billingStatus,
         row.invoiceDisplay,
       ],
   ];

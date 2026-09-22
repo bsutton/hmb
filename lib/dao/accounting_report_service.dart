@@ -18,6 +18,7 @@ import 'package:money2/money2.dart';
 import '../api/external_accounting.dart';
 import '../entity/credit_note.dart';
 import '../entity/debtor_adjustment.dart';
+import '../entity/helpers/charge_mode.dart';
 import '../entity/invoice.dart';
 import '../entity/job.dart';
 import '../entity/job_status.dart';
@@ -389,6 +390,21 @@ class MaterialBillingRow {
 
   bool get hasActualPrice => taskItem.actualPrice != null;
 
+  /// An explicit zero charge (or an actual zero-priced item) is not missing
+  /// billing. An unpriced estimate must still be reviewed.
+  bool get noCharge =>
+      charge.isZero &&
+      (hasActualPrice ||
+          taskItem.chargeMode == ChargeMode.userDefined ||
+          billingType == BillingType.nonBillable);
+  bool get needsBilling => !taskItem.billed && !noCharge;
+  bool get missingPrice => !hasActualPrice && !noCharge;
+  String get billingStatus => taskItem.billed
+      ? 'Billed'
+      : noCharge
+      ? 'No charge'
+      : 'Not billed';
+
   Money? get actualCost {
     final total = taskItem.actualPrice?.totalCost;
     if (total == null) {
@@ -411,9 +427,11 @@ class MaterialBillingReport {
 
   const MaterialBillingReport({required this.rows});
 
-  int get unbilledCount => rows.where((row) => !row.taskItem.billed).length;
+  int get unbilledCount => rows.where((row) => row.needsBilling).length;
 
-  int get missingPriceCount => rows.where((row) => !row.hasActualPrice).length;
+  int get missingPriceCount => rows.where((row) => row.missingPrice).length;
+
+  int get noChargeCount => rows.where((row) => row.noCharge).length;
 
   int get billedCount => rows.where((row) => row.taskItem.billed).length;
 }
@@ -815,9 +833,10 @@ ORDER BY r.receipt_date DESC, r.id DESC
     );
   }
 
-  Future<MaterialBillingReport> materialsBilling() async {
+  Future<MaterialBillingReport> materialsBilling({int? jobId}) async {
     final db = DaoInvoice().withoutTransaction();
-    final rows = await db.rawQuery('''
+    final rows = await db.rawQuery(
+      '''
 SELECT
   ti.*,
   t.name AS report_task_name,
@@ -836,6 +855,7 @@ LEFT JOIN customer c ON c.id = j.customer_id
 LEFT JOIN invoice_line il ON il.id = ti.invoice_line_id
 LEFT JOIN invoice i ON i.id = il.invoice_id
 WHERE ti.completed = 1
+  AND (? IS NULL OR j.id = ?)
   AND ti.item_type_id != ${TaskItemType.labour.id}
   AND j.status_id NOT IN (
     '${JobStatus.onHold.id}',
@@ -848,7 +868,9 @@ ORDER BY
   ti.billed,
   ti.modified_date DESC,
   ti.id DESC
-''');
+''',
+      [jobId, jobId],
+    );
 
     final materialRows = <MaterialBillingRow>[];
     for (final row in rows) {
@@ -1483,7 +1505,7 @@ class AccountingReportCsvExporter {
         row.taskItem.itemType.label,
         row.actualCost,
         row.charge,
-        if (row.taskItem.billed) 'Billed' else 'Not billed',
+        row.billingStatus,
         row.invoiceDisplay,
       ],
   ]);
