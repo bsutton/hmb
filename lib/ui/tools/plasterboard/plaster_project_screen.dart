@@ -31,6 +31,7 @@ import '../../widgets/media/pdf_preview.dart';
 import '../../widgets/select/hmb_select_job.dart';
 import '../../widgets/select/hmb_select_supplier.dart';
 import '../../widgets/select/hmb_select_task.dart';
+import '../paint_estimator_screen.dart';
 import 'plaster_attribute_fields.dart';
 import 'plaster_material_size_list_screen.dart';
 import 'plaster_project_pdf.dart';
@@ -2744,6 +2745,21 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                 : _project.name,
           ),
           actions: [
+            IconButton(
+              tooltip: 'Estimate painting',
+              icon: const Icon(Icons.format_paint),
+              onPressed: () async {
+                await _saveProject();
+                if (!context.mounted) {
+                  return;
+                }
+                await Navigator.of(context).push<void>(
+                  MaterialPageRoute(
+                    builder: (_) => PaintEstimatorScreen(project: _project),
+                  ),
+                );
+              },
+            ),
             if (_isRoomEditorOnly && _rooms.isNotEmpty)
               IconButton(
                 onPressed: () => unawaited(_openEditorFramingSettings()),

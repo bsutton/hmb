@@ -51,6 +51,7 @@ import '../scheduling/today/today_page.dart';
 import '../task_items/list_packing_screen.dart';
 import '../task_items/list_shopping_screen.dart';
 import '../tools/mailings/mailing_list_screen.dart';
+import '../tools/paint_estimator_screen.dart';
 import '../tools/plasterboard/plaster_project_list_screen.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_toast.dart';
@@ -209,6 +210,10 @@ List<GoRoute> dashboardRoutes() => [
     path: 'tools/plasterboard',
     builder: (_, _) =>
         const HomeScaffold(initialScreen: PlasterProjectListScreen()),
+  ),
+  GoRoute(
+    path: 'tools/painting',
+    builder: (_, _) => const PaintEstimatorScreen(),
   ),
   GoRoute(
     path: 'tools/mailings',
