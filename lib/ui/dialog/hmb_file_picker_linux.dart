@@ -16,6 +16,7 @@ import 'dart:io';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
+import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/layout/layout.g.dart';
 
@@ -24,9 +25,10 @@ class HMBFilePickerDialog {
     BuildContext context, {
     List<String>? allowedExtensions,
     bool showHidden = false,
+    Directory? initialDirectory,
   }) => _pickFileFromDirectory(
     context,
-    Directory.current,
+    initialDirectory ?? Directory.current,
     allowedExtensions: allowedExtensions,
     showHidden: showHidden,
   );
@@ -76,6 +78,41 @@ class _FilePickerDialog extends StatefulWidget {
 class __FilePickerDialogState extends State<_FilePickerDialog> {
   late Directory _currentDirectory;
   List<FileSystemEntity> _files = [];
+  final _pathController = TextEditingController();
+  final _searchController = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _pathController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  bool _allowed(String path) =>
+      widget.allowedExtensions == null ||
+      widget.allowedExtensions!.any(
+        (extension) =>
+            extension.toLowerCase().replaceFirst('.', '') ==
+            p.extension(path).toLowerCase().replaceFirst('.', ''),
+      );
+
+  void _openPath() {
+    final path = p.normalize(
+      p.absolute(
+        p.isAbsolute(_pathController.text.trim())
+            ? _pathController.text.trim()
+            : p.join(_currentDirectory.path, _pathController.text.trim()),
+      ),
+    );
+    if (Directory(path).existsSync()) {
+      _navigateToDirectory(Directory(path));
+    } else if (File(path).existsSync() && _allowed(path)) {
+      widget.onFileSelected(path);
+    } else {
+      setState(() => _error = 'Enter an existing folder or a supported file.');
+    }
+  }
 
   @override
   void initState() {
@@ -86,25 +123,40 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
 
   void _listFiles() {
     setState(() {
-      _files = _currentDirectory.listSync().where((entity) {
-        final isHidden = p.basename(entity.path).startsWith('.');
+      _pathController.text = p.normalize(_currentDirectory.absolute.path);
+      _error = null;
+      try {
+        _files = _currentDirectory.listSync().where((entity) {
+          final isHidden = p.basename(entity.path).startsWith('.');
 
-        if (!widget.showHidden && isHidden) {
-          return false;
-        }
-
-        if (entity is File) {
-          if (widget.allowedExtensions != null) {
-            final extension = p
-                .extension(entity.path)
-                .toLowerCase()
-                .replaceAll('.', '');
-            return widget.allowedExtensions!.contains(extension);
+          if (!widget.showHidden && isHidden) {
+            return false;
           }
-        }
 
-        return true;
-      }).toList();
+          if (entity is File) {
+            if (widget.allowedExtensions != null) {
+              return _allowed(entity.path);
+            }
+          }
+
+          return true;
+        }).toList();
+        _files.sort((a, b) {
+          if (a is Directory && b is! Directory) {
+            return -1;
+          }
+          if (a is! Directory && b is Directory) {
+            return 1;
+          }
+          return p
+              .basename(a.path)
+              .toLowerCase()
+              .compareTo(p.basename(b.path).toLowerCase());
+        });
+      } on FileSystemException {
+        _files = [];
+        _error = 'Could not read this folder. Check its permissions.';
+      }
     });
   }
 
@@ -141,8 +193,13 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
   @override
   Widget build(BuildContext context) {
     final breadcrumbs = _buildBreadcrumbs();
+    final query = _searchController.text.trim().toLowerCase();
+    final visible = _files
+        .where((file) => p.basename(file.path).toLowerCase().contains(query))
+        .toList();
     return AlertDialog(
       title: HMBColumn(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('Select a File'),
@@ -156,7 +213,9 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
                       child: Row(
                         children: [
                           Text(breadcrumb.name),
-                          if (breadcrumb != breadcrumbs.last) const Text(' / '),
+                          if (breadcrumb != breadcrumbs.last &&
+                              breadcrumb.name != '/')
+                            const Text(' / '),
                         ],
                       ),
                     ),
@@ -164,14 +223,29 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
                   .toList(),
             ),
           ),
+          HMBTextField(
+            controller: _pathController,
+            labelText: 'Folder or full file path',
+            suffixIcon: IconButton(
+              tooltip: 'Open path',
+              icon: const Icon(Icons.arrow_forward),
+              onPressed: _openPath,
+            ),
+          ),
+          HMBTextField(
+            controller: _searchController,
+            labelText: 'Search this folder',
+            onChanged: (_) => setState(() {}),
+          ),
+          if (_error != null) Text(_error!),
         ],
       ),
       content: SizedBox(
         width: double.maxFinite,
         child: ListView.builder(
-          itemCount: _files.length,
+          itemCount: visible.length,
           itemBuilder: (context, index) {
-            final entity = _files[index];
+            final entity = visible[index];
             return ListTile(
               leading: entity is Directory
                   ? const Icon(Icons.folder)
