@@ -14,7 +14,7 @@
 
 import 'entity.dart';
 
-enum ParentType { task, tool, receipt }
+enum ParentType { task, tool, receipt, job }
 
 class Photo extends Entity<Photo> {
   int parentId;

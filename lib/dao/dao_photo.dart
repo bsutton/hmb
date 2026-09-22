@@ -201,8 +201,19 @@ WHERE id = ?
   static Future<List<PhotoMeta>> getMetaByParent(
     int parentId,
     ParentType parentType,
-  ) {
+  ) async {
     switch (parentType) {
+      case ParentType.job:
+        final job = await DaoJob().getById(parentId);
+        return (await DaoPhoto().getByParent(parentId, ParentType.job))
+            .map(
+              (photo) => PhotoMeta(
+                photo: photo,
+                title: job?.summary ?? 'Job',
+                comment: photo.comment,
+              ),
+            )
+            .toList();
       case ParentType.task:
         return getByTask(parentId);
       case ParentType.tool:
@@ -210,5 +221,29 @@ WHERE id = ?
       case ParentType.receipt:
         return getByReceipt(parentId);
     }
+  }
+
+  static Future<List<PhotoMeta>> getJobGallery(int jobId, {int? limit}) async {
+    final rows = await DaoPhoto().withoutTransaction().rawQuery(
+      '''
+SELECT p.*, COALESCE(t.name, j.summary) AS title
+FROM photo p
+LEFT JOIN task t ON p.parentType = 'task' AND t.id = p.parentId
+JOIN job j ON j.id = ?
+WHERE (p.parentType = 'job' AND p.parentId = j.id) OR t.job_id = j.id
+ORDER BY p.created_date DESC, p.id DESC
+${limit == null ? '' : 'LIMIT ?'}
+''',
+      [jobId, ?limit],
+    );
+    return rows
+        .map(
+          (row) => PhotoMeta(
+            photo: Photo.fromMap(row),
+            title: row['title']! as String,
+            comment: row['comment']! as String,
+          ),
+        )
+        .toList();
   }
 }

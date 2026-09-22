@@ -21,7 +21,6 @@ import 'package:material_ui/material_ui.dart';
 import '../../../cache/hmb_image_cache.dart';
 import '../../../cache/image_cache_config.dart';
 import '../../../dao/dao_photo.dart';
-import '../../../dao/dao_task.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/compute_manager.dart';
 import '../../../util/dart/photo_meta.dart';
@@ -36,15 +35,8 @@ class PhotoGallery extends StatelessWidget {
   final computeManager = ComputeManager<Thumbnail, Thumbnail>();
   late final Future<List<PhotoMeta>> Function() _fetchPhotos;
 
-  PhotoGallery.forJob({required Job job, super.key}) {
-    _fetchPhotos = () async {
-      final tasks = await DaoTask().getTasksByJob(job.id);
-      final meta = <PhotoMeta>[];
-      for (final task in tasks) {
-        meta.addAll(await DaoPhoto.getMetaByParent(task.id, ParentType.task));
-      }
-      return meta;
-    };
+  PhotoGallery.forJob({required Job job, int? limit, super.key}) {
+    _fetchPhotos = () => DaoPhoto.getJobGallery(job.id, limit: limit);
   }
 
   PhotoGallery.forTask({required Task task, super.key}) {

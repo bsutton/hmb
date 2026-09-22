@@ -9,6 +9,7 @@ import '../../../entity/job_party.dart';
 import '../../dialog/source_context.dart';
 import '../../widgets/hmb_contact_actions.dart';
 import '../../widgets/layout/layout.g.dart';
+import '../../widgets/media/photo_gallery.dart';
 import '../../widgets/text/hmb_site_text.dart';
 import '../../widgets/widgets.g.dart';
 import 'job_edit_section.dart';
@@ -64,9 +65,9 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
       _attachments = (await DaoJobAttachment().getByJob(job.id)).length;
       final counts = await DatabaseHelper.instance.database.rawQuery(
         'SELECT COUNT(*) AS count FROM photo p '
-        'JOIN task t ON t.id = p.parentId '
-        'WHERE p.parentType = ? AND t.job_id = ?',
-        ['task', job.id],
+        'LEFT JOIN task t ON t.id = p.parentId AND p.parentType = ? '
+        'WHERE t.job_id = ? OR (p.parentType = ? AND p.parentId = ?)',
+        ['task', job.id, 'job', job.id],
       );
       _photos = counts.single['count']! as int;
     });
@@ -235,7 +236,16 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
           JobEditSection.attachments,
           Text('$_attachments attachment(s)'),
         ),
-        _section(JobEditSection.photos, Text('$_photos photo(s)')),
+        _section(
+          JobEditSection.photos,
+          HMBColumn(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('$_photos photo(s)'),
+              if (_photos > 0) PhotoGallery.forJob(job: widget.job, limit: 20),
+            ],
+          ),
+        ),
       ],
     ),
   );

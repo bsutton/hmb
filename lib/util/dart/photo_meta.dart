@@ -68,6 +68,7 @@ class PhotoMeta {
     ParentType.task => await _getPathForTask(photo),
     ParentType.tool => _getPathForTool(photo),
     ParentType.receipt => _getPathForReceipt(photo),
+    ParentType.job => _getPathForJob(photo),
   };
 
   bool exists() => core.exists(absolutePathTo);
@@ -102,6 +103,16 @@ class PhotoMeta {
       jobFolderName,
       taskFolderName,
       p.basename(absolutePathToPhoto),
+    );
+  }
+
+  static Future<String> _getPathForJob(Photo photo) async {
+    final job = await DaoJob().getById(photo.parentId);
+    return p.join(
+      'jobs',
+      'Job ${photo.parentId} - ${sanitize(job?.summary ?? 'Job')}',
+      'photos',
+      photo.filename,
     );
   }
 
