@@ -38,6 +38,7 @@ import '../crud/system/system_business_screen.dart';
 import '../crud/system/system_contact_screen.dart';
 import '../crud/system/system_storage_screen.dart';
 import '../crud/system/xero_integration_screen.dart';
+import '../crud/task/task_effort_history_screen.dart';
 import '../crud/todo/list_todo_screen.dart';
 import '../crud/tool/list_tool_screen.dart';
 import '../error.dart';
@@ -282,6 +283,10 @@ List<GoRoute> dashboardRoutes() => [
 
 // 4) All other routes directly from the top level:
 List<GoRoute> accountingRoutes() => [
+  GoRoute(
+    path: 'prior-work',
+    builder: (_, _) => const TaskEffortHistoryScreen(),
+  ),
   GoRoute(
     path: 'quotes',
     builder: (_, _) => const HomeScaffold(initialScreen: QuoteListScreen()),
