@@ -15,7 +15,6 @@ import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../util/flutter/hmb_theme.dart';
-import '../color_ex.dart';
 import '../text/hmb_text_themes.dart';
 import 'hmb_column.dart';
 import 'hmb_row.dart';
@@ -61,13 +60,9 @@ class Surface extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    var decoration = BoxDecoration(color: elevation.color);
-    if (rounded) {
-      decoration = BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        color: elevation.color,
-      );
-    }
+    final decoration = rounded
+        ? HMBTheme.surfaceDecoration(elevation.color)
+        : BoxDecoration(color: elevation.color);
     return Container(
       decoration: decoration,
 
@@ -109,11 +104,11 @@ class SurfaceCard extends StatelessWidget {
     onTap: onPressed,
     child: Container(
       height: height,
-      color: elevation.color,
+      decoration: HMBTheme.surfaceDecoration(elevation.color),
       padding: padding,
       child: HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [HMBTextHeadline2(title), body],
+        children: [HMBCardHeading(title), body],
       ),
     ),
   );
@@ -149,14 +144,7 @@ class SurfaceCardWithActions extends StatelessWidget {
   Widget build(BuildContext context) => summary
       ? Material(
           color: elevation.color,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withSafeOpacity(0.12),
-            ),
-          ),
+          shape: HMBTheme.cardShape,
           child: Padding(
             padding: padding ?? const EdgeInsets.all(16),
             child: Column(
@@ -177,27 +165,15 @@ class SurfaceCardWithActions extends StatelessWidget {
                     ...actions,
                   ],
                 ),
-                Divider(
-                  height: 20,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withSafeOpacity(0.12),
-                ),
-                Theme(
-                  data: Theme.of(context).copyWith(
-                    dividerColor: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withSafeOpacity(0.12),
-                  ),
-                  child: body,
-                ),
+                const Divider(),
+                body,
               ],
             ),
           ),
         )
       : Container(
           height: height,
-          color: elevation.color,
+          decoration: HMBTheme.surfaceDecoration(elevation.color),
           padding: padding,
           child: HMBColumn(
             mainAxisSize: MainAxisSize.min,
@@ -209,7 +185,7 @@ class SurfaceCardWithActions extends StatelessWidget {
                   title,
                   style: const TextStyle(
                     color: HMBColors.textPrimary,
-                    fontSize: HMBTextHeadline2.fontSize,
+                    fontSize: HMBCardHeading.fontSize,
                     fontWeight: FontWeight.w500,
                   ),
                   maxLines: titleMaxLines,

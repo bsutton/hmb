@@ -17,10 +17,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../util/flutter/hmb_theme.dart';
-import 'color_ex.dart';
 import 'hmb_tooltip.dart';
 import 'icons/svg.dart';
-import 'layout/hmb_empty.dart';
 
 /// A generic HMB button with optional hint shown on long press.
 class HMBButton extends StatelessWidget {
@@ -84,7 +82,7 @@ class HMBButton extends StatelessWidget {
     final button = icon != null
         ? ElevatedButton.icon(
             onPressed: enabled ? onPressed : null,
-            label: Text(label, style: TextStyle(color: color)),
+            label: Text(label, style: TextStyle(color: enabled ? color : null)),
             icon: IconTheme.merge(
               data: IconThemeData(
                 color: enabled ? color : null,
@@ -97,7 +95,7 @@ class HMBButton extends StatelessWidget {
         : ElevatedButton(
             onPressed: enabled ? onPressed : null,
             style: _smallFlag ? _smallStyle(context) : null,
-            child: Text(label, style: TextStyle(color: color)),
+            child: Text(label, style: TextStyle(color: enabled ? color : null)),
           );
 
     return showTooltip ? HMBTooltip(hint: hint, child: button) : button;
@@ -106,12 +104,11 @@ class HMBButton extends StatelessWidget {
   ButtonStyle _smallStyle(BuildContext context) => ElevatedButton.styleFrom(
     padding: const EdgeInsets.symmetric(horizontal: 10),
     minimumSize: const Size(0, 32),
-    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    tapTargetSize: MaterialTapTargetSize.padded,
     visualDensity: VisualDensity.standard,
     textStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
       fontSize: 12,
       fontWeight: FontWeight.w600,
-      color: color,
     ),
   );
 }
@@ -149,18 +146,23 @@ class HMBButtonPrimary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final btn = ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.deepPurple,
-        disabledForegroundColor: (Colors.grey[500]!).withSafeOpacity(0.38),
-        disabledBackgroundColor: (Colors.grey[500]!).withSafeOpacity(0.12),
-      ),
-      onPressed: enabled ? onPressed : null,
-      label: Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
-      icon: svg == null
-          ? const HMBEmpty()
-          : Svg(svg!, height: 24, width: 24, color: svgColor),
-    );
+    final callback = enabled ? onPressed : null;
+    final btn = svg == null
+        ? ElevatedButton(onPressed: callback, child: Text(label))
+        : ElevatedButton.icon(
+            onPressed: callback,
+            label: Text(label),
+            icon: Builder(
+              builder: (context) => Svg(
+                svg!,
+                height: 24,
+                width: 24,
+                color: callback == null
+                    ? IconTheme.of(context).color
+                    : svgColor ?? IconTheme.of(context).color,
+              ),
+            ),
+          );
 
     return HMBTooltip(hint: hint, child: btn);
   }
@@ -189,22 +191,14 @@ class HMBButtonSecondary extends StatelessWidget {
         child: TextButton(
           onPressed: onPressed,
           style: TextButton.styleFrom(
-            foregroundColor: Colors.deepPurple.shade200,
+            foregroundColor: Theme.of(context).colorScheme.primary,
             minimumSize: const Size(48, 48),
           ),
           child: Text(label),
         ),
       );
     }
-    final btn = ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.purple,
-        disabledForegroundColor: (Colors.grey[500]!).withSafeOpacity(0.38),
-        disabledBackgroundColor: (Colors.grey[500]!).withSafeOpacity(0.12),
-      ),
-      child: Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
-    );
+    final btn = OutlinedButton(onPressed: onPressed, child: Text(label));
 
     return HMBTooltip(hint: hint, child: btn);
   }
@@ -227,7 +221,7 @@ class HMBLinkButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final btn = TextButton(
       onPressed: () => unawaited(_launchURL(link)),
-      child: Text(label, style: const TextStyle(color: Colors.blue)),
+      child: Text(label),
     );
 
     return HMBTooltip(hint: hint, child: btn);

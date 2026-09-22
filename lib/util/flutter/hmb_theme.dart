@@ -21,6 +21,198 @@ class HMBTheme {
 
   static const colors = HMBColors();
 
+  static const double cornerRadius = 8;
+  static const double controlRadius = 6;
+  static const double sectionPadding = 12;
+
+  static const cardShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.all(Radius.circular(cornerRadius)),
+    side: BorderSide(color: HMBColors.outline),
+  );
+
+  static const controlShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.all(Radius.circular(controlRadius)),
+  );
+
+  static BoxDecoration surfaceDecoration(Color color) => BoxDecoration(
+    color: color,
+    borderRadius: BorderRadius.circular(cornerRadius),
+    border: Border.all(color: HMBColors.outline),
+  );
+
+  /// Shared application style: charcoal panels and lavender actions.
+  /// Keep touch targets generous even when the visible controls are compact.
+  static ThemeData get dark {
+    const scheme = ColorScheme.dark(
+      onPrimary: HMBColors.onPrimary,
+      primaryContainer: HMBColors.primaryContainer,
+      onPrimaryContainer: HMBColors.primary,
+      secondary: HMBColors.primary,
+      onSecondary: HMBColors.onPrimary,
+      surface: HMBColors.surface4dp,
+      onSurface: HMBColors.textPrimary,
+      onSurfaceVariant: HMBColors.textSecondary,
+      outline: HMBColors.outline,
+      outlineVariant: HMBColors.outline,
+      error: HMBColors.errorBackground,
+    );
+    final base = ThemeData(
+      useMaterial3: true,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: HMBColors.defaultBackground,
+      visualDensity: VisualDensity.standard,
+    );
+    const border = OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(controlRadius)),
+      borderSide: BorderSide(color: HMBColors.outline),
+    );
+    final textTheme = base.textTheme.copyWith(
+      headlineSmall: const TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+        color: HMBColors.textPrimary,
+      ),
+      titleLarge: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: HMBColors.textPrimary,
+      ),
+      titleMedium: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: HMBColors.textPrimary,
+      ),
+      bodyLarge: const TextStyle(
+        fontSize: 16,
+        height: 1.4,
+        color: HMBColors.textPrimary,
+      ),
+      bodyMedium: const TextStyle(
+        fontSize: 14,
+        height: 1.4,
+        color: HMBColors.textPrimary,
+      ),
+      bodySmall: const TextStyle(
+        fontSize: 12,
+        height: 1.4,
+        color: HMBColors.textSecondary,
+      ),
+    );
+    return base.copyWith(
+      textTheme: textTheme,
+      dividerColor: HMBColors.outline,
+      dividerTheme: const DividerThemeData(
+        color: HMBColors.outline,
+        thickness: 1,
+        space: 16,
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: HMBColors.defaultBackground,
+        foregroundColor: HMBColors.textPrimary,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        titleTextStyle: textTheme.titleLarge,
+      ),
+      cardTheme: const CardThemeData(
+        color: HMBColors.surface4dp,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: cardShape,
+        margin: EdgeInsets.symmetric(vertical: 4),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: HMBColors.primary,
+          foregroundColor: HMBColors.onPrimary,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          minimumSize: const Size(48, 40),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          shape: controlShape,
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(48, 40),
+          shape: controlShape,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: HMBColors.primary,
+          side: const BorderSide(color: HMBColors.primary),
+          minimumSize: const Size(48, 40),
+          shape: controlShape,
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: HMBColors.primary,
+          minimumSize: const Size(48, 40),
+          shape: controlShape,
+        ),
+      ),
+      iconTheme: const IconThemeData(color: HMBColors.textSecondary, size: 20),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(foregroundColor: HMBColors.primary),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: HMBColors.surface3dp,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 14,
+        ),
+        border: border,
+        enabledBorder: border,
+        disabledBorder: border,
+        focusedBorder: border.copyWith(
+          borderSide: const BorderSide(color: HMBColors.primary, width: 2),
+        ),
+        errorBorder: border.copyWith(
+          borderSide: const BorderSide(color: HMBColors.errorBackground),
+        ),
+        focusedErrorBorder: border.copyWith(
+          borderSide: const BorderSide(
+            color: HMBColors.errorBackground,
+            width: 2,
+          ),
+        ),
+        labelStyle: const TextStyle(color: HMBColors.textSecondary),
+        hintStyle: const TextStyle(color: HMBColors.textSecondary),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: HMBColors.surface4dp,
+        surfaceTintColor: Colors.transparent,
+        shape: cardShape,
+        titleTextStyle: textTheme.titleLarge,
+        contentTextStyle: textTheme.bodyMedium,
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: HMBColors.surface4dp,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: HMBColors.surface8dp,
+        selectedColor: HMBColors.primaryContainer,
+        side: BorderSide.none,
+        shape: controlShape,
+        labelStyle: textTheme.bodySmall?.copyWith(color: HMBColors.textPrimary),
+      ),
+      snackBarTheme: const SnackBarThemeData(
+        backgroundColor: HMBColors.surface8dp,
+        actionTextColor: HMBColors.primary,
+        contentTextStyle: TextStyle(color: HMBColors.textPrimary),
+      ),
+    );
+  }
+
   /// padding to separate a page layout from the
   /// thumb menu circle that protudes up into the main
   /// page layout area.
@@ -29,7 +221,11 @@ class HMBTheme {
 
 class HMBColors {
   static const primary = Color(0xFFBB86FC);
-  static const accent = Color(0xFF03DAC5);
+  static const Color accent = primary;
+  static const onPrimary = Color(0xFF241331);
+  static const primaryContainer = Color(0xFF3D2E51);
+  static const outline = Color(0xFF414145);
+  static const textSecondary = Color(0xFFB9B7BE);
 
   /// Colors created by creating two layers in gimp
   /// bottom layer is Colors.green.
@@ -42,21 +238,21 @@ class HMBColors {
   static const green10 = Color(0xFF7dbb6b);
 
   /// The background color to be used by all pages.
-  static const Color defaultBackground = Colors.black;
+  static const defaultBackground = Color(0xFF121214);
 
   /// The background color of the heading panel on each page.
-  static const Color headingBackground = Colors.purple;
+  static const Color headingBackground = surface4dp;
 
   /// the color of most text such as body text.
-  static const Color textPrimary = Colors.white;
+  static const textPrimary = Color(0xFFF1EFF4);
 
   /// Used in headings
-  static const Color textHeading = Colors.black;
+  static const Color textHeading = textPrimary;
 
   /// The color of text when used for a fields label.
-  static const Color fieldLabel = Colors.purple;
+  static const Color fieldLabel = textSecondary;
 
-  static const Color buttonLabel = Colors.white;
+  static const Color buttonLabel = onPrimary;
 
   /// The color of text used for a chip. Some darker
   /// colored chips may need to use the light version
@@ -105,7 +301,7 @@ class HMBColors {
   static const helpIcon = Color(0xFF0000FF); // dark blue
 
   /// the background color of the main app bar
-  static const appBarColor = Color(0xFFBB86FC); // Colors.deepPurple;
+  static const Color appBarColor = defaultBackground;
 
   /// When a text element needs to stand out from
   /// surrounding text use this color.

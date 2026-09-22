@@ -20,7 +20,7 @@ import '../../../util/flutter/hmb_theme.dart';
 class HMBPageTitle extends StatelessWidget {
   final String text;
   final Color color;
-  static const fontSize = 26.0;
+  static const fontSize = 24.0;
 
   const HMBPageTitle(
     this.text, {
@@ -36,7 +36,7 @@ class HMBPageTitle extends StatelessWidget {
       style: TextStyle(
         color: color,
         fontSize: fontSize,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w600,
       ),
       overflow: TextOverflow.ellipsis,
       maxLines: 1,
@@ -53,7 +53,7 @@ class HMBPageTitle extends StatelessWidget {
 }
 
 class HMBCardTitle extends StatelessWidget {
-  static const fontSize = 22.0;
+  static const fontSize = 18.0;
   final String text;
   final Color color;
 
@@ -71,7 +71,7 @@ class HMBCardTitle extends StatelessWidget {
       style: TextStyle(
         color: color,
         fontSize: fontSize,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w600,
       ),
       overflow: TextOverflow.ellipsis,
       maxLines: 1,
@@ -89,7 +89,7 @@ class HMBCardTitle extends StatelessWidget {
 
 /// The first heading withing the body of the card.
 class HMBCardHeading extends StatelessWidget {
-  static const fontSize = 20.0;
+  static const fontSize = 16.0;
   final String text;
   final Color color;
 
@@ -107,7 +107,7 @@ class HMBCardHeading extends StatelessWidget {
       style: TextStyle(
         color: color,
         fontSize: fontSize,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w600,
       ),
       overflow: TextOverflow.ellipsis, // Handle overflow
       maxLines: 1, // Limit to one line
@@ -146,7 +146,7 @@ class HMBTextPageHeading extends StatelessWidget {
       style: TextStyle(
         color: color,
         fontSize: fontSize,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w600,
       ),
     ),
   );
@@ -160,7 +160,7 @@ class HMBTextPageHeading extends StatelessWidget {
 }
 
 class HMBTextHeadline extends StatelessWidget {
-  static const fontSize = 26.0;
+  static const fontSize = 24.0;
   final String text;
   final Color color;
 
@@ -178,7 +178,7 @@ class HMBTextHeadline extends StatelessWidget {
       style: TextStyle(
         color: color,
         fontSize: fontSize,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w600,
       ),
       overflow: TextOverflow.ellipsis,
       maxLines: 1,
@@ -219,7 +219,7 @@ class HMBTextHeadline2 extends StatelessWidget {
       style: TextStyle(
         color: color,
         fontSize: fontSize,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w600,
       ),
       overflow: maxLines == null ? TextOverflow.visible : TextOverflow.ellipsis,
       maxLines: maxLines,
@@ -236,7 +236,7 @@ class HMBTextHeadline2 extends StatelessWidget {
 }
 
 class HMBTextHeadline3 extends StatelessWidget {
-  static const fontSize = 22.0;
+  static const fontSize = 18.0;
   final String text;
   final Color color;
 
@@ -509,8 +509,11 @@ class HMBUTextAncillary extends StatelessWidget {
   final Color color;
   final TextStyle style;
 
-  HMBUTextAncillary(this.text, {super.key, this.color = Colors.grey})
-    : style = TextStyle(color: color, fontSize: fontSize);
+  HMBUTextAncillary(
+    this.text, {
+    super.key,
+    this.color = HMBColors.textSecondary,
+  }) : style = TextStyle(color: color, fontSize: fontSize);
 
   @override
   Widget build(BuildContext context) => Padding(

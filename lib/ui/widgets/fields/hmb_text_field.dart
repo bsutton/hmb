@@ -94,7 +94,6 @@ class HMBTextField extends StatelessWidget {
             onChanged: onChanged?.call,
             decoration: InputDecoration(
               labelText: labelText,
-              border: const OutlineInputBorder(),
               suffixIcon: suffixIcon,
             ),
             validator: (value) {

@@ -72,7 +72,7 @@ class _HMBIconButtonState extends State<HMBIconButton> {
       hint: widget.hint ?? '',
       child: (widget.showBackground)
           ? CircleAvatar(
-              backgroundColor: Colors.lightBlue,
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
               radius: _buttonSize / 2,
               child: IconButton(
                 key: widget.buttonKey,

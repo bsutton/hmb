@@ -242,44 +242,7 @@ class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
   );
 }
 
-ThemeData get theme => ThemeData(
-  primaryColor: Colors.deepPurple,
-  brightness: Brightness.dark, // This sets the overall theme brightness to dark
-  scaffoldBackgroundColor: HMBColors.defaultBackground,
-  buttonTheme: const ButtonThemeData(
-    buttonColor: Colors.deepPurple,
-    textTheme: ButtonTextTheme.primary,
-  ),
-  snackBarTheme: SnackBarThemeData(
-    actionTextColor: HMBColors.accent,
-    backgroundColor: Colors.grey.shade800,
-    contentTextStyle: const TextStyle(color: Colors.white),
-  ),
-  timePickerTheme: TimePickerThemeData(
-    confirmButtonStyle: TextButton.styleFrom(foregroundColor: Colors.white),
-    cancelButtonStyle: TextButton.styleFrom(foregroundColor: Colors.white),
-  ),
-  textButtonTheme: TextButtonThemeData(
-    style: TextButton.styleFrom(foregroundColor: Colors.white),
-  ),
-  dialogTheme: const DialogTheme(
-    titleTextStyle: TextStyle(
-      color: Colors.white,
-      fontSize: 20,
-      fontWeight: FontWeight.bold,
-    ),
-    contentTextStyle: TextStyle(color: Colors.white),
-  ).data,
-  colorScheme:
-      ColorScheme.fromSwatch(
-            primarySwatch: Colors.deepPurple,
-            brightness:
-                Brightness.dark, // Add this line to match ThemeData brightness
-          )
-          .copyWith(secondary: HMBColors.accent)
-          .copyWith(surface: HMBColors.defaultBackground),
-  visualDensity: VisualDensity.adaptivePlatformDensity,
-);
+ThemeData get theme => HMBTheme.dark;
 
 /// this is we we do all the heavy initialisation of the app after
 /// we have the splash screen up and displayed.

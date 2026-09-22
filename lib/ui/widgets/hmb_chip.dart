@@ -23,25 +23,24 @@ class HMBChip extends StatelessWidget {
   Color _backgroundColor(BuildContext context) {
     switch (tone) {
       case HMBChipTone.accent:
-        return Theme.of(context).colorScheme.primary.withSafeOpacity(0.15);
+        return Theme.of(context).colorScheme.primaryContainer;
       case HMBChipTone.danger:
         return Colors.red.withSafeOpacity(0.15);
       case HMBChipTone.warning:
         return Colors.orange.withSafeOpacity(0.15);
       case HMBChipTone.neutral:
-        // Slightly stronger tint for better white text contrast
-        return Theme.of(context).colorScheme.primary.withSafeOpacity(0.25);
+        return HMBColors.surface8dp;
     }
   }
 
   Color _textColor(BuildContext context) {
     switch (tone) {
       case HMBChipTone.accent:
-        return Colors.white;
+        return Theme.of(context).colorScheme.onPrimaryContainer;
       case HMBChipTone.danger:
         return Colors.red.shade400;
       case HMBChipTone.warning:
-        return Colors.orange.shade700;
+        return Colors.orange.shade300;
       case HMBChipTone.neutral:
         // White text for stronger contrast
         return Colors.white;
@@ -72,14 +71,14 @@ class HMBChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(HMBTheme.controlRadius),
       ),
       child: chipContent,
     );
 
     if (onTap != null) {
       return InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(HMBTheme.controlRadius),
         onTap: onTap,
         child: chip,
       );
