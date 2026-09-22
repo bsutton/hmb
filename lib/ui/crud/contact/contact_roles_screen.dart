@@ -64,6 +64,7 @@ class _ContactRolesScreenState extends DeferredState<ContactRolesScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(role == null ? 'Add role type' : 'Rename role'),
+        scrollable: true,
         content: Form(
           key: form,
           child: HMBTextField(
