@@ -29,6 +29,7 @@ import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../base_nested/edit_nested_screen.dart';
+import '../category/select_category.dart';
 import 'photo_crud.dart';
 
 class TaskEditScreen extends StatefulWidget {
@@ -62,6 +63,10 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   late FocusNode _summaryFocusNode;
   late FocusNode _descriptionFocusNode;
   late FocusNode _assumptionFocusNode;
+  final _category = SelectedCategory();
+  late TextEditingController _quantityController;
+  late TextEditingController _unitController;
+  late TextEditingController _effortNotesController;
 
   @override
   Task? currentEntity;
@@ -73,6 +78,14 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
     currentEntity ??= widget.task;
     selectedBillingType = widget.billingType;
+    _category.categoryId = currentEntity?.categoryId;
+    _quantityController = TextEditingController(
+      text: currentEntity?.effortQuantity?.toString() ?? '',
+    );
+    _unitController = TextEditingController(text: currentEntity?.effortUnit);
+    _effortNotesController = TextEditingController(
+      text: currentEntity?.effortNotes,
+    );
 
     _nameController = TextEditingController(text: currentEntity?.name);
     _descriptionController = TextEditingController(
@@ -118,6 +131,9 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     _nameController.dispose();
     _descriptionController.dispose();
     _assumptionController.dispose();
+    _quantityController.dispose();
+    _unitController.dispose();
+    _effortNotesController.dispose();
     _photoController.dispose();
     _summaryFocusNode.dispose();
     _descriptionFocusNode.dispose();
@@ -145,6 +161,46 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         ),
         _chooseTaskStatus(task),
         _chooseBillingType(),
+        ExpansionTile(
+          title: const Text('Effort comparison'),
+          subtitle: const Text('Optional details for future estimating'),
+          children: [
+            SelectCategory(selectedCategory: _category),
+            HMBTextField(
+              controller: _quantityController,
+              labelText: 'Work quantity (e.g. 25)',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return null;
+                }
+                final quantity = double.tryParse(value);
+                return quantity == null || !quantity.isFinite || quantity <= 0
+                    ? 'Enter a positive quantity'
+                    : null;
+              },
+            ),
+            HMBTextField(
+              controller: _unitController,
+              labelText: 'Unit (e.g. m², metres, items)',
+              validator: (value) =>
+                  _quantityController.text.trim().isNotEmpty &&
+                      (value == null || value.trim().isEmpty)
+                  ? 'Enter the unit used for this quantity'
+                  : null,
+            ),
+            HMBTextArea(
+              controller: _effortNotesController,
+              labelText: 'Comparison notes (size, condition, access)',
+            ),
+            const Text(
+              'Internal comparison only. These values do not change billing '
+              'or appear on quotes.',
+            ),
+          ],
+        ),
         HMBTextArea(
           controller: _descriptionController,
           focusNode: _descriptionFocusNode,
@@ -247,6 +303,12 @@ Navigate to Billing | Milestones.
     description: _descriptionController.text,
     assumption: _assumptionController.text,
     status: June.getState(SelectedTaskStatus.new).taskStatus,
+    categoryId: _category.categoryId,
+    clearCategory: _category.categoryId == null,
+    effortQuantity: double.tryParse(_quantityController.text.trim()),
+    clearEffortQuantity: _quantityController.text.trim().isEmpty,
+    effortUnit: _unitController.text.trim(),
+    effortNotes: _effortNotesController.text.trim(),
   );
 
   @override
@@ -257,6 +319,10 @@ Navigate to Billing | Milestones.
     description: _descriptionController.text,
     assumption: _assumptionController.text,
     status: June.getState(SelectedTaskStatus.new).taskStatus!,
+    categoryId: _category.categoryId,
+    effortQuantity: double.tryParse(_quantityController.text.trim()),
+    effortUnit: _unitController.text.trim(),
+    effortNotes: _effortNotesController.text.trim(),
   );
 
   @override

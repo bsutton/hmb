@@ -26,6 +26,12 @@ class Task extends Entity<Task> {
   /// Notes not shown to customers; editable even after quote approval.
   String internalNotes;
 
+  /// Optional comparison metadata, independent of billing and quote quantities.
+  int? categoryId;
+  double? effortQuantity;
+  String effortUnit;
+  String effortNotes;
+
   /// Optional override. When null, inherit from Job.billingType.
   BillingType? billingType;
 
@@ -44,6 +50,10 @@ class Task extends Entity<Task> {
     required super.createdDate,
     required super.modifiedDate,
     this.billingType,
+    this.categoryId,
+    this.effortQuantity,
+    this.effortUnit = '',
+    this.effortNotes = '',
   }) : super();
 
   Task.forInsert({
@@ -55,6 +65,10 @@ class Task extends Entity<Task> {
     this.assumption = '',
     this.internalNotes = '',
     this.billingType,
+    this.categoryId,
+    this.effortQuantity,
+    this.effortUnit = '',
+    this.effortNotes = '',
   }) : super.forInsert();
 
   Task copyWith({
@@ -66,6 +80,12 @@ class Task extends Entity<Task> {
     TaskStatus? status,
     bool? estimateComplete,
     BillingType? billingType,
+    int? categoryId,
+    double? effortQuantity,
+    String? effortUnit,
+    String? effortNotes,
+    bool clearEffortQuantity = false,
+    bool clearCategory = false,
   }) => Task._(
     id: id,
     jobId: jobId ?? this.jobId,
@@ -78,6 +98,12 @@ class Task extends Entity<Task> {
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
     billingType: billingType ?? this.billingType,
+    categoryId: clearCategory ? null : categoryId ?? this.categoryId,
+    effortQuantity: clearEffortQuantity
+        ? null
+        : effortQuantity ?? this.effortQuantity,
+    effortUnit: effortUnit ?? this.effortUnit,
+    effortNotes: effortNotes ?? this.effortNotes,
   );
 
   /// Resolve the effective billing type for this task.
@@ -91,6 +117,10 @@ class Task extends Entity<Task> {
     description: map['description'] as String? ?? '',
     assumption: map['assumption'] as String? ?? '',
     internalNotes: map['internal_notes'] as String? ?? '',
+    categoryId: map['category_id'] as int?,
+    effortQuantity: (map['effort_quantity'] as num?)?.toDouble(),
+    effortUnit: map['effort_unit'] as String? ?? '',
+    effortNotes: map['effort_notes'] as String? ?? '',
     status: TaskStatus.fromId(map['task_status_id'] as int),
     estimateComplete: (map['estimate_complete'] as int? ?? 0) == 1,
     createdDate: DateTime.parse(map['createdDate'] as String),
@@ -108,6 +138,10 @@ class Task extends Entity<Task> {
     'description': description,
     'assumption': assumption,
     'internal_notes': internalNotes,
+    'category_id': categoryId,
+    'effort_quantity': effortQuantity,
+    'effort_unit': effortUnit,
+    'effort_notes': effortNotes,
     'task_status_id': status.id,
     'estimate_complete': estimateComplete ? 1 : 0,
     'billing_type': billingType?.name,

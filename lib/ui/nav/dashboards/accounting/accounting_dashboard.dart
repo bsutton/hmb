@@ -46,6 +46,14 @@ class _AccountingDashboardPageState extends State<AccountingDashboardPage> {
     dashlets: [
       const ReceiptDashlet(),
       DashletCard<void>.route(
+        label: 'Prior work',
+        hint: 'Compare completed tasks, quantities and actual time',
+        icon: Icons.history,
+        value: () async => const DashletValue(null),
+        route: '/home/accounting/prior-work',
+        valueBuilder: (_, _) => const SizedBox.shrink(),
+      ),
+      DashletCard<void>.route(
         label: 'Estimator',
         hint:
             'Create estimates for a Job by adding Tasks, Labour and Materials',
