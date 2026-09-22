@@ -19,6 +19,7 @@ import 'package:strings/strings.dart';
 import '../../dao/dao.g.dart';
 import '../../dao/invoice_billing_contact.dart';
 import '../../entity/entity.g.dart';
+import '../nav/dashboards/accounting/materials_billing_screen.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_select_contact.dart';
 import '../widgets/widgets.g.dart';
@@ -182,6 +183,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
   late Customer _customer;
   late Contact _selectedContact;
   List<Contact> _contacts = [];
+  late List<TaskSelector> _selectors = List.of(widget.taskSelectors);
 
   @override
   void initState() {
@@ -202,7 +204,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
               !widget.job.bookingFeeInvoiced;
     billBookingFee = canBillBookingFee;
 
-    for (final accuredValue in widget.taskSelectors) {
+    for (final accuredValue in _selectors) {
       _selectedTasks[accuredValue.task.id] = true;
       _taskBillingTypes[accuredValue.task.id] = accuredValue.task
           .effectiveBillingType(widget.job.billingType);
@@ -217,6 +219,39 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
   void dispose() {
     _quoteNameController.dispose();
     super.dispose();
+  }
+
+  Future<void> _reviewMaterials() async {
+    Future<MaterialBillingReport> load() =>
+        AccountingReportService().materialsBilling(jobId: widget.job.id);
+    final report = await BlockingUI().runAndWait(load);
+    if (!mounted) {
+      return;
+    }
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) =>
+            MaterialsBillingScreen(report: report, reportLoader: load),
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+    final updated = await BlockingUI().runAndWait(
+      () => taskSelectorsForInvoice(job: widget.job),
+    );
+    if (mounted) {
+      final originalIds = widget.taskSelectors
+          .map((item) => item.task.id)
+          .toSet();
+      setState(() {
+        _selectors = updated
+            .where((item) => originalIds.contains(item.task.id))
+            .toList();
+        final currentIds = _selectors.map((item) => item.task.id).toSet();
+        _selectedTasks.removeWhere((id, _) => !currentIds.contains(id));
+      });
+    }
   }
 
   bool get _hasSelectedTimeAndMaterialsTasks => _selectedTasks.entries.any(
@@ -314,7 +349,14 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
                 value: _selectAll,
                 onChanged: _toggleSelectAll,
               ),
-            for (final taskSelector in widget.taskSelectors)
+            if (!widget.forQuote)
+              HMBButtonSecondary(
+                label: 'Review materials',
+                hint:
+                    'Check missing prices and no-charge materials for this job',
+                onPressed: _reviewMaterials,
+              ),
+            for (final taskSelector in _selectors)
               HMBColumn(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [

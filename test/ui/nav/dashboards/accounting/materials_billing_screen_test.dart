@@ -66,6 +66,8 @@ void main() {
         _row('Missing price item'),
         _row('Ready to bill', price: MoneyEx.dollars(10)),
         _row('Already billed', price: MoneyEx.dollars(20), billed: true),
+        _row('Free stock', price: MoneyEx.zero),
+        _row('Explicitly waived', waived: true),
       ],
     );
 
@@ -73,17 +75,27 @@ void main() {
       MaterialApp(home: MaterialsBillingScreen(report: report)),
     );
 
-    expect(find.text('3 completed'), findsOneWidget);
+    expect(find.text('5 completed'), findsOneWidget);
+    expect(find.text('2 no charge'), findsOneWidget);
     expect(find.text('2 not billed'), findsOneWidget);
     expect(find.text('1 missing price'), findsOneWidget);
     expect(find.text('Missing price item'), findsOneWidget);
     expect(find.text('Ready to bill'), findsOneWidget);
     expect(find.text('Already billed'), findsNothing);
+    expect(find.text('Free stock'), findsNothing);
+    expect(find.text('Explicitly waived'), findsNothing);
 
     await tester.tap(find.text('All'));
     await tester.pump();
 
     expect(find.text('Already billed'), findsOneWidget);
+    expect(find.text('Free stock'), findsOneWidget);
+    expect(find.text('Explicitly waived'), findsOneWidget);
+    expect(report.rows.last.taskItem.billed, isFalse);
+    expect(
+      AccountingReportCsvExporter().materialsBilling(report),
+      contains('No charge'),
+    );
   });
 }
 
@@ -104,6 +116,7 @@ MaterialBillingRow _row(
   String description, {
   Money? price,
   bool billed = false,
+  bool waived = false,
 }) {
   final materialPrice = price == null
       ? null
@@ -116,7 +129,8 @@ MaterialBillingRow _row(
     estimatedPrice: materialPrice,
     actualPrice: materialPrice,
     margin: Percentage.zero,
-    chargeMode: ChargeMode.calculated,
+    chargeMode: waived ? ChargeMode.userDefined : ChargeMode.calculated,
+    totalLineCharge: waived ? MoneyEx.zero : null,
     completed: true,
     billed: billed,
     invoiceLineId: billed ? 30 : null,
