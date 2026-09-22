@@ -59,6 +59,86 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
     await _load();
   }
 
+  Future<void> _editReferrer() async {
+    var selected = _referrer;
+    final form = GlobalKey<FormState>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Referring business'),
+        scrollable: true,
+        content: Form(
+          key: form,
+          child: HMBDroplist<Customer>(
+            title: 'Referring customer',
+            selectedItem: () async => selected,
+            items: (filter) => DaoCustomer().getByFilter(filter),
+            format: (customer) => customer.name,
+            onChanged: (customer) => selected = customer,
+          ),
+        ),
+        actions: [
+          HMBButtonSecondary(
+            label: 'Cancel',
+            hint: 'Keep the current referring business',
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          HMBButtonPrimary(
+            label: 'Save',
+            hint: 'Save the referring business without changing billing',
+            onPressed: () {
+              if (form.currentState!.validate()) {
+                Navigator.pop(context, true);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+    if ((confirmed ?? false) && selected != null) {
+      await _saveReferrer(selected!.id);
+    }
+  }
+
+  Future<void> _saveReferrer(int? customerId) async {
+    try {
+      await BlockingUI().runAndWait(
+        () => DaoJob().setReferringCustomer(widget.job.id, customerId),
+      );
+      await _load();
+    } catch (error) {
+      HMBToast.error(error.toString());
+    }
+  }
+
+  Future<void> _removeReferrer() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove referring business?'),
+        content: Text(
+          'Remove ${_referrer!.name} as the referring business? '
+          'The customer record and billing settings will not change.',
+        ),
+        actions: [
+          HMBButtonSecondary(
+            label: 'Cancel',
+            hint: 'Keep the referring business',
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          HMBButtonPrimary(
+            label: 'Remove',
+            hint: 'Remove the referral only',
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed ?? false) {
+      await _saveReferrer(null);
+    }
+  }
+
   Future<void> _remove(JobParty party) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -120,7 +200,7 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
               HMBButtonSecondary(
                 quiet: true,
                 label: 'Change',
-                hint: 'Change the job customer or referring customer',
+                hint: 'Change the job customer',
                 onPressed: () async {
                   await widget.editCustomers();
                   await _load();
@@ -129,14 +209,7 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
             ],
             body: HMBColumn(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_customer?.name ?? 'Not selected'),
-                if (_referrer != null)
-                  Text(
-                    'Referred by: ${_referrer!.name}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-              ],
+              children: [Text(_customer?.name ?? 'Not selected')],
             ),
           ),
           const SizedBox(height: 16),
@@ -144,7 +217,7 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
             children: [
               Expanded(
                 child: Text(
-                  'Job contacts',
+                  'Job parties',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
@@ -156,6 +229,41 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
             ],
           ),
           const SizedBox(height: 8),
+          if (_referrer != null)
+            Surface(
+              rounded: true,
+              padding: EdgeInsets.zero,
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                title: Text(_referrer!.name),
+                subtitle: const Text('Referrer · Customer/business'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: 'Edit referring business',
+                      icon: const Icon(Icons.edit),
+                      onPressed: _editReferrer,
+                    ),
+                    IconButton(
+                      tooltip: 'Remove referring business',
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: _removeReferrer,
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            Align(
+              alignment: Alignment.centerLeft,
+              child: HMBButtonSecondary(
+                quiet: true,
+                label: 'Add referring business',
+                hint: 'Choose the customer or business that referred this job',
+                onPressed: _job == null ? null : _editReferrer,
+              ),
+            ),
           if (_parties.isEmpty) const Text('No contacts assigned.'),
           for (final party in _parties)
             Surface(

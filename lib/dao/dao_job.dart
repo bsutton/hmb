@@ -56,6 +56,30 @@ class DaoJob extends Dao<Job> {
 
   DaoJob() : super(tableName);
 
+  /// Change the referring business without changing the billing customer.
+  Future<void> setReferringCustomer(int jobId, int? customerId) async {
+    await db.transaction((transaction) async {
+      final job = await getById(jobId, transaction);
+      if (job == null) {
+        throw HMBException('Job no longer exists.');
+      }
+      if (customerId != null &&
+          await DaoCustomer().getById(customerId, transaction) == null) {
+        throw HMBException('Referring customer no longer exists.');
+      }
+      if (job.referrerCustomerId == customerId) {
+        return;
+      }
+      // Older jobs derive Bill To from the referrer. Preserve that selection
+      // when the referral changes; billing is edited separately.
+      if (job.billingParty == BillingParty.referrer) {
+        job.billToCustomerId ??= job.billingCustomerId;
+      }
+      job.referrerCustomerId = customerId;
+      await update(job, transaction);
+    });
+  }
+
   @override
   Future<int> insert(Job entity, [Transaction? transaction]) async {
     if (transaction == null) {
@@ -124,9 +148,8 @@ class DaoJob extends Dao<Job> {
     final values = entity.toMap()
       ..remove('status_id')
       ..remove('resume_status_id');
-    final count = await withinTransaction(
-      transaction,
-    ).update(tableName, values, where: 'id = ?', whereArgs: [entity.id]);
+    final count = await withinTransaction(transaction)
+        .update(tableName, values, where: 'id = ?', whereArgs: [entity.id]);
     assert(count == 1, 'A job update must affect exactly one row.');
     await DaoJobParty().syncLegacyFields(entity, existing, transaction);
     Dao.notifier(this, entity.id);
@@ -527,9 +550,8 @@ where q.id=?
 
     if (bestPhone == null) {
       final customer = await DaoCustomer().getByJob(job.id);
-      bestPhone = (await DaoContact().getPrimaryForCustomer(
-        customer!.id,
-      ))?.bestPhone;
+      bestPhone = (await DaoContact().getPrimaryForCustomer(customer!.id))
+          ?.bestPhone;
     }
     return bestPhone;
   }
@@ -542,9 +564,8 @@ where q.id=?
 
     if (bestEmail == null) {
       final customer = await DaoCustomer().getByJob(job.id);
-      bestEmail = (await DaoContact().getPrimaryForCustomer(
-        customer!.id,
-      ))?.bestEmail;
+      bestEmail = (await DaoContact().getPrimaryForCustomer(customer!.id))
+          ?.bestEmail;
     }
     return bestEmail;
   }

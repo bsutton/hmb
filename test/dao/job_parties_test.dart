@@ -24,6 +24,35 @@ void main() {
     hourlyRate: MoneyEx.dollars(95),
   );
 
+  test('business referrer changes retain billing and contact roles', () async {
+    final job = await makeJob();
+    final businessJob = await makeJob();
+    final replacementJob = await makeJob();
+    job
+      ..referrerCustomerId = businessJob.customerId
+      ..billingParty = BillingParty.referrer;
+    await DaoJob().update(job);
+    // Exercise the legacy fallback, not only the explicit Bill To field.
+    job.billToCustomerId = null;
+    await DaoJob().update(job);
+    final before = await DaoJobParty().getByJob(job.id);
+
+    await DaoJob().setReferringCustomer(job.id, replacementJob.customerId);
+    var saved = (await DaoJob().getById(job.id))!;
+    expect(saved.customerId, job.customerId);
+    expect(saved.referrerCustomerId, replacementJob.customerId);
+    expect(saved.billingCustomerId, businessJob.customerId);
+    await DaoJob().setReferringCustomer(job.id, null);
+    saved = (await DaoJob().getById(job.id))!;
+    expect(saved.referrerCustomerId, isNull);
+    expect(saved.billingCustomerId, businessJob.customerId);
+    expect(await DaoCustomer().getById(businessJob.customerId), isNotNull);
+    expect(
+      (await DaoJobParty().getByJob(job.id)).map((party) => party.id),
+      before.map((party) => party.id),
+    );
+  });
+
   Future<Contact> makeContact({
     int? roleId,
     String roleDescription = '',
@@ -131,9 +160,8 @@ void main() {
         replaceSingleton: true,
       );
       expect((await DaoJob().getById(job.id))!.contactId, other.id);
-      final row = (await parties.getByJob(
-        job.id,
-      )).singleWhere((p) => p.role.id == ContactRole.primary);
+      final row = (await parties.getByJob(job.id))
+          .singleWhere((p) => p.role.id == ContactRole.primary);
       await parties.delete(job.id, row.id);
       expect((await DaoJob().getById(job.id))!.contactId, isNull);
       expect(await DaoContact().getById(other.id), isNotNull);
@@ -151,9 +179,8 @@ void main() {
       containsAll([ContactRole.primary, ContactRole.billing]),
     );
     expect(
-      (await DaoJobParty().getByJob(
-        job.id,
-      )).any((p) => p.role.id == ContactRole.owner),
+      (await DaoJobParty().getByJob(job.id))
+          .any((p) => p.role.id == ContactRole.owner),
       isFalse,
     );
   });
@@ -310,9 +337,8 @@ void main() {
         (await DaoJob().getById(job.id))!.legacyBillingContactId,
         job.billingContactId,
       );
-      final billing = (await DaoJobParty().getByJob(
-        job.id,
-      )).singleWhere((party) => party.role.id == ContactRole.billing);
+      final billing = (await DaoJobParty().getByJob(job.id))
+          .singleWhere((party) => party.role.id == ContactRole.billing);
       await DaoJobParty().save(
         jobId: job.id,
         contactId: billing.contact.id,

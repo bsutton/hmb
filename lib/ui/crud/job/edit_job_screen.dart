@@ -350,11 +350,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
           ..summary = _summaryController.text.trim()
           ..description = _descriptionController.text;
       case JobEditSection.customer:
-        job
-          ..customerId = June.getState(SelectedCustomer.new).customerId
-          ..referrerCustomerId = June.getState(
-            SelectedReferrerCustomer.new,
-          ).customerId;
+        job.customerId = June.getState(SelectedCustomer.new).customerId;
       case JobEditSection.site:
         job.siteId = June.getState(SelectedSite.new).siteId;
       case JobEditSection.billing:
