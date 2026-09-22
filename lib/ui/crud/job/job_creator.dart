@@ -63,6 +63,9 @@ class _JobCreatorState extends State<JobCreator> {
   final _suburb = TextEditingController();
   final _state = TextEditingController();
   final _postcode = TextEditingController();
+  final List<TextEditingController> _siteAddress =
+      List.generate(5, (_) => TextEditingController());
+  var _sameSiteAddress = true;
   final _jobSummary = TextEditingController();
   final _jobDescription = TextEditingController();
   final _existingContactFilter = TextEditingController();
@@ -159,6 +162,9 @@ class _JobCreatorState extends State<JobCreator> {
     _suburb.dispose();
     _state.dispose();
     _postcode.dispose();
+    for (final controller in _siteAddress) {
+      controller.dispose();
+    }
     _jobSummary.dispose();
     _jobDescription.dispose();
     _existingContactFilter.dispose();
@@ -399,6 +405,7 @@ class _JobCreatorState extends State<JobCreator> {
     final daoSite = DaoSite();
     final contacts = await daoContact.getByCustomer(customer.id);
     final sites = await daoSite.getByCustomer(customer.id);
+    final primarySite = await daoSite.getPrimaryForCustomer(customer.id);
     contacts.sort(
       (a, b) => _displayName(
         a,
@@ -412,7 +419,7 @@ class _JobCreatorState extends State<JobCreator> {
       _existingSites = sites;
       _selectedExistingContact = _pickBestMatchingContact(contacts);
       _selectedPrimaryContact ??= _selectedExistingContact;
-      _selectedExistingSite = sites.isEmpty ? null : sites.first;
+      _selectedExistingSite = primarySite;
     });
   }
 
@@ -756,6 +763,12 @@ class _JobCreatorState extends State<JobCreator> {
       HMBToast.error('Please enter a customer name.');
       return false;
     }
+    if (!_sameSiteAddress && _siteAddress.first.text.trim().isEmpty) {
+      HMBToast.error(
+        'Enter the separate site address or use the customer address.',
+      );
+      return false;
+    }
     if (Strings.isBlank(_jobSummary.text)) {
       HMBToast.error('Please enter a job summary.');
       return false;
@@ -956,6 +969,22 @@ class _JobCreatorState extends State<JobCreator> {
             suburb: _suburb.text,
             postcode: _postcode.text,
             state: _state.text,
+            accessDetails: null,
+          );
+          await daoSite.insert(site!, transaction);
+          await DaoSiteCustomer().insertJoin(site!, customer, transaction);
+          if (_selectedCustomer == null) {
+            await DaoSiteCustomer().setAsPrimary(site!, customer, transaction);
+          }
+        }
+
+        if (!_sameSiteAddress) {
+          site = Site.forInsert(
+            addressLine1: _siteAddress[0].text.trim(),
+            addressLine2: _siteAddress[1].text.trim(),
+            suburb: _siteAddress[2].text.trim(),
+            state: _siteAddress[3].text.trim(),
+            postcode: _siteAddress[4].text.trim(),
             accessDetails: null,
           );
           await daoSite.insert(site!, transaction);
@@ -1241,6 +1270,7 @@ class _AddressStep extends WizardStep {
       padding: const EdgeInsets.all(12),
       child: HMBColumn(
         children: [
+          const Text('Customer address'),
           if (state._selectedCustomer != null) ...[
             if (state._existingSites.length > 8)
               HMBTextField(
@@ -1333,6 +1363,29 @@ class _AddressStep extends WizardStep {
             textCapitalization: TextCapitalization.characters,
             enabled: state._selectedExistingSite == null,
           ),
+          HMBToggle(
+            label: 'Site same as customer',
+            hint: 'Use the customer address as the job site',
+            initialValue: state._sameSiteAddress,
+            onToggled: (value) =>
+                setState(() => state._sameSiteAddress = value),
+          ),
+          if (!state._sameSiteAddress) ...[
+            const Text('Job site address'),
+            for (var index = 0; index < 5; index++)
+              HMBTextField(
+                controller: state._siteAddress[index],
+                labelText: const [
+                  'Site address line 1',
+                  'Site address line 2',
+                  'Site suburb',
+                  'Site state',
+                  'Site postcode',
+                ][index],
+                required: index == 0,
+                textCapitalization: TextCapitalization.words,
+              ),
+          ],
         ],
       ),
     ),

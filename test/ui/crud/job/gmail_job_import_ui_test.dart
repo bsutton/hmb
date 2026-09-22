@@ -29,71 +29,106 @@ void main() {
 
   tearDown(tearDownTestDb);
 
-  testWidgets('new customer import persists the draft primary contact', (
-    tester,
-  ) async {
-    await prepareSettingsTest();
-    await tester.binding.setSurfaceSize(const Size(1200, 1000));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    final source = JobCreationEmailSource(
-      accountEmail: 'owner@example.com',
-      messageId: 'primary-contact-import',
-      threadId: null,
-      senderName: 'Casey Customer',
-      senderEmail: 'casey@example.com',
-      subject: 'Repair the tap',
-      body: 'Please repair the tap.',
-      receivedAt: DateTime.utc(2026, 8, 14),
-      hasAttachments: false,
-    );
-    await tester.pumpWidget(
-      ToastificationWrapper(
-        child: MaterialApp(
-          home: Scaffold(body: JobCreator(emailSource: source)),
-        ),
-      ),
-    );
-    await _pumpAsyncWork(tester);
-    for (var step = 0; step < 4; step++) {
-      await tester.tap(find.text('Next'));
-      await _pumpAsyncWork(tester);
-      await tester.pumpAndSettle();
-    }
-    expect(find.text('Primary Contact'), findsOneWidget);
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Job Summary'),
-      source.subject,
-    );
-    await tester.tap(find.text('Done'));
-    await _pumpAsyncWork(tester);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Skip'));
-    await _pumpAsyncWork(tester);
-    await tester.pumpAndSettle();
-    await _pumpAsyncWork(tester);
+  for (final separateSite in [false, true]) {
+    testWidgets(
+      'new customer import retains contact and addresses ($separateSite)',
+      (tester) async {
+        await prepareSettingsTest();
+        await tester.binding.setSurfaceSize(const Size(1200, 1000));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final source = JobCreationEmailSource(
+          accountEmail: 'owner@example.com',
+          messageId: 'primary-contact-import',
+          threadId: null,
+          senderName: 'Casey Customer',
+          senderEmail: 'casey@example.com',
+          subject: 'Repair the tap',
+          body: 'Please repair the tap.',
+          receivedAt: DateTime.utc(2026, 8, 14),
+          hasAttachments: false,
+        );
+        await tester.pumpWidget(
+          ToastificationWrapper(
+            child: MaterialApp(
+              home: Scaffold(body: JobCreator(emailSource: source)),
+            ),
+          ),
+        );
+        await _pumpAsyncWork(tester);
+        for (var step = 0; step < 4; step++) {
+          if (step == 3) {
+            await tester.enterText(
+              find.widgetWithText(TextFormField, 'Address Line 1'),
+              '10 Customer Street',
+            );
+            if (separateSite) {
+              final toggle = find.byTooltip(
+                'Use the customer address as the job site',
+              );
+              await tester.ensureVisible(toggle);
+              await tester.pumpAndSettle();
+              await tester.tap(toggle);
+              await tester.pumpAndSettle();
+              final siteField = find.widgetWithText(
+                TextFormField,
+                'Site address line 1',
+              );
+              await tester.ensureVisible(siteField);
+              await tester.pumpAndSettle();
+              await tester.enterText(siteField, '20 Work Street');
+            }
+          }
+          await tester.tap(find.text('Next'));
+          await _pumpAsyncWork(tester);
+          await tester.pumpAndSettle();
+        }
+        expect(find.text('Primary Contact'), findsOneWidget);
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Job Summary'),
+          source.subject,
+        );
+        await tester.tap(find.text('Done'));
+        await _pumpAsyncWork(tester);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Skip'));
+        await _pumpAsyncWork(tester);
+        await tester.pumpAndSettle();
+        await _pumpAsyncWork(tester);
 
-    await tester.runAsync(() async {
-      final imported = await DaoJobSourceEmail().getByMessage(
-        accountEmail: source.accountEmail,
-        messageId: source.messageId,
-      );
-      expect(
-        imported,
-        isNotNull,
-        reason: tester
-            .widgetList<Text>(find.byType(Text))
-            .map((text) => text.data)
-            .join('\n'),
-      );
-      final job = (await DaoJob().getById(imported!.jobId))!;
-      final contact = await DaoContact().getById(job.contactId);
-      expect(contact, isNotNull);
-      expect(contact!.emailAddress, source.senderEmail);
-      expect(job.billingContactId, contact.id);
-    });
-    // Let the wizard's completed transition timeout timers expire.
-    await tester.pump(const Duration(seconds: 11));
-  });
+        await tester.runAsync(() async {
+          final imported = await DaoJobSourceEmail().getByMessage(
+            accountEmail: source.accountEmail,
+            messageId: source.messageId,
+          );
+          expect(
+            imported,
+            isNotNull,
+            reason: tester
+                .widgetList<Text>(find.byType(Text))
+                .map((text) => text.data)
+                .join('\n'),
+          );
+          final job = (await DaoJob().getById(imported!.jobId))!;
+          final contact = await DaoContact().getById(job.contactId);
+          expect(contact, isNotNull);
+          expect(contact!.emailAddress, source.senderEmail);
+          expect(job.billingContactId, contact.id);
+          final customerAddress = await DaoSite().getPrimaryForCustomer(
+            job.customerId,
+          );
+          final siteAddress = await DaoSite().getById(job.siteId);
+          expect(customerAddress!.addressLine1, '10 Customer Street');
+          expect(
+            siteAddress!.addressLine1,
+            separateSite ? '20 Work Street' : '10 Customer Street',
+          );
+          expect(siteAddress.id == customerAddress.id, !separateSite);
+        });
+        // Let the wizard's completed transition timeout timers expire.
+        await tester.pump(const Duration(seconds: 11));
+      },
+    );
+  }
 
   test('Gmail attachment local names are readable and bounded', () {
     const original = 'Plinth board repair to front timber fence.pdf';
