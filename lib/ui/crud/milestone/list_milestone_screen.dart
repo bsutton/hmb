@@ -157,6 +157,10 @@ class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
           Text('Invoiced Milestones: ${summary.invoicedCount}'),
           Text('Voided Milestones: ${summary.voidedCount}'),
           Text('Invoiced to date: ${summary.invoicedValue}'),
+          Text(
+            'Remaining to invoice: '
+            '${summary.totalValue - summary.invoicedValue}',
+          ),
           Text('Total Value: ${summary.totalValue}'),
         ],
         onTap: () async {
