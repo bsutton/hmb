@@ -177,6 +177,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
               job: currentEntity!,
               onEdit: _open,
               onActions: _actions,
+              onScheduleChanged: _refresh,
             ),
           ),
         );
@@ -352,9 +353,8 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
       case JobEditSection.customer:
         job
           ..customerId = June.getState(SelectedCustomer.new).customerId
-          ..referrerCustomerId = June.getState(
-            SelectedReferrerCustomer.new,
-          ).customerId;
+          ..referrerCustomerId = June.getState(SelectedReferrerCustomer.new)
+              .customerId;
       case JobEditSection.site:
         job.siteId = June.getState(SelectedSite.new).siteId;
       case JobEditSection.billing:
