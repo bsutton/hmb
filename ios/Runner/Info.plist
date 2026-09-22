@@ -4,6 +4,27 @@
 <dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>When you enable the trip log, Handyman checks your location on opening the app to record trips. Location is not tracked in the background.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Take photos of jobs, tasks, receipts and equipment to attach to your business records.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Select photos and your business logo for your HMB records and documents.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>dev.onepub.handyman</string>
+			</array>
+		</dict>
+	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>sms</string>
+		<string>tel</string>
+		<string>mailto</string>
+	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
