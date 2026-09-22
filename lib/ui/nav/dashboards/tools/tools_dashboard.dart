@@ -18,6 +18,14 @@ class ToolsDashboardPage extends StatelessWidget {
   Widget build(BuildContext context) => DashboardPage(
     title: 'Tools',
     dashlets: [
+      DashletCard<void>.route(
+        label: 'Trip log',
+        hint: 'Review travel recorded on app openings',
+        icon: Icons.directions_car,
+        value: () async => const DashletValue(null),
+        route: '/home/tools/trips',
+        valueBuilder: (_, _) => const SizedBox.shrink(),
+      ),
       DashletCard<int>.route(
         label: 'Inventory',
         hint: 'Maintain a list of tools, warranty details and receipts',

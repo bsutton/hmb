@@ -52,6 +52,7 @@ import '../task_items/list_packing_screen.dart';
 import '../task_items/list_shopping_screen.dart';
 import '../tools/mailings/mailing_list_screen.dart';
 import '../tools/plasterboard/plaster_project_list_screen.dart';
+import '../tools/trip_log_screen.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/media/full_screen_photo_view.dart';
@@ -205,6 +206,7 @@ List<GoRoute> dashboardRoutes() => [
     path: 'tools/inventory',
     builder: (_, _) => const HomeScaffold(initialScreen: ToolListScreen()),
   ),
+  GoRoute(path: 'tools/trips', builder: (_, _) => const TripLogScreen()),
   GoRoute(
     path: 'tools/plasterboard',
     builder: (_, _) =>

@@ -26,6 +26,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:toastification/toastification.dart';
 
 import 'api/ihserver/booking_request_sync_service.dart';
+import 'api/trip_capture_service.dart';
 import 'api/xero/xero_invoice_payment_sync_service.dart';
 import 'database/management/backup_providers/google_drive/background_backup/photo_sync_service.dart';
 import 'database/management/database_helper.dart';
@@ -112,11 +113,13 @@ class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
     LocalNotifs().onNotificationPayload = _onNotificationPayload;
     WidgetsBinding.instance.addObserver(this);
     unawaited(_runResumeSyncTasks());
+    unawaited(TripCaptureService.instance.onResume());
   }
 
   @override
   void dispose() {
     LocalNotifs().onNotificationPayload = null;
+    unawaited(TripCaptureService.instance.cancelFix());
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -142,6 +145,9 @@ class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(_runResumeSyncTasks());
+      unawaited(TripCaptureService.instance.onResume());
+    } else {
+      unawaited(TripCaptureService.instance.cancelFix());
     }
   }
 
