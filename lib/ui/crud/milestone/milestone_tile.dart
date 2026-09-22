@@ -30,9 +30,9 @@ import '../../dialog/hmb_comfirm_delete_dialog.dart';
 import '../../invoicing/edit_invoice_screen.dart';
 import '../../invoicing/invoice_details.dart';
 import '../../widgets/fields/fields.g.dart';
+import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_link_internal.dart';
 import '../../widgets/hmb_toast.dart';
-import '../../widgets/icons/hmb_add_button.dart';
 import '../../widgets/icons/hmb_delete_icon.dart';
 import '../../widgets/icons/hmb_save_icon.dart';
 import '../../widgets/layout/layout.g.dart';
@@ -267,14 +267,6 @@ Are you sure you want to delete ${Strings.isNotBlank(widget.milestone.milestoneD
                               )
                             else ...[
                               if (_isEditable)
-                                HMBButtonAdd(
-                                  onAdd: disabled ? null : _onInvoicePressed,
-                                  enabled: true,
-                                  small: true,
-                                  hint: 'Invoice this Milestone',
-                                ),
-                              if (_isEditable) const SizedBox(width: 8),
-                              if (_isEditable)
                                 HMBDeleteIcon(
                                   enabled: !disabled,
                                   onPressed: () async => _onDeletePressed(),
@@ -286,6 +278,12 @@ Are you sure you want to delete ${Strings.isNotBlank(widget.milestone.milestoneD
                       ],
                     ),
                     const SizedBox(height: 8),
+                    if (_isEditable && !_isInEditMode)
+                      HMBButtonPrimary(
+                        label: 'Create invoice',
+                        hint: 'Create an invoice for this milestone payment',
+                        onPressed: disabled ? null : _onInvoicePressed,
+                      ),
 
                     // ===== Optional invoice link below header =====
                     if (widget.milestone.invoiceId != null)
