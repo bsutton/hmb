@@ -61,7 +61,12 @@ class HMBMoneyField extends HMBTextField {
     super.autofocus = false,
     super.enabled,
     super.validator,
-  }) : super(keyboardType: TextInputType.number);
+  }) : super(
+         keyboardType: const TextInputType.numberWithOptions(
+           decimal: true,
+           signed: true,
+         ),
+       );
 
   // ignore: avoid_positional_boolean_parameters
   static String? validation(String? value, bool nonZero, String fieldName) {

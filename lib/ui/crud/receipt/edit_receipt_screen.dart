@@ -145,8 +145,9 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       );
       _linkedTaskItemIds.addAll(linkedIds);
       _lineItems.addAll(
-        (await DaoReceiptLineItem().getByReceiptId(currentEntity!.id))
-            .map(_ReceiptLineItemEditor.fromEntity),
+        (await DaoReceiptLineItem().getByReceiptId(
+          currentEntity!.id,
+        )).map(_ReceiptLineItemEditor.fromEntity),
       );
       final matchedIds = {
         for (final line in _lineItems)
@@ -530,9 +531,15 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   void _setCalculatedTotals(ReceiptTaxTotals totals) {
     setState(() {
       _isCalculating = true;
-      _totalExclCtrl.money = totals.excluding;
-      _taxCtrl.money = totals.tax;
-      _totalInclCtrl.money = totals.including;
+      if (_totalBasis != ReceiptTotalBasis.excludingTax) {
+        _totalExclCtrl.money = totals.excluding;
+      }
+      if (_taxMode != _ReceiptTaxMode.directEntry) {
+        _taxCtrl.money = totals.tax;
+      }
+      if (_totalBasis != ReceiptTotalBasis.includingTax) {
+        _totalInclCtrl.money = totals.including;
+      }
       _isCalculating = false;
     });
     _syncSoleJobAllocation();
@@ -581,6 +588,18 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     );
   }
 
+  void _recalculateLinePrice(_ReceiptLineItemEditor line) {
+    final quantity = Fixed.tryParse(line.quantityController.text.trim());
+    if (quantity == null) {
+      return;
+    }
+    line.totalBasis = ReceiptTotalBasis.excludingTax;
+    line.lineTotalExTaxController.money = line.unitPrice.multiplyByFixed(
+      quantity,
+    );
+    _applyLineTaxMode(line);
+  }
+
   int _lineCustomTaxRateBasisPoints(_ReceiptLineItemEditor line) {
     final ratePercent = double.tryParse(
       line.customTaxRateController.text.trim().replaceAll('%', ''),
@@ -597,9 +616,17 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   }) {
     setState(() {
       _isCalculating = true;
-      line.lineTotalExTaxController.money = totals.excluding;
-      line.taxAmountController.money = totals.tax;
-      line.lineTotalIncTaxController.money = totals.including;
+      // Keep the user's text and caret, including intermediate values such
+      // as "12.". Only the derived amounts should be formatted here.
+      if (line.totalBasis != ReceiptTotalBasis.excludingTax) {
+        line.lineTotalExTaxController.money = totals.excluding;
+      }
+      if (line.taxMode != _ReceiptTaxMode.directEntry) {
+        line.taxAmountController.money = totals.tax;
+      }
+      if (line.totalBasis != ReceiptTotalBasis.includingTax) {
+        line.lineTotalIncTaxController.money = totals.including;
+      }
       _isCalculating = false;
     });
   }
@@ -755,13 +782,19 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
               controller: line.quantityController,
               labelText: 'Quantity',
               required: true,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
+              onChanged: (_) => _recalculateLinePrice(line),
             ),
             const SizedBox(height: 10),
             HMBMoneyField(
               controller: line.unitPriceController,
-              labelText: 'Unit Price',
+              labelText: 'Unit Price Excl. Tax',
               fieldName: 'Unit Price',
               nonZero: false,
+              onChanged: (_) => _recalculateLinePrice(line),
             ),
             const SizedBox(height: 10),
             HMBMoneyField(
@@ -1423,8 +1456,9 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     required MaterialPrice price,
     required Money lineTotalExTax,
   }) async {
-    final exactUnitCost = _absoluteMoney(lineTotalExTax)
-        .divideByFixed(price.quantity);
+    final exactUnitCost = _absoluteMoney(
+      lineTotalExTax,
+    ).divideByFixed(price.quantity);
     final exactPrice = price.mode == MaterialPriceEntryMode.packages
         ? MaterialPrice.packages(
             packageCount: price.quantity,
@@ -1478,8 +1512,9 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     if (line.unitPrice.isNonZero) {
       return _absoluteMoney(line.unitPrice);
     }
-    return _absoluteMoney(line.lineTotalExTax)
-        .divideByFixed(_parsePositiveFixed(line.quantity.toString()));
+    return _absoluteMoney(
+      line.lineTotalExTax,
+    ).divideByFixed(_parsePositiveFixed(line.quantity.toString()));
   }
 
   Fixed _parsePositiveFixed(String value) {
@@ -1546,9 +1581,12 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     final warnings = <String>[
       ...changes,
       ...billedWarnings,
-      if (matchedLines.isEmpty && _selectedJob.jobId != null) '''This receipt is linked only to a job. It will not be added to an invoice; match its lines to Task Items to bill them.''',
-      if (matchedLines.isEmpty && _selectedJob.jobId == null) '''This receipt is linked to neither a Task Item nor a job. It will be saved for bookkeeping but will not be billed.''',
-      if (matchedLines.isNotEmpty && _jobAllocations.isNotEmpty) '''Job allocations are bookkeeping only. Only matched Task Items can flow through to an invoice.''',
+      if (matchedLines.isEmpty && _selectedJob.jobId != null)
+        '''This receipt is linked only to a job. It will not be added to an invoice; match its lines to Task Items to bill them.''',
+      if (matchedLines.isEmpty && _selectedJob.jobId == null)
+        '''This receipt is linked to neither a Task Item nor a job. It will be saved for bookkeeping but will not be billed.''',
+      if (matchedLines.isNotEmpty && _jobAllocations.isNotEmpty)
+        '''Job allocations are bookkeeping only. Only matched Task Items can flow through to an invoice.''',
     ];
     if (warnings.isEmpty) {
       return true;
