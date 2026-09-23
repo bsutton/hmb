@@ -20,6 +20,7 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/types.dart';
 import '../../../util/flutter/hmb_theme.dart';
+import '../hmb_button.dart';
 import '../layout/layout.g.dart';
 import '../layout/surface.dart';
 import 'hmb_droplist_dialog.dart';
@@ -33,6 +34,7 @@ class HMBDroplist<T> extends StatefulWidget {
   final void Function(T?) onChanged;
   final String title;
   final AsyncVoidCallback? onAdd;
+  final String? addLabel;
   final Widget Function(BuildContext context, VoidCallback onChange)?
   filterSheetBuilder;
   final VoidCallback? onFilterReset;
@@ -56,6 +58,7 @@ class HMBDroplist<T> extends StatefulWidget {
     required this.title,
     this.formatSelection,
     this.onAdd,
+    this.addLabel,
     this.filterSheetBuilder,
     this.onFilterReset,
     this.isFilterActive,
@@ -89,8 +92,12 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
   Future<void> _handleAdd() async {
     if (widget.onAdd != null) {
       await widget.onAdd!();
-      _selectedItem = await widget.selectedItem();
-      setState(() {});
+      final selected = await widget.selectedItem();
+      if (!mounted) {
+        return;
+      }
+      setState(() => _selectedItem = selected);
+      _formFieldKey.currentState?.didChange(selected);
     }
   }
 
@@ -146,7 +153,6 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
                   title: widget.title,
                   selectedItem: _selectedItem,
                   allowClear: !widget.required,
-                  onAdd: widget.onAdd != null ? _handleAdd : null,
                   filterSheetBuilder: widget.filterSheetBuilder,
                   onFilterReset: widget.onFilterReset,
                   isFilterActive: widget.isFilterActive,
@@ -198,6 +204,11 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
               ),
             ),
           ),
+          if (widget.onAdd != null)
+            HMBActionLink(
+              label: widget.addLabel ?? 'Add ${widget.title}',
+              onPressed: _handleAdd,
+            ),
           if (state.hasError)
             Padding(
               padding: const EdgeInsets.only(top: 4, left: 8),

@@ -290,3 +290,24 @@ class HMBLinkButton extends StatelessWidget {
     await launchUrl(uri);
   }
 }
+
+/// A shared underlined action beneath a selection field.
+class HMBActionLink extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+
+  const HMBActionLink({
+    required this.label,
+    required this.onPressed,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) => TextButton(
+    onPressed: onPressed,
+    child: Text(
+      label,
+      style: const TextStyle(decoration: TextDecoration.underline),
+    ),
+  );
+}

@@ -118,6 +118,7 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
     format: (jc) => '${jc.job!.summary}\n${jc.customer?.name ?? ''}',
     required: widget.required,
     onAdd: widget.showAdd ? _addJob : null,
+    addLabel: 'Add Job',
     filterSheetBuilder: widget.items == null ? _buildFilterSheet : null,
     onFilterReset: widget.items == null ? _resetFilters : null,
     isFilterActive: widget.items == null ? _isFilterActive : null,

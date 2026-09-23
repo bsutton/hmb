@@ -22,7 +22,6 @@ import '../../../entity/customer.dart';
 import '../../../entity/job.dart';
 import '../../../entity/site.dart';
 import '../../crud/site/edit_site_screen.dart';
-import '../icons/hmb_add_button.dart';
 import 'hmb_droplist.dart';
 
 /// Allows the user to select a Primary Site from the sites
@@ -108,20 +107,15 @@ class HMBSelectSiteState extends State<HMBSelectSite> {
     if (widget.customer == null) {
       return const Center(child: Text('Sites: Select a customer first.'));
     } else {
-      return Row(
-        children: [
-          Expanded(
-            child: HMBDroplist<Site>(
-              title: 'Site',
-              selectedItem: _getInitialSite,
-              onChanged: _onSiteChanged,
-              items: _getSites,
-              format: (site) => site.abbreviated(),
-              required: false,
-            ),
-          ),
-          HMBButtonAdd(enabled: true, onAdd: _addSite),
-        ],
+      return HMBDroplist<Site>(
+        title: 'Site',
+        selectedItem: _getInitialSite,
+        onChanged: _onSiteChanged,
+        items: _getSites,
+        format: (site) => site.abbreviated(),
+        required: false,
+        onAdd: _addSite,
+        addLabel: 'Add Site',
       );
     }
   }

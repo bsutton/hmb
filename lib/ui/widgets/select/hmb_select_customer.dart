@@ -17,7 +17,6 @@ import 'package:material_ui/material_ui.dart';
 import '../../../dao/dao_customer.dart';
 import '../../../entity/customer.dart';
 import '../../crud/customer/edit_customer_screen.dart';
-import '../icons/hmb_add_button.dart';
 import 'hmb_droplist.dart';
 
 class HMBSelectCustomer extends StatefulWidget {
@@ -68,22 +67,14 @@ class HMBSelectCustomerState extends State<HMBSelectCustomer> {
   }
 
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: HMBDroplist<Customer>(
-          title: 'Customer',
-          selectedItem: _getInitialCustomer,
-          onChanged: _onCustomerChanged,
-          items: _getCustomers,
-          format: (customer) => customer.name,
-          onAdd: widget.showAdd ? _addCustomer : null,
-          required: widget.required,
-        ),
-      ),
-      if (widget.showAdd)
-        Center(child: HMBButtonAdd(enabled: true, onAdd: _addCustomer)),
-    ],
+  Widget build(BuildContext context) => HMBDroplist<Customer>(
+    title: 'Customer',
+    selectedItem: _getInitialCustomer,
+    onChanged: _onCustomerChanged,
+    items: _getCustomers,
+    format: (customer) => customer.name,
+    onAdd: widget.showAdd ? _addCustomer : null,
+    required: widget.required,
   );
 }
 

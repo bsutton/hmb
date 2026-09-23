@@ -33,6 +33,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.add), findsNothing);
+    expect(find.text('Add Job'), findsNothing);
   });
 
   testWidgets('can hide add button in selection dialog', (tester) async {
@@ -54,9 +55,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byIcon(Icons.add), findsNothing);
+    expect(find.text('Add Job'), findsNothing);
   });
 
-  testWidgets('shows add button by default in selection dialog', (
+  testWidgets('shows one add link beneath the field, not in the dialog', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -66,11 +68,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Add Job'), findsOneWidget);
     await tester.tap(find.text('Select a Job'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.byIcon(Icons.add), findsOneWidget);
+    expect(find.byIcon(Icons.add), findsNothing);
+    expect(
+      find.descendant(of: find.byType(Dialog), matching: find.text('Add Job')),
+      findsNothing,
+    );
   });
 
   testWidgets('shows active filter icon by default in selection dialog', (

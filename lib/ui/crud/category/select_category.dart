@@ -16,7 +16,6 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../dao/dao_category.dart';
 import '../../../entity/category.dart';
-import '../../widgets/icons/hmb_add_button.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import 'edit_category_screen.dart';
 
@@ -64,19 +63,13 @@ class SelectCategoryState extends State<SelectCategory> {
   }
 
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: HMBDroplist<Category>(
-          title: 'Category',
-          selectedItem: _getInitialCategory,
-          onChanged: _onCategoryChanged,
-          items: _getCategories,
-          format: (category) => category.name,
-        ),
-      ),
-      Center(child: HMBButtonAdd(enabled: true, onAdd: _addCategory)),
-    ],
+  Widget build(BuildContext context) => HMBDroplist<Category>(
+    title: 'Category',
+    selectedItem: _getInitialCategory,
+    onChanged: _onCategoryChanged,
+    items: _getCategories,
+    format: (category) => category.name,
+    onAdd: _addCategory,
   );
 }
 

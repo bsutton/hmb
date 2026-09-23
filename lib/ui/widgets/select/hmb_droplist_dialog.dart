@@ -16,7 +16,6 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../entity/entity.g.dart';
-import '../../../util/dart/types.dart';
 import '../../../util/flutter/hmb_theme.dart';
 import '../icons/hmb_clear_icon.dart';
 import '../icons/hmb_close_icon.dart';
@@ -31,7 +30,6 @@ class HMBDroplistDialog<T> extends StatefulWidget {
   final String title;
   final T? selectedItem;
   final bool allowClear;
-  final AsyncVoidCallback? onAdd; // Optional "Add" button callback
   final Widget Function(BuildContext context, VoidCallback onChange)?
   filterSheetBuilder;
   final VoidCallback? onFilterReset;
@@ -47,7 +45,6 @@ class HMBDroplistDialog<T> extends StatefulWidget {
     required this.title,
     this.selectedItem,
     this.allowClear = false,
-    this.onAdd, // Optional "Add" button callback
     this.filterSheetBuilder,
     this.onFilterReset,
     this.isFilterActive,
@@ -137,13 +134,6 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
       return item.modifiedDate;
     }
     return null;
-  }
-
-  Future<void> _handleAdd() async {
-    if (widget.onAdd != null) {
-      await widget.onAdd!();
-      unawaited(_loadItems());
-    }
   }
 
   Future<void> _showFilterSheet() async {
@@ -327,15 +317,6 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
               onChanged: _onFilterChanged,
             ),
           ),
-          if (widget.onAdd != null)
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: HMBButtonAdd(
-                enabled: true,
-                onAdd: _handleAdd,
-                hint: 'Add ${widget.title}',
-              ),
-            ),
           if (widget.filterSheetBuilder != null)
             Padding(
               padding: const EdgeInsets.only(left: 8),

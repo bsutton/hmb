@@ -17,7 +17,6 @@ import 'package:material_ui/material_ui.dart';
 import '../../../dao/dao_manufacturer.dart';
 import '../../../entity/manufacturer.dart';
 import '../../crud/manufacturer/edit_manufacturer_screen.dart';
-import '../icons/hmb_add_button.dart';
 import 'hmb_droplist.dart';
 
 class HMBSelectManufacturer extends StatefulWidget {
@@ -66,20 +65,15 @@ class HMBSelectManufacturerState extends State<HMBSelectManufacturer> {
   }
 
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: HMBDroplist<Manufacturer>(
-          title: widget.isRequired ? 'Manufacturer *' : 'Manufacturer',
-          selectedItem: _getInitialManufacturer,
-          onChanged: _onManufacturerChanged,
-          items: _getManufacturers,
-          format: (manufacturer) => manufacturer.name,
-          required: widget.isRequired,
-        ),
-      ),
-      Center(child: HMBButtonAdd(enabled: true, onAdd: _addManufacturer)),
-    ],
+  Widget build(BuildContext context) => HMBDroplist<Manufacturer>(
+    title: widget.isRequired ? 'Manufacturer *' : 'Manufacturer',
+    selectedItem: _getInitialManufacturer,
+    onChanged: _onManufacturerChanged,
+    items: _getManufacturers,
+    format: (manufacturer) => manufacturer.name,
+    required: widget.isRequired,
+    onAdd: _addManufacturer,
+    addLabel: 'Add Manufacturer',
   );
 }
 
