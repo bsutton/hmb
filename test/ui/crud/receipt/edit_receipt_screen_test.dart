@@ -195,6 +195,38 @@ void main() {
     await tester.pump(const Duration(seconds: 11));
   });
 
+  testWidgets('single job has no duplicate selector and can split costs', (
+    tester,
+  ) async {
+    await openLines(tester, withJobs: true);
+    for (var step = 0; step < 2; step++) {
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+    }
+    await waitFor(tester, find.text('Split Across Jobs'));
+    expect(find.text('Allocated Job'), findsNothing);
+    expect(find.textContaining('full receipt amount'), findsOneWidget);
+    await tester.ensureVisible(find.text('Split Across Jobs'));
+    await tester.tap(find.text('Split Across Jobs'));
+    await waitFor(tester, find.text('Allocated Job'));
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is HMBSelectJob && widget.title == 'Allocated Job',
+      ),
+      findsNWidgets(2),
+    );
+    expect(find.text('Add Allocation'), findsOneWidget);
+    final remove = find.byTooltip('Remove job allocation').last;
+    await tester.ensureVisible(remove);
+    await tester.pumpAndSettle();
+    await tester.tap(remove);
+    await tester.pumpAndSettle();
+    expect(find.text('Allocated Job'), findsNothing);
+    expect(find.text('Split Across Jobs'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 11));
+  });
+
   testWidgets('receipt line decimals survive tax recalculation', (
     tester,
   ) async {

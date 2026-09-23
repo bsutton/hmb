@@ -97,6 +97,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   var _receiptJobIdsByTaskItemId = <int, int>{};
   var _receiptMatchContexts = <int, ReceiptTaskItemContext>{};
   final _jobAllocations = <_ReceiptJobAllocationEditor>[];
+  var _splitCosts = false;
   final _lineItems = <_ReceiptLineItemEditor>[];
   Task? _lastCreatedLineTask;
 
@@ -181,6 +182,13 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         ),
       );
     }
+    _splitCosts =
+        _jobAllocations.length > 1 ||
+        _jobAllocations.any(
+          (allocation) =>
+              allocation.jobId != _selectedJob.jobId ||
+              allocation.amount != (_totalExclCtrl.money ?? MoneyEx.zero),
+        );
     _matchFilterJob.jobId = _selectedJob.jobId;
     await _reloadLinkableTaskItems();
   }
@@ -356,8 +364,13 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
             _selectedJob.jobId = job?.id;
             _matchFilterJob.jobId = job?.id;
             if (job == null) {
+              for (final allocation in _jobAllocations) {
+                allocation.dispose();
+              }
               _jobAllocations.clear();
+              _splitCosts = false;
             } else if (_jobAllocations.length <= 1) {
+              _splitCosts = false;
               _jobAllocations
                 ..clear()
                 ..add(
@@ -901,6 +914,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
                     ),
               items: (filter) async => _filteredTaskItemsForLine(line, filter),
               onAdd: () => _createTaskItemForLine(line),
+              addLabel: 'Create Task Item',
               onChanged: (item) => _setLineMatch(line, item),
               format: _formatTaskItemMatch,
               formatSelection: (item) => item.description,
@@ -932,15 +946,6 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
                 ),
               ),
             const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: HMBButton.withIcon(
-                label: 'Create Task Item',
-                hint: 'Create a task item for this receipt line.',
-                icon: const Icon(Icons.add_task),
-                onPressed: () => _createTaskItemForLine(line),
-              ),
-            ),
             if (line.source != 'manual' || line.confidence > 0)
               Text(
                 '${line.source} confidence ${line.confidence}%',
@@ -1176,15 +1181,32 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         'Classify the receipt as overhead, or allocate it to one or more jobs.',
       ),
       const SizedBox(height: 8),
-      for (var i = 0; i < _jobAllocations.length; i++)
-        _buildJobAllocationRow(i),
+      if (_splitCosts)
+        for (var i = 0; i < _jobAllocations.length; i++)
+          _buildJobAllocationRow(i)
+      else
+        Text(
+          _selectedJob.jobId == null
+              ? 'No Primary Job selected. This receipt is overhead.'
+              : 'The full receipt amount is allocated to the Primary Job '
+                    'selected in Capture.',
+        ),
       HMBButton.withIcon(
         key: TestKeys.receiptAddJobAllocationButton,
-        label: 'Add Job',
-        hint: 'Allocate part of this receipt to another job.',
+        label: _splitCosts ? 'Add Allocation' : 'Split Across Jobs',
+        hint: 'Split the receipt cost between existing jobs.',
         icon: const Icon(Icons.add),
         onPressed: () {
           setState(() {
+            _splitCosts = true;
+            if (_jobAllocations.isEmpty) {
+              _jobAllocations.add(
+                _ReceiptJobAllocationEditor(
+                  jobId: _selectedJob.jobId,
+                  amount: _totalExclCtrl.money ?? MoneyEx.zero,
+                ),
+              );
+            }
             _jobAllocations.add(
               _ReceiptJobAllocationEditor(amount: MoneyEx.zero),
             );
@@ -1223,7 +1245,14 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
                   tooltip: 'Remove job allocation',
                   onPressed: () {
                     setState(() {
-                      _jobAllocations.removeAt(index);
+                      _jobAllocations.removeAt(index).dispose();
+                      if (_jobAllocations.length == 1 &&
+                          _jobAllocations.single.jobId != null) {
+                        _selectedJob.jobId = _jobAllocations.single.jobId;
+                        _matchFilterJob.jobId = _selectedJob.jobId;
+                        _syncSoleJobAllocation();
+                        _splitCosts = false;
+                      }
                     });
                   },
                   icon: const Icon(Icons.delete_outline),
