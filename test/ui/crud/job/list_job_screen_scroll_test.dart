@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/crud/base_full_screen/list_entity_screen.dart';
+import 'package:hmb/ui/crud/job/list_job_card.dart';
 import 'package:hmb/ui/crud/job/list_job_screen.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 import 'package:material_ui/material_ui.dart';
@@ -96,6 +97,47 @@ void main() {
     await _pumpUntilJobsLoad(tester);
     await tester.drag(find.byType(ListView), const Offset(0, -600));
     await tester.pump(const Duration(seconds: 1));
+    expect(tester.takeException(), isNull);
+    await _disposeHarness(tester);
+  });
+
+  testWidgets('scrolling back retains loaded job cards', (tester) async {
+    await tester.runAsync(() async {
+      for (var index = 0; index < 8; index++) {
+        await createJobWithCustomer(
+          billingType: BillingType.timeAndMaterial,
+          hourlyRate: MoneyEx.zero,
+          summary: 'Recent job $index',
+        );
+      }
+    });
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: JobListScreen())),
+    );
+    for (var attempt = 0; attempt < 40; attempt++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pump();
+    }
+    final card = find.byType(ListJobCard).first;
+    final originalState = tester.state(card);
+    final originalKey = tester.widget<ListJobCard>(card).key!;
+    final originalHeight = tester.getSize(card).height;
+    expect(originalHeight, greaterThan(200));
+    final controller =
+        tester.widget<ListView>(find.byType(ListView)).controller!
+          ..jumpTo(2500);
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 300)),
+    );
+    await tester.pump();
+    expect(originalState.mounted, isTrue);
+    controller.jumpTo(0);
+    await tester.pump();
+    expect(tester.state(find.byKey(originalKey)), same(originalState));
+    expect(tester.getSize(find.byKey(originalKey)).height, originalHeight);
     expect(tester.takeException(), isNull);
     await _disposeHarness(tester);
   });
