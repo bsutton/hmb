@@ -93,11 +93,7 @@ class _ListJobCardState extends DeferredState<ListJobCard>
     return DeferredBuilder(
       this,
       waitingBuilder: (_) => const SizedBox.shrink(),
-      builder: (context) => Surface(
-        padding: EdgeInsets.zero,
-        elevation: SurfaceElevation.e6,
-        child: _buildDetails(job.status),
-      ),
+      builder: (context) => _buildDetails(job.status),
     );
   }
 
