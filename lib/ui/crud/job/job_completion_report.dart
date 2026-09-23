@@ -434,11 +434,10 @@ Future<File> _generateJobCompletionReportPdf(
           pw.SizedBox(height: 8),
         ];
 
-        for (var i = 0; i < selection.tasks.length; i++) {
+        for (final reportTask in selection.tasks) {
           content.addAll(
             _buildTaskReportSection(
-              number: i + 1,
-              reportTask: selection.tasks[i],
+              reportTask: reportTask,
               photoPaths: photoPaths,
             ),
           );
@@ -542,7 +541,6 @@ pw.Widget _buildReportHeader({
 );
 
 List<pw.Widget> _buildTaskReportSection({
-  required int number,
   required _ReportTask reportTask,
   required Map<String, String> photoPaths,
 }) {
@@ -550,15 +548,12 @@ List<pw.Widget> _buildTaskReportSection({
   final widgets = <pw.Widget>[
     pw.Container(
       margin: const pw.EdgeInsets.only(bottom: 10),
-      padding: const pw.EdgeInsets.all(8),
-      decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: PdfColors.grey500),
-      ),
+      padding: const pw.EdgeInsets.symmetric(vertical: 8),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            '$number. ${task.name}',
+            task.name,
             style: const pw.TextStyle(
               fontSize: 14,
               fontWeight: pw.FontWeight.bold,
