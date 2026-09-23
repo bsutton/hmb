@@ -71,7 +71,7 @@ class DashboardState extends State<DashboardPage> with RouteAware {
     body: Align(
       alignment: Alignment.topCenter,
       child: Padding(
-        padding: const EdgeInsets.only(top: 16),
+        padding: const EdgeInsets.fromLTRB(12, 16, 12, 0),
         child: Column(
           children: [
             if (widget.header != null) widget.header!,
