@@ -69,7 +69,7 @@ class HMBTheme {
     );
     const border = OutlineInputBorder(
       borderRadius: BorderRadius.all(Radius.circular(controlRadius)),
-      borderSide: BorderSide(color: HMBColors.outline),
+      borderSide: BorderSide(color: HMBColors.fieldOutline),
     );
     final textTheme = base.textTheme.copyWith(
       headlineSmall: const TextStyle(
@@ -173,7 +173,9 @@ class HMBTheme {
         ),
         border: border,
         enabledBorder: border,
-        disabledBorder: border,
+        disabledBorder: border.copyWith(
+          borderSide: const BorderSide(color: HMBColors.outline),
+        ),
         focusedBorder: border.copyWith(
           borderSide: const BorderSide(color: HMBColors.primary, width: 2),
         ),
@@ -270,6 +272,7 @@ class HMBColors {
   static const onPrimary = Color(0xFF241331);
   static const primaryContainer = Color(0xFF3D2E51);
   static const outline = Color(0xFF414145);
+  static const fieldOutline = Color(0xFF929098);
   static const textSecondary = Color(0xFFB9B7BE);
   static const success = Color(0xFF8DCEA1);
   static const warning = Color(0xFFFFC477);
