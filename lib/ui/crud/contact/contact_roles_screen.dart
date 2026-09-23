@@ -7,18 +7,21 @@ import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/widgets.g.dart';
+import 'contact_role_usage_screen.dart';
 
 class ContactRoleSelector extends StatefulWidget {
   final int? roleId;
   final ValueChanged<ContactRole?> onChanged;
   final bool required;
   final String title;
+  final int? excludeRoleId;
 
   const ContactRoleSelector({
     required this.roleId,
     required this.onChanged,
     this.required = false,
     this.title = 'Default role',
+    this.excludeRoleId,
     super.key,
   });
 
@@ -70,6 +73,7 @@ class _ContactRoleSelectorState extends State<ContactRoleSelector> {
     items: (filter) async => (await DaoContactRole().getAll())
         .where(
           (role) =>
+              role.id != widget.excludeRoleId &&
               role.name.toLowerCase().contains((filter ?? '').toLowerCase()),
         )
         .toList(),
@@ -116,7 +120,25 @@ class _ContactRolesScreenState extends DeferredState<ContactRolesScreen> {
     });
   }
 
+  Future<void> _viewUsage(ContactRole role) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => ContactRoleUsageScreen(role: role)),
+    );
+    await _load();
+  }
+
   Future<void> _delete(ContactRole role) async {
+    final usage = await BlockingUI().runAndWait(
+      () => DaoContactRole().getUsage(role.id),
+    );
+    if (!mounted) {
+      return;
+    }
+    if (!usage.isEmpty) {
+      HMBToast.info('This role is in use. Review or reassign its uses first.');
+      await _viewUsage(role);
+      return;
+    }
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -174,7 +196,11 @@ class _ContactRolesScreenState extends DeferredState<ContactRolesScreen> {
           for (final role in _roles)
             ListTile(
               title: Text(role.name),
-              subtitle: Text(role.builtin ? 'Standard role' : 'Custom role'),
+              subtitle: HMBActionLink(
+                label: 'View usage',
+                onPressed: () => _viewUsage(role),
+              ),
+              onTap: () => _viewUsage(role),
               trailing: role.builtin
                   ? const Icon(Icons.lock_outline)
                   : Row(

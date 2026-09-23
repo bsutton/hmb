@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
+import 'package:hmb/dao/dao_contact_role.dart';
 import 'package:hmb/dao/dao_job_party.dart';
 import 'package:hmb/entity/contact_role.dart';
 import 'package:hmb/entity/entity.g.dart';
@@ -20,6 +21,7 @@ import 'package:hmb/util/dart/money_ex.dart';
 import 'package:hmb/util/flutter/hmb_theme.dart';
 import 'package:june/june.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:toastification/toastification.dart';
 
 import '../../../database/management/db_utility_test_helper.dart';
 import '../../ui_test_helpers.dart';
@@ -361,6 +363,70 @@ void main() {
         isNot(contains(job.contactId)),
       );
     });
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('role usage reviews and reassigns contacts and jobs', (
+    tester,
+  ) async {
+    final job = await seed(tester);
+    late int source;
+    await tester.runAsync(() async {
+      source = await DaoContactRole().create('Old dispatch');
+      final contact = (await DaoContact().getById(job.contactId))!
+        ..defaultRoleId = source;
+      await DaoContact().update(contact);
+      await DaoJobParty().save(
+        jobId: job.id,
+        contactId: contact.id,
+        roleId: source,
+      );
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (_, child) => ToastificationWrapper(
+          child: Stack(children: [child!, const BlockingOverlay()]),
+        ),
+        home: const ContactRolesScreen(),
+      ),
+    );
+    await pumpUntil(tester, find.text('Add role type'));
+    await tester.scrollUntilVisible(find.text('Old dispatch'), 200);
+    await tester.tap(find.text('Old dispatch'));
+    await pumpUntil(
+      tester,
+      find.text('Contact defaults: 1 · Job assignments: 1'),
+    );
+    expect(find.text('Contacts using this default role'), findsOneWidget);
+    final picker = tester.widget<ContactRoleSelector>(
+      find.byType(ContactRoleSelector),
+    );
+    expect(picker.excludeRoleId, source);
+    picker.onChanged(
+      const ContactRole(
+        id: ContactRole.site,
+        name: 'Site Contact',
+        builtin: true,
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.text('Reassign all uses'));
+    await pumpUntil(tester, find.text('Reassign all uses?'));
+    await tester.tap(find.text('Reassign'));
+    await pumpUntil(
+      tester,
+      find.text('Contact defaults: 0 · Job assignments: 0'),
+    );
+    await tester.runAsync(() async {
+      expect(
+        (await DaoContact().getById(job.contactId))!.defaultRoleId,
+        ContactRole.site,
+      );
+      expect((await DaoContactRole().getUsage(source)).isEmpty, isTrue);
+    });
+    toastification.dismissAll(delayForAnimation: false);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
 

@@ -131,8 +131,12 @@ class DaoJobParty {
     }
   }
 
-  Future<void> delete(int jobId, int assignmentId) async {
-    await _db.transaction((txn) async {
+  Future<void> delete(
+    int jobId,
+    int assignmentId, {
+    Transaction? transaction,
+  }) async {
+    Future<void> deleteInTransaction(Transaction txn) async {
       final rows = await txn.query(
         'job_party',
         where: 'id = ? AND job_id = ?',
@@ -152,8 +156,14 @@ class DaoJobParty {
         whereArgs: [assignmentId, jobId],
       );
       await _projectLegacyFields(jobId, txn);
-    });
-    Dao.notifier(DaoJob(), jobId);
+    }
+
+    if (transaction != null) {
+      await deleteInTransaction(transaction);
+    } else {
+      await _db.transaction(deleteInTransaction);
+      Dao.notifier(DaoJob(), jobId);
+    }
   }
 
   /// Compatibility boundary for existing job creators and callers. Only
