@@ -51,6 +51,7 @@ import 'dimensions.dart';
 class TaskItemEditScreen extends StatefulWidget {
   final Task? parent;
   final TaskItem? taskItem;
+  final bool forEstimate;
   final BillingType billingType; // Fixed Price | Time and Materials
   final Money hourlyRate;
 
@@ -60,6 +61,7 @@ class TaskItemEditScreen extends StatefulWidget {
     required this.hourlyRate,
     super.key,
     this.taskItem,
+    this.forEstimate = false,
   });
 
   @override
@@ -112,6 +114,8 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     _purposeController = TextEditingController(text: currentEntity?.purpose);
     _estimatedPriceController = MaterialPriceEditingController(
       price: currentEntity?.estimatedPrice,
+      costRequired: widget.forEstimate,
+      defaultQuantity: Fixed.one,
     );
     _actualPriceController = MaterialPriceEditingController(
       price: currentEntity?.actualPrice ?? currentEntity?.estimatedPrice,
@@ -344,6 +348,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       HMBTextField(
         controller: _estimatedLabourHoursController,
         labelText: 'Estimated Hours',
+        required: widget.forEstimate,
         keyboardType: TextInputType.number,
         enabled: _chargeMode != ChargeMode.userDefined,
         onChanged: (value) {
@@ -355,6 +360,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       HMBTextField(
         controller: _estimatedLabourCostController,
         labelText: 'Estimated Cost',
+        required: widget.forEstimate,
         keyboardType: TextInputType.number,
         enabled: _chargeMode != ChargeMode.userDefined,
         onChanged: (value) =>

@@ -13,18 +13,26 @@ import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/layout/layout.g.dart';
 
 class MaterialPriceEditingController {
-  MaterialPriceEditingController({MaterialPrice? price})
-    : mode = price?.mode ?? MaterialPriceEntryMode.items,
-      quantity = TextEditingController(),
-      unitCost = TextEditingController(),
-      itemsPerPackage = TextEditingController() {
+  MaterialPriceEditingController({
+    MaterialPrice? price,
+    this.costRequired = true,
+    Fixed? defaultQuantity,
+  }) : mode = price?.mode ?? MaterialPriceEntryMode.items,
+       quantity = TextEditingController(),
+       unitCost = TextEditingController(),
+       itemsPerPackage = TextEditingController() {
     if (price == null) {
+      quantity.text = defaultQuantity?.compact() ?? '';
       itemsPerPackage.text = '1';
     } else {
       _applyPrice(price);
     }
     _rememberCurrentDraft();
   }
+
+  /// Optional costs preserve the entered quantity with a zero estimate until
+  /// pricing is known. Invalid or negative costs are never accepted.
+  final bool costRequired;
 
   MaterialPriceEntryMode mode;
   final TextEditingController quantity;
@@ -36,7 +44,7 @@ class MaterialPriceEditingController {
   MaterialPrice? get value {
     final parsedQuantity = Fixed.tryParse(quantity.text, decimalDigits: 3);
     final parsedUnitCost = Money.tryParse(
-      unitCost.text,
+      !costRequired && unitCost.text.trim().isEmpty ? '0' : unitCost.text,
       isoCode: 'AUD',
       decimalDigits: 2,
     );
@@ -201,6 +209,9 @@ class _MaterialPriceEditorState extends State<MaterialPriceEditor> {
   }
 
   String? _nonNegativeMoney(String? value) {
+    if (!widget.controller.costRequired && (value?.trim().isEmpty ?? true)) {
+      return null;
+    }
     final parsed = Money.tryParse(
       value ?? '',
       isoCode: 'AUD',
@@ -236,9 +247,11 @@ class _MaterialPriceEditorState extends State<MaterialPriceEditor> {
           );
     final costField = HMBTextField(
       controller: controller.unitCost,
-      labelText: isPackages ? 'Cost per package' : 'Cost per item',
+      labelText:
+          '${isPackages ? 'Cost per package' : 'Cost per item'}'
+          '${controller.costRequired ? '' : ' (optional)'}',
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      required: true,
+      required: controller.costRequired,
       validator: _nonNegativeMoney,
       onChanged: (_) => _fieldChanged(),
     );

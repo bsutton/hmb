@@ -669,6 +669,7 @@ class _JobEstimateBuilderScreenState
         builder: (context) => FutureBuilderEx(
           future: getTaskAndRate(task),
           builder: (context, taskAndRate) => TaskItemEditScreen(
+            forEstimate: true,
             parent: task,
             taskItem: newItem,
             billingType:
@@ -691,6 +692,7 @@ class _JobEstimateBuilderScreenState
         builder: (context) => FutureBuilderEx(
           future: getTaskAndRate(task),
           builder: (context, taskAndRate) => TaskItemEditScreen(
+            forEstimate: true,
             parent: task,
             taskItem: item,
             billingType:
