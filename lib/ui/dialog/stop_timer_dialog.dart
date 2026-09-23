@@ -22,7 +22,6 @@ import '../../util/dart/format.dart';
 import '../widgets/fields/hmb_text_area.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_date_time_picker.dart';
-import '../widgets/hmb_toast.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/text/hmb_text.dart';
 import 'hmb_dialog.dart';
@@ -63,37 +62,47 @@ class StopTimerDialog extends StatefulWidget {
 }
 
 class _StopTimerDialogState extends State<StopTimerDialog> {
-  late DateTime selectedDate;
-  late TimeOfDay selectedTime;
-  late Duration duration;
+  late DateTime _selectedStop;
+  late final TextEditingController _noteController;
+  final _noteFocusNode = FocusNode();
+
+  Duration get _duration =>
+      _selectedStop.difference(widget.timeEntry.startTime);
+
+  DateTime _atMinute(DateTime value) =>
+      DateTime(value.year, value.month, value.day, value.hour, value.minute);
 
   @override
   void initState() {
     super.initState();
-    selectedDate = widget.stopTime;
-    selectedTime = TimeOfDay.fromDateTime(widget.stopTime);
-    duration = selectedDate.difference(widget.timeEntry.startTime);
+    _selectedStop = _atMinute(widget.stopTime.toLocal());
+    final start = widget.timeEntry.startTime.toLocal();
+    if (_selectedStop.isBefore(start)) {
+      // A handoff can start a task after the rounded current stop time.
+      // Suggest the earliest selectable minute that is not before its start.
+      final startMinute = _atMinute(start);
+      _selectedStop = startMinute.isBefore(start)
+          ? startMinute.add(const Duration(minutes: 1))
+          : startMinute;
+    }
+    _noteController = TextEditingController(text: widget.timeEntry.note ?? '');
   }
 
-  void _updateDuration() {
-    final stopDateTime = DateTime(
-      selectedDate.year,
-      selectedDate.month,
-      selectedDate.day,
-      selectedTime.hour,
-      selectedTime.minute,
-    );
-    setState(() {
-      duration = stopDateTime.difference(widget.timeEntry.startTime);
-    });
+  @override
+  void dispose() {
+    _noteController.dispose();
+    _noteFocusNode.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final noteController = TextEditingController();
-    final noteFocusNode = FocusNode();
-
-    noteController.text = widget.timeEntry.note ?? '';
+    final duration = _duration;
+    final magnitude = duration.abs();
+    final formattedDuration = formatDuration(
+      magnitude,
+      seconds: magnitude > Duration.zero && magnitude.inMinutes == 0,
+    );
 
     return HMBDialog(
       title: const HMBRow(
@@ -117,43 +126,36 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
           HMBDateTimeField(
             label: 'Stop:',
             mode: HMBDateTimeFieldMode.dateAndTime,
-            initialDateTime: selectedDate,
-            onChanged: (date) {
-              setState(() {
-                selectedDate = date;
-                selectedTime = TimeOfDay.fromDateTime(date);
-              });
-              _updateDuration();
-            },
+            initialDateTime: _selectedStop,
+            onChanged: (date) => setState(() {
+              _selectedStop = _atMinute(date.toLocal());
+            }),
           ),
-          HMBText('Duration: ${duration.inHours}h ${duration.inMinutes % 60}m'),
+          HMBText(
+            'Duration: ${duration.isNegative ? '-' : ''}$formattedDuration',
+          ),
+          if (duration.isNegative)
+            Text(
+              'Stop time must be at or after the start time.',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           HMBTextArea(
-            controller: noteController,
-            focusNode: noteFocusNode,
+            controller: _noteController,
+            focusNode: _noteFocusNode,
             labelText: 'Note',
           ),
         ],
       ),
       actions: [
-        HMBButton(
-          label: 'Cancel',
-          hint: "Don't stop the timer",
-          onPressed: () => Navigator.pop(context),
-        ),
-        HMBButton(
-          label: 'OK',
-          hint: 'Start the timer',
-          onPressed: () async {
-            final stopDateTime = DateTime(
-              selectedDate.year,
-              selectedDate.month,
-              selectedDate.day,
-              selectedTime.hour,
-              selectedTime.minute,
-            );
-
+        HMBSaveCancelButtons(
+          saveLabel: 'Stop timer',
+          saveHint: 'Stop this task timer',
+          cancelHint: 'Keep the timer running',
+          saveEnabled: !duration.isNegative,
+          onCancel: () => Navigator.pop(context),
+          onSave: () async {
+            final duration = _duration;
             if (duration.isNegative) {
-              HMBToast.error('The duration is negative');
               return;
             }
             if (duration.inHours > TimeEntry.longDurationHours) {
@@ -163,12 +165,11 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
               }
             }
 
-            final note = noteController.text;
             final timeEntry = widget.timeEntry.copyWith(
               taskId: widget.task.id,
               startTime: widget.timeEntry.startTime,
-              endTime: stopDateTime,
-              note: note,
+              endTime: _selectedStop,
+              note: _noteController.text,
             );
 
             if (context.mounted) {
