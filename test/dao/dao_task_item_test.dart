@@ -19,6 +19,29 @@ void main() {
     await tearDownTestDb();
   });
 
+  test(
+    'shopping completion preserves barcode text and leading zeros',
+    () async {
+      final item = await _insertTaskItemForJob(
+        jobStatus: JobStatus.inProgress,
+        taskStatus: TaskStatus.inProgress,
+        itemType: TaskItemType.materialsBuy,
+        completed: false,
+      );
+      item.barcode = '0012345678905';
+      await DaoTaskItem().markAsCompleted(
+        item: item,
+        price: item.estimatedPrice!,
+      );
+      final saved = (await DaoTaskItem().getById(item.id))!;
+      expect(saved.barcode, '0012345678905');
+      expect(saved.completed, isTrue);
+      expect(saved.copyWith(description: 'Updated').barcode, saved.barcode);
+      await DaoTaskItem().update(saved.copyWith(barcode: ''));
+      expect((await DaoTaskItem().getById(item.id))!.barcode, isEmpty);
+    },
+  );
+
   test('shopping history ranges calculate rolling cutoffs', () {
     final reference = DateTime(2026, 7, 24, 12);
 

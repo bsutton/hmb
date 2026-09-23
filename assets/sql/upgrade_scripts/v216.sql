@@ -1,0 +1,1 @@
+ALTER TABLE task_item ADD COLUMN barcode TEXT NOT NULL DEFAULT '';

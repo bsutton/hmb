@@ -119,6 +119,7 @@ class TaskItem extends Entity<TaskItem> {
   final Fixed dimension3;
   final Units? units;
   final String url;
+  String barcode;
 
   // ---- Supplier / labour / returns -----------------------------------------
 
@@ -160,6 +161,7 @@ class TaskItem extends Entity<TaskItem> {
     required this.actualPrice,
     required this.sourceTaskItemId,
     required this.isReturn,
+    this.barcode = '',
   }) : _totalLineCharge = totalLineCharge,
        super();
 
@@ -188,6 +190,7 @@ class TaskItem extends Entity<TaskItem> {
     MaterialPrice? actualPrice,
     int? sourceTaskItemId,
     bool isReturn = false,
+    String barcode = '',
   }) {
     assert(
       (chargeMode == ChargeMode.userDefined && totalLineCharge != null) ||
@@ -217,6 +220,7 @@ class TaskItem extends Entity<TaskItem> {
       dimension3: dimension3,
       units: units,
       url: url,
+      barcode: barcode,
       purpose: purpose,
       labourEntryMode: labourEntryMode,
       invoiceLineId: invoiceLineId,
@@ -247,6 +251,7 @@ class TaskItem extends Entity<TaskItem> {
     Fixed? dimension3,
     Units? units,
     String? url,
+    String? barcode,
     String? purpose,
     int? supplierId,
     LabourEntryMode? labourEntryMode,
@@ -284,6 +289,7 @@ class TaskItem extends Entity<TaskItem> {
       supplierId: supplierId ?? this.supplierId,
       labourEntryMode: labourEntryMode ?? this.labourEntryMode,
       url: url ?? this.url,
+      barcode: barcode ?? this.barcode,
       actualPrice: clearActualPrice ? null : actualPrice ?? this.actualPrice,
       sourceTaskItemId: sourceTaskItemId ?? this.sourceTaskItemId,
       isReturn: isReturn ?? this.isReturn,
@@ -333,6 +339,7 @@ class TaskItem extends Entity<TaskItem> {
         Units.fromName(map['units'] as String? ?? Units.defaultUnits.name) ??
         Units.defaultUnits,
     url: map['url'] as String? ?? '',
+    barcode: map['barcode'] as String? ?? '',
     purpose: map['purpose'] as String? ?? '',
     supplierId: map['supplier_id'] as int?,
     labourEntryMode: LabourEntryMode.fromString(
@@ -438,6 +445,7 @@ class TaskItem extends Entity<TaskItem> {
     'actual_items_per_package': null,
     ...?actualPrice?.toMap(prefix: 'actual'),
     'source_task_item_id': sourceTaskItemId,
+    'barcode': barcode,
     'is_return': isReturn ? 1 : 0,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
@@ -473,6 +481,7 @@ class TaskItem extends Entity<TaskItem> {
       supplierId: supplierId,
       actualPrice: returnPrice,
       sourceTaskItemId: id,
+      barcode: barcode,
       isReturn: true,
     );
   }

@@ -20,6 +20,7 @@ import '../../dao/dao.g.dart';
 import '../../entity/supplier.dart';
 import '../../entity/task_item_type.dart';
 import '../crud/tool/tool.g.dart';
+import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/widgets.g.dart';
@@ -32,6 +33,7 @@ Future<void> markAsCompleted(
   final taskItem = itemContext.taskItem;
   final itemType = taskItem.itemType;
   final isLabour = itemType == TaskItemType.labour;
+  final barcodeController = TextEditingController(text: taskItem.barcode);
   final priceController = MaterialPriceEditingController(
     price: taskItem.actualPrice ?? taskItem.estimatedPrice,
   );
@@ -43,6 +45,8 @@ Future<void> markAsCompleted(
   }
 
   if (!context.mounted) {
+    barcodeController.dispose();
+    priceController.dispose();
     return;
   }
   final confirmed = await showDialog<bool>(
@@ -76,6 +80,13 @@ Future<void> markAsCompleted(
               ],
 
               if (!isLabour) ...[
+                HMBTextField(
+                  controller: barcodeController,
+                  labelText: 'Barcode (optional)',
+                ),
+                const Text(
+                  'Enter, paste or scan with a connected barcode reader.',
+                ),
                 HMBDroplist<Supplier>(
                   title: 'Supplier',
                   items: (filter) => DaoSupplier().getByFilter(filter),
@@ -121,9 +132,11 @@ Future<void> markAsCompleted(
     } else {
       final price = priceController.value;
       if (price == null) {
+        barcodeController.dispose();
         priceController.dispose();
         return;
       }
+      taskItem.barcode = barcodeController.text.trim();
       await DaoTaskItem().markAsCompleted(item: taskItem, price: price);
 
       taskItem.supplierId = selectedSupplier?.id;
@@ -172,4 +185,5 @@ Future<void> markAsCompleted(
     }
   }
   priceController.dispose();
+  barcodeController.dispose();
 }

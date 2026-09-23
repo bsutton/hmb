@@ -39,6 +39,7 @@ Future<void> showShoppingItemDialog(
   final item = ctx.taskItem;
   final descriptionController = TextEditingController(text: item.description);
   final purposeController = TextEditingController(text: item.purpose);
+  final barcodeController = TextEditingController(text: item.barcode);
   final priceController = MaterialPriceEditingController(
     price: item.completed
         ? item.actualPrice ?? item.estimatedPrice
@@ -96,6 +97,10 @@ Future<void> showShoppingItemDialog(
                       labelText: 'Purpose',
                       maxLines: 2,
                     ),
+                    HMBTextField(
+                      controller: barcodeController,
+                      labelText: 'Barcode (optional)',
+                    ),
                     if (Strings.isNotBlank(url)) ...[
                       InkWell(
                         onTap: () async {
@@ -150,6 +155,7 @@ Future<void> showShoppingItemDialog(
                 final updated = item.copyWith(
                   description: descriptionController.text,
                   purpose: purposeController.text,
+                  barcode: barcodeController.text.trim(),
                   supplierId: selectedSupplier?.id,
                   estimatedPrice: item.completed ? null : price,
                   actualPrice: item.completed ? price : null,
@@ -173,6 +179,7 @@ Future<void> showShoppingItemDialog(
   } finally {
     descriptionController.dispose();
     purposeController.dispose();
+    barcodeController.dispose();
     priceController.dispose();
   }
 }
