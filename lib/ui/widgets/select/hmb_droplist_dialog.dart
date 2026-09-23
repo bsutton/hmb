@@ -181,7 +181,7 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
 
   @override
   Widget build(BuildContext context) => Dialog(
-    insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+    insetPadding: const EdgeInsets.all(8),
     child: HMBColumn(
       mainAxisSize: MainAxisSize.min,
       children: [

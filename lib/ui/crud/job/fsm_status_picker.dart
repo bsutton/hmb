@@ -18,7 +18,7 @@ Future<void> showJobStatusDialog(BuildContext context, Job job) async {
   await showDialog<void>(
     context: context,
     builder: (context) => Dialog(
-      insetPadding: const EdgeInsets.all(16),
+      insetPadding: const EdgeInsets.all(8),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: HMBColumn(

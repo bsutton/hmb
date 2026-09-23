@@ -184,7 +184,7 @@ class _JobCreatorState extends State<JobCreator> {
         theme.dialogTheme.backgroundColor ?? theme.colorScheme.surface;
 
     return AlertDialog(
-      insetPadding: const EdgeInsets.all(10),
+      insetPadding: const EdgeInsets.all(8),
       contentPadding: const EdgeInsets.all(8),
       title: Row(
         children: [

@@ -59,7 +59,7 @@ Future<void> showShoppingItemDialog(
 
   // Compute 80% of screen width, capped at 600
   final screenWidth = MediaQuery.of(context).size.width;
-  final targetWidth = screenWidth * 0.8;
+  final targetWidth = screenWidth - 16;
   final dialogWidth = targetWidth > 600 ? 600.0 : targetWidth;
 
   try {
@@ -68,10 +68,7 @@ Future<void> showShoppingItemDialog(
       builder: (dialogCtx) => StatefulBuilder(
         builder: (dialogCtx, setState) => AlertDialog(
           title: const Text('Item Details'),
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 24,
-          ),
+          insetPadding: const EdgeInsets.all(8),
           content: SizedBox(
             width: dialogWidth,
             child: ConstrainedBox(

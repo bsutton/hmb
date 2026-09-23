@@ -1122,7 +1122,7 @@ You can set a default booking fee from System | Billing screen''');
     return showDialog<String?>(
       context: context,
       builder: (context) => Dialog(
-        insetPadding: const EdgeInsets.all(16),
+        insetPadding: const EdgeInsets.all(8),
         constraints: const BoxConstraints(maxWidth: 600, maxHeight: 600),
         child: Padding(
           padding: const EdgeInsets.all(16),

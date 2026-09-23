@@ -192,6 +192,7 @@ class HMBTheme {
         hintStyle: const TextStyle(color: HMBColors.textSecondary),
       ),
       dialogTheme: DialogThemeData(
+        insetPadding: const EdgeInsets.all(8),
         backgroundColor: HMBColors.surface4dp,
         surfaceTintColor: Colors.transparent,
         shape: cardShape,
