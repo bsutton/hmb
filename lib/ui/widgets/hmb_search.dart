@@ -43,6 +43,7 @@ class HMBSearchState extends State<HMBSearch> {
   late final bool controllerOwned;
   late final HMBSearchController? filterController;
   Timer? _debounceTimer;
+  final _focusNode = FocusNode();
 
   String? filter;
 
@@ -54,54 +55,60 @@ class HMBSearchState extends State<HMBSearch> {
   @override
   void initState() {
     super.initState();
+    _focusNode.addListener(_focusChanged);
 
     if (widget.controller != null) {
-      controllerOwned = true;
+      controllerOwned = false;
       filterController = widget.controller;
     } else {
       filterController = HMBSearchController();
-      controllerOwned = false;
+      controllerOwned = true;
     }
   }
 
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    _focusNode.dispose();
     if (controllerOwned) {
       filterController?.dispose();
     }
     super.dispose();
   }
 
+  void _focusChanged() {
+    HMBSearchFocusNotification(focused: _focusNode.hasFocus).dispatch(context);
+  }
+
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: HMBTextField(
-          labelText: widget.label,
-          controller: filterController!,
-          onChanged: (newValue) {
-            filter = newValue;
-            _debounceTimer?.cancel();
-            _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-              unawaited(widget.onSearch(filter));
-            });
-          },
-        ),
-      ),
-      HMBClearIcon(
-        onPressed: () async {
-          _debounceTimer?.cancel();
-          filterController?.clear();
-          filter = null;
-          await widget.onSearch(filter);
-        },
-      ),
-    ],
+  Widget build(BuildContext context) => HMBTextField(
+    labelText: widget.label,
+    focusNode: _focusNode,
+    controller: filterController!,
+    onChanged: (newValue) {
+      filter = newValue;
+      _debounceTimer?.cancel();
+      _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+        unawaited(widget.onSearch(filter));
+      });
+    },
+    suffixIcon: HMBClearIcon(
+      onPressed: () async {
+        _debounceTimer?.cancel();
+        filterController?.clear();
+        filter = null;
+        await widget.onSearch(filter);
+      },
+    ),
   );
 }
 
-class HMBSearchWithAdd extends StatelessWidget {
+class HMBSearchFocusNotification extends Notification {
+  final bool focused;
+  HMBSearchFocusNotification({required this.focused});
+}
+
+class HMBSearchWithAdd extends StatefulWidget {
   final void Function(String? filter) onSearch;
 
   final void Function() onAdd;
@@ -123,22 +130,38 @@ class HMBSearchWithAdd extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      const SizedBox(width: 8),
-      Expanded(
-        child: HMBSearch(
-          onSearch: (filter) async {
-            onSearch(filter?.trim().toLowerCase());
-          },
-          controller: controller,
+  State<HMBSearchWithAdd> createState() => _HMBSearchWithAddState();
+}
+
+class _HMBSearchWithAddState extends State<HMBSearchWithAdd> {
+  var _focused = false;
+
+  @override
+  Widget build(BuildContext context) =>
+      NotificationListener<HMBSearchFocusNotification>(
+        onNotification: (notification) {
+          setState(() => _focused = notification.focused);
+          return false;
+        },
+        child: Row(
+          children: [
+            Expanded(
+              child: HMBSearch(
+                onSearch: (filter) async {
+                  widget.onSearch(filter?.trim().toLowerCase());
+                },
+                controller: widget.controller,
+              ),
+            ),
+            if (widget.showAdd && !_focused)
+              HMBButtonAdd(
+                onAdd: () async => widget.onAdd(),
+                enabled: true,
+                hint: widget.hint,
+              ),
+          ],
         ),
-      ),
-      if (showAdd)
-        HMBButtonAdd(onAdd: () async => onAdd(), enabled: true, hint: hint),
-      const SizedBox(width: 8),
-    ],
-  );
+      );
 }
 
 class HMBSearchController extends TextEditingController {}

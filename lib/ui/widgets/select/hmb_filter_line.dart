@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../util/flutter/hmb_theme.dart';
+import '../hmb_search.dart';
 import 'hmb_filter_sheet.dart';
 
 typedef BoolCallback = bool Function();
@@ -13,7 +14,7 @@ typedef BoolCallback = bool Function();
 ///
 /// If the users clicks the filter button then a bottom sheet is
 /// displayed with the content of [sheetBuilder]
-class HMBFilterLine extends StatelessWidget {
+class HMBFilterLine extends StatefulWidget {
   /// Icon when filter is inactive
   static const IconData icon = Icons.tune;
 
@@ -40,24 +41,41 @@ class HMBFilterLine extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      // left content
-      Expanded(child: lineBuilder(context)),
-      IconButton(
-        icon: const Icon(icon),
-        tooltip: tooltip,
-        color: isActive() ? HMBColors.primary : Colors.grey,
-        onPressed: () async {
-          await showModalBottomSheet<void>(
-            context: context,
-            isScrollControlled: true,
-            builder: (_) =>
-                HMBFilterSheet(contentBuilder: sheetBuilder, onReset: onReset),
-          );
-          onSheetClosed?.call();
+  State<HMBFilterLine> createState() => _HMBFilterLineState();
+}
+
+class _HMBFilterLineState extends State<HMBFilterLine> {
+  var _searchFocused = false;
+
+  @override
+  Widget build(BuildContext context) =>
+      NotificationListener<HMBSearchFocusNotification>(
+        onNotification: (notification) {
+          setState(() => _searchFocused = notification.focused);
+          return false;
         },
-      ),
-    ],
-  );
+        child: Row(
+          children: [
+            // left content
+            Expanded(child: widget.lineBuilder(context)),
+            if (!_searchFocused)
+              IconButton(
+                icon: const Icon(HMBFilterLine.icon),
+                tooltip: widget.tooltip,
+                color: widget.isActive() ? HMBColors.primary : Colors.grey,
+                onPressed: () async {
+                  await showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (_) => HMBFilterSheet(
+                      contentBuilder: widget.sheetBuilder,
+                      onReset: widget.onReset,
+                    ),
+                  );
+                  widget.onSheetClosed?.call();
+                },
+              ),
+          ],
+        ),
+      );
 }
