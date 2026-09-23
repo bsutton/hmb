@@ -263,11 +263,9 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
               Text(_billTo?.name ?? 'No customer selected'),
               const Divider(),
               const Text('Send invoices to'),
-              Text(_billing.contact?.fullname.trim() ?? 'No billing contact'),
-              if (_billing.source != JobBillingContactSource.explicit &&
-                  _billing.contact != null)
-                const HMBChip(label: 'Automatic'),
-              Text(_billing.source.description),
+              Text(
+                _billing.contact?.fullname.trim() ?? 'Select a billing contact',
+              ),
               const Divider(),
               Text(
                 'Billing type: '
