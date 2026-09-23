@@ -2,6 +2,32 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/api/chat_gpt/customer_extract_api_client.dart';
 
 void main() {
+  test('keeps a new referrer person separate from business and evidence', () {
+    final result = CustomerExtractApiClient.parseExtraction({
+      'customerName': 'Jill Doe',
+      'firstName': 'Jill',
+      'surname': 'Doe',
+      'jobParties': <String, dynamic>{
+        'referringCustomer': 'Miles Real Estate',
+        'referralEvidence': 'Cara from Miles Real Estate recommended you',
+        'contacts': [
+          <String, dynamic>{
+            'firstName': 'Cara',
+            'customerName': 'Miles Real Estate',
+            'role': 'Referrer',
+            'evidence': 'Cara from Miles Real Estate recommended you',
+          },
+        ],
+      },
+    }, forJob: true);
+    final cara = result.jobParties!.contacts.single;
+    expect(cara.name, 'Cara');
+    expect(cara.customerName, 'Miles Real Estate');
+    expect(cara.role, 'Referrer');
+    expect(cara.email, isEmpty);
+    expect(result.customerName, 'Jill Doe');
+  });
+
   test(
     'job extraction preserves principal, referrer and bill-to separately',
     () {

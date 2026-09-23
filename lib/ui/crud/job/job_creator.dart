@@ -19,6 +19,7 @@ import '../../../entity/contact_role.dart';
 import '../../../entity/entity.g.dart';
 import '../../../entity/job_party.dart';
 import '../../../util/dart/money_ex.dart';
+import '../../../util/dart/parse/customer_name_match.dart';
 import '../../../util/dart/parse/parse_customer.dart';
 import '../../../util/dart/parse/parsed_job_parties.dart';
 import '../../dialog/source_context.dart';
@@ -95,6 +96,8 @@ class _JobCreatorState extends DeferredState<JobCreator> {
   ParsedJobParties? _partySuggestions;
   final _pendingContacts = <(Contact, Customer?)>[];
   final _reviewedSuggestions = <ParsedJobParty>{};
+  var _referringSuggestionReviewed = false;
+  var _billingSuggestionReviewed = false;
   var _nextPartyId = -10;
 
   var _creating = false;
@@ -471,23 +474,6 @@ class _JobCreatorState extends DeferredState<JobCreator> {
     });
   }
 
-  Future<void> _loadReferrerContacts(Customer? customer) async {
-    if (customer == null) {
-      setState(() {
-        _selectedReferrerContact = null;
-      });
-      return;
-    }
-
-    final contacts = await DaoContact().getByCustomer(customer.id);
-    if (!mounted || _selectedReferrerCustomer?.id != customer.id) {
-      return;
-    }
-    setState(() {
-      _selectedReferrerContact = contacts.isEmpty ? null : contacts.first;
-    });
-  }
-
   List<JobParty> _parties() => [
     if (_resolvedPrimaryContact() case final contact?)
       JobParty(
@@ -547,7 +533,8 @@ class _JobCreatorState extends DeferredState<JobCreator> {
     });
   }
 
-  Future<void> _editParty([JobParty? party]) async {
+  Future<bool> _editParty([JobParty? party]) async {
+    var saved = false;
     final draft = _draftPrimaryContactForCurrentFields();
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
@@ -566,6 +553,7 @@ class _JobCreatorState extends DeferredState<JobCreator> {
                 pending.$1,
           ],
           onSave: (contact, role, {required replace}) async {
+            saved = true;
             if (party != null) {
               _removeParty(party);
             }
@@ -589,28 +577,88 @@ class _JobCreatorState extends DeferredState<JobCreator> {
     if (mounted) {
       setState(() {});
     }
+    return saved;
   }
 
-  Future<Contact?> _createDraftPartyContact({required bool billing}) async {
+  Future<Contact?> _createDraftPartyContact({
+    required bool billing,
+    ParsedJobParty? suggestion,
+  }) async {
     final form = GlobalKey<FormState>();
-    final firstName = TextEditingController();
-    final surname = TextEditingController();
-    final email = TextEditingController();
-    final phone = TextEditingController();
-    final owner = billing
+    final firstName = TextEditingController(text: suggestion?.firstName);
+    final surname = TextEditingController(text: suggestion?.surname);
+    final email = TextEditingController(text: suggestion?.email);
+    final phone = TextEditingController(text: suggestion?.phone);
+    var owner = billing
         ? _billToCustomer ?? _selectedCustomer
         : _selectedCustomer;
+    final customers = suggestion == null
+        ? <Customer>[]
+        : await BlockingUI().runAndWait(() => DaoCustomer().getAll());
+    final sourceCustomer = suggestion?.customerName ?? '';
+    final usesNewJobCustomer =
+        _selectedCustomer == null &&
+        sourceCustomer.isNotEmpty &&
+        _normalize(sourceCustomer) == _normalize(_customerName.text);
+    final requiresExistingCustomer =
+        sourceCustomer.isNotEmpty && !usesNewJobCustomer;
+    customers.sort(
+      (a, b) => customerNameSimilarity(
+        sourceCustomer,
+        b.name,
+      ).compareTo(customerNameSimilarity(sourceCustomer, a.name)),
+    );
+    if (sourceCustomer.isNotEmpty) {
+      owner = await _exactCustomer(sourceCustomer);
+      if (owner == null &&
+          _referringSuggestionReviewed &&
+          sourceCustomer == _partySuggestions?.referringCustomer) {
+        owner = _selectedReferrerCustomer;
+      }
+    }
     try {
+      if (!mounted) {
+        return null;
+      }
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Add contact'),
+          title: Text(
+            suggestion == null ? 'Add contact' : 'Review new contact',
+          ),
           scrollable: true,
           content: Form(
             key: form,
             child: HMBColumn(
               children: [
-                Text('Customer: ${owner?.name ?? _customerName.text}'),
+                if (suggestion == null)
+                  Text('Customer: ${owner?.name ?? _customerName.text}')
+                else ...[
+                  Text(
+                    'Suggested role: ${suggestion.role} '
+                    '(you can change this next)',
+                  ),
+                  if (suggestion.evidence.isNotEmpty)
+                    Text('Source evidence: ${suggestion.evidence}'),
+                  if (sourceCustomer.isNotEmpty)
+                    Text('Customer in source: $sourceCustomer'),
+                  const Text(
+                    'Select the customer this contact belongs to. '
+                    'Similar names appear first.',
+                  ),
+                  HMBDroplist<Customer>(
+                    title: 'Contact’s customer',
+                    required: requiresExistingCustomer,
+                    selectedItem: () async => owner,
+                    items: (filter) async => (filter ?? '').trim().isEmpty
+                        ? customers
+                        : DaoCustomer().getByFilter(filter),
+                    format: (customer) => customer.name,
+                    onChanged: (customer) => owner = customer,
+                  ),
+                  if (sourceCustomer.isEmpty || usesNewJobCustomer)
+                    const Text('Leave blank to use the job customer.'),
+                ],
                 HMBTextField(controller: firstName, labelText: 'First Name'),
                 HMBTextField(controller: surname, labelText: 'Surname'),
                 HMBEmailField(controller: email, labelText: 'Email'),
@@ -625,10 +673,11 @@ class _JobCreatorState extends DeferredState<JobCreator> {
           actions: [
             HMBCancelButton(onPressed: () => Navigator.pop(context, false)),
             HMBButtonPrimary(
-              label: 'Use contact',
-              hint: 'Keep this contact in the draft job',
+              label: suggestion == null ? 'Use contact' : 'Review role',
+              hint: 'Choose the role for this contact',
               onPressed: () {
-                if (!form.currentState!.validate()) {
+                if (!form.currentState!.validate() ||
+                    (requiresExistingCustomer && owner == null)) {
                   return;
                 }
                 if (firstName.text.trim().isEmpty &&
@@ -678,7 +727,25 @@ class _JobCreatorState extends DeferredState<JobCreator> {
     final name = billing
         ? suggestions.billToCustomer
         : suggestions.referringCustomer;
-    var selected = await BlockingUI().runAndWait(() => _exactCustomer(name));
+    final customers = await BlockingUI().runAndWait(
+      () => DaoCustomer().getAll(),
+    );
+    final matches =
+        customers
+            .where(
+              (customer) => customerNameSimilarity(name, customer.name) >= 0.7,
+            )
+            .toList()
+          ..sort(
+            (a, b) => customerNameSimilarity(
+              name,
+              b.name,
+            ).compareTo(customerNameSimilarity(name, a.name)),
+          );
+    final exact = matches
+        .where((customer) => _normalize(customer.name) == _normalize(name))
+        .toList();
+    var selected = exact.length == 1 ? exact.single : null;
     if (!mounted) {
       return;
     }
@@ -692,17 +759,32 @@ class _JobCreatorState extends DeferredState<JobCreator> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(name),
+            Text('Business named in source: $name'),
+            const SizedBox(height: 8),
+            const Text('Source evidence:'),
             Text(
               billing
                   ? suggestions.billingEvidence
                   : suggestions.referralEvidence,
             ),
             const SizedBox(height: 12),
+            if (selected == null)
+              Text(
+                matches.isEmpty
+                    ? 'No close match found. Search for an existing customer.'
+                    : 'Possible matches found. Choose the correct customer; '
+                          'the source spelling may differ.',
+              ),
             HMBDroplist<Customer>(
-              title: 'Customer',
+              title: 'Existing customer',
+              required: false,
               selectedItem: () async => selected,
-              items: (filter) => DaoCustomer().getByFilter(filter),
+              items: (filter) async => (filter ?? '').trim().isEmpty
+                  ? [
+                      ...matches,
+                      ...customers.where((c) => !matches.contains(c)),
+                    ]
+                  : DaoCustomer().getByFilter(filter),
               format: (customer) => customer.name,
               onChanged: (customer) => selected = customer,
             ),
@@ -731,19 +813,26 @@ class _JobCreatorState extends DeferredState<JobCreator> {
       setState(() {
         _billToCustomer = selected;
         _billingContact = null;
+        _billingSuggestionReviewed = true;
       });
     } else {
       setState(() {
         _selectedReferrerCustomer = selected;
+        _selectedReferrerContact = null;
         _referrerRemoved = false;
+        _referringSuggestionReviewed = true;
       });
-      await _loadReferrerContacts(selected);
     }
   }
 
   Future<void> _reviewSuggestedParty(ParsedJobParty suggestion) async {
     final candidates = await BlockingUI().runAndWait(() async {
-      final all = await DaoContact().getAll();
+      final saved = await DaoContact().getAll();
+      final all = <int, Contact>{
+        for (final contact in saved) contact.id: contact,
+        for (final party in _parties()) party.contact.id: party.contact,
+        for (final pending in _pendingContacts) pending.$1.id: pending.$1,
+      }.values;
       return all
           .where(
             (contact) =>
@@ -752,7 +841,10 @@ class _JobCreatorState extends DeferredState<JobCreator> {
                         _normalize(suggestion.email)) ||
                 (suggestion.phone.isNotEmpty &&
                     _normalizedDigits(contact.bestPhone) ==
-                        _normalizedDigits(suggestion.phone)),
+                        _normalizedDigits(suggestion.phone)) ||
+                (suggestion.name.isNotEmpty &&
+                    _normalize(contact.fullname) ==
+                        _normalize(suggestion.name)),
           )
           .toList();
     });
@@ -768,96 +860,79 @@ class _JobCreatorState extends DeferredState<JobCreator> {
     if (candidates.length == 1) {
       contact = candidates.single;
     } else {
-      var owner = await _exactCustomer(suggestion.customerName);
-      owner ??= role?.id == ContactRole.billing
-          ? _billToCustomer ?? _selectedCustomer
-          : _selectedCustomer;
-      if (!mounted) {
-        return;
-      }
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Review new contact'),
-          scrollable: true,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(suggestion.name),
-              Text(suggestion.email),
-              Text(suggestion.phone),
-              if (suggestion.customerName.isNotEmpty)
-                Text('Suggested customer: ${suggestion.customerName}'),
-              const Text(
-                'Choose the customer this contact belongs to. '
-                'Leave blank to use the job customer. '
-                'No contact is saved until '
-                'you finish the wizard.',
-              ),
-              HMBDroplist<Customer>(
-                title: 'Contact’s customer',
-                required: false,
-                selectedItem: () async => owner,
-                items: (filter) => DaoCustomer().getByFilter(filter),
-                format: (customer) => customer.name,
-                onChanged: (customer) => owner = customer,
-              ),
-            ],
-          ),
-          actions: [
-            HMBCancelButton(onPressed: () => Navigator.pop(context, false)),
-            HMBButtonPrimary(
-              label: 'Review role',
-              hint: 'Choose a role for this contact',
-              onPressed: () => Navigator.pop(context, true),
-            ),
-          ],
-        ),
+      final draft = await _createDraftPartyContact(
+        billing: role?.id == ContactRole.billing,
+        suggestion: suggestion,
       );
-      if (confirmed != true || !mounted) {
+      if (draft == null) {
         return;
       }
-      contact = Contact.forInsert(
-        firstName: suggestion.firstName,
-        surname: suggestion.surname,
-        mobileNumber: suggestion.phone,
-        emailAddress: suggestion.email,
-        landLine: '',
-        officeNumber: '',
-      )..id = _nextPartyId--;
-      pending = (contact, owner);
-      _pendingContacts.add(pending);
+      contact = draft;
+      pending = _pendingContacts
+          .where((entry) => identical(entry.$1, draft))
+          .single;
     }
-    await _editParty(
-      JobParty(
-        id: _nextPartyId--,
-        contact: contact,
-        role:
-            role ??
-            const ContactRole(id: 0, name: 'Choose a role', builtin: false),
-      ),
+    final existing = _parties()
+        .where(
+          (party) =>
+              party.contact.id == contact.id && party.role.id == role?.id,
+        )
+        .firstOrNull;
+    final saved = await _editParty(
+      existing ??
+          JobParty(
+            id: _nextPartyId--,
+            contact: contact,
+            role:
+                role ??
+                const ContactRole(id: 0, name: 'Choose a role', builtin: false),
+          ),
     );
     if (!mounted) {
       return;
     }
     setState(() {
-      if (_parties().any((party) => identical(party.contact, contact))) {
+      if (saved) {
         _reviewedSuggestions.add(suggestion);
-      } else if (pending != null) {
+      }
+      if (pending != null &&
+          !_parties().any((party) => identical(party.contact, contact))) {
         _pendingContacts.remove(pending);
       }
     });
   }
 
+  String _suggestedRole(ParsedJobParty suggestion) =>
+      suggestion.role.isEmpty ? 'Unclear' : suggestion.role;
+
+  String _assignedRoles(ParsedJobParty suggestion) => _parties()
+      .where(
+        (party) =>
+            (suggestion.name.isNotEmpty &&
+                _normalize(party.contact.fullname) ==
+                    _normalize(suggestion.name)) ||
+            (suggestion.email.isNotEmpty &&
+                _normalize(party.contact.emailAddress) ==
+                    _normalize(suggestion.email)),
+      )
+      .map((party) => party.role.name)
+      .join(', ');
+
   Widget _suggestedParties() => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      const Text('Suggested parties — review before assigning'),
-      if (_partySuggestions!.referringCustomer.isNotEmpty)
+      const Text('Suggestions from the source'),
+      const Text(
+        'Review each suggestion to choose a contact and role. '
+        'A contact can have more than one role.',
+      ),
+      if (!_referringSuggestionReviewed &&
+          _partySuggestions!.referringCustomer.isNotEmpty)
         ListTile(
           title: Text(_partySuggestions!.referringCustomer),
           subtitle: Text(
-            'Referring business: ${_partySuggestions!.referralEvidence}',
+            'Suggested referring business\n'
+            'Source evidence: ${_partySuggestions!.referralEvidence}',
           ),
           trailing: HMBActionLink(
             label: 'Review',
@@ -871,11 +946,20 @@ class _JobCreatorState extends DeferredState<JobCreator> {
               suggestion.name.isEmpty ? suggestion.email : suggestion.name,
             ),
             subtitle: Text(
-              '${suggestion.role} · ${suggestion.customerName}\n'
-              '${suggestion.email} ${suggestion.phone}\n${suggestion.evidence}',
+              [
+                'Suggested role: ${_suggestedRole(suggestion)}',
+                if (suggestion.customerName.isNotEmpty)
+                  'Customer in source: ${suggestion.customerName}',
+                if (_assignedRoles(suggestion).isNotEmpty)
+                  'Already assigned: ${_assignedRoles(suggestion)}',
+                if (suggestion.email.isNotEmpty) suggestion.email,
+                if (suggestion.phone.isNotEmpty) suggestion.phone,
+                if (suggestion.evidence.isNotEmpty)
+                  'Source evidence: ${suggestion.evidence}',
+              ].join('\n'),
             ),
             trailing: HMBActionLink(
-              label: 'Review',
+              label: 'Review role',
               onPressed: () => _reviewSuggestedParty(suggestion),
             ),
           ),
@@ -894,14 +978,13 @@ class _JobCreatorState extends DeferredState<JobCreator> {
         selectedItem: () async => _selectedReferrerCustomer,
         items: (filter) => DaoCustomer().getByFilter(filter),
         format: (customer) => customer.name,
-        onChanged: (customer) async {
-          setState(() {
-            _selectedReferrerCustomer = customer;
-            _referrerRemoved = false;
-          });
-          await _loadReferrerContacts(customer);
-        },
+        onChanged: (customer) => setState(() {
+          _selectedReferrerCustomer = customer;
+          _selectedReferrerContact = null;
+          _referrerRemoved = false;
+        }),
       ),
+      const Text('Assigned contacts and roles'),
       for (final party in _parties())
         Surface(
           padding: EdgeInsets.zero,
@@ -928,7 +1011,9 @@ class _JobCreatorState extends DeferredState<JobCreator> {
       HMBButtonPrimary(
         label: 'Add party',
         hint: 'Assign a contact and role',
-        onPressed: _editParty,
+        onPressed: () async {
+          await _editParty();
+        },
       ),
     ],
   );
@@ -941,12 +1026,15 @@ class _JobCreatorState extends DeferredState<JobCreator> {
         'the job customer and can be different from the customer '
         'receiving the work.',
       ),
-      if (_partySuggestions?.billToCustomer.isNotEmpty ?? false)
+      if (!_billingSuggestionReviewed &&
+          (_partySuggestions?.billToCustomer.isNotEmpty ?? false))
         ListTile(
           title: Text(
             'Suggested Bill To: ${_partySuggestions!.billToCustomer}',
           ),
-          subtitle: Text(_partySuggestions!.billingEvidence),
+          subtitle: Text(
+            'Source evidence: ${_partySuggestions!.billingEvidence}',
+          ),
           trailing: HMBActionLink(
             label: 'Review',
             onPressed: () => _reviewSuggestedBusiness(billing: true),
@@ -1224,6 +1312,9 @@ class _JobCreatorState extends DeferredState<JobCreator> {
 
         await _loadMatches(parsedCustomer);
         _partySuggestions = parsedCustomer.jobParties;
+        _reviewedSuggestions.clear();
+        _referringSuggestionReviewed = false;
+        _billingSuggestionReviewed = false;
         extractedSuccessfully = true;
       }, label: 'Extracting job details');
 
