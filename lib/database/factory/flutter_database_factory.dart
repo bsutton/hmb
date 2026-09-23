@@ -18,6 +18,7 @@ import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
+import 'busy_retry_database_factory.dart';
 import 'hmb_database_factory.dart' as local;
 
 class FlutterDatabaseFactory implements local.HMBDatabaseFactory {
@@ -45,9 +46,9 @@ class FlutterDatabaseFactory implements local.HMBDatabaseFactory {
       } else if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
         /// required for non-mobile platforms.
         sqfliteFfiInit();
-        _databaseFactory = useFfiIsolate
-            ? databaseFactoryFfi
-            : databaseFactoryFfiNoIsolate;
+        _databaseFactory = busyRetryDatabaseFactory(
+          useFfiIsolate ? databaseFactoryFfi : databaseFactoryFfiNoIsolate,
+        );
       } else {
         throw UnsupportedError(
           'Unsupported platform for database factory: '

@@ -15,6 +15,7 @@ import 'dart:io';
 
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'busy_retry_database_factory.dart';
 import 'hmb_database_factory.dart' as local;
 
 class CliDatabaseFactory implements local.HMBDatabaseFactory {
@@ -34,7 +35,7 @@ class CliDatabaseFactory implements local.HMBDatabaseFactory {
   void initDatabaseFactory() {
     if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
       /// required for non-mobile platforms.
-      databaseFactory = databaseFactoryFfi;
+      databaseFactory = busyRetryDatabaseFactory(databaseFactoryFfi);
     } else if (Platform.isAndroid || Platform.isIOS) {
       /// uses the default factory.
     }

@@ -20,6 +20,7 @@ import '../database/management/database_helper.dart';
 import '../entity/image_cache_variant.dart';
 import '../util/dart/compute_manager.dart';
 import '../util/dart/future_ex.dart';
+import '../util/dart/log.dart';
 import '../util/dart/paths.dart';
 import '../util/dart/photo_meta.dart';
 import 'image_cache_config.dart';
@@ -186,7 +187,7 @@ class HMBImageCache {
         delete(legacyJson);
       }
     }
-    unawaited(_trimIfNeeded());
+    unawaited(_trimOnStartup());
     _initialised = true;
   }
 
@@ -568,6 +569,20 @@ class HMBImageCache {
   }
 
   // TODO(bsutton): remove raw images from cache first
+
+  Future<void> _trimOnStartup() async {
+    try {
+      await _trimIfNeeded();
+    } catch (error, stackTrace) {
+      // Cache trimming is best effort at startup. Normal cache updates retry
+      // it; a failed background trim must not escape as an unhandled error.
+      Log.w(
+        'Could not trim the image cache during startup.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
 
   Future<void> _trimIfNeeded() async {
     final dao = DaoImageCacheVariant();

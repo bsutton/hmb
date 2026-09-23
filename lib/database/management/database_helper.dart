@@ -78,6 +78,7 @@ The database isn't open, if this code is running in an isolate $isolate you will
       path,
       options: OpenDatabaseOptions(
         version: targetVersion,
+        onConfigure: _configureConnection,
         onUpgrade: (db, oldVersion, newVersion) => upgradeDb(
           db: db,
           backup: backup,
@@ -94,6 +95,13 @@ The database isn't open, if this code is running in an isolate $isolate you will
       BillingMutation.enable(_database!);
     }
     afterOpen?.call();
+  }
+
+  /// Foreground and worker isolates have independent SQLite connections.
+  /// Wait for short write transactions instead of immediately failing reads
+  /// with SQLITE_BUSY. Set this on every connection, before schema access.
+  Future<void> _configureConnection(Database db) async {
+    await db.rawQuery('PRAGMA busy_timeout = 5000');
   }
 
   Future<void> closeDb() async {
@@ -137,7 +145,10 @@ The database isn't open, if this code is running in an isolate $isolate you will
       if (_database == null) {
         _database = await databaseFactory.openDatabase(
           pathToDb,
-          options: OpenDatabaseOptions(singleInstance: false),
+          options: OpenDatabaseOptions(
+            singleInstance: false,
+            onConfigure: _configureConnection,
+          ),
         );
         wasOpen = true;
       }
