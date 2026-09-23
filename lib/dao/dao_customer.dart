@@ -111,9 +111,22 @@ or exists (
   where cc.customer_id = c.id
   and replace(co.mobileNumber, ' ', '') like ?
 )
+or exists (
+  select 1
+  from customer_site cs
+  join site s on s.id = cs.site_id
+  where cs.customer_id = c.id
+  and (
+    coalesce(s.addressLine1, '') || ' ' ||
+    coalesce(s.addressLine2, '') || ' ' ||
+    coalesce(s.suburb, '') || ' ' ||
+    coalesce(s.state, '') || ' ' ||
+    coalesce(s.postcode, '')
+  ) like ?
+)
 order by c.modifiedDate desc
 ''',
-        ['''%$text%''', '''%$mobileText%'''],
+        ['''%$text%''', '''%$mobileText%''', '''%$text%'''],
       ),
     );
   }

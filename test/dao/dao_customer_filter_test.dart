@@ -14,6 +14,42 @@ void main() {
     await tearDownTestDb();
   });
 
+  test(
+    'site search finds linked customers once and excludes unlinked sites',
+    () async {
+      final customer = await _insertCustomer(
+        name: 'Site Search Customer',
+        mobileNumber: '0400000001',
+      );
+      final other = await _insertCustomer(
+        name: 'Unrelated Customer',
+        mobileNumber: '0400000002',
+      );
+      for (var index = 0; index < 2; index++) {
+        final site = Site.forInsert(
+          addressLine1: '27 Example Crescent',
+          addressLine2: 'Unit $index',
+          suburb: 'Testville',
+          state: 'VIC',
+          postcode: '3999',
+          accessDetails: null,
+        );
+        await DaoSite().insert(site);
+        await DaoSiteCustomer().insertJoin(site, customer);
+      }
+      for (final query in ['example crescent', 'Unit 1', 'Testville', '3999']) {
+        final ids = (await DaoCustomer().getByFilter(query)).map((c) => c.id);
+        expect(ids.where((id) => id == customer.id), hasLength(1));
+        expect(ids, isNot(contains(other.id)));
+      }
+      expect(await DaoCustomer().getByFilter('Unknown Street'), isEmpty);
+      expect(
+        (await DaoCustomer().getByFilter('Site Search')).map((c) => c.id),
+        contains(customer.id),
+      );
+    },
+  );
+
   test('getByFilter finds customer by linked contact mobile number', () async {
     final customer = await _insertCustomer(
       name: 'Mobile Search Customer',
