@@ -885,10 +885,7 @@ class _JobCreatorState extends DeferredState<JobCreator> {
   Widget _buildParties() => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      const Text(
-        'Assign contacts and their roles for this job. '
-        'These assignments are saved when you finish the wizard.',
-      ),
+      const Text('Assign contacts and their roles for this job.'),
       if (_partySuggestions != null) _suggestedParties(),
       HMBDroplist<Customer>(
         title: 'Referring business',
