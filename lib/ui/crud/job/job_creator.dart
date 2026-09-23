@@ -542,7 +542,18 @@ class _JobCreatorState extends DeferredState<JobCreator> {
           customerId: _selectedCustomer?.id,
           billToCustomerId: _billToCustomer?.id ?? _selectedCustomer?.id,
           parties: _parties(),
-          createContact: _createDraftPartyContact,
+          relatedCustomerIds: [?_selectedReferrerCustomer?.id],
+          newCustomerName: _customerName.text,
+          draftContactCustomerIds: {
+            if (draft != null) draft.id: _selectedCustomer?.id,
+            for (final pending in _pendingContacts)
+              pending.$1.id: pending.$2?.id ?? _selectedCustomer?.id,
+          },
+          createContact: ({required billing, required customerId}) async =>
+              _createDraftPartyContact(
+                billing: billing,
+                customerOverride: await DaoCustomer().getById(customerId),
+              ),
           party: party,
           draftContacts: [?draft, ..._pendingContacts.map((entry) => entry.$1)],
           draftBillingContacts: [
@@ -583,15 +594,16 @@ class _JobCreatorState extends DeferredState<JobCreator> {
   Future<Contact?> _createDraftPartyContact({
     required bool billing,
     ParsedJobParty? suggestion,
+    Customer? customerOverride,
   }) async {
     final form = GlobalKey<FormState>();
     final firstName = TextEditingController(text: suggestion?.firstName);
     final surname = TextEditingController(text: suggestion?.surname);
     final email = TextEditingController(text: suggestion?.email);
     final phone = TextEditingController(text: suggestion?.phone);
-    var owner = billing
-        ? _billToCustomer ?? _selectedCustomer
-        : _selectedCustomer;
+    var owner =
+        customerOverride ??
+        (billing ? _billToCustomer ?? _selectedCustomer : _selectedCustomer);
     final customers = suggestion == null
         ? <Customer>[]
         : await BlockingUI().runAndWait(() => DaoCustomer().getAll());
@@ -648,6 +660,7 @@ class _JobCreatorState extends DeferredState<JobCreator> {
                   ),
                   HMBDroplist<Customer>(
                     title: 'Contact’s customer',
+                    sortByRecent: false,
                     required: requiresExistingCustomer,
                     selectedItem: () async => owner,
                     items: (filter) async => (filter ?? '').trim().isEmpty
@@ -777,6 +790,7 @@ class _JobCreatorState extends DeferredState<JobCreator> {
               ),
             HMBDroplist<Customer>(
               title: 'Existing customer',
+              sortByRecent: false,
               required: false,
               selectedItem: () async => selected,
               items: (filter) async => (filter ?? '').trim().isEmpty

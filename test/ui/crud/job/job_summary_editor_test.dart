@@ -295,6 +295,105 @@ void main() {
     },
   );
 
+  testWidgets('party customer filter defaults and ranks related customers', (
+    tester,
+  ) async {
+    final job = await seed(tester);
+    late Job related;
+    late Job unrelated;
+    await tester.runAsync(() async {
+      related = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.zero,
+        summary: 'Related account',
+      );
+      unrelated = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.zero,
+        summary: 'Unrelated account',
+      );
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (_, child) =>
+            Stack(children: [child!, const BlockingOverlay()]),
+        home: JobPartyAssignmentEditor(
+          customerId: job.customerId,
+          billToCustomerId: job.customerId,
+          relatedCustomerIds: [related.customerId!],
+          parties: const [],
+          onSave: (contact, role, {required replace}) async {},
+        ),
+      ),
+    );
+    await pumpUntil(tester, find.byType(ContactRoleSelector));
+    final filter = tester.widget<HMBDroplist<int>>(
+      find.byType(HMBDroplist<int>),
+    );
+    await tester.runAsync(() async {
+      expect(await filter.selectedItem(), job.customerId);
+      final customers = await filter.items(null);
+      expect(
+        customers.indexOf(related.customerId!),
+        lessThan(customers.indexOf(unrelated.customerId!)),
+      );
+      final contacts = await tester
+          .widget<HMBDroplist<Contact>>(find.byType(HMBDroplist<Contact>))
+          .items(null);
+      expect(contacts.map((contact) => contact.id), contains(job.contactId));
+      expect(
+        contacts.map((contact) => contact.id),
+        isNot(contains(related.contactId)),
+      );
+    });
+    filter.onChanged(related.customerId);
+    await tester.pump();
+    await tester.runAsync(() async {
+      final contacts = await tester
+          .widget<HMBDroplist<Contact>>(find.byType(HMBDroplist<Contact>))
+          .items(null);
+      expect(
+        contacts.map((contact) => contact.id),
+        contains(related.contactId),
+      );
+      expect(
+        contacts.map((contact) => contact.id),
+        isNot(contains(job.contactId)),
+      );
+    });
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('role selector creates and selects a custom role', (
+    tester,
+  ) async {
+    await seed(tester);
+    ContactRole? selected;
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (_, child) =>
+            Stack(children: [child!, const BlockingOverlay()]),
+        home: Scaffold(
+          body: ContactRoleSelector(
+            roleId: null,
+            title: 'Role on this job',
+            onChanged: (role) => selected = role,
+          ),
+        ),
+      ),
+    );
+    await pumpUntil(tester, find.text('Add role'));
+    await tester.tap(find.text('Add role'));
+    await pumpUntil(tester, find.byType(TextFormField));
+    await tester.enterText(find.byType(TextFormField), 'Access coordinator');
+    await tester.tap(find.text('Save'));
+    await pumpUntil(tester, find.text('Access coordinator'));
+    expect(selected?.name, 'Access coordinator');
+    expect(selected?.builtin, isFalse);
+    expect(selected?.id, isNotNull);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('custom role dialog saves without controller disposal errors', (
     tester,
   ) async {

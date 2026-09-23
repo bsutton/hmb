@@ -8,7 +8,7 @@ import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/widgets.g.dart';
 
-class ContactRoleSelector extends StatelessWidget {
+class ContactRoleSelector extends StatefulWidget {
   final int? roleId;
   final ValueChanged<ContactRole?> onChanged;
   final bool required;
@@ -23,10 +23,50 @@ class ContactRoleSelector extends StatelessWidget {
   });
 
   @override
+  State<ContactRoleSelector> createState() => _ContactRoleSelectorState();
+}
+
+class _ContactRoleSelectorState extends State<ContactRoleSelector> {
+  int? _roleId;
+
+  @override
+  void initState() {
+    super.initState();
+    _roleId = widget.roleId;
+  }
+
+  @override
+  void didUpdateWidget(covariant ContactRoleSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.roleId != widget.roleId) {
+      _roleId = widget.roleId;
+    }
+  }
+
+  Future<void> _addRole() async {
+    final name = await _editRoleName(context);
+    if (name == null || !mounted) {
+      return;
+    }
+    try {
+      final role = await BlockingUI().runAndWait(() async {
+        final id = await DaoContactRole().create(name);
+        return await DaoContactRole().getById(id);
+      });
+      if (mounted) {
+        setState(() => _roleId = role?.id);
+        widget.onChanged(role);
+      }
+    } catch (error) {
+      HMBToast.error(error.toString());
+    }
+  }
+
+  @override
   Widget build(BuildContext context) => HMBDroplist<ContactRole>(
-    title: title,
-    required: required,
-    selectedItem: () => DaoContactRole().getById(roleId),
+    title: widget.title,
+    required: widget.required,
+    selectedItem: () => DaoContactRole().getById(_roleId),
     items: (filter) async => (await DaoContactRole().getAll())
         .where(
           (role) =>
@@ -34,7 +74,12 @@ class ContactRoleSelector extends StatelessWidget {
         )
         .toList(),
     format: (role) => role.name,
-    onChanged: onChanged,
+    onChanged: (role) {
+      _roleId = role?.id;
+      widget.onChanged(role);
+    },
+    addLabel: 'Add role',
+    onAdd: _addRole,
   );
 }
 
@@ -58,39 +103,7 @@ class _ContactRolesScreenState extends DeferredState<ContactRolesScreen> {
   }
 
   Future<void> _edit([ContactRole? role]) async {
-    final controller = TextEditingController(text: role?.name);
-    final form = GlobalKey<FormState>();
-    final route = DialogRoute<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(role == null ? 'Add role type' : 'Rename role'),
-        scrollable: true,
-        content: Form(
-          key: form,
-          child: HMBTextField(
-            controller: controller,
-            labelText: 'Role name',
-            required: true,
-          ),
-        ),
-        actions: [
-          HMBSaveCancelButtons(
-            cancelHint: 'Keep existing roles',
-            saveHint: 'Save role type',
-            onCancel: () => Navigator.pop(context),
-            onSave: () {
-              if (form.currentState!.validate()) {
-                Navigator.pop(context, controller.text.trim());
-              }
-            },
-          ),
-        ],
-      ),
-    );
-    final value = await Navigator.of(context).push(route);
-    await route.completed;
-    // The dialog's exit animation has finished using the controller.
-    controller.dispose();
+    final value = await _editRoleName(context, role: role);
     if (value == null || !mounted) {
       return;
     }
@@ -184,4 +197,41 @@ class _ContactRolesScreenState extends DeferredState<ContactRolesScreen> {
       ),
     ),
   );
+}
+
+Future<String?> _editRoleName(BuildContext context, {ContactRole? role}) async {
+  final controller = TextEditingController(text: role?.name);
+  final form = GlobalKey<FormState>();
+  final route = DialogRoute<String>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(role == null ? 'Add role type' : 'Rename role'),
+      scrollable: true,
+      content: Form(
+        key: form,
+        child: HMBTextField(
+          controller: controller,
+          labelText: 'Role name',
+          required: true,
+        ),
+      ),
+      actions: [
+        HMBSaveCancelButtons(
+          cancelHint: 'Keep existing roles',
+          saveHint: 'Save role type',
+          onCancel: () => Navigator.pop(context),
+          onSave: () {
+            if (form.currentState!.validate()) {
+              Navigator.pop(context, controller.text.trim());
+            }
+          },
+        ),
+      ],
+    ),
+  );
+  final value = await Navigator.of(context).push(route);
+  await route.completed;
+  // The dialog's exit animation has finished using the controller.
+  controller.dispose();
+  return value;
 }
