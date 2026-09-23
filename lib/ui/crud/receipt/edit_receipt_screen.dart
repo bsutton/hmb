@@ -76,6 +76,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
 
   late DateTime _date;
   final _selectedJob = SelectedJob();
+  final _matchFilterJob = SelectedJob();
   int? _supplierId;
 
   @override
@@ -180,6 +181,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         ),
       );
     }
+    _matchFilterJob.jobId = _selectedJob.jobId;
     await _reloadLinkableTaskItems();
   }
 
@@ -340,6 +342,31 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
           setState(() {
             _supplierId = supplier?.id;
             selectedSupplier.selected = supplier?.id;
+          });
+          unawaited(_reloadLinkableTaskItems());
+        },
+      ),
+
+      HMBSelectJob(
+        key: TestKeys.receiptPrimaryJobSelector,
+        title: 'Primary Job',
+        selectedJob: _selectedJob,
+        onSelected: (job) {
+          setState(() {
+            _selectedJob.jobId = job?.id;
+            _matchFilterJob.jobId = job?.id;
+            if (job == null) {
+              _jobAllocations.clear();
+            } else if (_jobAllocations.length <= 1) {
+              _jobAllocations
+                ..clear()
+                ..add(
+                  _ReceiptJobAllocationEditor(
+                    jobId: job.id,
+                    amount: _totalExclCtrl.money ?? MoneyEx.zero,
+                  ),
+                );
+            }
           });
           unawaited(_reloadLinkableTaskItems());
         },
@@ -728,6 +755,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   Widget _buildLineItemRow(int index) {
     final line = _lineItems[index];
     return Card(
+      key: line.cardKey,
       child: Padding(
         padding: _lineItemPadding,
         child: Column(
@@ -735,16 +763,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
           children: [
             Row(
               children: [
-                Expanded(
-                  child: HMBTextField(
-                    controller: line.descriptionController,
-                    labelText: 'Description',
-                    required: true,
-                    keyboardType: TextInputType.multiline,
-                    minLines: 2,
-                    maxLines: 4,
-                  ),
-                ),
+                Expanded(child: Text('Line ${index + 1}')),
                 HMBIconButton(
                   buttonKey: TestKeys.receiptLineMoveUp(index),
                   hint: 'Move receipt line up',
@@ -776,6 +795,15 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
                   icon: const Icon(Icons.delete_outline),
                 ),
               ],
+            ),
+            HMBTextField(
+              controller: line.descriptionController,
+              focusNode: line.descriptionFocus,
+              labelText: 'Description',
+              required: true,
+              keyboardType: TextInputType.multiline,
+              minLines: 2,
+              maxLines: 4,
             ),
             const SizedBox(height: 10),
             HMBTextField(
@@ -875,6 +903,17 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
               onAdd: () => _createTaskItemForLine(line),
               onChanged: (item) => _setLineMatch(line, item),
               format: _formatTaskItemMatch,
+              formatSelection: (item) => item.description,
+              sortByRecent: false,
+              headerBuilder: (context, onChange) => HMBSelectJob(
+                title: 'Filter by Job (clear for all jobs)',
+                showAdd: false,
+                selectedJob: _matchFilterJob,
+                onSelected: (job) {
+                  _matchFilterJob.jobId = job?.id;
+                  onChange();
+                },
+              ),
             ),
             if (line.matchedTaskItemId != null && !line.matchReviewed)
               ListTile(
@@ -1000,7 +1039,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     });
   }
 
-  void _addManualLine() {
+  Future<void> _addManualLine() async {
     setState(() {
       _lineItems.add(
         _ReceiptLineItemEditor(
@@ -1017,6 +1056,18 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         ),
       );
     });
+    final line = _lineItems.last;
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted || !_lineItems.contains(line)) {
+      return;
+    }
+    final lineContext = line.cardKey.currentContext;
+    if (lineContext != null && lineContext.mounted) {
+      await Scrollable.ensureVisible(lineContext);
+      if (mounted && _lineItems.contains(line)) {
+        line.descriptionFocus.requestFocus();
+      }
+    }
   }
 
   Future<int> _matchExtractedLinesToTaskItems() async {
@@ -1124,29 +1175,6 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       _buildStepIntro(
         'Classify the receipt as overhead, or allocate it to one or more jobs.',
       ),
-      HMBSelectJob(
-        key: TestKeys.receiptPrimaryJobSelector,
-        title: 'Primary Job',
-        selectedJob: _selectedJob,
-        onSelected: (job) {
-          setState(() {
-            _selectedJob.jobId = job?.id;
-            if (job == null) {
-              _jobAllocations.clear();
-            } else if (_jobAllocations.length <= 1) {
-              _jobAllocations
-                ..clear()
-                ..add(
-                  _ReceiptJobAllocationEditor(
-                    jobId: job.id,
-                    amount: _totalExclCtrl.money ?? MoneyEx.zero,
-                  ),
-                );
-            }
-          });
-          unawaited(_reloadLinkableTaskItems());
-        },
-      ),
       const SizedBox(height: 8),
       for (var i = 0; i < _jobAllocations.length; i++)
         _buildJobAllocationRow(i),
@@ -1214,18 +1242,26 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   }
 
   Future<void> _reloadLinkableTaskItems() async {
-    final candidates = await DaoTaskItem().getPurchasedItemsForReceiptLink(
-      jobId: _selectedJob.jobId,
-    );
+    final candidates = await DaoTaskItem().getPurchasedItemsForReceiptLink();
     final returnedCandidates = await DaoTaskItem()
-        .getReturnedItemsForReceiptLink(jobId: _selectedJob.jobId);
+        .getReturnedItemsForReceiptLink();
     final linked = currentEntity == null
         ? <TaskItem>[]
         : await DaoReceipt().getLinkedTaskItems(currentEntity!.id);
+    // Unsaved matches can include newly created items or jobs that no longer
+    // qualify for the shopping list. Keep their full details for the review.
+    final matched = await DaoTaskItem().getByIds(
+      {
+        ..._linkedTaskItemIds,
+        for (final line in _lineItems)
+          if (line.matchedTaskItemId != null) line.matchedTaskItemId!,
+      }.toList(),
+    );
     final byId = <int, TaskItem>{
       for (final item in candidates) item.id: item,
       for (final item in returnedCandidates) item.id: item,
       for (final item in linked) item.id: item,
+      for (final item in matched) item.id: item,
     };
     final today = LocalDate.today();
     final activities = await DaoJobActivity().getActivitiesInRange(
@@ -1260,6 +1296,10 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     _ReceiptLineItemEditor line,
     String? filter,
   ) => _rankedTaskItemsForLine(line).where((item) {
+    if (_matchFilterJob.jobId != null &&
+        _receiptJobIdsByTaskItemId[item.id] != _matchFilterJob.jobId) {
+      return false;
+    }
     final context = _receiptMatchContexts[item.id];
     return context?.matches(filter, item.description) ??
         item.description.toLowerCase().contains(
@@ -1311,9 +1351,15 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   }
 
   String _formatTaskItemMatch(TaskItem item) {
-    final summary = '${item.description} - ${_formatTaskItemCost(item)}';
     final context = _receiptMatchContexts[item.id];
-    return context == null ? summary : '$summary · ${context.display}';
+    final price = item.actualPrice ?? item.estimatedPrice;
+    return [
+      if (context != null) 'Job: ${context.jobSummary}',
+      if (context != null) 'Task: ${context.taskName}',
+      item.description,
+      if (price != null)
+        'Quantity: ${price.quantity} · Unit cost: ${price.unitCost}',
+    ].join('\n');
   }
 
   Future<void> _createTaskItemForLine(_ReceiptLineItemEditor line) async {
@@ -1821,6 +1867,8 @@ class _ScoredReceiptTaskItem {
 }
 
 class _ReceiptLineItemEditor {
+  final GlobalKey cardKey = GlobalKey();
+  final descriptionFocus = FocusNode();
   final TextEditingController descriptionController;
   final TextEditingController quantityController;
   final HMBMoneyEditingController unitPriceController;
@@ -1933,6 +1981,7 @@ class _ReceiptLineItemEditor {
       );
 
   void dispose() {
+    descriptionFocus.dispose();
     descriptionController.dispose();
     quantityController.dispose();
     unitPriceController.dispose();

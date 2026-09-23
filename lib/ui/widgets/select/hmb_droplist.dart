@@ -29,6 +29,7 @@ class HMBDroplist<T> extends StatefulWidget {
   final Future<T?> Function() selectedItem;
   final Future<List<T>> Function(String? filter) items;
   final String Function(T) format;
+  final String Function(T)? formatSelection;
   final void Function(T?) onChanged;
   final String title;
   final AsyncVoidCallback? onAdd;
@@ -42,6 +43,9 @@ class HMBDroplist<T> extends StatefulWidget {
   final T? initialValue;
   final bool required;
   final bool showSearch;
+  final bool sortByRecent;
+  final Widget Function(BuildContext context, VoidCallback onChange)?
+  headerBuilder;
   final Key? fieldKey;
 
   const HMBDroplist({
@@ -50,6 +54,7 @@ class HMBDroplist<T> extends StatefulWidget {
     required this.format,
     required this.onChanged,
     required this.title,
+    this.formatSelection,
     this.onAdd,
     this.filterSheetBuilder,
     this.onFilterReset,
@@ -60,6 +65,8 @@ class HMBDroplist<T> extends StatefulWidget {
     this.initialValue,
     this.required = true,
     this.showSearch = true,
+    this.sortByRecent = true,
+    this.headerBuilder,
     this.fieldKey,
     super.key,
   });
@@ -144,6 +151,8 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
                   onFilterReset: widget.onFilterReset,
                   isFilterActive: widget.isFilterActive,
                   showSearch: widget.showSearch,
+                  sortByRecent: widget.sortByRecent,
+                  headerBuilder: widget.headerBuilder,
                 ),
               );
               if (selected != null || !widget.required) {
@@ -166,7 +175,9 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
                   Expanded(
                     child: Text(
                       _selectedItem != null
-                          ? widget.format(_selectedItem as T)
+                          ? (widget.formatSelection ?? widget.format)(
+                              _selectedItem as T,
+                            )
                           : 'Select a ${widget.title}',
                       style: TextStyle(
                         fontSize: 16,

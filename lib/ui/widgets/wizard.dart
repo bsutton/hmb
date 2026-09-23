@@ -399,7 +399,12 @@ class WizardState extends State<Wizard> {
 
   Widget _buildStepHeading(WizardStep step, int stepNo) => GrayedOut(
     grayedOut: step != _currentStep,
-    child: Row(children: [_buildNo(stepNo), step.title]),
+    child: Row(
+      children: [
+        _buildNo(stepNo),
+        Expanded(child: step.title),
+      ],
+    ),
   );
 
   Widget _buildNo(int stepNo) => SizedBox(

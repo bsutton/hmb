@@ -37,6 +37,9 @@ class HMBDroplistDialog<T> extends StatefulWidget {
   final VoidCallback? onFilterReset;
   final bool Function()? isFilterActive;
   final bool showSearch;
+  final bool sortByRecent;
+  final Widget Function(BuildContext context, VoidCallback onChange)?
+  headerBuilder;
 
   const HMBDroplistDialog({
     required this.getItems,
@@ -50,6 +53,8 @@ class HMBDroplistDialog<T> extends StatefulWidget {
     this.isFilterActive,
     super.key,
     this.showSearch = true,
+    this.sortByRecent = true,
+    this.headerBuilder,
   });
 
   @override
@@ -76,8 +81,10 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
     final generation = ++_loadGeneration;
     final filter = _filter;
     try {
-      final items = [...await widget.getItems(filter)]
-        ..sort(_compareRecentFirst);
+      final items = [...await widget.getItems(filter)];
+      if (widget.sortByRecent) {
+        items.sort(_compareRecentFirst);
+      }
       if (!mounted || generation != _loadGeneration) {
         return;
       }
@@ -211,6 +218,10 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
             ],
           ),
         ),
+        if (widget.headerBuilder != null)
+          widget.headerBuilder!(context, () {
+            unawaited(_loadItems());
+          }),
         if (_loading)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 20),
