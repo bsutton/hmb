@@ -310,6 +310,12 @@ class EntityListScreenState<T extends Entity<T>>
       controller: _scrollController,
       itemCount: entityList.length,
       itemExtent: widget.cardHeight,
+      findChildIndexCallback: (key) {
+        final index = entityList.indexWhere(
+          (entity) => ValueKey(entity.id) == key,
+        );
+        return index == -1 ? null : index;
+      },
       itemBuilder: (context, index) => _buildCard(entityList[index]),
     );
   }
@@ -326,6 +332,7 @@ class EntityListScreenState<T extends Entity<T>>
   );
 
   Widget _buildCard(T entity) => FutureBuilderEx<Color>(
+    key: ValueKey(entity.id),
     initialData: SurfaceElevation.e6.color,
     future:
         widget.background?.call(entity) ??

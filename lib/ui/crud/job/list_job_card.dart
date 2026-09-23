@@ -46,7 +46,13 @@ class ListJobCard extends StatefulWidget {
   _ListJobCardState createState() => _ListJobCardState();
 }
 
-class _ListJobCardState extends DeferredState<ListJobCard> {
+class _ListJobCardState extends DeferredState<ListJobCard>
+    with AutomaticKeepAliveClientMixin<ListJobCard> {
+  // Retain loaded details while off-screen so scrolling back does not replace
+  // a full-height card with a short asynchronous loading placeholder.
+  @override
+  bool get wantKeepAlive => true;
+
   late Job job;
   late final JobActivity? nextActivity;
   late Customer? customer;
@@ -82,14 +88,18 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
   }
 
   @override
-  Widget build(BuildContext context) => DeferredBuilder(
-    this,
-    builder: (context) => Surface(
-      padding: EdgeInsets.zero,
-      elevation: SurfaceElevation.e6,
-      child: _buildDetails(job.status),
-    ),
-  );
+  Widget build(BuildContext context) {
+    super.build(context);
+    return DeferredBuilder(
+      this,
+      waitingBuilder: (_) => const SizedBox.shrink(),
+      builder: (context) => Surface(
+        padding: EdgeInsets.zero,
+        elevation: SurfaceElevation.e6,
+        child: _buildDetails(job.status),
+      ),
+    );
+  }
 
   Widget _buildDetails(JobStatus? jobStatus) => DaoJuneBuilder.builder(
     DaoJob(),
