@@ -6,7 +6,12 @@ import 'dart:async';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
+import 'package:hmb/dao/dao_job_party.dart';
+import 'package:hmb/dao/job_billing_contact.dart';
+import 'package:hmb/entity/contact_role.dart';
+import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/integrations/gmail/gmail_import_service.dart';
+import 'package:hmb/ui/crud/contact/contact_roles_screen.dart';
 import 'package:hmb/ui/crud/job/gmail_job_import_screen.dart';
 import 'package:hmb/ui/crud/job/job_creation_email_source.dart';
 import 'package:hmb/ui/crud/job/job_creator.dart';
@@ -14,12 +19,15 @@ import 'package:hmb/ui/crud/job/list_job_screen.dart';
 import 'package:hmb/ui/widgets/blocking_ui.dart';
 import 'package:hmb/ui/widgets/hmb_button.dart';
 import 'package:hmb/ui/widgets/icons/hmb_add_button.dart';
+import 'package:hmb/ui/widgets/select/hmb_droplist.dart';
+import 'package:hmb/util/dart/money_ex.dart';
 import 'package:june/june.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../../database/management/db_utility_test_helper.dart';
 import '../../../util/settings_test_helper.dart';
+import '../../ui_test_helpers.dart';
 
 void main() {
   setUp(() async {
@@ -47,6 +55,19 @@ void main() {
           receivedAt: DateTime.utc(2026, 8, 14),
           hasAttachments: false,
         );
+        final otherJob = await tester.runAsync(
+          () => createJobWithCustomer(
+            billingType: BillingType.timeAndMaterial,
+            hourlyRate: MoneyEx.zero,
+            summary: 'Billing account fixture',
+          ),
+        );
+        final billingCustomer = await tester.runAsync(
+          () => DaoCustomer().getById(otherJob!.customerId),
+        );
+        final billingContact = await tester.runAsync(
+          () => DaoContact().getById(otherJob!.contactId),
+        );
         await tester.pumpWidget(
           ToastificationWrapper(
             child: MaterialApp(
@@ -55,7 +76,7 @@ void main() {
           ),
         );
         await _pumpAsyncWork(tester);
-        for (var step = 0; step < 4; step++) {
+        for (var step = 0; step < 6; step++) {
           if (step == 3) {
             await tester.enterText(
               find.widgetWithText(TextFormField, 'Address Line 1'),
@@ -78,11 +99,129 @@ void main() {
               await tester.enterText(siteField, '20 Work Street');
             }
           }
+          if (step == 4 && !separateSite) {
+            await tester.ensureVisible(find.text('Add party'));
+            await tester.pumpAndSettle();
+            await tester.tap(find.text('Add party'));
+            await _pumpAsyncWork(tester);
+            tester
+                .widget<ContactRoleSelector>(find.byType(ContactRoleSelector))
+                .onChanged(
+                  const ContactRole(
+                    id: ContactRole.site,
+                    name: 'Site Contact',
+                    builtin: true,
+                  ),
+                );
+            await _pumpAsyncWork(tester);
+            await tester.tap(find.text('Add Contact'));
+            await _pumpAsyncWork(tester);
+            await tester.enterText(
+              find.widgetWithText(TextFormField, 'First Name'),
+              'Sam',
+            );
+            await tester.enterText(
+              find.widgetWithText(TextFormField, 'Surname'),
+              'Access',
+            );
+            await tester.enterText(
+              find.widgetWithText(TextFormField, 'Email'),
+              'draft-access@example.test',
+            );
+            await tester.tap(find.text('Use contact'));
+            await _pumpAsyncWork(tester);
+            await tester.pumpAndSettle();
+            await tester.tap(find.text('Save'));
+            await _pumpAsyncWork(tester);
+            await tester.pumpAndSettle();
+            expect(find.text('Sam Access'), findsOneWidget);
+            expect(
+              await tester.runAsync(
+                () => DaoContact().getByEmail('draft-access@example.test'),
+              ),
+              isEmpty,
+            );
+          }
+          if (step == 4 && separateSite) {
+            await tester.ensureVisible(find.text('Add party'));
+            await tester.pumpAndSettle();
+            await tester.tap(find.text('Add party'));
+            await _pumpAsyncWork(tester);
+            tester
+                .widget<ContactRoleSelector>(find.byType(ContactRoleSelector))
+                .onChanged(
+                  const ContactRole(
+                    id: ContactRole.site,
+                    name: 'Site Contact',
+                    builtin: true,
+                  ),
+                );
+            await tester.pumpAndSettle();
+            tester
+                .widget<HMBDroplist<Contact>>(
+                  find.byWidgetPredicate(
+                    (widget) =>
+                        widget is HMBDroplist<Contact> &&
+                        widget.title == 'Contact',
+                  ),
+                )
+                .onChanged(billingContact);
+            await _pumpAsyncWork(tester);
+            await tester.pumpAndSettle();
+            await tester.tap(find.text('Save'));
+            await _pumpAsyncWork(tester);
+            await tester.pumpAndSettle();
+            expect(find.text('Site Contact'), findsOneWidget);
+            expect(
+              await tester.runAsync(
+                () => DaoJobSourceEmail().getByMessage(
+                  accountEmail: source.accountEmail,
+                  messageId: source.messageId,
+                ),
+              ),
+              isNull,
+            );
+          }
+          if (step == 5 && separateSite) {
+            tester
+                .widget<HMBDroplist<Customer>>(
+                  find.byWidgetPredicate(
+                    (widget) =>
+                        widget is HMBDroplist<Customer> &&
+                        widget.title == 'Bill To customer',
+                  ),
+                )
+                .onChanged(billingCustomer);
+            await _pumpAsyncWork(tester);
+            await tester.pumpAndSettle();
+            final billingPicker = tester.widget<HMBDroplist<Contact>>(
+              find.byWidgetPredicate(
+                (widget) =>
+                    widget is HMBDroplist<Contact> &&
+                    widget.title == 'Billing Contact (optional)',
+              ),
+            );
+            final choices = await tester.runAsync(
+              () => billingPicker.items(null),
+            );
+            expect(
+              choices!.map((contact) => contact.id),
+              contains(billingContact!.id),
+            );
+            expect(
+              choices.map((contact) => contact.emailAddress),
+              isNot(contains(source.senderEmail)),
+            );
+            billingPicker.onChanged(billingContact);
+            await tester.pumpAndSettle();
+            final rate = find.widgetWithText(TextFormField, 'Hourly Rate');
+            await tester.ensureVisible(rate);
+            await tester.enterText(rate, '123.45');
+          }
           await tester.tap(find.text('Next'));
           await _pumpAsyncWork(tester);
           await tester.pumpAndSettle();
         }
-        expect(find.text('Primary Contact'), findsOneWidget);
         await tester.enterText(
           find.widgetWithText(TextFormField, 'Job Summary'),
           source.subject,
@@ -112,7 +251,49 @@ void main() {
           final contact = await DaoContact().getById(job.contactId);
           expect(contact, isNotNull);
           expect(contact!.emailAddress, source.senderEmail);
-          expect(job.billingContactId, contact.id);
+          expect(
+            job.billingContactId,
+            separateSite ? billingContact!.id : null,
+          );
+          expect(
+            (await resolveJobBillingContact(job)).contact?.id,
+            separateSite ? billingContact!.id : contact.id,
+          );
+          if (separateSite) {
+            expect(job.billingCustomerId, billingCustomer!.id);
+            expect(job.customerId, isNot(billingCustomer.id));
+            expect(job.hourlyRate, MoneyEx.tryParse('123.45'));
+            final parties = await DaoJobParty().getByJob(job.id);
+            expect(
+              parties.any(
+                (party) =>
+                    party.role.id == ContactRole.site &&
+                    party.contact.id == billingContact!.id,
+              ),
+              isTrue,
+            );
+          }
+          if (!separateSite) {
+            final createdContacts = await DaoContact().getByEmail(
+              'draft-access@example.test',
+            );
+            expect(createdContacts, hasLength(1));
+            final parties = await DaoJobParty().getByJob(job.id);
+            expect(
+              parties.any(
+                (party) =>
+                    party.role.id == ContactRole.site &&
+                    party.contact.id == createdContacts.single.id,
+              ),
+              isTrue,
+            );
+            expect(
+              (await DaoContact().getByCustomer(
+                job.customerId,
+              )).any((contact) => contact.id == createdContacts.single.id),
+              isTrue,
+            );
+          }
           final customerAddress = await DaoSite().getPrimaryForCustomer(
             job.customerId,
           );
@@ -144,7 +325,11 @@ void main() {
     expect(localName, endsWith('.pdf'));
   });
 
-  testWidgets('new job menu offers Gmail import', (tester) async {
+  testWidgets('new job menu has aligned creation choices on mobile', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(360, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       const MaterialApp(home: Scaffold(body: JobListScreen())),
     );
@@ -158,6 +343,16 @@ void main() {
 
     expect(find.text('Enter manually'), findsOneWidget);
     expect(find.text('Import from Gmail'), findsOneWidget);
+    final manual = tester.getRect(
+      find.widgetWithText(HMBButtonPrimary, 'Enter manually'),
+    );
+    final gmail = tester.getRect(
+      find.widgetWithText(HMBButtonSecondary, 'Import from Gmail'),
+    );
+    expect(manual.left, gmail.left);
+    expect(manual.right, gmail.right);
+    expect(gmail.top - manual.bottom, greaterThanOrEqualTo(12));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('email source remains available in the job wizard', (
@@ -234,7 +429,7 @@ void main() {
       () => Future<void>.delayed(const Duration(milliseconds: 1100)),
     );
     await tester.pump(const Duration(milliseconds: 1100));
-    final cancelButton = find.widgetWithText(HMBButton, 'Cancel');
+    final cancelButton = find.widgetWithText(HMBCancelButton, 'Cancel');
     expect(cancelButton, findsOneWidget);
     await tester.tap(cancelButton);
     await _pumpAsyncWork(tester);

@@ -74,23 +74,33 @@ class _JobListScreenState extends State<JobListScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Create job'),
-        content: const Text(
-          'Enter a job manually or choose an email from Gmail.',
+        content: SizedBox(
+          width: 360,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('How would you like to create this job?'),
+              const SizedBox(height: 20),
+              HMBButtonPrimary(
+                label: 'Enter manually',
+                hint: 'Open the Create Job Wizard',
+                onPressed: () =>
+                    Navigator.of(context).pop(_NewJobSource.manual),
+              ),
+              const SizedBox(height: 12),
+              HMBButtonSecondary(
+                label: 'Import from Gmail',
+                hint: 'Search Gmail and create a job from an email',
+                onPressed: () => Navigator.of(context).pop(_NewJobSource.gmail),
+              ),
+            ],
+          ),
         ),
         actions: [
           HMBCancelButton(
             hint: 'Close without creating a job',
             onPressed: () => Navigator.of(context).pop(),
-          ),
-          HMBButton(
-            label: 'Enter manually',
-            hint: 'Open the Create Job Wizard',
-            onPressed: () => Navigator.of(context).pop(_NewJobSource.manual),
-          ),
-          HMBButton(
-            label: 'Import from Gmail',
-            hint: 'Search Gmail and create a job from an email',
-            onPressed: () => Navigator.of(context).pop(_NewJobSource.gmail),
           ),
         ],
       ),

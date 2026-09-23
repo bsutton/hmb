@@ -24,6 +24,38 @@ void main() {
     hourlyRate: MoneyEx.dollars(95),
   );
 
+  test('party assignments roll back with draft job creation', () async {
+    final existing = await makeJob();
+    int? draftJobId;
+    await expectLater(
+      DaoJob().withTransaction((transaction) async {
+        final draft = Job.forInsert(
+          customerId: existing.customerId,
+          summary: 'Rollback draft',
+          description: '',
+          siteId: existing.siteId,
+          contactId: null,
+          status: JobStatus.prospecting,
+          hourlyRate: MoneyEx.zero,
+          billingContactId: null,
+          bookingFee: MoneyEx.zero,
+        );
+        await DaoJob().insert(draft, transaction);
+        draftJobId = draft.id;
+        await DaoJobParty().save(
+          jobId: draft.id,
+          contactId: existing.contactId!,
+          roleId: ContactRole.site,
+          transaction: transaction,
+        );
+        throw StateError('Cancel transaction');
+      }),
+      throwsStateError,
+    );
+    expect(await DaoJob().getById(draftJobId), isNull);
+    expect(await DaoJobParty().getByJob(draftJobId!), isEmpty);
+  });
+
   test('business referrer changes retain billing and contact roles', () async {
     final job = await makeJob();
     final businessJob = await makeJob();

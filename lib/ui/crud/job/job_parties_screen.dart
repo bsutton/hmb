@@ -2,6 +2,7 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../dao/dao.g.dart';
+import '../../../dao/dao_contact_role.dart';
 import '../../../dao/dao_job_party.dart';
 import '../../../dao/job_billing_contact.dart';
 import '../../../dao/join_adaptors/join_adaptor_customer_contact.dart';
@@ -55,7 +56,19 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
   Future<void> _edit([JobParty? party]) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) => _PartyAssignmentEditor(job: _job!, party: party),
+        builder: (_) => JobPartyAssignmentEditor(
+          customerId: _job!.customerId,
+          billToCustomerId: _job!.billingCustomerId,
+          party: party,
+          parties: _parties,
+          onSave: (contact, role, {required replace}) => DaoJobParty().save(
+            jobId: _job!.id,
+            contactId: contact.id,
+            roleId: role.id,
+            assignmentId: party?.id,
+            replaceSingleton: replace,
+          ),
+        ),
       ),
     );
     await _load();
@@ -325,20 +338,45 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
   );
 }
 
-class _PartyAssignmentEditor extends StatefulWidget {
-  final Job job;
+class JobPartyAssignmentEditor extends StatefulWidget {
+  final int? customerId;
+  final int? billToCustomerId;
   final JobParty? party;
-  const _PartyAssignmentEditor({required this.job, this.party});
+  final List<JobParty> parties;
+  final List<Contact> draftContacts;
+  final List<Contact> draftBillingContacts;
+  final Future<Contact?> Function({required bool billing})? createContact;
+  final Future<void> Function(
+    Contact contact,
+    ContactRole role, {
+    required bool replace,
+  })
+  onSave;
+
+  const JobPartyAssignmentEditor({
+    required this.customerId,
+    required this.billToCustomerId,
+    required this.parties,
+    required this.onSave,
+    this.party,
+    this.createContact,
+    this.draftContacts = const [],
+    this.draftBillingContacts = const [],
+    super.key,
+  });
   @override
-  State<_PartyAssignmentEditor> createState() => _PartyAssignmentEditorState();
+  State<JobPartyAssignmentEditor> createState() =>
+      JobPartyAssignmentEditorState();
 }
 
-class _PartyAssignmentEditorState extends State<_PartyAssignmentEditor> {
+class JobPartyAssignmentEditorState extends State<JobPartyAssignmentEditor> {
   final _form = GlobalKey<FormState>();
   Contact? _contact;
   int? _roleId;
   var _roleChosen = false;
   var _saving = false;
+  final _createdContacts = <Contact>[];
+  final _createdBillingContacts = <Contact>[];
 
   @override
   void initState() {
@@ -358,11 +396,24 @@ class _PartyAssignmentEditorState extends State<_PartyAssignmentEditor> {
   }
 
   Future<void> _createContact() async {
+    if (widget.createContact != null) {
+      final billing = _roleId == ContactRole.billing;
+      final contact = await widget.createContact!(billing: billing);
+      if (mounted && contact != null) {
+        _createdContacts.add(contact);
+        if (billing) {
+          _createdBillingContacts.add(contact);
+        }
+        _selectContact(contact);
+      }
+      return;
+    }
+
     final customer = await BlockingUI().runAndWait(
       () => DaoCustomer().getById(
         _roleId == ContactRole.billing
-            ? widget.job.billingCustomerId
-            : widget.job.customerId,
+            ? widget.billToCustomerId
+            : widget.customerId,
       ),
     );
     if (!mounted) {
@@ -391,9 +442,11 @@ class _PartyAssignmentEditorState extends State<_PartyAssignmentEditor> {
     }
     setState(() => _saving = true);
     try {
-      final existing = await BlockingUI().runAndWait(
-        () => DaoJobParty().getByJob(widget.job.id),
-      );
+      final existing = widget.parties;
+      final role = await DaoContactRole().getById(_roleId);
+      if (role == null) {
+        return;
+      }
       if (!mounted) {
         return;
       }
@@ -434,14 +487,26 @@ class _PartyAssignmentEditorState extends State<_PartyAssignmentEditor> {
           return;
         }
       }
+      if (existing.any(
+        (other) =>
+            other.id != widget.party?.id &&
+            other.contact.id == _contact!.id &&
+            other.role.id == role.id,
+      )) {
+        HMBToast.error('That contact already has this role on the job.');
+        return;
+      }
+      if (role.id == ContactRole.billing &&
+          ![
+            ...await billingContactsForCustomer(widget.billToCustomerId),
+            ...widget.draftBillingContacts,
+            ..._createdBillingContacts,
+          ].any((contact) => contact.id == _contact!.id)) {
+        HMBToast.error('Choose a contact belonging to the Bill To customer.');
+        return;
+      }
       await BlockingUI().runAndWait(
-        () => DaoJobParty().save(
-          jobId: widget.job.id,
-          contactId: _contact!.id,
-          roleId: _roleId!,
-          assignmentId: widget.party?.id,
-          replaceSingleton: replace,
-        ),
+        () => widget.onSave(_contact!, role, replace: replace),
       );
       if (mounted) {
         Navigator.pop(context);
@@ -474,11 +539,17 @@ class _PartyAssignmentEditorState extends State<_PartyAssignmentEditor> {
             title: 'Contact',
             selectedItem: () async => _contact,
             items: (filter) async =>
-                (await (_roleId == ContactRole.billing
-                        ? billingContactsForCustomer(
-                            widget.job.billingCustomerId,
-                          )
-                        : DaoContact().getAll()))
+                [
+                      ...await (_roleId == ContactRole.billing
+                          ? billingContactsForCustomer(widget.billToCustomerId)
+                          : DaoContact().getAll()),
+                      ...(_roleId == ContactRole.billing
+                          ? widget.draftBillingContacts
+                          : widget.draftContacts),
+                      ...(_roleId == ContactRole.billing
+                          ? _createdBillingContacts
+                          : _createdContacts),
+                    ]
                     .where(
                       (contact) => '${contact.fullname} ${contact.bestEmail}'
                           .toLowerCase()

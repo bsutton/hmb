@@ -45,8 +45,9 @@ class DaoJobParty {
     required int roleId,
     int? assignmentId,
     bool replaceSingleton = false,
+    Transaction? transaction,
   }) async {
-    await _db.transaction((txn) async {
+    Future<void> saveInTransaction(Transaction txn) async {
       final role = await DaoContactRole().getById(roleId, txn);
       final job = await DaoJob().getById(jobId, txn);
       if (role == null ||
@@ -120,8 +121,14 @@ class DaoJobParty {
         );
       }
       await _projectLegacyFields(jobId, txn);
-    });
-    Dao.notifier(DaoJob(), jobId);
+    }
+
+    if (transaction != null) {
+      await saveInTransaction(transaction);
+    } else {
+      await _db.transaction(saveInTransaction);
+      Dao.notifier(DaoJob(), jobId);
+    }
   }
 
   Future<void> delete(int jobId, int assignmentId) async {

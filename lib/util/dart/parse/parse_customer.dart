@@ -12,6 +12,7 @@ import '../../../dao/dao_system.dart';
 import '../../../entity/site.dart';
 import 'device_region.dart';
 import 'parse_address.dart';
+import 'parsed_job_parties.dart';
 import 'phone_fallback.dart';
 
 /// --------------------------
@@ -30,6 +31,7 @@ class ParsedCustomer {
   String firstname;
   String surname;
   ParsedAddress address;
+  final ParsedJobParties? jobParties;
 
   ParsedCustomer({
     required this.customerName,
@@ -39,6 +41,7 @@ class ParsedCustomer {
     required this.surname,
     required this.mobile,
     required this.address,
+    this.jobParties,
   });
 
   // ---------- factory parser ----------
