@@ -350,9 +350,9 @@ Sometime this is referred to as a Surcharge, Callout Fee or Admin Fee''',
                   ? 'Enter a valid percentage'
                   : null,
             ).help('Default Profit Margin', '''
-Used as the default margin when creating new Task Items and
-as the starting estimate margin for new Jobs.
-You can still override the margin per Task Item and per Job estimate.'''),
+Used as the starting estimate margin for new Jobs.
+In the estimate editor, a zero Task Item margin uses the Job margin.
+A non-zero Task Item margin replaces the Job margin for that item.'''),
             HMBTextField(
               controller: _financialYearStartMonthController,
               labelText: 'Financial Year Start Month',

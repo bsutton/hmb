@@ -159,9 +159,9 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   Future<SystemConfiguration> _loadSystemDefaults() async {
     final daoSystem = DaoSystem();
     final system = await daoSystem.get();
-    final defaultMarginText = (await daoSystem.getDefaultProfitMargin(
-      system: system,
-    )).toString();
+    // The estimate/quote carries the usual margin. Line-item margins are
+    // explicit exceptions, so new items start at zero.
+    final defaultMarginText = Percentage.zero.toString();
     var selectedUnits = June.getState(SelectedUnits.new).selected;
 
     June.getState(SelectedSupplier.new).selected = currentEntity?.supplierId;
@@ -452,6 +452,10 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
         keyboardType: TextInputType.number,
         enabled: _chargeMode != ChargeMode.userDefined,
         onChanged: _calculateChargeFromMargin,
+      ),
+      const Text(
+        'For estimates and quotes, 0% uses the job margin. '
+        'A custom item margin replaces it.',
       ),
       _buildDirectChargeField(),
       HMBTextField(

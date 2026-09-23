@@ -3,10 +3,14 @@ library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/job.dart';
+import 'package:hmb/entity/task_item_type.dart';
 import 'package:hmb/ui/crud/check_list/edit_task_item_screen.dart';
 import 'package:hmb/ui/widgets/blocking_ui.dart';
+import 'package:hmb/ui/widgets/fields/hmb_text_field.dart';
+import 'package:hmb/ui/widgets/select/hmb_droplist.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:money2/money2.dart';
 
 import '../../../database/management/db_utility_test_helper.dart';
 import '../../../util/settings_test_helper.dart';
@@ -58,6 +62,20 @@ void main() {
     expect(find.text('Loading...'), findsNothing);
     expect(find.text('Add Task Item'), findsOneWidget);
     expect(find.text('Description'), findsOneWidget);
+    tester
+        .widget<HMBDroplist<TaskItemType>>(
+          find.byType(HMBDroplist<TaskItemType>),
+        )
+        .onChanged(TaskItemType.materialsBuy);
+    await tester.pumpAndSettle();
+    final margin = tester.widget<HMBTextField>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is HMBTextField &&
+            widget.labelText == 'Margin (%) – applied to line total',
+      ),
+    );
+    expect(Percentage.tryParse(margin.controller.text), Percentage.zero);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();

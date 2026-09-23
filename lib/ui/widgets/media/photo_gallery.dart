@@ -32,20 +32,35 @@ import 'photo_carousel.dart';
 import 'thumbnail.dart';
 
 class PhotoGallery extends StatelessWidget {
+  final double emptyHeight;
+
   final computeManager = ComputeManager<Thumbnail, Thumbnail>();
   late final Future<List<PhotoMeta>> Function() _fetchPhotos;
 
-  PhotoGallery.forJob({required Job job, int? limit, super.key}) {
+  PhotoGallery.forJob({
+    required Job job,
+    int? limit,
+    this.emptyHeight = 100,
+    super.key,
+  }) {
     _fetchPhotos = () => DaoPhoto.getJobGallery(job.id, limit: limit);
   }
 
-  PhotoGallery.forTask({required Task task, super.key}) {
+  PhotoGallery.forTask({
+    required Task task,
+    this.emptyHeight = 100,
+    super.key,
+  }) {
     _fetchPhotos = () async => [
       ...await DaoPhoto.getMetaByParent(task.id, ParentType.task),
     ];
   }
 
-  PhotoGallery.forReceipt({required Receipt receipt, super.key}) {
+  PhotoGallery.forReceipt({
+    required Receipt receipt,
+    this.emptyHeight = 100,
+    super.key,
+  }) {
     _fetchPhotos = () async => [
       ...await DaoPhoto.getMetaByParent(receipt.id, ParentType.receipt),
     ];
@@ -56,6 +71,7 @@ class PhotoGallery extends StatelessWidget {
   /// are returned.
   PhotoGallery.forTool({
     required Tool tool,
+    this.emptyHeight = 100,
     super.key,
     bool Function(Photo photo)? filter,
   }) {
@@ -76,11 +92,11 @@ class PhotoGallery extends StatelessWidget {
   Widget build(BuildContext context) => JuneBuilder(
     PhotoGalleryState.new,
     builder: (context) => FutureBuilderEx<List<PhotoMeta>>(
-      waitingBuilder: (context) => const HMBPlaceHolder(height: 100),
+      waitingBuilder: (context) => HMBPlaceHolder(height: emptyHeight),
       future: _fetchPhotos(),
       builder: (context, photos) {
         if (photos!.isEmpty) {
-          return const HMBPlaceHolder(height: 100);
+          return HMBPlaceHolder(height: emptyHeight);
         } else {
           return buildGallery(photos, context);
         }

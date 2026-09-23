@@ -18,6 +18,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/entity.g.dart';
+import '../entity/helpers/estimate_margin.dart';
 import '../fsm/lifecycle_event_dispatcher.dart';
 import '../fsm/lifecycle_models.dart';
 import '../fsm/quote_events.dart';
@@ -220,9 +221,9 @@ class DaoQuote extends Dao<Quote> {
 
       for (final item in items.where((i) => !i.billed)) {
         if (item.itemType == TaskItemType.labour) {
-          labourTotal += _applyTaskMarginOverride(
+          labourTotal += applyDefaultLineMargin(
             item.calcLabourCharges(billingType, job.hourlyRate!),
-            taskMargin: taskMargin,
+            defaultMargin: taskMargin,
             itemMargin: item.margin,
           );
         }
@@ -257,9 +258,9 @@ class DaoQuote extends Dao<Quote> {
           continue;
         }
 
-        final matTotal = _applyTaskMarginOverride(
+        final matTotal = applyDefaultLineMargin(
           item.calcMaterialCharges(billingType),
-          taskMargin: taskMargin,
+          defaultMargin: taskMargin,
           itemMargin: item.margin,
         );
 
@@ -348,17 +349,6 @@ class DaoQuote extends Dao<Quote> {
       return MoneyEx.zero;
     }
     return lineTotal.divideByFixed(quantity);
-  }
-
-  Money _applyTaskMarginOverride(
-    Money baseCharge, {
-    required Percentage taskMargin,
-    required Percentage itemMargin,
-  }) {
-    if (baseCharge.isZero || !itemMargin.isZero || taskMargin.isZero) {
-      return baseCharge;
-    }
-    return baseCharge.plusPercentage(taskMargin);
   }
 
   Future<Money> _applyQuoteMarginAcrossLines(

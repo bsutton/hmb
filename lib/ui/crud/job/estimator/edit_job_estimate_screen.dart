@@ -24,6 +24,7 @@ import 'package:strings/strings.dart';
 import '../../../../api/chat_gpt/job_assist_api_client.dart';
 import '../../../../dao/dao.g.dart';
 import '../../../../entity/helpers/charge_mode.dart';
+import '../../../../entity/helpers/estimate_margin.dart';
 import '../../../../entity/job.dart';
 import '../../../../entity/material_price.dart';
 import '../../../../entity/task.dart';
@@ -38,6 +39,7 @@ import '../../../dialog/hmb_dialog.dart';
 import '../../../invoicing/dialog_select_tasks.dart';
 import '../../../quoting/list_quote_screen.dart';
 import '../../../widgets/blocking_ui.dart';
+import '../../../widgets/fields/hmb_text_field.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_search.dart';
 import '../../../widgets/hmb_toast.dart';
@@ -326,9 +328,10 @@ class _JobEstimateBuilderScreenState
   );
 
   Widget _buildTotals() {
-    final marginAmount =
-        _totalCombinedCost.plusPercentage(_estimateMargin) - _totalCombinedCost;
-    final total = _totalCombinedCost.plusPercentage(_estimateMargin);
+    final total = _tasks
+        .where((task) => !task.status.isWithdrawn())
+        .fold<Money>(MoneyEx.zero, (sum, task) => sum + _taskTotal(task));
+    final marginAmount = total - _totalCombinedCost;
 
     return Surface(
       elevation: SurfaceElevation.e0,
@@ -377,7 +380,7 @@ class _JobEstimateBuilderScreenState
               children: [
                 Text('Labour: $_totalLabourCost'),
                 Text('Materials: $_totalMaterialsCost'),
-                Text('Margin: $marginAmount ($_estimateMargin)'),
+                Text('Job margin: $marginAmount ($_estimateMargin)'),
                 HMBEditIcon(
                   onPressed: _showEditMarginDialog,
                   hint: 'Edit estimate margin',
@@ -432,7 +435,12 @@ class _JobEstimateBuilderScreenState
   }
 
   Future<void> _showQuotes() => Navigator.of(context).push<void>(
-    MaterialPageRoute(builder: (_) => QuoteListScreen(job: widget.job)),
+    MaterialPageRoute(
+      builder: (_) => HMBFullPageChildScreen(
+        title: 'Quotes',
+        child: QuoteListScreen(job: widget.job),
+      ),
+    ),
   );
 
   Future<void> _saveEstimateMargin(Percentage parsed) async {
@@ -451,7 +459,7 @@ class _JobEstimateBuilderScreenState
       context: context,
       builder: (context) => _EstimateMarginDialog(
         initialMargin: _estimateMargin,
-        combinedCost: _totalCombinedCost,
+        combinedCost: _defaultMarginBase,
       ),
     );
 
@@ -523,9 +531,14 @@ class _JobEstimateBuilderScreenState
                 ),
               ],
             ),
+            Text(
+              'Task total: ${_taskTotal(task)}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const Text('Includes applicable margins'),
             if (Strings.isNotBlank(task.description))
               HMBTextBody(task.description),
-            PhotoGallery.forTask(task: task),
+            PhotoGallery.forTask(task: task, emptyHeight: 0),
             _buildTaskItems(task),
             HMBButton(
               label: 'Add Item',
@@ -551,6 +564,51 @@ class _JobEstimateBuilderScreenState
             )
           : const Icon(Icons.auto_awesome),
     );
+  }
+
+  Money get _defaultMarginBase {
+    var total = MoneyEx.zero;
+    for (final task in _tasks.where((task) => !task.status.isWithdrawn())) {
+      final values = _itemsByTaskId[task.id];
+      if (values == null) {
+        continue;
+      }
+      for (final item in values.items.where((item) => item.margin.isZero)) {
+        total += item.getTotalLineCharge(values.billingType, values.hourlyRate);
+      }
+    }
+    return total;
+  }
+
+  Money _taskTotal(Task task) {
+    final values = _itemsByTaskId[task.id];
+    if (values == null) {
+      return MoneyEx.zero;
+    }
+    return values.items.fold<Money>(
+      MoneyEx.zero,
+      (total, item) =>
+          total + _itemTotal(item, values.billingType, values.hourlyRate),
+    );
+  }
+
+  Money _itemTotal(TaskItem item, BillingType billingType, Money hourlyRate) =>
+      applyDefaultLineMargin(
+        item.getTotalLineCharge(billingType, hourlyRate),
+        defaultMargin: _estimateMargin,
+        itemMargin: item.margin,
+      );
+
+  String _itemMarginDescription(TaskItem item) {
+    if (item.chargeMode == ChargeMode.userDefined) {
+      return item.margin.isZero
+          ? 'Custom line price • Job margin: $_estimateMargin'
+          : 'Custom line price (job margin overridden)';
+    }
+    if (item.margin.isZero) {
+      return 'Margin: $_estimateMargin (from job)';
+    }
+    return 'Margin: ${item.margin} (item override)';
   }
 
   Widget _buildTaskItems(Task task) {
@@ -597,7 +655,8 @@ class _JobEstimateBuilderScreenState
           ],
         ),
         const Divider(height: 1),
-        Text('Cost: ${item.getTotalLineCharge(billingType, hourlyRate)}'),
+        Text('Line total: ${_itemTotal(item, billingType, hourlyRate)}'),
+        Text(_itemMarginDescription(item)),
       ],
     ),
   );
@@ -1045,21 +1104,21 @@ class _EstimateMarginDialogState extends State<_EstimateMarginDialog> {
         ),
         const HMBSpacer(height: true),
         if (_mode == MarginMode.percent) ...[
-          TextField(
-            key: const ValueKey('margin_percent_field'),
+          HMBTextField(
+            fieldKey: const ValueKey('margin_percent_field'),
             controller: _percentController,
             keyboardType: TextInputType.number,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(labelText: 'Margin (%)'),
+            labelText: 'Margin (%)',
           ),
           Text('Resulting Margin: $_calculatedAmount'),
         ] else ...[
-          TextField(
-            key: const ValueKey('margin_amount_field'),
+          HMBTextField(
+            fieldKey: const ValueKey('margin_amount_field'),
             controller: _amountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(labelText: r'Margin ($)'),
+            labelText: r'Margin ($)',
           ),
           Text('Resulting Margin %: $_calculatedPercentFromAmount'),
         ],

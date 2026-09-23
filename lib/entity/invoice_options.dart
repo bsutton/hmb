@@ -21,7 +21,12 @@ class InvoiceOptions {
   bool billBookingFee = true;
   bool groupByTask;
   Contact contact;
+
+  /// An additional whole-quote surcharge, distinct from a job's default
+  /// item margin. Job estimate margins belong in [taskMargins].
   Percentage quoteMargin;
+
+  /// Defaults applied only to items whose own margin is zero.
   Map<int, Percentage> taskMargins;
   String? quoteName;
 

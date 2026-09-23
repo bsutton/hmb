@@ -19,6 +19,8 @@ import 'package:strings/strings.dart';
 import '../../dao/dao.g.dart';
 import '../../dao/invoice_billing_contact.dart';
 import '../../entity/entity.g.dart';
+import '../../entity/helpers/estimate_margin.dart';
+import '../../util/dart/money_ex.dart';
 import '../nav/dashboards/accounting/materials_billing_screen.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_select_contact.dart';
@@ -71,6 +73,23 @@ Future<InvoiceOptions?> selectTaskToQuote({
     );
     return null;
   }
+  final selectors = <TaskSelector>[];
+  for (final estimate in quoteEligible) {
+    final items = await DaoTaskItem().getByTask(estimate.task.id);
+    var total = MoneyEx.zero;
+    for (final item in items.where((item) => !item.billed)) {
+      total += applyDefaultLineMargin(
+        item.getTotalLineCharge(
+          BillingType.fixedPrice,
+          job.hourlyRate ?? MoneyEx.zero,
+        ),
+        defaultMargin: job.estimateMargin,
+        itemMargin: item.margin,
+      );
+    }
+    selectors.add(TaskSelector(estimate.task, estimate.task.name, total));
+  }
+
   if (context.mounted) {
     final invoiceOptions = await showDialog<InvoiceOptions>(
       context: context,
@@ -79,15 +98,7 @@ Future<InvoiceOptions?> selectTaskToQuote({
         contact: contact,
         title: title,
         forQuote: true,
-        taskSelectors: quoteEligible
-            .map(
-              (estimate) => TaskSelector(
-                estimate.task,
-                estimate.task.name,
-                estimate.total,
-              ),
-            )
-            .toList(),
+        taskSelectors: selectors,
       ),
     );
 
@@ -372,7 +383,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
                 children: [
                   CheckboxListTile(
                     title: Text(taskSelector.description),
-                    subtitle: Text('Total Cost: ${taskSelector.value}'),
+                    subtitle: Text('Total: ${taskSelector.value}'),
                     value: _selectedTasks[taskSelector.task.id] ?? false,
                     onChanged: (value) =>
                         _toggleIndividualTask(taskSelector.task.id, value),
@@ -403,7 +414,14 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
               billBookingFee: billBookingFee,
               groupByTask: !_hasSelectedTimeAndMaterialsTasks || _groupByTask,
               contact: _selectedContact,
-              quoteMargin: widget.job.estimateMargin,
+              // The job margin is a fallback for each item, not a surcharge
+              // on top of custom item margins.
+              taskMargins: widget.forQuote
+                  ? {
+                      for (final id in selectedTaskIds)
+                        id: widget.job.estimateMargin,
+                    }
+                  : {},
               quoteName: _quoteNameController.text.trim(),
             ),
           );
