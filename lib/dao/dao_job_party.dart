@@ -8,6 +8,7 @@ import 'dao.dart';
 import 'dao_contact.dart';
 import 'dao_contact_role.dart';
 import 'dao_job.dart';
+import 'job_billing_contact.dart';
 
 class DaoJobParty {
   Database get _db => DatabaseHelper.instance.database;
@@ -52,6 +53,16 @@ class DaoJobParty {
           await DaoContact().getById(contactId, txn) == null ||
           job == null) {
         throw HMBException('Select a valid contact and role.');
+      }
+      if (roleId == ContactRole.billing &&
+          !(await billingContactsForCustomer(
+            job.billingCustomerId,
+            txn,
+          )).any((contact) => contact.id == contactId)) {
+        throw HMBException(
+          'Choose a contact belonging to the Bill To customer. '
+          'Change the Bill To customer in Billing first if needed.',
+        );
       }
       final previous = assignmentId == null
           ? <Map<String, Object?>>[]
@@ -101,17 +112,6 @@ class DaoJobParty {
         final billingValues = <String, Object?>{
           'legacy_billing_contact_id': null,
         };
-        if (roleId == ContactRole.billing && job.billToCustomerId == null) {
-          final customers = await txn.rawQuery(
-            'SELECT DISTINCT customer_id FROM customer_contact '
-            'WHERE contact_id = ?',
-            [contactId],
-          );
-          if (customers.length == 1) {
-            billingValues['bill_to_customer_id'] =
-                customers.single['customer_id'];
-          }
-        }
         await txn.update(
           'job',
           billingValues,
