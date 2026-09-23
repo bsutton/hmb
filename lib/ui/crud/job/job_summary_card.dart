@@ -45,6 +45,7 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
   Site? _site;
   List<JobParty> _parties = [];
   late ResolvedJobBillingContact _billing;
+  var _mixedBilling = false;
   var _notes = 0;
   var _attachments = 0;
   var _photos = 0;
@@ -65,6 +66,11 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
       final site = await DaoSite().getById(job.siteId);
       final parties = await DaoJobParty().getByJob(job.id);
       final billing = await resolveJobBillingContact(job);
+      final mixedBilling = (await DaoTask().getTasksByJob(job.id)).any(
+        (task) =>
+            !task.status.isWithdrawn() &&
+            task.effectiveBillingType(job.billingType) != job.billingType,
+      );
       final notes = (await DaoActivity().getByJob(
         job.id,
         type: ActivityType.note,
@@ -87,6 +93,7 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
       _site = site;
       _parties = parties;
       _billing = billing;
+      _mixedBilling = mixedBilling;
       _notes = notes;
       _attachments = attachments;
       _photos = counts.single['count']! as int;
@@ -262,7 +269,12 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
                 const HMBChip(label: 'Automatic'),
               Text(_billing.source.description),
               const Divider(),
-              Text('Billing type: ${widget.job.billingType.display}'),
+              Text(
+                'Billing type: '
+                '${_mixedBilling ? 'Mixed' : widget.job.billingType.display}',
+              ),
+              if (_mixedBilling)
+                Text('Job default: ${widget.job.billingType.display}'),
               Text('Hourly rate: ${widget.job.hourlyRate ?? 'Not set'}'),
               Text('Booking fee: ${widget.job.bookingFee ?? 'Not set'}'),
             ],

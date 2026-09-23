@@ -3,7 +3,9 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../dao/dao_job_party.dart';
+import '../../../dao/job_billing_contact.dart';
 import '../../../dao/join_adaptors/join_adaptor_customer_contact.dart';
+import '../../../entity/contact_role.dart';
 import '../../../entity/entity.g.dart';
 import '../../../entity/job_party.dart';
 import '../../dialog/source_context.dart';
@@ -359,7 +361,11 @@ class _PartyAssignmentEditorState extends State<_PartyAssignmentEditor> {
 
   Future<void> _createContact() async {
     final customer = await BlockingUI().runAndWait(
-      () => DaoCustomer().getById(widget.job.customerId),
+      () => DaoCustomer().getById(
+        _roleId == ContactRole.billing
+            ? widget.job.billingCustomerId
+            : widget.job.customerId,
+      ),
     );
     if (!mounted) {
       return;
@@ -467,15 +473,21 @@ class _PartyAssignmentEditorState extends State<_PartyAssignmentEditor> {
         padding: const EdgeInsets.all(16),
         children: [
           HMBDroplist<Contact>(
+            key: ValueKey(_roleId == ContactRole.billing),
             title: 'Contact',
             selectedItem: () async => _contact,
-            items: (filter) async => (await DaoContact().getAll())
-                .where(
-                  (contact) => '${contact.fullname} ${contact.bestEmail}'
-                      .toLowerCase()
-                      .contains((filter ?? '').toLowerCase()),
-                )
-                .toList(),
+            items: (filter) async =>
+                (await (_roleId == ContactRole.billing
+                        ? billingContactsForCustomer(
+                            widget.job.billingCustomerId,
+                          )
+                        : DaoContact().getAll()))
+                    .where(
+                      (contact) => '${contact.fullname} ${contact.bestEmail}'
+                          .toLowerCase()
+                          .contains((filter ?? '').toLowerCase()),
+                    )
+                    .toList(),
             format: (contact) => contact.fullname.trim(),
             onChanged: _selectContact,
             onAdd: _createContact,
@@ -486,6 +498,10 @@ class _PartyAssignmentEditorState extends State<_PartyAssignmentEditor> {
             required: true,
             title: 'Role on this job',
             onChanged: (role) => setState(() {
+              if (role?.id == ContactRole.billing &&
+                  _roleId != ContactRole.billing) {
+                _contact = null;
+              }
               _roleId = role?.id;
               _roleChosen = true;
             }),
@@ -493,7 +509,8 @@ class _PartyAssignmentEditorState extends State<_PartyAssignmentEditor> {
           const SizedBox(height: 12),
           const Text(
             'The contact’s default role is a suggestion. '
-            'Changing this assignment only affects this job.',
+            'Changing this assignment only affects this job. Billing contacts '
+            'must belong to the Bill To customer selected in Billing.',
           ),
           const SizedBox(height: 16),
           HMBSaveCancelButtons(

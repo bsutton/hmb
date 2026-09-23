@@ -406,6 +406,88 @@ void main() {
     },
   );
 
+  testWidgets('billing contacts follow the Bill To customer', (tester) async {
+    final job = await seed(tester);
+    late Job other;
+    late Customer otherCustomer;
+    await tester.runAsync(() async {
+      other = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.dollars(95),
+      );
+      otherCustomer = (await DaoCustomer().getById(other.customerId))!;
+    });
+    await showEditor(tester, job);
+    await pumpUntil(tester, find.text('Job actions'));
+    final editBilling = find.byKey(const ValueKey('edit-job-section-billing'));
+    await tester.ensureVisible(editBilling);
+    await tester.tap(editBilling);
+    await pumpUntil(tester, find.text('Bill To customer'));
+    final billTo = tester.widget<HMBDroplist<Customer>>(
+      find.byType(HMBDroplist<Customer>),
+    );
+    var contacts = tester.widget<HMBDroplist<Contact>>(
+      find.byType(HMBDroplist<Contact>),
+    );
+    await tester.runAsync(() async {
+      expect((await billTo.selectedItem())!.id, job.customerId);
+      expect((await contacts.items(null)).map((c) => c.id), [job.contactId]);
+    });
+    billTo.onChanged(otherCustomer);
+    await pumpUntil(
+      tester,
+      find.byKey(ValueKey('billing-contact-${other.customerId}')),
+    );
+    contacts = tester.widget<HMBDroplist<Contact>>(
+      find.byType(HMBDroplist<Contact>),
+    );
+    await tester.runAsync(() async {
+      expect(await contacts.selectedItem(), isNull);
+      expect((await contacts.items(null)).map((c) => c.id), [other.contactId]);
+    });
+    final selected = await tester.runAsync(
+      () => DaoContact().getById(other.contactId),
+    );
+    contacts.onChanged(selected);
+    await tester.pump();
+    await tester.tap(find.text('Save'));
+    await pumpUntil(tester, find.text('Job actions'));
+    await tester.runAsync(() async {
+      final saved = (await DaoJob().getById(job.id))!;
+      expect(saved.customerId, job.customerId);
+      expect(saved.billingCustomerId, other.customerId);
+      expect(saved.billingContactId, other.contactId);
+      final billing = (await DaoJobParty().getByJob(
+        job.id,
+      )).singleWhere((party) => party.role.id == ContactRole.billing);
+      expect(billing.contact.id, other.contactId);
+    });
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('billing summary shows mixed task overrides and job default', (
+    tester,
+  ) async {
+    final job = await seed(tester);
+    await tester.runAsync(() async {
+      await DaoTask().insert(
+        Task.forInsert(
+          jobId: job.id,
+          name: 'Fixed scope',
+          description: '',
+          status: TaskStatus.inProgress,
+          billingType: BillingType.fixedPrice,
+        ),
+      );
+    });
+    await showEditor(tester, job);
+    await pumpUntil(tester, find.text('Billing type: Mixed'));
+    expect(
+      find.text('Job default: ${job.billingType.display}'),
+      findsOneWidget,
+    );
+  });
+
   for (final resetDefaults in [false, true]) {
     testWidgets(
       'billing saves automatic recipient; reset old defaults: $resetDefaults',

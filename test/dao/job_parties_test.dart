@@ -187,32 +187,52 @@ void main() {
     );
   });
 
+  test('billing assignment belongs to the selected Bill To customer', () async {
+    final job = await makeJob();
+    final other = await makeJob();
+    await expectLater(
+      DaoJobParty().save(
+        jobId: job.id,
+        contactId: other.contactId!,
+        roleId: ContactRole.billing,
+        replaceSingleton: true,
+      ),
+      throwsException,
+    );
+    var saved = (await DaoJob().getById(job.id))!;
+    expect(saved.billingCustomerId, job.customerId);
+    expect(saved.billingContactId, job.contactId);
+    saved
+      ..billToCustomerId = other.customerId
+      ..billingContactId = null;
+    await DaoJob().update(saved);
+    await DaoJobParty().save(
+      jobId: job.id,
+      contactId: other.contactId!,
+      roleId: ContactRole.billing,
+      replaceSingleton: true,
+    );
+    saved = (await DaoJob().getById(job.id))!;
+    expect(saved.billingCustomerId, other.customerId);
+    expect(saved.billingContactId, other.contactId);
+  });
+
   test(
-    'billing assignment infers Bill To but keeps an explicit customer',
+    'Bill To without a contact never falls back to the job customer',
     () async {
       final job = await makeJob();
       final other = await makeJob();
-      final contact = (await DaoContact().getById(other.contactId))!;
-      final customer = (await DaoCustomer().getById(other.customerId))!;
-      await DaoContactCustomer().insertJoin(contact, customer);
-      await DaoJobParty().save(
-        jobId: job.id,
-        contactId: contact.id,
-        roleId: ContactRole.billing,
-        replaceSingleton: true,
+      job
+        ..billToCustomerId = other.customerId
+        ..billingContactId = null;
+      await DaoJob().update(job);
+      await testDb!.update(
+        'customer',
+        {'billing_contact_id': null},
+        where: 'id = ?',
+        whereArgs: [other.customerId],
       );
-      var saved = (await DaoJob().getById(job.id))!;
-      expect(saved.billToCustomerId, other.customerId);
-      saved.billToCustomerId = job.customerId;
-      await DaoJob().update(saved);
-      await DaoJobParty().save(
-        jobId: job.id,
-        contactId: contact.id,
-        roleId: ContactRole.billing,
-        replaceSingleton: true,
-      );
-      saved = (await DaoJob().getById(job.id))!;
-      expect(saved.billToCustomerId, job.customerId);
+      expect((await resolveJobBillingContact(job)).contact, isNull);
     },
   );
 
@@ -222,6 +242,9 @@ void main() {
       final original = await makeJob();
       final primary = await makeContact();
       final explicit = await makeContact();
+      final customer = (await DaoCustomer().getById(original.customerId))!;
+      await DaoContactCustomer().insertJoin(primary, customer);
+      await DaoContactCustomer().insertJoin(explicit, customer);
       final job = (await DaoJob().getById(original.id))!
         ..contactId = primary.id
         ..billingContactId = explicit.id;
