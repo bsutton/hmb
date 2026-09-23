@@ -78,15 +78,11 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
           ),
         ),
         actions: [
-          HMBButtonSecondary(
-            label: 'Cancel',
-            hint: 'Keep the current referring business',
-            onPressed: () => Navigator.pop(context, false),
-          ),
-          HMBButtonPrimary(
-            label: 'Save',
-            hint: 'Save the referring business without changing billing',
-            onPressed: () {
+          HMBSaveCancelButtons(
+            cancelHint: 'Keep the current referring business',
+            saveHint: 'Save the referring business without changing billing',
+            onCancel: () => Navigator.pop(context, false),
+            onSave: () {
               if (form.currentState!.validate()) {
                 Navigator.pop(context, true);
               }
@@ -500,23 +496,12 @@ class _PartyAssignmentEditorState extends State<_PartyAssignmentEditor> {
             'Changing this assignment only affects this job.',
           ),
           const SizedBox(height: 16),
-          Wrap(
-            alignment: WrapAlignment.end,
-            spacing: 12,
-            children: [
-              HMBButtonSecondary(
-                quiet: true,
-                label: 'Cancel',
-                hint: 'Discard assignment changes',
-                onPressed: () => Navigator.pop(context),
-              ),
-              HMBButtonPrimary(
-                label: 'Save',
-                hint: 'Save this assignment',
-                enabled: !_saving,
-                onPressed: _save,
-              ),
-            ],
+          HMBSaveCancelButtons(
+            saveHint: 'Save this assignment',
+            cancelHint: 'Discard assignment changes',
+            saveEnabled: !_saving,
+            onSave: _save,
+            onCancel: () => Navigator.pop(context),
           ),
         ],
       ),

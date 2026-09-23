@@ -1068,12 +1068,12 @@ class _EstimateMarginDialogState extends State<_EstimateMarginDialog> {
       ],
     ),
     actions: [
-      HMBButton(
-        label: 'Cancel',
-        hint: 'Cancel margin changes',
-        onPressed: () => Navigator.of(context).pop(),
+      HMBSaveCancelButtons(
+        saveHint: 'Save estimate margin',
+        cancelHint: 'Cancel margin changes',
+        onSave: _save,
+        onCancel: () => Navigator.of(context).pop(),
       ),
-      HMBButton(label: 'Save', hint: 'Save estimate margin', onPressed: _save),
     ],
   );
 }

@@ -41,6 +41,7 @@ class PhotoCrud<E extends Entity<E>> extends StatefulWidget {
   final PhotoController<E> controller;
   final bool allowPendingPhotos;
   final bool showCommentField;
+  final bool showCaptureButton;
 
   const PhotoCrud({
     required this.parentName,
@@ -48,6 +49,7 @@ class PhotoCrud<E extends Entity<E>> extends StatefulWidget {
     required this.controller,
     this.allowPendingPhotos = false,
     this.showCommentField = true,
+    this.showCaptureButton = true,
     super.key,
   });
 
@@ -83,7 +85,8 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
             builder: (context, photoMetas) => HMBColumn(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildAddButton(widget.controller.parent, photoMetas),
+                if (widget.showCaptureButton)
+                  _buildAddButton(widget.controller.parent, photoMetas),
                 _buildPhotoCRUD(photoMetas),
               ],
             ),

@@ -7,6 +7,9 @@ import 'package:money2/money2.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/money_ex.dart';
+import '../../../util/flutter/platform_ex.dart';
+import '../../widgets/fields/hmb_text_area.dart';
+import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/form_validation.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_droplist.dart';
@@ -155,10 +158,20 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     onBillingTypeChanged: (type) => setState(() => _billingType = type),
   );
 
+  Widget _pageShell({Widget child = const SizedBox.shrink()}) =>
+      HMBFullPageChildScreen(
+        title:
+            widget.section?.title ??
+            (widget.job == null ? 'Add Job' : 'Job #${widget.job!.id}'),
+        subdued: true,
+        maxContentWidth: 800,
+        child: child,
+      );
+
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
-    waitingBuilder: (_) => const SizedBox.shrink(),
+    waitingBuilder: (_) => _pageShell(),
     errorBuilder: (_, error) => HMBFullPageChildScreen(
       title: 'Job',
       child: Text('Could not load job: $error'),
@@ -173,7 +186,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: JobSummaryCard(
-              key: ValueKey(_revision),
+              revision: _revision,
               job: currentEntity!,
               onEdit: _open,
               onActions: _actions,
@@ -191,9 +204,12 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
       return JuneBuilder(
         SelectedCustomer.new,
         builder: (selection) => FutureBuilderEx<Customer?>(
-          future: DaoCustomer().getById(selection.customerId),
-          waitingBuilder: (_) => const SizedBox.shrink(),
-          errorBuilder: (_, error) => const Text('Could not load customer.'),
+          future: BlockingUI().runAndWait(
+            () => DaoCustomer().getById(selection.customerId),
+          ),
+          waitingBuilder: (_) => _pageShell(),
+          errorBuilder: (_, error) =>
+              _pageShell(child: const Text('Could not load customer.')),
           builder: (context, customer) {
             if (currentEntity == null) {
               return EntityEditScreen<Job>(
@@ -212,37 +228,100 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
               maxContentWidth: 800,
               child: Form(
                 key: _formKey,
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    if (!section.immediate) ...[
-                      Wrap(
-                        spacing: 8,
+                child:
+                    section == JobEditSection.summary ||
+                        section == JobEditSection.internalNotes ||
+                        section == JobEditSection.assumptions
+                    ? _longTextEditor(section)
+                    : ListView(
+                        padding: const EdgeInsets.all(16),
                         children: [
-                          HMBButtonPrimary(
-                            label: 'Save',
-                            hint: 'Save this section',
-                            enabled: !_saving,
-                            onPressed: _saveSection,
-                          ),
-                          HMBButtonSecondary(
-                            label: 'Cancel',
-                            hint: 'Discard changes to this section',
-                            onPressed: () => Navigator.pop(context),
-                          ),
+                          if (!section.immediate) ...[
+                            _sectionActions(),
+                            const SizedBox(height: 16),
+                          ],
+                          content,
                         ],
                       ),
-                      const SizedBox(height: 16),
-                    ],
-                    content,
-                  ],
-                ),
               ),
             );
           },
         ),
       );
     },
+  );
+
+  Widget _longTextEditor(JobEditSection section) {
+    final (controller, focusNode, label, hint) = switch (section) {
+      JobEditSection.summary => (
+        _descriptionController,
+        _descriptionFocusNode,
+        'Description',
+        null,
+      ),
+      JobEditSection.internalNotes => (
+        _notesController,
+        _notesFocusNode,
+        'Internal notes',
+        'Not shown on quotes or invoices.',
+      ),
+      _ => (
+        _assumptionController,
+        _assumptionFocusNode,
+        'Assumptions',
+        'Assumptions are shown on the quote.',
+      ),
+    };
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        child: SizedBox(
+          // In landscape with the keyboard open, keep the controls usable
+          // and allow the outer form to scroll instead of overflowing.
+          height: constraints.maxHeight < 320 ? 320 : constraints.maxHeight,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _sectionActions(),
+                const SizedBox(height: 16),
+                if (section == JobEditSection.summary)
+                  HMBTextField(
+                    key: const Key('jobSummary'),
+                    labelText: 'Job Summary',
+                    controller: _summaryController,
+                    focusNode: _summaryFocusNode,
+                    autofocus: isNotMobile,
+                    textCapitalization: TextCapitalization.sentences,
+                    required: true,
+                    keyboardType: TextInputType.name,
+                  )
+                else
+                  Text(hint!),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: HMBTextArea(
+                    labelText: label,
+                    controller: controller,
+                    focusNode: focusNode,
+                    leadingSpace: false,
+                    expands: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionActions() => HMBSaveCancelButtons(
+    saveEnabled: !_saving,
+    saveHint: 'Save this section',
+    cancelHint: 'Discard changes to this section',
+    onSave: _saveSection,
+    onCancel: () => Navigator.pop(context),
   );
 
   Widget _billingFields(Customer? customer) => HMBColumn(

@@ -185,23 +185,73 @@ class HMBButtonSecondary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (quiet) {
-      return HMBTooltip(
-        hint: hint,
-        child: TextButton(
-          onPressed: onPressed,
-          style: TextButton.styleFrom(
-            foregroundColor: Theme.of(context).colorScheme.primary,
+    final scheme = Theme.of(context).colorScheme;
+    // Secondary actions need a visible boundary on touch screens too.
+    final btn = OutlinedButton(
+      onPressed: onPressed,
+      style:
+          OutlinedButton.styleFrom(
             minimumSize: const Size(48, 48),
+            visualDensity: VisualDensity.standard,
+            backgroundColor: quiet ? scheme.surfaceContainerLow : null,
+          ).copyWith(
+            side: WidgetStateProperty.resolveWith(
+              (states) => BorderSide(
+                color: states.contains(WidgetState.disabled)
+                    ? scheme.onSurface.withValues(alpha: 0.12)
+                    : quiet
+                    ? scheme.outline
+                    : scheme.primary,
+              ),
+            ),
           ),
-          child: Text(label),
-        ),
-      );
-    }
-    final btn = OutlinedButton(onPressed: onPressed, child: Text(label));
+      child: Text(label),
+    );
 
     return HMBTooltip(hint: hint, child: btn);
   }
+}
+
+/// Consistent touch-friendly actions for editing screens and dialogs.
+class HMBSaveCancelButtons extends StatelessWidget {
+  final VoidCallback? onSave;
+  final VoidCallback? onCancel;
+  final bool saveEnabled;
+  final String saveLabel;
+  final String saveHint;
+  final String cancelHint;
+
+  const HMBSaveCancelButtons({
+    required this.onSave,
+    required this.onCancel,
+    this.saveEnabled = true,
+    this.saveLabel = 'Save',
+    this.saveHint = 'Save your changes',
+    this.cancelHint = 'Discard changes',
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: 8,
+    runSpacing: 8,
+    children: [
+      SizedBox(
+        height: 48,
+        child: HMBButtonPrimary(
+          label: saveLabel,
+          hint: saveHint,
+          enabled: saveEnabled,
+          onPressed: onSave,
+        ),
+      ),
+      HMBButtonSecondary(
+        label: 'Cancel',
+        hint: cancelHint,
+        onPressed: onCancel,
+      ),
+    ],
+  );
 }
 
 /// A link-style button that launches a URL and shows a hint on long press.

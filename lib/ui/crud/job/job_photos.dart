@@ -69,6 +69,7 @@ class _JobPhotosState extends DeferredState<JobPhotos> {
           Text(controller.parent!.name),
           PhotoCrud<Task>(
             parentName: 'Task',
+            showCaptureButton: false,
             parentType: ParentType.task,
             controller: controller,
           ),

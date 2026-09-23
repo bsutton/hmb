@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:deferred_state/deferred_state.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -19,6 +21,7 @@ import 'job_schedule_actions.dart';
 /// It deliberately does not contain the list card's dashlets.
 class JobSummaryCard extends StatefulWidget {
   final Job job;
+  final int revision;
   final Future<void> Function(JobEditSection section) onEdit;
   final Future<void> Function() onActions;
   final Future<void> Function()? onScheduleChanged;
@@ -28,6 +31,7 @@ class JobSummaryCard extends StatefulWidget {
     required this.onEdit,
     required this.onActions,
     this.onScheduleChanged,
+    this.revision = 0,
     super.key,
   });
   @override
@@ -44,33 +48,69 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
   var _notes = 0;
   var _attachments = 0;
   var _photos = 0;
+  var _refreshFailed = false;
 
   int get _contactCount =>
       _parties.map((party) => party.contact.id).toSet().length;
 
   @override
-  Future<void> asyncInitState() async {
+  Future<void> asyncInitState() => _load();
+
+  Future<void> _load() async {
     await BlockingUI().runAndWait(() async {
       final job = widget.job;
-      _customer = await DaoCustomer().getById(job.customerId);
-      _billTo = await DaoCustomer().getById(job.billingCustomerId);
-      _referrer = await DaoCustomer().getById(job.referrerCustomerId);
-      _site = await DaoSite().getById(job.siteId);
-      _parties = await DaoJobParty().getByJob(job.id);
-      _billing = await resolveJobBillingContact(job);
-      _notes = (await DaoActivity().getByJob(
+      final customer = await DaoCustomer().getById(job.customerId);
+      final billTo = await DaoCustomer().getById(job.billingCustomerId);
+      final referrer = await DaoCustomer().getById(job.referrerCustomerId);
+      final site = await DaoSite().getById(job.siteId);
+      final parties = await DaoJobParty().getByJob(job.id);
+      final billing = await resolveJobBillingContact(job);
+      final notes = (await DaoActivity().getByJob(
         job.id,
         type: ActivityType.note,
       )).length;
-      _attachments = (await DaoJobAttachment().getByJob(job.id)).length;
+      final attachments = (await DaoJobAttachment().getByJob(job.id)).length;
       final counts = await DatabaseHelper.instance.database.rawQuery(
         'SELECT COUNT(*) AS count FROM photo p '
         'LEFT JOIN task t ON t.id = p.parentId AND p.parentType = ? '
         'WHERE t.job_id = ? OR (p.parentType = ? AND p.parentId = ?)',
         ['task', job.id, 'job', job.id],
       );
+      if (!mounted) {
+        return;
+      }
+      // Publish the refreshed data together, keeping the existing cards and
+      // their height visible while these reads run.
+      _customer = customer;
+      _billTo = billTo;
+      _referrer = referrer;
+      _site = site;
+      _parties = parties;
+      _billing = billing;
+      _notes = notes;
+      _attachments = attachments;
       _photos = counts.single['count']! as int;
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant JobSummaryCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.revision != widget.revision) {
+      unawaited(_refresh());
+    }
+  }
+
+  Future<void> _refresh() async {
+    try {
+      await _load();
+      _refreshFailed = false;
+    } catch (_) {
+      _refreshFailed = true;
+    }
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Widget _section(JobEditSection section, Widget body, {String? title}) =>
@@ -111,6 +151,10 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
       spacing: 16,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (_refreshFailed)
+          const Text(
+            'Could not refresh job details. Showing previous details.',
+          ),
         _section(
           JobEditSection.summary,
           title: widget.job.summary,

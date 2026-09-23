@@ -21,6 +21,7 @@ class HMBTextArea extends StatelessWidget {
   final String labelText;
   final int maxLines;
   final bool leadingSpace;
+  final bool expands;
   final void Function(String?)? onChanged;
 
   const HMBTextArea({
@@ -30,22 +31,27 @@ class HMBTextArea extends StatelessWidget {
     this.maxLines = 6,
     this.focusNode,
     this.leadingSpace = true,
+    this.expands = false,
     super.key,
   });
 
   @override
-  Widget build(BuildContext context) => HMBColumn(
-    leadingSpace: leadingSpace,
-    children: [
-      TextFormField(
-        maxLines: maxLines,
-        keyboardType: TextInputType.multiline,
-        textInputAction: TextInputAction.newline,
-        controller: controller,
-        focusNode: focusNode,
-        onChanged: onChanged?.call,
-        decoration: InputDecoration(labelText: labelText),
-      ),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final field = TextFormField(
+      maxLines: expands ? null : maxLines,
+      expands: expands,
+      textAlignVertical: expands ? TextAlignVertical.top : null,
+      keyboardType: TextInputType.multiline,
+      textInputAction: TextInputAction.newline,
+      controller: controller,
+      focusNode: focusNode,
+      onChanged: onChanged?.call,
+      decoration: InputDecoration(labelText: labelText),
+    );
+    return HMBColumn(
+      leadingSpace: leadingSpace,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [if (expands) Expanded(child: field) else field],
+    );
+  }
 }

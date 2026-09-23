@@ -17,7 +17,6 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../util/dart/types.dart';
 import 'hmb_button.dart';
-import 'layout/hmb_spacer.dart';
 
 class SaveAndClose extends StatelessWidget {
   final Future<void> Function({required bool close}) onSave;
@@ -38,21 +37,10 @@ class SaveAndClose extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.all(16),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        HMBButton(
-          label: saveLabel,
-          hint: 'Save your changes',
-          onPressed: () => unawaited(onSave(close: true)),
-        ),
-        const HMBSpacer(width: true),
-        HMBButton(
-          onPressed: onCancel,
-          label: 'Cancel',
-          hint: "Dont' save any changes",
-        ),
-      ],
+    child: HMBSaveCancelButtons(
+      saveLabel: saveLabel,
+      onSave: () => unawaited(onSave(close: true)),
+      onCancel: onCancel,
     ),
   );
 }

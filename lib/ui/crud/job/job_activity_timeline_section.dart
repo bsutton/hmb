@@ -462,12 +462,12 @@ class _ActivityEditorDialogState extends State<_ActivityEditorDialog> {
       ],
     ),
     actions: [
-      HMBButton(
-        label: 'Cancel',
-        hint: 'Cancel',
-        onPressed: () => Navigator.of(context).pop(),
+      HMBSaveCancelButtons(
+        saveHint: 'Save activity',
+        cancelHint: 'Cancel',
+        onSave: _save,
+        onCancel: () => Navigator.of(context).pop(),
       ),
-      HMBButton(label: 'Save', hint: 'Save activity', onPressed: _save),
     ],
   );
 }

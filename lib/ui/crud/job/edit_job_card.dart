@@ -1123,35 +1123,23 @@ You can set a default booking fee from System | Billing screen''');
       context: context,
       builder: (context) => Dialog(
         insetPadding: const EdgeInsets.all(16),
+        constraints: const BoxConstraints(maxWidth: 600, maxHeight: 600),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: HMBColumn(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(
-                height: 300,
+              Expanded(
                 child: HMBTextArea(
                   labelText: title,
                   controller: localController,
-                  focusNode: FocusNode(),
+                  leadingSpace: false,
+                  expands: true,
                 ),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  HMBButton(
-                    label: 'Cancel',
-                    hint: 'Close the dialog without saving any changes',
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  HMBButton(
-                    label: 'Save',
-                    hint: 'Save any changes',
-                    onPressed: () =>
-                        Navigator.of(context).pop(localController.text),
-                  ),
-                ],
+              HMBSaveCancelButtons(
+                onSave: () => Navigator.of(context).pop(localController.text),
+                onCancel: () => Navigator.of(context).pop(),
               ),
             ],
           ),

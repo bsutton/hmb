@@ -74,15 +74,11 @@ class _ContactRolesScreenState extends DeferredState<ContactRolesScreen> {
           ),
         ),
         actions: [
-          HMBButtonSecondary(
-            label: 'Cancel',
-            hint: 'Keep existing roles',
-            onPressed: () => Navigator.pop(context),
-          ),
-          HMBButtonPrimary(
-            label: 'Save',
-            hint: 'Save role type',
-            onPressed: () {
+          HMBSaveCancelButtons(
+            cancelHint: 'Keep existing roles',
+            saveHint: 'Save role type',
+            onCancel: () => Navigator.pop(context),
+            onSave: () {
               if (form.currentState!.validate()) {
                 Navigator.pop(context, controller.text.trim());
               }

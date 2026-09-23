@@ -1,6 +1,8 @@
 @Tags(['flutter'])
 library;
 
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/dao/dao_job_party.dart';
@@ -15,6 +17,7 @@ import 'package:hmb/ui/crud/job/mini_job_dashboard.dart';
 import 'package:hmb/ui/widgets/select/hmb_droplist.dart';
 import 'package:hmb/ui/widgets/widgets.g.dart';
 import 'package:hmb/util/dart/money_ex.dart';
+import 'package:hmb/util/flutter/hmb_theme.dart';
 import 'package:june/june.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -40,6 +43,176 @@ void main() {
       builder: (_, child) => Stack(children: [child!, const BlockingOverlay()]),
       home: JobEditScreen(job: job),
     ),
+  );
+
+  for (final section in [null, JobEditSection.summary]) {
+    testWidgets('job ${section?.name ?? 'overview'} paints while loading', (
+      tester,
+    ) async {
+      final job = await seed(tester);
+      late Completer<void> release;
+      late Future<void> blocker;
+      await tester.runAsync(() async {
+        final acquired = Completer<void>();
+        release = Completer<void>();
+        blocker = testDb!.transaction((_) async {
+          acquired.complete();
+          await release.future;
+        });
+        await acquired.future;
+      });
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: HMBTheme.dark,
+            builder: (_, child) =>
+                Stack(children: [child!, const BlockingOverlay()]),
+            home: JobEditScreen(job: job, section: section),
+          ),
+        );
+        // Initialization is deliberately blocked: the route still needs to
+        // paint its own themed surface and navigation, even before data loads.
+        expect(find.byType(Scaffold), findsOneWidget);
+        expect(find.byType(BackButton), findsOneWidget);
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Material &&
+                widget.color == HMBColors.defaultBackground,
+          ),
+          findsWidgets,
+        );
+      } finally {
+        release.complete();
+        await tester.runAsync(() => blocker);
+        await pumpUntil(
+          tester,
+          section == null
+              ? find.byType(JobSummaryCard)
+              : find.byType(TextFormField),
+        );
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final section in [
+    JobEditSection.summary,
+    JobEditSection.internalNotes,
+    JobEditSection.assumptions,
+  ]) {
+    testWidgets('${section.name} fills the screen and resizes for keyboard', (
+      tester,
+    ) async {
+      final job = await seed(tester);
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 800);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: HMBTheme.dark,
+          builder: (_, child) =>
+              Stack(children: [child!, const BlockingOverlay()]),
+          home: JobEditScreen(job: job, section: section),
+        ),
+      );
+      await pumpUntil(tester, find.byType(TextFormField));
+      final field = find.byType(TextFormField).last;
+      expect(tester.getSize(field).height, greaterThan(500));
+      expect(tester.getRect(field).bottom, closeTo(784, 1));
+      await tester.enterText(field, 'Keep this text while resizing.');
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      await tester.pumpAndSettle();
+      expect(tester.getSize(field).height, greaterThan(150));
+      expect(tester.getRect(field).bottom, closeTo(484, 1));
+      expect(find.text('Keep this text while resizing.'), findsOneWidget);
+      tester.view.physicalSize = const Size(800, 360);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 200);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    });
+  }
+
+  testWidgets('returning from a section retains the job scroll offset', (
+    tester,
+  ) async {
+    final job = await seed(tester);
+    await showEditor(tester, job);
+    await pumpUntil(tester, find.byType(JobSummaryCard));
+    final edit = find.byKey(const ValueKey('edit-job-section-assumptions'));
+    await tester.ensureVisible(edit);
+    await tester.pumpAndSettle();
+    final scroll = tester.state<ScrollableState>(
+      find
+          .descendant(
+            of: find.byType(SingleChildScrollView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    final offset = scroll.position.pixels;
+    expect(offset, greaterThan(0));
+    await tester.tap(edit);
+    await pumpUntil(tester, find.byType(TextFormField));
+    await tester.tap(find.text('Cancel'));
+    await pumpUntil(tester, find.byType(JobSummaryCard));
+    expect(scroll.position.pixels, closeTo(offset, 1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'job note dialog fills its space and saves after keyboard resize',
+    (tester) async {
+      final job = await seed(tester);
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 800);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetViewInsets);
+      await showEditor(tester, job);
+      await pumpUntil(tester, find.byType(JobSummaryCard));
+      final edit = find.byKey(const ValueKey('edit-job-section-notes'));
+      await tester.ensureVisible(edit);
+      await tester.pumpAndSettle();
+      final scroll = tester.state<ScrollableState>(
+        find
+            .descendant(
+              of: find.byType(SingleChildScrollView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      final offset = scroll.position.pixels;
+      await tester.tap(edit);
+      await pumpUntil(tester, find.text('No notes'));
+      await tester.tap(find.byTooltip('Add a job note.'));
+      await pumpUntil(tester, find.byType(TextFormField));
+      final field = find.byType(TextFormField);
+      expect(tester.getSize(field).height, greaterThan(400));
+      await tester.enterText(field, 'A saved job note.');
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      await tester.pumpAndSettle();
+      expect(tester.getSize(field).height, greaterThan(200));
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('Save'));
+      tester.view.resetViewInsets();
+      await pumpUntil(tester, find.text('A saved job note.'));
+      await tester.pageBack();
+      await pumpUntil(tester, find.text('1 note(s)'));
+      expect(scroll.position.pixels, closeTo(offset, 1));
+      await tester.runAsync(() async {
+        final notes = await DaoActivity().getByJob(
+          job.id,
+          type: ActivityType.note,
+        );
+        expect(notes.single.details, 'A saved job note.');
+      });
+      expect(tester.takeException(), isNull);
+    },
   );
 
   testWidgets('business referral is a removable party, not a customer field', (
