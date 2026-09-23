@@ -128,6 +128,7 @@ class EntityListScreenState<T extends Entity<T>>
     with RouteAware {
   BuildActionItems<T>? buildActionItems;
   List<T> entityList = [];
+  var _refreshGeneration = 0;
   String? filterOption;
   late final TextEditingController filterController;
   final _scrollController = ScrollController();
@@ -161,8 +162,9 @@ class EntityListScreenState<T extends Entity<T>>
   }
 
   Future<void> refresh({bool scrollToTop = false}) async {
+    final generation = ++_refreshGeneration;
     final list = await widget._fetchList(filterOption);
-    if (mounted) {
+    if (mounted && generation == _refreshGeneration) {
       setState(() {
         entityList = list;
       });
@@ -177,6 +179,9 @@ class EntityListScreenState<T extends Entity<T>>
 
   /// Insert or update a **single** entity in memory (partial refresh).
   void _partialRefresh(T updatedEntity) {
+    // A refresh started while a creation/edit dialog was closing may contain
+    // old rows. Do not let it overwrite the saved entity when it completes.
+    _refreshGeneration++;
     final idx = entityList.indexWhere((e) => e.id == updatedEntity.id);
     setState(() {
       if (idx == -1) {
@@ -191,6 +196,7 @@ class EntityListScreenState<T extends Entity<T>>
 
   /// Remove the entity from our in-memory list.
   void _removeFromList(T entity) {
+    _refreshGeneration++;
     setState(() {
       entityList.removeWhere((e) => e.id == entity.id);
     });
