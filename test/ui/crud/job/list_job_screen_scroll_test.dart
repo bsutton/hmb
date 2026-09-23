@@ -70,6 +70,36 @@ void main() {
     });
   }
 
+  testWidgets('narrow job cards grow to fit their contents', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.runAsync(() async {
+      await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.zero,
+        summary: 'Recent job 3',
+      );
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(1.5)),
+          child: child!,
+        ),
+        home: const Scaffold(
+          body: Center(child: SizedBox(width: 390, child: JobListScreen())),
+        ),
+      ),
+    );
+    await _pumpUntilJobsLoad(tester);
+    await tester.drag(find.byType(ListView), const Offset(0, -600));
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.takeException(), isNull);
+    await _disposeHarness(tester);
+  });
+
   testWidgets('returning to recent jobs resets the scroll position', (
     tester,
   ) async {

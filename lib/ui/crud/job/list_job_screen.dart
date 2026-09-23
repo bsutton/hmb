@@ -176,54 +176,51 @@ class _JobListScreenState extends State<JobListScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    return Surface(
-      elevation: SurfaceElevation.e0,
-      child: HMBColumn(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: EntityListScreen<Job>(
-              entityNameSingular: 'Job',
-              entityNamePlural: JobListScreen.pageTitle,
-              key: _entityListKey,
-              dao: DaoJob(),
-              onEdit: (job) => JobEditScreen(job: job),
-              fetchList: _fetchJobs,
-              listCardTitle: (job) => HMBCardTitle(job.summary),
-              onAdd: _addJob,
-              cardHeight: size.width < 456 ? 860 : 770,
-              filterSheetBuilder: _buildFilterSheet,
-              isFilterActive: () =>
-                  !_showCurrentJobs ||
-                  _showOldJobs ||
-                  _order != JobOrder.active ||
-                  _selectedBillingTypes.length != BillingType.values.length,
-              onFilterReset: () {
-                _showCurrentJobs = true;
-                _showOldJobs = false;
-                _order = JobOrder.active;
-                _selectedBillingTypes = {
-                  BillingType.timeAndMaterial,
-                  BillingType.fixedPrice,
-                };
-                unawaited(_persistFilters());
-              },
-              background: (job) async => job.status.getColour(),
-              listCard: (job) =>
-                  ListJobCard(job: job, key: ValueKey(job.hashCode)),
-              buildActionItems: _buildActionItems,
-              canEdit: (job) => !job.isStock,
-              canDelete: (job) => !job.isStock,
-              confirmDelete: _confirmJobDelete,
-              scrollToTopOnReturn: true,
-            ),
+  Widget build(BuildContext context) => Surface(
+    elevation: SurfaceElevation.e0,
+    child: HMBColumn(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: EntityListScreen<Job>(
+            entityNameSingular: 'Job',
+            entityNamePlural: JobListScreen.pageTitle,
+            key: _entityListKey,
+            dao: DaoJob(),
+            onEdit: (job) => JobEditScreen(job: job),
+            fetchList: _fetchJobs,
+            listCardTitle: (job) => HMBCardTitle(job.summary),
+            onAdd: _addJob,
+            cardHeight: null,
+            filterSheetBuilder: _buildFilterSheet,
+            isFilterActive: () =>
+                !_showCurrentJobs ||
+                _showOldJobs ||
+                _order != JobOrder.active ||
+                _selectedBillingTypes.length != BillingType.values.length,
+            onFilterReset: () {
+              _showCurrentJobs = true;
+              _showOldJobs = false;
+              _order = JobOrder.active;
+              _selectedBillingTypes = {
+                BillingType.timeAndMaterial,
+                BillingType.fixedPrice,
+              };
+              unawaited(_persistFilters());
+            },
+            background: (job) async => job.status.getColour(),
+            listCard: (job) =>
+                ListJobCard(job: job, key: ValueKey(job.hashCode)),
+            buildActionItems: _buildActionItems,
+            canEdit: (job) => !job.isStock,
+            canDelete: (job) => !job.isStock,
+            confirmDelete: _confirmJobDelete,
+            scrollToTopOnReturn: true,
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 
   Future<List<Job>> _fetchJobs(String? filter) async {
     final jobs = await DaoJob().getByFilter(filter, order: _order);

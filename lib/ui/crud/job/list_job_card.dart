@@ -109,7 +109,9 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
             await DaoActivity().recordNavigatedToJob(jobId: job.id);
           },
         ),
-        HMBRow(
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
           children: [
             HMBText('Job #${job.id}', bold: true),
             HMBText('Status: ${jobStatus?.displayName ?? 'Status Unknown'}'),
