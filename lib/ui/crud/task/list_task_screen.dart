@@ -11,12 +11,15 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'dart:async';
+
 import 'package:june/june.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
+import '../../../util/dart/log.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
 import '../base_full_screen/list_entity_screen.dart';
@@ -40,6 +43,8 @@ class TaskListScreen extends StatefulWidget {
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
+  var _listKey = GlobalKey<EntityListScreenState<Task>>();
+
   /// If a time is running for a task, this will be the
   /// active TimeEntry record.
   /// Only a single task can have a time running at a time.
@@ -63,7 +68,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
           child: EntityListScreen<Task>(
             entityNameSingular: 'Task',
             entityNamePlural: 'Tasks',
-            key: ValueKey(showCompleted),
+            key: _listKey,
             dao: DaoTask(),
             fetchList: _fetchTasks,
             listCardTitle: (entity) => Text(entity.name),
@@ -84,6 +89,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   onToggled: (value) {
                     setState(() {
                       June.getState(ShowInActiveTasksState.new).toggle();
+                      _listKey = GlobalKey<EntityListScreenState<Task>>();
                     });
                   },
                 ),
@@ -95,6 +101,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
             canEdit: (_) => !widget.parent.parent!.isStock,
             canDelete: (_) => !widget.parent.parent!.isStock,
 
+            cardHeight: null,
             listCard: _buildFullTasksDetails,
             // : _buildTaskSummary(task),
           ),
@@ -147,8 +154,28 @@ class _TaskListScreenState extends State<TaskListScreen> {
     return included;
   }
 
-  Widget _buildFullTasksDetails(Task task) =>
-      ListTaskCard(job: widget.parent.parent!, task: task, summary: false);
+  Future<void> _timerStarted() async {
+    try {
+      await BlockingUI().runAndWait(() async {
+        await _listKey.currentState?.refresh(scrollToTop: true);
+      });
+    } catch (error, stackTrace) {
+      Log.e(
+        'Could not refresh tasks after starting timer',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      HMBToast.error('The timer started, but the task list could not refresh.');
+    }
+  }
+
+  Widget _buildFullTasksDetails(Task task) => ListTaskCard(
+    key: ValueKey(task.id),
+    job: widget.parent.parent!,
+    task: task,
+    summary: false,
+    onTimerStarted: () => unawaited(_timerStarted()),
+  );
 }
 
 class ShowInActiveTasksState extends JuneState {

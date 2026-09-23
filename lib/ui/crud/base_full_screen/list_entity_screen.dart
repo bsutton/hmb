@@ -160,12 +160,18 @@ class EntityListScreenState<T extends Entity<T>>
     await refresh();
   }
 
-  Future<void> refresh() async {
+  Future<void> refresh({bool scrollToTop = false}) async {
     final list = await widget._fetchList(filterOption);
     if (mounted) {
       setState(() {
         entityList = list;
       });
+      if (scrollToTop) {
+        await WidgetsBinding.instance.endOfFrame;
+        if (mounted && _scrollController.hasClients) {
+          _scrollController.jumpTo(0);
+        }
+      }
     }
   }
 

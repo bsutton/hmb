@@ -26,11 +26,13 @@ class ListTaskCard extends StatefulWidget {
   final Job job;
   final Task task;
   final bool summary;
+  final VoidCallback? onTimerStarted;
 
   const ListTaskCard({
     required this.job,
     required this.task,
     required this.summary,
+    this.onTimerStarted,
     super.key,
   });
 
@@ -74,6 +76,8 @@ class _ListTaskCardState extends State<ListTaskCard> {
           task: activeTask,
           includeBilled: true,
         ),
+        waitingBuilder: (_) => const SizedBox.shrink(),
+        errorBuilder: (_, error) => _loadError(error, 'earnings'),
         builder: (context, taskAccruedValue) {
           final accrued = taskAccruedValue!;
           return Padding(
@@ -89,6 +93,8 @@ class _ListTaskCardState extends State<ListTaskCard> {
       ),
       FutureBuilderEx<String?>(
         future: _getAssignmentSummary(activeTask.id),
+        waitingBuilder: (_) => const SizedBox.shrink(),
+        errorBuilder: (_, error) => _loadError(error, 'assignments'),
         builder: (context, assignmentSummary) => assignmentSummary == null
             ? const SizedBox.shrink()
             : Padding(
@@ -101,13 +107,14 @@ class _ListTaskCardState extends State<ListTaskCard> {
               ),
       ),
       HMBStartTimeEntry(
-        key: ValueKey(activeTask),
+        key: ValueKey(activeTask.id),
         task: activeTask,
         onTimerChanged: () => setState(() {}),
         onStart: (job, task) {
           June.getState(SelectJobStatus.new).jobStatus = job.status;
           activeTask = task;
           setState(() {});
+          widget.onTimerStarted?.call();
         },
       ),
     ],
@@ -120,6 +127,8 @@ class _ListTaskCardState extends State<ListTaskCard> {
       Text(task.status.name),
       FutureBuilderEx(
         future: DaoTimeEntry().getByTask(task.id),
+        waitingBuilder: (_) => const SizedBox.shrink(),
+        errorBuilder: (_, error) => _loadError(error, 'time entries'),
         builder: (context, timeEntries) => Text(
           formatDuration(
             timeEntries!.fold<Duration>(
@@ -131,10 +140,14 @@ class _ListTaskCardState extends State<ListTaskCard> {
       ),
       FutureBuilderEx<int>(
         future: _getPhotoCount(task.id),
+        waitingBuilder: (_) => const SizedBox.shrink(),
+        errorBuilder: (_, error) => _loadError(error, 'photo count'),
         builder: (context, photoCount) => Text('Photos: ${photoCount ?? 0}'),
       ), // Display photo count
       FutureBuilderEx<String?>(
         future: _getAssignmentSummary(task.id),
+        waitingBuilder: (_) => const SizedBox.shrink(),
+        errorBuilder: (_, error) => _loadError(error, 'assignments'),
         builder: (context, assignmentSummary) => assignmentSummary == null
             ? const SizedBox.shrink()
             : Text(
@@ -149,10 +162,20 @@ class _ListTaskCardState extends State<ListTaskCard> {
           June.getState(SelectJobStatus.new).jobStatus = job.status;
           activeTask = task;
           setState(() {});
+          widget.onTimerStarted?.call();
         },
       ),
     ],
   );
+
+  Widget _loadError(Object error, String detail) {
+    Log.e('Could not load task $detail', error: error);
+    return Text(
+      'Could not load $detail.',
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
 
   Future<int> _getPhotoCount(int taskId) async =>
       (await DaoPhoto().getByParent(taskId, ParentType.task)).length;
