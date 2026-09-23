@@ -16,10 +16,9 @@ Future<PostJobTodoAction> promptForPostJobTodo({
       title: const Text('Create follow-up todo?'),
       content: const Text('Would you like to add a follow-up todo now?'),
       actions: [
-        TextButton(
+        HMBCancelButton(
           onPressed: () =>
               Navigator.of(dialogContext).pop(PostJobTodoAction.cancel),
-          child: const Text('Cancel'),
         ),
         TextButton(
           onPressed: () =>

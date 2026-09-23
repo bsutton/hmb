@@ -89,8 +89,7 @@ class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
       ),
     ),
     actions: <Widget>[
-      HMBButton(
-        label: 'Cancel',
+      HMBCancelButton(
         hint: 'Cancel the changes',
         onPressed: () {
           Navigator.of(context).pop();

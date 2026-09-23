@@ -254,8 +254,7 @@ class _JobCompletionReportDialogState
       ),
     ),
     actions: [
-      HMBButton(
-        label: 'Cancel',
+      HMBCancelButton(
         hint: "Don't create the report",
         onPressed: () => Navigator.of(context).pop(),
       ),

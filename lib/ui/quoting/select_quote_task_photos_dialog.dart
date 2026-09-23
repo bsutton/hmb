@@ -223,8 +223,7 @@ class _SelectQuoteTaskPhotosDialogState
       child: DeferredBuilder(this, builder: (_) => _buildBody()),
     ),
     actions: [
-      HMBButton(
-        label: 'Cancel',
+      HMBCancelButton(
         hint: 'Close without saving task photo selections',
         enabled: !_saving,
         onPressed: () => Navigator.of(context).pop(),

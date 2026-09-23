@@ -219,14 +219,24 @@ class HMBTheme {
         shape: cardShape,
         textStyle: textTheme.bodyMedium,
       ),
-      datePickerTheme: const DatePickerThemeData(
+      datePickerTheme: DatePickerThemeData(
+        cancelButtonStyle: OutlinedButton.styleFrom(
+          side: const BorderSide(color: HMBColors.primary),
+          shape: controlShape,
+          minimumSize: const Size(48, 48),
+        ),
         backgroundColor: HMBColors.surface4dp,
         surfaceTintColor: Colors.transparent,
         shape: cardShape,
         headerBackgroundColor: HMBColors.surface4dp,
         headerForegroundColor: HMBColors.textPrimary,
       ),
-      timePickerTheme: const TimePickerThemeData(
+      timePickerTheme: TimePickerThemeData(
+        cancelButtonStyle: OutlinedButton.styleFrom(
+          side: const BorderSide(color: HMBColors.primary),
+          shape: controlShape,
+          minimumSize: const Size(48, 48),
+        ),
         backgroundColor: HMBColors.surface4dp,
         shape: cardShape,
         dialBackgroundColor: HMBColors.surface8dp,

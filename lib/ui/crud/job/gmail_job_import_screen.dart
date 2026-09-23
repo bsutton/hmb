@@ -359,8 +359,7 @@ class _GmailJobImportScreenState extends DeferredState<GmailJobImportScreen> {
             ),
           ),
           actions: [
-            HMBButton(
-              label: 'Cancel',
+            HMBCancelButton(
               hint: 'Return to Gmail search results',
               onPressed: () => Navigator.of(context).pop(),
             ),

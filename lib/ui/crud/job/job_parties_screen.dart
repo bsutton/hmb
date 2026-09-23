@@ -119,8 +119,7 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
           'The customer record and billing settings will not change.',
         ),
         actions: [
-          HMBButtonSecondary(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: 'Keep the referring business',
             onPressed: () => Navigator.pop(context, false),
           ),
@@ -147,8 +146,7 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
           '${party.role.name}? The contact will not be deleted.',
         ),
         actions: [
-          HMBButtonSecondary(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: 'Keep assignment',
             onPressed: () => Navigator.pop(context, false),
           ),
@@ -419,8 +417,7 @@ class _PartyAssignmentEditorState extends State<_PartyAssignmentEditor> {
                   '${_contact!.fullname.trim()} for this job?',
                 ),
                 actions: [
-                  HMBButtonSecondary(
-                    label: 'Cancel',
+                  HMBCancelButton(
                     hint: 'Keep existing assignment',
                     onPressed: () => Navigator.pop(context, false),
                   ),

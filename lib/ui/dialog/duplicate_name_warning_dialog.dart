@@ -29,8 +29,7 @@ Future<bool> showDuplicateNameWarningDialog({
           'Do you want to continue anyway?',
         ),
         actions: [
-          HMBButton(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: "Don't save this $entityName",
             onPressed: () => Navigator.of(context).pop(false),
           ),

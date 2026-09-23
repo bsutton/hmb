@@ -301,8 +301,7 @@ To approve it, reply to this email with:
             ),
           ),
           actions: [
-            HMBButton(
-              label: 'Cancel',
+            HMBCancelButton(
               hint: "Don't view/send this quote",
               onPressed: () => Navigator.of(context).pop(),
             ),
@@ -336,8 +335,7 @@ To approve it, reply to this email with:
             'active quotes?',
           ),
           actions: [
-            HMBButton(
-              label: 'Cancel',
+            HMBCancelButton(
               hint: 'Keep the quote unchanged',
               onPressed: () => Navigator.pop(context),
             ),
@@ -363,8 +361,7 @@ To approve it, reply to this email with:
       title: const Text('Withdraw Quote'),
       content: const Text('Withdraw this quote?'),
       actions: [
-        HMBButton(
-          label: 'Cancel',
+        HMBCancelButton(
           hint: 'Keep the quote unchanged',
           onPressed: () => Navigator.pop(context, false),
         ),

@@ -142,9 +142,8 @@ class _CustomerCreatorState extends State<CustomerCreator> {
       ),
     ),
     actions: [
-      HMBButton(
+      HMBCancelButton(
         onPressed: () => Navigator.of(context).pop(),
-        label: 'Cancel',
         hint: "Don't create this customer",
       ),
       HMBButton(

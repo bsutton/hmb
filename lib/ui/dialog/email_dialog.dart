@@ -140,8 +140,7 @@ $businessDetails
         ),
       ),
       actions: <Widget>[
-        HMBButton(
-          label: 'Cancel',
+        HMBCancelButton(
           hint: "Don't send the email",
           onPressed: () {
             Navigator.of(context).pop(false);

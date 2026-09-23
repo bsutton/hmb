@@ -174,10 +174,7 @@ Future<Quote?> _selectQuoteForJob({
       ),
     ),
     actions: [
-      TextButton(
-        onPressed: () => Navigator.of(dialogContext).pop(),
-        child: const Text('Cancel'),
-      ),
+      HMBCancelButton(onPressed: () => Navigator.of(dialogContext).pop()),
     ],
   ),
 );

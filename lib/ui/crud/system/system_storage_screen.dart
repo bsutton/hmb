@@ -151,10 +151,7 @@ class SystemStorageScreenState extends DeferredState<SystemStorageScreen> {
           'usage. These photos cannot be recovered unless already backed up.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
+          HMBCancelButton(onPressed: () => Navigator.of(context).pop(false)),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Delete Photos'),

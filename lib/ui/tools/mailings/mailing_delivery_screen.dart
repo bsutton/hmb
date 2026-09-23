@@ -110,8 +110,7 @@ class _MailingDeliveryScreenState extends DeferredState<MailingDeliveryScreen> {
           'future mailings?',
         ),
         actions: [
-          HMBButton(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: 'Keep this recipient in the mailing',
             onPressed: () => Navigator.pop(context, false),
           ),

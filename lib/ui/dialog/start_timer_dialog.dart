@@ -91,8 +91,7 @@ class _StartTimerDialogState extends State<StartTimerDialog> {
         ],
       ),
       actions: [
-        HMBButton(
-          label: 'Cancel',
+        HMBCancelButton(
           hint: "Don't start the timer",
           onPressed: () => Navigator.pop(context),
         ),

@@ -258,8 +258,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
       // Cancel and Save buttons on the right
       Row(
         children: [
-          HMBButtonSecondary(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: "Don't save the changes",
             onPressed: () => Navigator.of(context).pop(
               widget.isEditing
@@ -353,8 +352,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
           'Are you sure you want to delete this schedule event?',
         ),
         actions: [
-          HMBButtonSecondary(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: "Don't delete this event",
             onPressed: () => Navigator.of(context).pop(false),
           ),
@@ -426,10 +424,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
             'Do you want to continue?',
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
+            HMBCancelButton(onPressed: () => Navigator.of(context).pop(false)),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
               child: const Text('Continue'),
@@ -497,10 +492,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
           'If this was an AM/PM mistake, tap Cancel and adjust the end time.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
+          HMBCancelButton(onPressed: () => Navigator.of(context).pop(false)),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Continue'),

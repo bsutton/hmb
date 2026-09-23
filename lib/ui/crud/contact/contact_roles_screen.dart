@@ -110,8 +110,7 @@ class _ContactRolesScreenState extends DeferredState<ContactRolesScreen> {
         title: const Text('Delete role type?'),
         content: Text('Delete "${role.name}"? Roles in use cannot be deleted.'),
         actions: [
-          HMBButtonSecondary(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: 'Keep role type',
             onPressed: () => Navigator.pop(context, false),
           ),

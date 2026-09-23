@@ -85,8 +85,7 @@ Future<InvoiceAdjustmentRequest?> showRecordInvoiceAdjustmentDialog({
         ),
       ),
       actions: [
-        HMBButton(
-          label: 'Cancel',
+        HMBCancelButton(
           hint: 'Close without recording an adjustment',
           onPressed: () => Navigator.of(context).pop(),
         ),

@@ -203,8 +203,7 @@ Future<PaymentApplicationRequest?> showApplyPaymentToInvoiceDialog({
           ),
         ),
         actions: [
-          HMBButton(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: 'Close without applying a payment',
             onPressed: () => Navigator.of(context).pop(),
           ),

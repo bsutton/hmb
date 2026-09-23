@@ -1397,9 +1397,8 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
               ),
             ),
             actions: [
-              HMBButton(
+              HMBCancelButton(
                 onPressed: () => Navigator.of(dialogContext).pop(),
-                label: 'Cancel',
                 hint: "Don't create a task item",
               ),
               HMBButton(
@@ -1616,9 +1615,8 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
               ),
             ),
             actions: [
-              HMBButton(
+              HMBCancelButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                label: 'Cancel',
                 hint: "Don't apply the receipt prices",
               ),
               HMBButton(

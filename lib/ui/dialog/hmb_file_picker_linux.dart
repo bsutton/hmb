@@ -269,8 +269,7 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
             hint: 'Navigate up the directory tree to the parent directory',
             onPressed: _navigateToParent,
           ),
-        HMBButton(
-          label: 'Cancel',
+        HMBCancelButton(
           hint: 'Close the file Picker',
           onPressed: () => Navigator.pop(context),
         ),

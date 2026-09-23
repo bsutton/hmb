@@ -285,8 +285,7 @@ class MiniJobDashboard extends StatelessWidget {
             ),
           ),
           actions: [
-            HMBButton(
-              label: 'Cancel',
+            HMBCancelButton(
               hint: "Don't open milestone editor",
               onPressed: () => Navigator.of(context).pop(),
             ),

@@ -874,8 +874,7 @@ Future<CustomerPaymentRequest?> showRecordCustomerPaymentDialog({
           ),
         ),
         actions: [
-          HMBButton(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: 'Close without recording a payment',
             onPressed: () => Navigator.of(context).pop(),
           ),
@@ -1000,8 +999,7 @@ Future<PaymentAllocationRequest?> showAllocatePaymentDialog({
           ),
         ),
         actions: [
-          HMBButton(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: 'Close without allocating this payment',
             onPressed: () => Navigator.of(context).pop(),
           ),

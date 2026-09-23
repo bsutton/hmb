@@ -383,8 +383,7 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          HMBButton(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: "Don't select any Template",
             onPressed: () => Navigator.of(context).pop(),
           ),

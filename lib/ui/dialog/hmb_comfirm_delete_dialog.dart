@@ -34,8 +34,7 @@ Future<void> showConfirmDeleteDialog({
         title: Text('Confirm deletion of $nameSingular'),
         content: child ?? Text(question!),
         actions: <Widget>[
-          HMBButton(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: "Don't delete the $nameSingular",
             onPressed: () {
               Navigator.of(context).pop();

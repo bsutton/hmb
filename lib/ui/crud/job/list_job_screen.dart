@@ -78,8 +78,7 @@ class _JobListScreenState extends State<JobListScreen> {
           'Enter a job manually or choose an email from Gmail.',
         ),
         actions: [
-          HMBButton(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: 'Close without creating a job',
             onPressed: () => Navigator.of(context).pop(),
           ),
@@ -413,8 +412,7 @@ Future<bool> _showJobDeleteConfirmation(
         title: Text(title),
         content: Text(message),
         actions: [
-          HMBButton(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: "Don't delete this job",
             onPressed: () => Navigator.pop(dialogContext, false),
           ),

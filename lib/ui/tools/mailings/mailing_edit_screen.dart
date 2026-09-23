@@ -495,10 +495,7 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
-            ),
+            HMBCancelButton(onPressed: () => Navigator.pop(context, false)),
             AnimatedBuilder(
               animation: Listenable.merge([line1, suburb]),
               builder: (context, child) => TextButton(
@@ -889,10 +886,7 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          HMBCancelButton(onPressed: () => Navigator.pop(context)),
           TextButton(
             onPressed: () =>
                 Navigator.pop(context, _AddressEditChoice.editManually),
@@ -1051,10 +1045,7 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
             'Optimise the delivery route before starting delivery.',
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
-            ),
+            HMBCancelButton(onPressed: () => Navigator.pop(context, false)),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
               child: const Text('Optimise Route'),
@@ -1568,10 +1559,7 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
             decoration: const InputDecoration(labelText: 'Mailing name'),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
+            HMBCancelButton(onPressed: () => Navigator.pop(context)),
             TextButton(
               onPressed: () => Navigator.pop(context, controller.text),
               child: const Text('Save'),

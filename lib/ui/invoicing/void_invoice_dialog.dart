@@ -105,8 +105,7 @@ Future<String?> _promptForVoidDescription(
           ],
         ),
         actions: [
-          HMBButton(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: 'Do not void this invoice',
             onPressed: () => Navigator.of(context).pop(false),
           ),

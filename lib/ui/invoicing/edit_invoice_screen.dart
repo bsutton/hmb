@@ -800,8 +800,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
         title: const Text('Billing contact needs attention'),
         content: Text(message),
         actions: [
-          HMBButton(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: 'Return to the invoice',
             onPressed: () => Navigator.of(context).pop(),
           ),
@@ -954,10 +953,7 @@ Total: ${line.lineTotal}'''),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
+          HMBCancelButton(onPressed: () => Navigator.of(context).pop(false)),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Add'),

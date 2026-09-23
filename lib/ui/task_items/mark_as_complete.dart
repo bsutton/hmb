@@ -98,9 +98,8 @@ Future<void> markAsCompleted(
           ),
         ),
         actions: [
-          HMBButton(
+          HMBCancelButton(
             onPressed: () => Navigator.of(context).pop(false),
-            label: 'Cancel',
             hint: "Don't mark the item as complete",
           ),
           HMBButton(

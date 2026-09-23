@@ -13,6 +13,7 @@ import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/plaster_geometry.dart';
 import '../../crud/base_full_screen/list_entity_screen.dart';
 import '../../test_keys.dart';
+import '../../widgets/hmb_button.dart';
 import '../../widgets/select/hmb_select_job.dart';
 import '../../widgets/select/hmb_select_supplier.dart';
 import '../../widgets/select/hmb_select_task.dart';
@@ -300,10 +301,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
       ),
     ),
     actions: [
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Cancel'),
-      ),
+      HMBCancelButton(onPressed: () => Navigator.of(context).pop()),
       TextButton(onPressed: _save, child: const Text('Create')),
     ],
   );

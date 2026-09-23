@@ -143,8 +143,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
           ),
         ),
         actions: [
-          HMBButton(
-            label: 'Cancel',
+          HMBCancelButton(
             onPressed: () => Navigator.of(context).pop(),
             hint: "Don't add this task Item",
           ),

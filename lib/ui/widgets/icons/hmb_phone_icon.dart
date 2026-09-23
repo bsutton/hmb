@@ -17,7 +17,6 @@ import 'dart:io';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:permission_handler/permission_handler.dart';
-// import 'package:sms_advanced/sms_advanced.dart';
 import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -102,8 +101,7 @@ class HMBPhoneIcon extends StatelessWidget {
               }
             },
           ),
-          HMBButton(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: 'Take no action',
             onPressed: () {
               Navigator.of(context).pop();

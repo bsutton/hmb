@@ -212,6 +212,18 @@ class HMBButtonSecondary extends StatelessWidget {
   }
 }
 
+/// The standard outlined cancellation action for screens and dialogs.
+class HMBCancelButton extends HMBButtonSecondary {
+  const HMBCancelButton({
+    required VoidCallback? onPressed,
+    bool enabled = true,
+    super.hint = 'Discard changes',
+    super.label = 'Cancel',
+    super.key,
+    super.quiet = false,
+  }) : super(onPressed: enabled ? onPressed : null);
+}
+
 /// Consistent touch-friendly actions for editing screens and dialogs.
 class HMBSaveCancelButtons extends StatelessWidget {
   final VoidCallback? onSave;
@@ -245,11 +257,7 @@ class HMBSaveCancelButtons extends StatelessWidget {
           onPressed: onSave,
         ),
       ),
-      HMBButtonSecondary(
-        label: 'Cancel',
-        hint: cancelHint,
-        onPressed: onCancel,
-      ),
+      HMBCancelButton(hint: cancelHint, onPressed: onCancel),
     ],
   );
 }

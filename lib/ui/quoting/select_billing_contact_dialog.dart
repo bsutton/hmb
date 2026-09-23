@@ -181,8 +181,7 @@ class _SelectBillingContactDialogState
       ),
     ),
     actions: [
-      HMBButton(
-        label: 'Cancel',
+      HMBCancelButton(
         hint: "Don't change the billing Contact",
         onPressed: () => Navigator.pop(context),
       ),

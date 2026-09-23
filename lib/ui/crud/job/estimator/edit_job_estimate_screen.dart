@@ -124,8 +124,7 @@ class _JobEstimateBuilderScreenState
           'Switch this job to Fixed Price to continue?',
         ),
         actions: [
-          HMBButton(
-            label: 'Cancel',
+          HMBCancelButton(
             hint: "Don't switch the job billing type",
             onPressed: () => Navigator.pop(context, false),
           ),

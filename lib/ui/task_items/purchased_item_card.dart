@@ -98,9 +98,8 @@ class PurchasedItemCard extends ShoppingItemCard {
             ],
           ),
           actions: [
-            HMBButton(
+            HMBCancelButton(
               onPressed: () => Navigator.pop(ctx, false),
-              label: 'Cancel',
               hint: "Don't return this item",
             ),
             HMBButton(

@@ -60,8 +60,7 @@ Future<InvoiceWriteOffRequest?> showWriteOffInvoiceBalanceDialog({
         ),
       ),
       actions: [
-        HMBButton(
-          label: 'Cancel',
+        HMBCancelButton(
           hint: 'Close without writing off the invoice balance',
           onPressed: () => Navigator.of(context).pop(),
         ),

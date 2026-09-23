@@ -48,8 +48,7 @@ Future<EmailDeliveryOutcome> deliverEmail({
         'for another review?',
       ),
       actions: [
-        HMBButton(
-          label: 'Cancel',
+        HMBCancelButton(
           hint: "Don't send this email",
           onPressed: () => Navigator.of(context).pop(),
         ),

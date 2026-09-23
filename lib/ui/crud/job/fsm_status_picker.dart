@@ -165,8 +165,7 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
             title: Text(action.label),
             content: Text(action.hint),
             actions: [
-              HMBButtonSecondary(
-                label: 'Cancel',
+              HMBCancelButton(
                 hint: 'Keep the current job status',
                 onPressed: () => Navigator.of(context).pop(false),
               ),

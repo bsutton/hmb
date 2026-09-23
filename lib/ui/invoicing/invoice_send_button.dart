@@ -216,9 +216,8 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
             ],
           ),
           actions: [
-            HMBButton(
+            HMBCancelButton(
               onPressed: () => Navigator.of(context).pop(),
-              label: 'Cancel',
               hint: "Don't send the invoice",
             ),
             HMBButton(

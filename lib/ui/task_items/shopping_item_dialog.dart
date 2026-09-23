@@ -134,9 +134,8 @@ Future<void> showShoppingItemDialog(
             ),
           ),
           actions: [
-            HMBButton(
+            HMBCancelButton(
               onPressed: () => Navigator.of(dialogCtx).pop(),
-              label: 'Cancel',
               hint: "Don't save changes to this item",
             ),
             HMBButton(

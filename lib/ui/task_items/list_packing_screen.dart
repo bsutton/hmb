@@ -409,9 +409,8 @@ Packing items are taken from Task items that are marked as "${TaskItemType.mater
           'to the shopping list?',
         ),
         actions: [
-          HMBButton(
+          HMBCancelButton(
             onPressed: () => Navigator.of(context).pop(false),
-            label: 'Cancel',
             hint: "Don't move the item to the shopping list",
           ),
           HMBButton(

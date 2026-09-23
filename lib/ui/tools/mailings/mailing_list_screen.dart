@@ -12,6 +12,7 @@ import '../../../dao/dao_system.dart';
 import '../../../entity/mailing.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../widgets/blocking_ui.dart';
+import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/icons/hmb_add_button.dart';
 import '../../widgets/icons/hmb_delete_icon.dart';
@@ -102,10 +103,7 @@ class _MailingListScreenState extends State<MailingListScreen> {
             },
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
+            HMBCancelButton(onPressed: () => Navigator.pop(context)),
             ValueListenableBuilder<TextEditingValue>(
               valueListenable: controller,
               builder: (context, value, child) {

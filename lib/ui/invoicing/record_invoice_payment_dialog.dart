@@ -127,8 +127,7 @@ Future<InvoicePaymentRequest?> showRecordInvoicePaymentDialog({
             ),
           ),
           actions: [
-            HMBButton(
-              label: 'Cancel',
+            HMBCancelButton(
               hint: 'Close without recording a payment',
               onPressed: () => Navigator.of(context).pop(),
             ),

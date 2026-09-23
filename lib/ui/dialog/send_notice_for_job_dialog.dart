@@ -260,8 +260,7 @@ Add additional recipients who should receive a copy of the email.'''),
         ),
       ),
       actions: [
-        HMBButton(
-          label: 'Cancel',
+        HMBCancelButton(
           hint: 'Close without sending',
           onPressed: () {
             Navigator.of(context).pop(false);

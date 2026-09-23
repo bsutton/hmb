@@ -210,10 +210,8 @@ class _BlockingOverlayWidgetState extends State<_BlockingOverlayWidget> {
                           Semantics(
                             button: true,
                             label: 'Cancel this operation',
-                            child: HMBButton.small(
-                              label: 'Cancel',
+                            child: HMBCancelButton(
                               hint: 'Cancel this operation',
-                              showTooltip: false,
                               onPressed: cancelRun,
                             ),
                           ),

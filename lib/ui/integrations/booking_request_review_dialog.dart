@@ -347,10 +347,7 @@ class _BookingRequestReviewDialogState
       ),
     ),
     actions: [
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Cancel'),
-      ),
+      HMBCancelButton(onPressed: () => Navigator.of(context).pop()),
       if (widget.request.status != BookingRequestStatus.imported)
         TextButton(
           onPressed: _loading ? null : _deleteRequest,
@@ -630,10 +627,7 @@ class _BookingRequestReviewDialogState
           'This will remove it from the pending list.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
+          HMBCancelButton(onPressed: () => Navigator.of(context).pop(false)),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Delete'),
@@ -753,10 +747,7 @@ class _BookingRequestReviewDialogState
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
+            HMBCancelButton(onPressed: () => Navigator.of(context).pop()),
             TextButton(
               onPressed: () {
                 final text = controller.text.trim();

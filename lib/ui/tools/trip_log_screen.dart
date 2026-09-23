@@ -415,8 +415,7 @@ class _TripPurposeDialogState extends State<_TripPurposeDialog> {
       ],
     ),
     actions: [
-      HMBButtonSecondary(
-        label: 'Cancel',
+      HMBCancelButton(
         hint: 'Keep current details',
         onPressed: () => Navigator.pop(context),
       ),

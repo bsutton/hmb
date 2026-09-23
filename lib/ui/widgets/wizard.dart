@@ -540,7 +540,7 @@ class WizardState extends State<Wizard> {
       spacing: 12,
       overflowSpacing: 8,
       children: [
-        HMBButtonSecondary(
+        HMBCancelButton(
           label: widget.cancelLabel,
           hint: 'Close the Wizard',
           onPressed: _inTransition || _pageLoading

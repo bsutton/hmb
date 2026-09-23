@@ -89,8 +89,7 @@ class _EditQuoteLineDialogState extends State<EditQuoteLineDialog> {
       ),
     ),
     actions: <Widget>[
-      HMBButton(
-        label: 'Cancel',
+      HMBCancelButton(
         hint: "Don't save the quote line changes",
         onPressed: () {
           Navigator.of(context).pop();

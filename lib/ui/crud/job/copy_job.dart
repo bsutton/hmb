@@ -190,10 +190,7 @@ class _DialogMoveTasksState extends DeferredState<DialogMoveTasks> {
           'Do you still want to move these tasks?',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
+          HMBCancelButton(onPressed: () => Navigator.of(context).pop(false)),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Continue'),
@@ -324,8 +321,7 @@ class _DialogMoveTasksState extends DeferredState<DialogMoveTasks> {
       },
     ),
     actions: [
-      HMBButton(
-        label: 'Cancel',
+      HMBCancelButton(
         onPressed: () => Navigator.of(context).pop(),
         hint: "Don't move any tasks",
       ),
