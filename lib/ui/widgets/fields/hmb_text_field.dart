@@ -68,50 +68,57 @@ class HMBTextField extends StatelessWidget {
       LogicalKeySet(LogicalKeyboardKey.meta, LogicalKeyboardKey.keyV):
           const PasteIntent(), // macOS
     },
-    child: Actions(
-      actions: <Type, Action<Intent>>{
-        PasteIntent: CallbackAction<PasteIntent>(
-          onInvoke: (intent) => _handlePaste(),
-        ),
-      },
-      child: HMBColumn(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TextFormField(
-            key: fieldKey,
-            style: const TextStyle(color: HMBColors.textPrimary),
-            enabled: enabled,
-            readOnly: !enabled,
-            controller: controller,
-            focusNode: focusNode,
-            autofocus: autofocus,
-            keyboardType: keyboardType,
-            minLines: minLines,
-            maxLines: maxLines,
-            obscureText: obscureText,
-            textCapitalization: textCapitalization,
-            inputFormatters: inputFormatters,
-            onChanged: onChanged?.call,
-            decoration: InputDecoration(
-              labelText: labelText,
-              suffixIcon: suffixIcon,
-            ),
-            validator: (value) {
-              if (required && enabled && Strings.isBlank(value)) {
-                return 'Please enter a $labelText';
-              }
-              return validator?.call(value);
-            },
+    child: HMBColumn(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (keyboardType.index == TextInputType.number.index)
+          _ZeroValueField(controller: controller, builder: _buildField)
+        else
+          _buildField(controller, (value) => value),
+      ],
+    ),
+  );
 
-            // intercept the paste action on mobile so we
-            // parse the clipboard data of [onPaste] is
-            // passed.
-            contextMenuBuilder: onPaste == null
-                ? defaultContextMenuBuilder
-                : buildContextMenu,
-          ),
-        ],
+  Widget _buildField(
+    TextEditingController editingController,
+    String? Function(String?) effectiveValue,
+  ) => Actions(
+    actions: <Type, Action<Intent>>{
+      PasteIntent: CallbackAction<PasteIntent>(
+        onInvoke: (intent) => _handlePaste(editingController),
       ),
+    },
+    child: TextFormField(
+      key: fieldKey,
+      style: const TextStyle(color: HMBColors.textPrimary),
+      enabled: enabled,
+      readOnly: !enabled,
+      controller: editingController,
+      focusNode: focusNode,
+      autofocus: autofocus,
+      keyboardType: keyboardType,
+      minLines: minLines,
+      maxLines: maxLines,
+      obscureText: obscureText,
+      textCapitalization: textCapitalization,
+      inputFormatters: inputFormatters,
+      onChanged: onChanged?.call,
+      decoration: InputDecoration(labelText: labelText, suffixIcon: suffixIcon),
+      validator: (input) {
+        final value = effectiveValue(input);
+        if (required && enabled && Strings.isBlank(value)) {
+          return 'Please enter a $labelText';
+        }
+        return validator?.call(value);
+      },
+
+      // intercept the paste action on mobile so we
+      // parse the clipboard data of [onPaste] is
+      // passed.
+      contextMenuBuilder: onPaste == null
+          ? defaultContextMenuBuilder
+          : (context, editable) =>
+                buildContextMenu(context, editable, editingController),
     ),
   );
 
@@ -133,6 +140,7 @@ class HMBTextField extends StatelessWidget {
   Widget buildContextMenu(
     BuildContext context,
     EditableTextState editableTextState,
+    TextEditingController editingController,
   ) => AdaptiveTextSelectionToolbar.buttonItems(
     anchors: editableTextState.contextMenuAnchors,
     buttonItems: [
@@ -141,14 +149,14 @@ class HMBTextField extends StatelessWidget {
       ),
       ContextMenuButtonItem(
         onPressed: () async {
-          await _handlePaste();
+          await _handlePaste(editingController);
         },
         label: 'Paste',
       ),
     ],
   );
 
-  Future<void> _handlePaste() async {
+  Future<void> _handlePaste(TextEditingController editingController) async {
     final clipboardData = await Clipboard.getData('text/plain');
     if (clipboardData == null) {
       return;
@@ -160,9 +168,9 @@ class HMBTextField extends StatelessWidget {
 
     /// The user may be pasting in part of an email address
     // Get the current selection
-    final selection = controller.selection;
+    final selection = editingController.selection;
 
-    final text = controller.text;
+    final text = editingController.text;
 
     final newText = selection.isValid
         ? text.replaceRange(selection.start, selection.end, pasteData)
@@ -172,7 +180,7 @@ class HMBTextField extends StatelessWidget {
         ? selection.start + pasteData.length
         : newText.length;
 
-    controller.value = TextEditingValue(
+    editingController.value = TextEditingValue(
       text: newText,
       selection: TextSelection.collapsed(offset: newCursorPosition),
     );
@@ -181,4 +189,97 @@ class HMBTextField extends StatelessWidget {
 
 class PasteIntent extends Intent {
   const PasteIntent();
+}
+
+/// Hides a numeric zero while editing without changing its stored value until
+/// the user actually types. Validators still see the original zero if the
+/// user focuses and immediately saves.
+class _ZeroValueField extends StatefulWidget {
+  final TextEditingController controller;
+  final Widget Function(TextEditingController, String? Function(String?))
+  builder;
+
+  const _ZeroValueField({required this.controller, required this.builder});
+
+  @override
+  State<_ZeroValueField> createState() => _ZeroValueFieldState();
+}
+
+class _ZeroValueFieldState extends State<_ZeroValueField> {
+  late final TextEditingController _display;
+  var _syncing = false;
+  var _hidingZero = false;
+  var _focused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _display = TextEditingController.fromValue(widget.controller.value);
+    _display.addListener(_displayChanged);
+    widget.controller.addListener(_sourceChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ZeroValueField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_sourceChanged);
+      widget.controller.addListener(_sourceChanged);
+      _sourceChanged();
+    }
+  }
+
+  bool _isZero(String text) {
+    final number = text.trim().replaceAll(RegExp(r'[$,%\s]'), '');
+    return number.isNotEmpty && double.tryParse(number) == 0;
+  }
+
+  void _sourceChanged() {
+    if (_syncing) {
+      return;
+    }
+    _syncing = true;
+    _hidingZero = _focused && _isZero(widget.controller.text);
+    _display.value = _hidingZero
+        ? TextEditingValue.empty
+        : widget.controller.value;
+    _syncing = false;
+  }
+
+  void _displayChanged() {
+    if (_syncing || (_hidingZero && _display.text.isEmpty)) {
+      return;
+    }
+    _hidingZero = false;
+    _syncing = true;
+    widget.controller.value = _display.value;
+    _syncing = false;
+  }
+
+  void _focusChanged(bool focused) {
+    _focused = focused;
+    if (focused || _hidingZero) {
+      _sourceChanged();
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_sourceChanged);
+    _display.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Focus(
+    canRequestFocus: false,
+    skipTraversal: true,
+    onFocusChange: _focusChanged,
+    child: widget.builder(
+      _display,
+      (value) => _hidingZero && (value?.isEmpty ?? true)
+          ? widget.controller.text
+          : value,
+    ),
+  );
 }

@@ -55,7 +55,9 @@ class HMBFixedField extends HMBTextField {
     super.key,
     super.autofocus = false,
     super.validator,
-  }) : super(keyboardType: TextInputType.text);
+  }) : super(
+         keyboardType: const TextInputType.numberWithOptions(decimal: true),
+       );
 
   // ignore: avoid_positional_boolean_parameters
   static String? validation(String? value, bool nonZero, String fieldName) {
