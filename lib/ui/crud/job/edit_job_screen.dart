@@ -5,7 +5,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 
 import '../../../dao/dao.g.dart';
+import '../../../dao/dao_job_party.dart';
 import '../../../dao/job_billing_contact.dart';
+import '../../../entity/contact_role.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../../util/flutter/platform_ex.dart';
@@ -51,6 +53,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
   BillingType _billingType = BillingType.timeAndMaterial;
   int? _billToId;
   int? _billingContactId;
+  var _billingSelectionRevision = 0;
   var _useCurrentBillingDefaults = false;
   var _revision = 0;
   var _saving = false;
@@ -323,13 +326,30 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     onCancel: () => Navigator.pop(context),
   );
 
+  Future<Contact?> _displayBillingContact({bool automatic = false}) async {
+    final draft = currentEntity!.copyWith()
+      ..billToCustomerId = _billToId
+      ..billingContactId = automatic ? null : _billingContactId;
+    if (automatic || _useCurrentBillingDefaults) {
+      draft.legacyBillingContactId = null;
+    }
+    final resolved = await resolveJobBillingContact(draft);
+    if (resolved.source == JobBillingContactSource.onlyContact) {
+      final parties = await DaoJobParty().getByJob(draft.id);
+      if (!parties.any(
+        (party) =>
+            party.role.id != ContactRole.billing &&
+            party.contact.id == resolved.contact?.id,
+      )) {
+        return null;
+      }
+    }
+    return resolved.contact;
+  }
+
   Widget _billingFields(Customer? customer) => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      const Text(
-        'Choose whose account receives the bill. This defaults to the job '
-        'customer and can be different from the customer receiving the work.',
-      ),
       HMBDroplist<Customer>(
         title: 'Bill To customer',
         selectedItem: () => DaoCustomer().getById(_billToId),
@@ -345,10 +365,13 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
         }),
       ),
       HMBDroplist<Contact>(
-        key: ValueKey('billing-contact-$_billToId'),
-        title: 'Billing Contact (optional)',
+        key: ValueKey(
+          'billing-contact-$_billToId-$_billingContactId'
+          '-$_useCurrentBillingDefaults-$_billingSelectionRevision',
+        ),
+        title: 'Billing contact',
         required: false,
-        selectedItem: () => DaoContact().getById(_billingContactId),
+        selectedItem: _displayBillingContact,
         items: (filter) async => (await billingContactsForCustomer(_billToId))
             .where(
               (value) => value.fullname.toLowerCase().contains(
@@ -357,30 +380,26 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
             )
             .toList(),
         format: (value) => value.fullname.trim(),
-        onChanged: (value) => setState(() {
-          _billingContactId = value?.id;
-          _useCurrentBillingDefaults = true;
-        }),
+        onChanged: (value) async {
+          final automatic = await _displayBillingContact(automatic: true);
+          if (mounted) {
+            setState(() {
+              _billingContactId = value?.id == automatic?.id ? null : value?.id;
+              _useCurrentBillingDefaults = true;
+              _billingSelectionRevision++;
+            });
+          }
+        },
       ),
       if (currentEntity?.legacyBillingContactId != null &&
           _billingContactId == null &&
           !_useCurrentBillingDefaults) ...[
-        const Text(
-          'This job keeps its previous billing recipient until you choose '
-          'a new contact, change Bill To, or use the current defaults.',
-        ),
         HMBButtonSecondary(
-          label: 'Use current defaults',
+          label: 'Reset contact',
           hint: 'Use automatic recipient selection when you save',
           onPressed: () => setState(() => _useCurrentBillingDefaults = true),
         ),
       ],
-      const Text(
-        'Leave the contact blank to use the Bill To customer’s '
-        'default billing contact, then a Primary Contact or the only job '
-        'contact belonging to that customer. Otherwise invoicing asks '
-        'you to select one.',
-      ),
       // Retain shared HMB billing-type and rate controls.
       _editor(customer),
     ],
@@ -435,7 +454,11 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
           job.legacyBillingContactId = null;
         }
         job
-          ..billToCustomerId = _billToId
+          ..billToCustomerId =
+              _billToId == job.customerId &&
+                  job.billingParty == BillingParty.customer
+              ? null
+              : _billToId
           ..billingContactId = _billingContactId
           ..billingType = _billingType
           ..hourlyRate = rate

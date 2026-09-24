@@ -601,19 +601,22 @@ void main() {
     billTo.onChanged(otherCustomer);
     await pumpUntil(
       tester,
-      find.byKey(ValueKey('billing-contact-${other.customerId}')),
+      find.byKey(ValueKey('billing-contact-${other.customerId}-null-true-0')),
     );
     contacts = tester.widget<HMBDroplist<Contact>>(
       find.byType(HMBDroplist<Contact>),
     );
     await tester.runAsync(() async {
-      expect(await contacts.selectedItem(), isNull);
+      expect((await contacts.selectedItem())?.id, other.contactId);
       expect((await contacts.items(null)).map((c) => c.id), [other.contactId]);
     });
     final selected = await tester.runAsync(
       () => DaoContact().getById(other.contactId),
     );
     contacts.onChanged(selected);
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
     await tester.pump();
     await tester.tap(find.text('Save'));
     await pumpUntil(tester, find.text('Job actions'));
@@ -621,11 +624,13 @@ void main() {
       final saved = (await DaoJob().getById(job.id))!;
       expect(saved.customerId, job.customerId);
       expect(saved.billingCustomerId, other.customerId);
-      expect(saved.billingContactId, other.contactId);
-      final billing = (await DaoJobParty().getByJob(
-        job.id,
-      )).singleWhere((party) => party.role.id == ContactRole.billing);
-      expect(billing.contact.id, other.contactId);
+      expect(saved.billingContactId, isNull);
+      expect(
+        (await DaoJobParty().getByJob(
+          job.id,
+        )).where((party) => party.role.id == ContactRole.billing),
+        isEmpty,
+      );
     });
     expect(tester.takeException(), isNull);
   });
@@ -689,7 +694,7 @@ void main() {
         await pumpUntil(tester, find.text('Bill To customer'));
         await pumpUntil(tester, find.byType(TextFormField));
         if (resetDefaults) {
-          await tester.tap(find.text('Use current defaults'));
+          await tester.tap(find.text('Reset contact'));
           await tester.pump();
         }
         await tester.tap(find.text('Save'));
@@ -697,6 +702,7 @@ void main() {
         await tester.runAsync(() async {
           final saved = (await DaoJob().getById(job.id))!;
           expect(saved.billingContactId, isNull);
+          expect(saved.billToCustomerId, isNull);
           expect(saved.hourlyRate, MoneyEx.dollars(95));
           expect(
             saved.legacyBillingContactId,

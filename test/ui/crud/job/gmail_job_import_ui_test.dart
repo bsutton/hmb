@@ -182,6 +182,32 @@ void main() {
               isNull,
             );
           }
+          if (step == 5) {
+            final customerPicker = tester.widget<HMBDroplist<Customer>>(
+              find.byWidgetPredicate(
+                (widget) =>
+                    widget is HMBDroplist<Customer> &&
+                    widget.title == 'Bill To customer',
+              ),
+            );
+            final contactPicker = tester.widget<HMBDroplist<Contact>>(
+              find.byWidgetPredicate(
+                (widget) =>
+                    widget is HMBDroplist<Contact> &&
+                    widget.title == 'Billing contact',
+              ),
+            );
+            await tester.runAsync(() async {
+              expect(
+                (await customerPicker.selectedItem())?.name,
+                source.senderName,
+              );
+              expect(
+                (await contactPicker.selectedItem())?.emailAddress,
+                source.senderEmail,
+              );
+            });
+          }
           if (step == 5 && separateSite) {
             tester
                 .widget<HMBDroplist<Customer>>(
@@ -198,7 +224,7 @@ void main() {
               find.byWidgetPredicate(
                 (widget) =>
                     widget is HMBDroplist<Contact> &&
-                    widget.title == 'Billing Contact (optional)',
+                    widget.title == 'Billing contact',
               ),
             );
             final choices = await tester.runAsync(
@@ -212,16 +238,40 @@ void main() {
               choices.map((contact) => contact.emailAddress),
               isNot(contains(source.senderEmail)),
             );
+            expect(
+              (await tester.runAsync(billingPicker.selectedItem))?.id,
+              billingContact.id,
+            );
             billingPicker.onChanged(billingContact);
+            await _pumpAsyncWork(tester);
             await tester.pumpAndSettle();
-            final rate = find.widgetWithText(TextFormField, 'Hourly Rate');
+            final rate = find.byKey(const ValueKey('job-creator-hourly-rate'));
             await tester.ensureVisible(rate);
+            await tester.pumpAndSettle();
             await tester.enterText(rate, '123.45');
           }
           await tester.tap(find.text('Next'));
           await _pumpAsyncWork(tester);
           await tester.pumpAndSettle();
         }
+        await tester.scrollUntilVisible(
+          find.widgetWithText(TextFormField, 'Job Summary'),
+          200,
+          scrollable: find
+              .ancestor(
+                of: find.text('Extract'),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        expect(
+          find.widgetWithText(TextFormField, 'Job Summary'),
+          findsOneWidget,
+          reason: tester
+              .widgetList<Text>(find.byType(Text))
+              .map((text) => text.data)
+              .join(' | '),
+        );
         await tester.enterText(
           find.widgetWithText(TextFormField, 'Job Summary'),
           source.subject,
@@ -251,9 +301,12 @@ void main() {
           final contact = await DaoContact().getById(job.contactId);
           expect(contact, isNotNull);
           expect(contact!.emailAddress, source.senderEmail);
+          expect(job.billingContactId, isNull);
           expect(
-            job.billingContactId,
-            separateSite ? billingContact!.id : null,
+            (await DaoJobParty().getByJob(
+              job.id,
+            )).where((party) => party.role.id == ContactRole.billing),
+            isEmpty,
           );
           expect(
             (await resolveJobBillingContact(job)).contact?.id,

@@ -90,6 +90,7 @@ class _JobCreatorState extends DeferredState<JobCreator> {
   final _bookingFee = HMBMoneyEditingController();
   Customer? _billToCustomer;
   Contact? _billingContact;
+  var _billingSelectionRevision = 0;
   var _primaryRemoved = false;
   var _referrerRemoved = false;
   final _additionalParties = <JobParty>[];
@@ -825,7 +826,9 @@ class _JobCreatorState extends DeferredState<JobCreator> {
     }
     if (billing) {
       setState(() {
-        _billToCustomer = selected;
+        _billToCustomer = selected?.id == _selectedCustomer?.id
+            ? null
+            : selected;
         _billingContact = null;
         _billingSuggestionReviewed = true;
       });
@@ -1032,14 +1035,49 @@ class _JobCreatorState extends DeferredState<JobCreator> {
     ],
   );
 
+  Customer get _billingCustomerSelection =>
+      _billToCustomer ?? _selectedCustomer ?? _newBillingCustomer;
+
+  Customer get _newBillingCustomer => Customer.forInsert(
+    name: _customerName.text,
+    description: '',
+    disbarred: false,
+    customerType: CustomerType.residential,
+    hourlyRate: MoneyEx.zero,
+    billingContactId: null,
+  );
+
+  Future<Contact?> _defaultBillingContact() async {
+    final customer = _billToCustomer ?? _selectedCustomer;
+    final configured = await DaoContact().getById(customer?.billingContactId);
+    if (configured != null) {
+      return configured;
+    }
+    // Job creation uses its customer's first contact as the billing default.
+    if (_billToCustomer == null) {
+      final initial =
+          _selectedExistingContact ?? _draftPrimaryContactForCurrentFields();
+      if (initial != null) {
+        return initial;
+      }
+    }
+    final eligible = (await _billingContacts()).map((c) => c.id).toSet();
+    final primary = _resolvedPrimaryContact();
+    if (primary != null && eligible.contains(primary.id)) {
+      return primary;
+    }
+    final candidates = <int, Contact>{
+      for (final party in _parties())
+        if (party.role.id != ContactRole.billing &&
+            eligible.contains(party.contact.id))
+          party.contact.id: party.contact,
+    };
+    return candidates.length == 1 ? candidates.values.single : null;
+  }
+
   Widget _buildBilling() => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      const Text(
-        'Choose whose account receives the bill. This defaults to '
-        'the job customer and can be different from the customer '
-        'receiving the work.',
-      ),
       if (!_billingSuggestionReviewed &&
           (_partySuggestions?.billToCustomer.isNotEmpty ?? false))
         ListTile(
@@ -1056,24 +1094,35 @@ class _JobCreatorState extends DeferredState<JobCreator> {
         ),
       HMBDroplist<Customer>(
         title: 'Bill To customer',
-        required: false,
-        selectedItem: () async => _billToCustomer ?? _selectedCustomer,
-        items: (filter) => DaoCustomer().getByFilter(filter),
+        selectedItem: () async => _billingCustomerSelection,
+        items: (filter) async => [
+          if (_selectedCustomer == null &&
+              _customerName.text.toLowerCase().contains(
+                (filter ?? '').toLowerCase(),
+              ))
+            _newBillingCustomer,
+          ...await DaoCustomer().getByFilter(filter),
+        ],
         format: (customer) => customer.name,
         onChanged: (customer) => setState(() {
-          _billToCustomer = customer;
+          _billToCustomer =
+              customer == null ||
+                  customer.id < 0 ||
+                  customer.id == _selectedCustomer?.id
+              ? null
+              : customer;
           _billingContact = null;
         }),
       ),
-      if (_billToCustomer == null && _selectedCustomer == null)
-        Text('Bill To defaults to the new customer: ${_customerName.text}'),
       HMBDroplist<Contact>(
         key: ValueKey(
-          'billing-${_billToCustomer?.id}-${_selectedCustomer?.id}',
+          'billing-${_billToCustomer?.id}-${_selectedCustomer?.id}'
+          '-${_billingContact?.id}-$_billingSelectionRevision',
         ),
-        title: 'Billing Contact (optional)',
+        title: 'Billing contact',
         required: false,
-        selectedItem: () async => _billingContact,
+        selectedItem: () async =>
+            _billingContact ?? await _defaultBillingContact(),
         items: (filter) async => (await _billingContacts())
             .where(
               (contact) => contact.fullname.toLowerCase().contains(
@@ -1082,13 +1131,15 @@ class _JobCreatorState extends DeferredState<JobCreator> {
             )
             .toList(),
         format: (contact) => contact.fullname.trim(),
-        onChanged: (contact) => setState(() => _billingContact = contact),
-      ),
-      const Text(
-        'Leave the contact blank to use the Bill To customer’s '
-        'default billing contact, then a Primary Contact or the only job '
-        'contact belonging to that customer. Otherwise invoicing asks '
-        'you to select one.',
+        onChanged: (contact) async {
+          final automatic = await _defaultBillingContact();
+          if (mounted) {
+            setState(() {
+              _billingContact = contact?.id == automatic?.id ? null : contact;
+              _billingSelectionRevision++;
+            });
+          }
+        },
       ),
       HMBDroplist<BillingType>(
         title: 'Billing Type',
@@ -1104,6 +1155,7 @@ class _JobCreatorState extends DeferredState<JobCreator> {
       ),
       HMBMoneyField(
         controller: _hourlyRate,
+        fieldKey: const ValueKey('job-creator-hourly-rate'),
         labelText: 'Hourly Rate',
         fieldName: 'Hourly Rate',
         nonZero: false,
