@@ -24,6 +24,7 @@ import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_date_time_picker.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/layout/hmb_form_section.dart';
 import '../../widgets/select/hmb_select_manufacture.dart';
 import '../../widgets/select/hmb_select_supplier.dart';
 import '../../widgets/wizard.dart';
@@ -109,7 +110,7 @@ class ToolDetailsStep extends WizardStep {
     child: Padding(
       padding: const EdgeInsets.all(16),
       child: SingleChildScrollView(
-        child: Column(
+        child: HMBFormSection(
           children: [
             HMBTextField(
               controller: nameController,

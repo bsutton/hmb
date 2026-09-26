@@ -13,6 +13,10 @@ Run `flutter pub get` after cloning or when dependencies change. Use `flutter ru
 Follow Dart's 2-space indentation and keep lines under 80 characters. Use `dart format .` before committing and ensure `flutter analyze` passes; the repo inherits rules from `analysis_options.yaml` via `package:lint_hard`. Name classes and enums in PascalCase, public members and locals in lowerCamelCase, and constants with a leading `k`. Keep widgets small and composable, and place shared theming or utilities in existing directories instead of duplicating helpers.
 
 ## Standard HMB UI Components
+
+Follow `doc/ui_style_guide.md` for spacing and visual conventions. Use
+`HMBFormSection` for grouped fields and `HMBFormList` for scrolling forms;
+the parent layout owns gaps between controls.
 Before adding a Material widget or a one-off control, check `lib/ui/widgets/`
 for an existing HMB component and use it whenever possible. This includes
 buttons, fields, selectors, cards, surfaces, layout helpers, and loading UI.

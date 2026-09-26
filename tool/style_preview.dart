@@ -1,3 +1,4 @@
+import 'package:fdb_helper/fdb_helper.dart';
 import 'package:hmb/ui/widgets/fields/hmb_integer_field.dart';
 import 'package:hmb/ui/widgets/fields/hmb_money_editing_controller.dart';
 import 'package:hmb/ui/widgets/fields/hmb_money_field.dart';
@@ -12,6 +13,9 @@ import 'package:hmb/ui/widgets/hmb_toggle.dart';
 import 'package:hmb/ui/widgets/icons/hmb_delete_icon.dart';
 import 'package:hmb/ui/widgets/icons/hmb_edit_icon.dart';
 import 'package:hmb/ui/widgets/icons/hmb_icon_button.dart';
+import 'package:hmb/ui/widgets/layout/hmb_column.dart';
+import 'package:hmb/ui/widgets/layout/hmb_form_section.dart';
+import 'package:hmb/ui/widgets/layout/hmb_spacing.dart';
 import 'package:hmb/ui/widgets/layout/labeled_container.dart';
 import 'package:hmb/ui/widgets/layout/surface.dart';
 import 'package:hmb/ui/widgets/select/hmb_droplist.dart';
@@ -20,8 +24,10 @@ import 'package:hmb/util/flutter/hmb_theme.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Run with `flutter run -t tool/style_preview.dart` to inspect shared controls.
-void main() =>
-    runApp(MaterialApp(theme: HMBTheme.dark, home: const HMBStylePreview()));
+void main() {
+  FdbBinding.ensureInitialized();
+  runApp(MaterialApp(theme: HMBTheme.dark, home: const HMBStylePreview()));
+}
 
 /// A database-free reference for the HMB style, using fictional content.
 class HMBStylePreview extends StatefulWidget {
@@ -122,7 +128,7 @@ class _HMBStylePreviewState extends State<HMBStylePreview> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: HMBSpacing.kSectionGap),
             SurfaceCardWithActions(
               title: 'Billing',
               summary: true,
@@ -135,7 +141,8 @@ class _HMBStylePreviewState extends State<HMBStylePreview> {
                   onPressed: () {},
                 ),
               ],
-              body: Column(
+              body: HMBColumn(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
@@ -149,7 +156,6 @@ class _HMBStylePreviewState extends State<HMBStylePreview> {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const Text('Jane Smith'),
-                  const SizedBox(height: 8),
                   HMBButtonSecondary(
                     label: 'Change billing contact',
                     hint: 'Choose a billing contact',
@@ -158,20 +164,18 @@ class _HMBStylePreviewState extends State<HMBStylePreview> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: HMBSpacing.kSectionGap),
             SurfaceCardWithActions(
               title: 'Controls',
               summary: true,
               padding: const EdgeInsets.all(HMBTheme.sectionPadding),
-              body: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              body: HMBFormSection(
                 children: [
                   HMBTextField(
                     fieldKey: const ValueKey('preview-contact'),
                     controller: _contact,
                     labelText: 'Contact',
                   ),
-                  const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -198,15 +202,15 @@ class _HMBStylePreviewState extends State<HMBStylePreview> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: HMBSpacing.kSectionGap),
             _fields(),
-            const SizedBox(height: 12),
+            const SizedBox(height: HMBSpacing.kSectionGap),
             _selections(),
-            const SizedBox(height: 12),
+            const SizedBox(height: HMBSpacing.kSectionGap),
             _actions(),
-            const SizedBox(height: 12),
+            const SizedBox(height: HMBSpacing.kSectionGap),
             _typography(),
-            const SizedBox(height: 12),
+            const SizedBox(height: HMBSpacing.kSectionGap),
             _surfaces(),
           ],
         ),
@@ -235,36 +239,30 @@ class _HMBStylePreviewState extends State<HMBStylePreview> {
     [
       Form(
         key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: HMBFormSection(
           children: [
             HMBIntegerField(
               controller: _quantity,
               labelText: 'Quantity',
               positive: true,
             ),
-            const SizedBox(height: 12),
             HMBMoneyField(
               controller: _rate,
               labelText: 'Hourly rate',
               fieldName: 'rate',
             ),
-            const SizedBox(height: 12),
             HMBTextArea(controller: _notes, labelText: 'Notes', maxLines: 3),
-            const SizedBox(height: 12),
             HMBTextField(
               controller: _reference,
               labelText: 'Reference (disabled)',
               enabled: false,
             ),
-            const SizedBox(height: 12),
             HMBTextField(
               controller: _required,
               labelText: 'Summary',
               fieldKey: const ValueKey('preview-required'),
               required: true,
             ),
-            const SizedBox(height: 12),
             HMBButtonSecondary(
               label: 'Validate fields',
               hint: 'Show validation',

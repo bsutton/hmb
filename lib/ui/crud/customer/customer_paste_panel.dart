@@ -108,7 +108,6 @@ class _CustomerPastePanelState extends DeferredState<CustomerPastePanel> {
         controller: controller,
         maxLines: 8,
         labelText: 'Paste Message (sms or email) here',
-        leadingSpace: false,
         onChanged: (value) => widget.onChanged?.call(value ?? ''),
       ),
       const HMBSpacer(height: true),

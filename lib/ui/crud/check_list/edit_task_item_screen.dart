@@ -224,8 +224,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       onInsert: (taskItem, transaction) =>
           DaoTaskItem().insert(taskItem!, transaction),
       entityState: this,
-      editor: (taskItem) => HMBColumn(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      editor: (taskItem) => HMBFormSection(
         children: [
           HMBTextField(
             controller: _descriptionController,
@@ -449,8 +448,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     _buildMarginAndChargeFields(),
   ];
 
-  Widget _buildMarginAndChargeFields() => HMBColumn(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget _buildMarginAndChargeFields() => HMBFormSection(
     children: [
       HMBTextField(
         controller: _marginController,

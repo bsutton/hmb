@@ -100,8 +100,7 @@ class _SiteEditScreenState extends State<SiteEditScreen>
     entityState: this,
     onInsert: (site, transaction) =>
         widget.daoJoin.insertForParent(site!, widget.parent, transaction),
-    editor: (site) => HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    editor: (site) => HMBFormSection(
       children: [
         if (site == null) CustomerPastePanel(onExtract: _onExtract),
         // Add other form fields for the new fields

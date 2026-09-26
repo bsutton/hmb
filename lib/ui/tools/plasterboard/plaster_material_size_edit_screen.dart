@@ -9,6 +9,7 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/plaster_geometry.dart';
+import '../../widgets/layout/hmb_form_section.dart';
 import 'plaster_attribute_fields.dart';
 
 class PlasterMaterialSizeEditScreen extends StatefulWidget {
@@ -167,8 +168,7 @@ class _PlasterMaterialSizeEditScreenState
         title: Text(_isNew ? 'Add Material Size' : 'Edit Material Size'),
         actions: [IconButton(onPressed: _save, icon: const Icon(Icons.save))],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: HMBFormList(
         children: [
           if (_supplierId == null)
             const Padding(
@@ -181,7 +181,6 @@ class _PlasterMaterialSizeEditScreenState
             controller: _nameController,
             decoration: const InputDecoration(labelText: 'Material Name'),
           ),
-          const SizedBox(height: 12),
           TextField(
             controller: _widthController,
             decoration: InputDecoration(
@@ -189,7 +188,6 @@ class _PlasterMaterialSizeEditScreenState
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
-          const SizedBox(height: 12),
           TextField(
             controller: _heightController,
             decoration: InputDecoration(
@@ -197,7 +195,6 @@ class _PlasterMaterialSizeEditScreenState
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
-          const SizedBox(height: 12),
           TextField(
             controller: _thicknessController,
             decoration: InputDecoration(
@@ -206,12 +203,10 @@ class _PlasterMaterialSizeEditScreenState
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
-          const SizedBox(height: 12),
           PlasterAttributeFields(
             value: _attributeMask,
             onChanged: (value) => setState(() => _attributeMask = value),
           ),
-          const SizedBox(height: 12),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Exclude from layout'),
@@ -225,7 +220,6 @@ class _PlasterMaterialSizeEditScreenState
             },
           ),
           if (_error != null) ...[
-            const SizedBox(height: 12),
             Text(_error!, style: const TextStyle(color: Colors.redAccent)),
           ],
         ],

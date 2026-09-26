@@ -642,7 +642,7 @@ class _JobCreatorState extends DeferredState<JobCreator> {
           scrollable: true,
           content: Form(
             key: form,
-            child: HMBColumn(
+            child: HMBFormSection(
               children: [
                 if (suggestion == null)
                   Text('Customer: ${owner?.name ?? _customerName.text}')
@@ -1075,8 +1075,7 @@ class _JobCreatorState extends DeferredState<JobCreator> {
     return candidates.length == 1 ? candidates.values.single : null;
   }
 
-  Widget _buildBilling() => HMBColumn(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget _buildBilling() => HMBFormSection(
     children: [
       if (!_billingSuggestionReviewed &&
           (_partySuggestions?.billToCustomer.isNotEmpty ?? false))

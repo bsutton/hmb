@@ -18,6 +18,7 @@ import '../../../dao/dao.dart';
 import '../../../entity/entity.dart';
 import '../../widgets/form_validation.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/layout/hmb_spacing.dart';
 import '../../widgets/layout/layout.g.dart' show HMBColumn;
 import '../../widgets/save_and_close.dart';
 import '../base_full_screen/edit_entity_screen.dart';
@@ -92,7 +93,12 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
               children: [
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(4),
+                    padding: const EdgeInsets.fromLTRB(
+                      HMBSpacing.kPageInset,
+                      0,
+                      HMBSpacing.kPageInset,
+                      HMBSpacing.kPageInset,
+                    ),
 
                     /// Inject the entity specific editor.
                     child: ParentSaveScope(

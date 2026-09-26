@@ -17,6 +17,7 @@ import 'package:money2/money2.dart';
 import '../test_keys.dart';
 import '../widgets/fields/fields.g.dart';
 import '../widgets/hmb_button.dart';
+import '../widgets/layout/hmb_form_section.dart';
 
 class InvoiceWriteOffRequest {
   final String reason;
@@ -44,8 +45,7 @@ Future<InvoiceWriteOffRequest?> showWriteOffInvoiceBalanceDialog({
       title: Text(smallBalance ? 'Write Off Small Balance' : 'Write Off'),
       content: Form(
         key: formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: HMBFormSection(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Balance: $balance'),

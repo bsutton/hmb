@@ -148,12 +148,11 @@ class IhServerIntegrationScreenState extends State<IhServerIntegrationScreen> {
 
   Form _buildForm() => Form(
     key: _formKey,
-    child: HMBColumn(
+    child: HMBFormSection(
       children: [
         const Text(
           'Enable ihserver integration to import website enquiries as jobs.',
         ),
-        const HMBSpacer(height: true),
         SwitchListTile(
           title: const Text('Enable ihserver Integration'),
           subtitle: const Text('Turn on to enable booking imports'),

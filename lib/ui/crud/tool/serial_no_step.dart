@@ -62,7 +62,7 @@ class SerialNumberStep extends WizardStep {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.all(16),
-    child: HMBColumn(
+    child: HMBFormSection(
       children: [
         TextField(
           controller: _serialNumberController,

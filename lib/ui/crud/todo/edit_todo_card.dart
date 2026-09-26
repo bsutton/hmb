@@ -71,8 +71,7 @@ class _ToDoEditorCardState extends State<ToDoEditorCard> {
   Widget build(BuildContext context) {
     final v = widget.todo;
 
-    return HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return HMBFormSection(
       children: [
         // Title & Notes
         HMBTextField(

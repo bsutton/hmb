@@ -31,6 +31,7 @@ import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_crud_contact.dart';
 import '../../widgets/hmb_crud_site.dart';
 import '../../widgets/hmb_switch.dart';
+import '../../widgets/layout/hmb_spacing.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/select/hmb_select_contact.dart';
@@ -116,8 +117,8 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
     crossValidator: _validateDuplicateName,
     editor: (customer, {required isNew}) => DeferredBuilder(
       this,
-      builder: (context) => HMBColumn(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      builder: (context) => HMBFormSection(
+        spacing: HMBSpacing.kSectionGap,
         children: [
           HMBFormSection(
             children: [

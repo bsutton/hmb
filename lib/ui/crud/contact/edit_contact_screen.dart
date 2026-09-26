@@ -122,8 +122,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
     onInsert: (contact, transaction) =>
         widget.daoJoin.insertForParent(contact!, widget.parent, transaction),
     entityState: this,
-    editor: (contact) => HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    editor: (contact) => HMBFormSection(
       children: [
         HMBNameField(
           controller: _firstNameController,

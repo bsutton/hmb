@@ -72,8 +72,7 @@ class _StartTimerDialogState extends State<StartTimerDialog> {
 
     return HMBDialog(
       title: const Text('Start Timer'),
-      content: HMBColumn(
-        mainAxisSize: MainAxisSize.min,
+      content: HMBFormSection(
         children: [
           HMBText('Current Time: ${formatDateTime(DateTime.now())}'),
           if (widget.showTask) buildTaskDetails(),
