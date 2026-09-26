@@ -11,6 +11,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -38,41 +39,79 @@ Future<void> logAppStartup() async {
     // dart:io networking APIs are not supported on web.
     return;
   }
-  // Retrieve the system object.
-  final daoSystem = DaoSystem();
-  final system = await daoSystem.get();
-  final businessName = system.businessName ?? 'Unknown';
-  final obfuscatedBusinessName = obfuscateBusinessName(businessName);
+  try {
+    final system = await DaoSystem().get();
+    // This hostname must use a DNS-only AAAA record for UDP delivery.
+    await sendAppStartupTelemetry(
+      system.businessName ?? 'Unknown',
+      targetHost: 'telemetry.ivanhoehandyman.com.au',
+    );
+  } catch (_) {
+    // Telemetry must never prevent startup, including configuration failures.
+  }
+}
 
-  // Build the YAML message including the app version.
-  final now = DateTime.now().toIso8601String();
-  final message =
-      '''
+/// Sends best-effort app-start telemetry to the IPv6 collector.
+///
+/// Network operations are bounded independently. A bind completing after its
+/// timeout still closes its socket, since Future.timeout does not cancel it.
+Future<void> sendAppStartupTelemetry(
+  String businessName, {
+  required String targetHost,
+  DateTime? startedAt,
+  String? appVersion,
+  Duration networkTimeout = const Duration(seconds: 2),
+  Future<List<InternetAddress>> Function(
+        String host, {
+        InternetAddressType type,
+      })
+      lookup =
+      InternetAddress.lookup,
+  Future<RawDatagramSocket> Function(InternetAddress host, int port) bind =
+      RawDatagramSocket.bind,
+}) async {
+  RawDatagramSocket? socket;
+  var bindTimedOut = false;
+  try {
+    final obfuscatedBusinessName = obfuscateBusinessName(businessName);
+    final now = (startedAt ?? DateTime.now()).toIso8601String();
+    final message =
+        '''
 start: "$now"
 business name: "$obfuscatedBusinessName"
-app version: "$packageVersion"
+app version: "${appVersion ?? packageVersion}"
 ''';
-  final data = utf8.encode(message);
+    final addresses = await lookup(
+      targetHost,
+      type: InternetAddressType.IPv6,
+    ).timeout(networkTimeout);
+    if (addresses.isEmpty) {
+      return;
+    }
 
-  // Determine the target host: use localhost in debug mode.
-  // const targetHost = kDebugMode ? '127.0.0.1' : 'ivanhoehandyman.com.au';
-  // const targetHost = 'ivanhoehandyman.com.au';
-
-  const targetHost = '34.125.92.27';
-
-  // Resolve the target host.
-  final addresses = await InternetAddress.lookup(targetHost);
-  if (addresses.isEmpty) {
-    print('Could not resolve $targetHost');
-    return;
+    socket = await bind(InternetAddress.anyIPv6, 0)
+        .then((boundSocket) {
+          if (bindTimedOut) {
+            boundSocket.close();
+          }
+          return boundSocket;
+        })
+        .timeout(
+          networkTimeout,
+          onTimeout: () {
+            bindTimedOut = true;
+            throw TimeoutException('Telemetry socket bind timed out');
+          },
+        );
+    // Consume asynchronous socket errors as well as synchronous send failures.
+    // Assign before sending so finally can close the socket if sending throws.
+    // ignore: cascade_invocations
+    socket
+      ..listen((_) {}, onError: (Object _) {})
+      ..send(utf8.encode(message), addresses.first, 4040);
+  } catch (_) {
+    // Missing AAAA records, IPv4-only networks and socket errors are expected.
+  } finally {
+    socket?.close();
   }
-  final targetAddress = addresses.first;
-  // The port must match the UDP server's port (e.g. 4040).
-  const targetPort = 4040;
-
-  // Bind a UDP socket on an available local port.
-  final udpSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
-  udpSocket.send(data, targetAddress, targetPort);
-  print('Sent UDP packet to ${targetAddress.address}:$targetPort');
-  udpSocket.close();
 }
