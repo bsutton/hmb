@@ -798,9 +798,7 @@ Future<CustomerPaymentRequest?> showRecordCustomerPaymentDialog({
         content: Form(
           key: formKey,
           child: SingleChildScrollView(
-            child: HMBColumn(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: HMBFormSection(
               children: [
                 HMBSelectCustomer(
                   selectedCustomer: selectedCustomer,
@@ -958,9 +956,7 @@ Future<PaymentAllocationRequest?> showAllocatePaymentDialog({
         content: Form(
           key: formKey,
           child: SingleChildScrollView(
-            child: HMBColumn(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: HMBFormSection(
               children: [
                 Text('Unallocated: $unallocated'),
                 DropdownButtonFormField<_InvoiceAllocationOption>(

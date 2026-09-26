@@ -936,8 +936,7 @@ Total: ${line.lineTotal}'''),
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Add Discount'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+        content: HMBFormSection(
           children: [
             TextField(
               controller: descriptionController,

@@ -123,8 +123,7 @@ class _CustomLabelLayoutEditScreenState
     dao: DaoCustomLabelLayout(),
     entityState: this,
     crossValidator: _fitsPage,
-    editor: (layout, {required isNew}) => HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    editor: (layout, {required isNew}) => HMBFormSection(
       children: [
         HMBTextField(
           controller: _nameController,

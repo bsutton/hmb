@@ -306,7 +306,6 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
                     labelText: label,
                     controller: controller,
                     focusNode: focusNode,
-                    leadingSpace: false,
                     expands: true,
                   ),
                 ),
@@ -347,8 +346,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     return resolved.contact;
   }
 
-  Widget _billingFields(Customer? customer) => HMBColumn(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget _billingFields(Customer? customer) => HMBFormSection(
     children: [
       HMBDroplist<Customer>(
         title: 'Bill To customer',

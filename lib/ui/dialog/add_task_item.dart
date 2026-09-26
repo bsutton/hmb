@@ -58,8 +58,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
         content: Form(
           key: formKey,
           child: SingleChildScrollView(
-            child: HMBColumn(
-              mainAxisSize: MainAxisSize.min,
+            child: HMBFormSection(
               children: [
                 // Job Selection Dropdown
                 HMBSelectJob(

@@ -16,7 +16,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../dao/dao_message_template.dart';
 import '../../../entity/message_template.dart';
 import '../../widgets/fields/hmb_text_area.dart';
-import '../../widgets/layout/layout.g.dart' show HMBColumn;
+import '../../widgets/layout/layout.g.dart' show HMBFormSection;
 import '../../widgets/text/hmb_text_themes.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 
@@ -65,8 +65,7 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
     entityName: 'Message Template',
     dao: DaoMessageTemplate(),
     entityState: this,
-    editor: (messageTemplate, {required isNew}) => HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    editor: (messageTemplate, {required isNew}) => HMBFormSection(
       children: [
         if (messageTemplate == null ||
             messageTemplate.owner == MessageTemplateOwner.user) ...[

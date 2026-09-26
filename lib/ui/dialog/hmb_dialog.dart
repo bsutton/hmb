@@ -13,6 +13,7 @@
 
 import 'package:material_ui/material_ui.dart';
 
+import '../widgets/layout/hmb_spacing.dart';
 import '../widgets/layout/layout.g.dart';
 
 class HMBDialog extends StatelessWidget {
@@ -28,9 +29,9 @@ class HMBDialog extends StatelessWidget {
     required this.content,
     super.key,
     this.actions,
-    this.insetPadding = const EdgeInsets.all(8), // Default padding to 0
-    this.titlePadding = const EdgeInsets.all(8),
-    this.contentPadding = const EdgeInsets.all(8),
+    this.insetPadding = const EdgeInsets.all(HMBSpacing.kPageInset),
+    this.titlePadding = const EdgeInsets.all(HMBSpacing.kPageInset),
+    this.contentPadding = const EdgeInsets.all(HMBSpacing.kPageInset),
   });
 
   @override

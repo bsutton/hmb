@@ -17,6 +17,7 @@ import 'package:money2/money2.dart';
 import '../../entity/invoice_line.dart';
 import '../../util/dart/money_ex.dart';
 import '../widgets/hmb_button.dart';
+import '../widgets/layout/hmb_form_section.dart';
 
 class EditInvoiceLineDialog extends StatefulWidget {
   final InvoiceLine line;
@@ -53,7 +54,7 @@ class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
   Widget build(BuildContext context) => AlertDialog(
     title: const Text('Edit Invoice Line'),
     content: SingleChildScrollView(
-      child: ListBody(
+      child: HMBFormSection(
         children: <Widget>[
           TextField(
             controller: _descriptionController,

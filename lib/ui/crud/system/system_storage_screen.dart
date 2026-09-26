@@ -216,7 +216,7 @@ class SystemStorageScreenState extends DeferredState<SystemStorageScreen> {
     this,
     builder: (context) => Form(
       key: _formKey,
-      child: HMBColumn(
+      child: HMBFormSection(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           HMBTextField(

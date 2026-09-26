@@ -30,7 +30,7 @@ class HMBTextArea extends StatelessWidget {
     this.onChanged,
     this.maxLines = 6,
     this.focusNode,
-    this.leadingSpace = true,
+    this.leadingSpace = false,
     this.expands = false,
     super.key,
   });

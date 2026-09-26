@@ -64,9 +64,7 @@ Future<InvoicePaymentRequest?> showRecordInvoicePaymentDialog({
           content: Form(
             key: formKey,
             child: SingleChildScrollView(
-              child: HMBColumn(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: HMBFormSection(
                 children: [
                   HMBMoneyField(
                     controller: amountController,

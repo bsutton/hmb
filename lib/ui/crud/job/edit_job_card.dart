@@ -1133,7 +1133,6 @@ You can set a default booking fee from System | Billing screen''');
                 child: HMBTextArea(
                   labelText: title,
                   controller: localController,
-                  leadingSpace: false,
                   expands: true,
                 ),
               ),

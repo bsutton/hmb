@@ -161,8 +161,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
         child: HMBScrollForKeyboard(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: HMBColumn(
-              mainAxisSize: MainAxisSize.min,
+            child: HMBFormSection(
               children: [
                 HMBSelectJob(
                   selectedJob: _selectedJob,

@@ -119,7 +119,7 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
     this,
     builder: (context) => Form(
       key: _formKey,
-      child: HMBColumn(
+      child: HMBFormSection(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Existing fields...

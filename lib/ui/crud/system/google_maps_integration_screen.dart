@@ -79,7 +79,7 @@ class _GoogleMapsIntegrationScreenState
             children: [
               Form(
                 key: _formKey,
-                child: HMBColumn(
+                child: HMBFormSection(
                   children: [
                     const Text(
                       'Store a Google Maps Platform API key to enable '

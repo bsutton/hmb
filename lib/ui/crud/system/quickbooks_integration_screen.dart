@@ -9,6 +9,7 @@ import '../../../entity/quickbooks_settings.dart';
 import '../../../entity/system_credentials.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/layout/hmb_form_section.dart';
 import '../../widgets/widgets.g.dart';
 
 class QuickBooksIntegrationScreen extends StatefulWidget {
@@ -132,8 +133,7 @@ class _QuickBooksState extends DeferredState<QuickBooksIntegrationScreen> {
       this,
       waitingBuilder: (_) => const SizedBox.shrink(),
       errorBuilder: (_, _) => const Text('Could not load QuickBooks settings.'),
-      builder: (_) => ListView(
-        padding: const EdgeInsets.all(16),
+      builder: (_) => HMBFormList(
         children: [
           const Text('QuickBooks Online invoice export — preview'),
           const Text(

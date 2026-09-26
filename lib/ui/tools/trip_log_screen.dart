@@ -6,6 +6,7 @@ import '../../api/trip_capture_service.dart';
 import '../../dao/dao_trip_log.dart';
 import '../../entity/trip_log.dart';
 import '../widgets/fields/hmb_text_field.dart';
+import '../widgets/layout/hmb_spacing.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/widgets.g.dart';
@@ -186,8 +187,8 @@ class _TripLogScreenState extends DeferredState<TripLogScreen> {
             .where((trip) => trip.distanceMetres == null)
             .length;
         final cost = businessKm * (double.tryParse(_rate.text) ?? 0);
-        return ListView(
-          padding: const EdgeInsets.all(16),
+        return HMBFormList(
+          spacing: HMBSpacing.kSectionGap,
           children: [
             const Text(
               'Checks your location only when you open/resume the app. '
@@ -195,11 +196,15 @@ class _TripLogScreenState extends DeferredState<TripLogScreen> {
               'Review missed stops and personal travel.',
             ),
             ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: const EdgeInsets.symmetric(
+                vertical: HMBSpacing.kFieldGap,
+              ),
               title: const Text('Travel settings'),
               children: [
                 Form(
                   key: _form,
-                  child: HMBColumn(
+                  child: HMBFormSection(
                     children: [
                       HMBToggle(
                         label: 'Enable trip logging',
@@ -268,72 +273,88 @@ class _TripLogScreenState extends DeferredState<TripLogScreen> {
               valueListenable: TripCaptureService.instance.status,
               builder: (_, status, _) => Text(status),
             ),
-            HMBDroplist<String>(
-              title: 'Period',
-              selectedItem: () async => _period,
-              items: (_) async => [
-                'Today',
-                'Yesterday',
-                'This week',
-                'This month',
-                'Last month',
-                'This year',
-                'Last year',
-                'Custom',
+            HMBFormSection(
+              children: [
+                HMBDroplist<String>(
+                  title: 'Period',
+                  selectedItem: () async => _period,
+                  items: (_) async => [
+                    'Today',
+                    'Yesterday',
+                    'This week',
+                    'This month',
+                    'Last month',
+                    'This year',
+                    'Last year',
+                    'Custom',
+                  ],
+                  format: (value) => value,
+                  onChanged: _selectPeriod,
+                ),
+                if (_period == 'Custom') ...[
+                  HMBDateTimeField(
+                    label: 'From',
+                    initialDateTime: _start,
+                    mode: HMBDateTimeFieldMode.dateOnly,
+                    onChanged: (value) =>
+                        _start = DateTime(value.year, value.month, value.day),
+                  ),
+                  HMBDateTimeField(
+                    label: 'Until (exclusive)',
+                    initialDateTime: _end,
+                    mode: HMBDateTimeFieldMode.dateOnly,
+                    onChanged: (value) =>
+                        _end = DateTime(value.year, value.month, value.day),
+                  ),
+                ],
+                HMBButtonSecondary(
+                  label: 'Refresh trips',
+                  hint: 'Refresh the trip summary',
+                  onPressed: _reload,
+                ),
+                HMBButtonSecondary(
+                  label: 'Retry road distances',
+                  hint: 'Retry pending Google lookups when enabled',
+                  onPressed: () async {
+                    try {
+                      await BlockingUI().runAndWait(
+                        TripCaptureService.instance.updateRoutes,
+                      );
+                      await _reload();
+                    } catch (_) {
+                      HMBToast.error(
+                        'Road lookup failed. Check Google Maps setup. '
+                        'Trips are retained.',
+                      );
+                    }
+                  },
+                ),
               ],
-              format: (value) => value,
-              onChanged: _selectPeriod,
             ),
-            if (_period == 'Custom') ...[
-              HMBDateTimeField(
-                label: 'From',
-                initialDateTime: _start,
-                mode: HMBDateTimeFieldMode.dateOnly,
-                onChanged: (value) =>
-                    _start = DateTime(value.year, value.month, value.day),
+            Surface(
+              padding: const EdgeInsets.all(HMBSpacing.kPageInset),
+              child: HMBColumn(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Trip summary',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(
+                    '${km.toStringAsFixed(1)} km · '
+                    '${businessKm.toStringAsFixed(1)} business km',
+                  ),
+                  Text('$pending trips with unknown road distance'),
+                  Text(
+                    'Business cost estimate: '
+                    '${cost.toStringAsFixed(2)}',
+                  ),
+                ],
               ),
-              HMBDateTimeField(
-                label: 'Until (exclusive)',
-                initialDateTime: _end,
-                mode: HMBDateTimeFieldMode.dateOnly,
-                onChanged: (value) =>
-                    _end = DateTime(value.year, value.month, value.day),
-              ),
-            ],
-            HMBButtonSecondary(
-              label: 'Refresh trips',
-              hint: 'Refresh the trip summary',
-              onPressed: _reload,
-            ),
-            HMBButtonSecondary(
-              label: 'Retry road distances',
-              hint: 'Retry pending Google lookups when enabled',
-              onPressed: () async {
-                try {
-                  await BlockingUI().runAndWait(
-                    TripCaptureService.instance.updateRoutes,
-                  );
-                  await _reload();
-                } catch (_) {
-                  HMBToast.error(
-                    'Road lookup failed. Check Google Maps setup. '
-                    'Trips are retained.',
-                  );
-                }
-              },
-            ),
-            Text(
-              '${km.toStringAsFixed(1)} km · '
-              '${businessKm.toStringAsFixed(1)} business km',
-            ),
-            Text('$pending trips with unknown road distance'),
-            Text(
-              'Business cost estimate: '
-              '${cost.toStringAsFixed(2)}',
             ),
             for (final trip in _trips)
               Surface(
-                margin: const EdgeInsets.only(bottom: 8),
                 child: ListTile(
                   title: Text(
                     DateFormat('EEE d MMM, HH:mm').format(trip.arrivedAt),
@@ -402,8 +423,7 @@ class _TripPurposeDialogState extends State<_TripPurposeDialog> {
   Widget build(BuildContext context) => AlertDialog(
     title: const Text('Trip purpose'),
     scrollable: true,
-    content: HMBColumn(
-      mainAxisSize: MainAxisSize.min,
+    content: HMBFormSection(
       children: [
         HMBToggle(
           label: 'Business trip',
