@@ -52,6 +52,10 @@ Use a cheaper sidecar agent for bounded, repeatable checks when the main task is
 active HMB development. The main agent keeps ownership of code changes, product
 decisions, diff review, and final commit scope.
 
+Run tests through a low-cost sidecar agent and await its completion report.
+Do not poll or monitor the test agent for progress. Use its completion report
+to assess the results before integrating changes.
+
 Good sidecar tasks include:
 - running focused `flutter test` or `dart test` commands and reporting exact
   pass/fail output,

@@ -22,6 +22,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
+import '../../util/dart/format.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/icons/help_button.dart';
@@ -45,6 +46,32 @@ String noticeSmsGreetingForContact(Contact? contact) {
 }
 
 String _noticeContactName(Contact? contact) => contact?.fullname.trim() ?? '';
+
+/// Builds the default SMS for both new and edited schedule events.
+String noticeSmsBodyForActivity({
+  required JobActivity activity,
+  required Contact? contact,
+  required String? businessName,
+}) {
+  final greeting = noticeSmsGreetingForContact(contact);
+  if (activity.status == JobActivityStatus.proposed) {
+    final date = formatDate(activity.start, format: 'Y-m-d');
+    final start = formatTime(activity.start, 'HH:mm');
+    final end = formatTime(activity.end, 'HH:mm');
+    return '$greeting would $date at $start – $end work for you?'
+        '\n$businessName';
+  }
+
+  return '$greeting your job is scheduled. '
+      '${_noticeScheduleLine(activity)}\n$businessName';
+}
+
+String _noticeScheduleLine(JobActivity activity) {
+  final date = formatDate(activity.start, format: 'Y-m-d');
+  final start = formatTime(activity.start, 'HH:mm');
+  final end = formatTime(activity.end, 'HH:mm');
+  return 'Date: $date, Time: $start – $end';
+}
 
 class SendNoticeForJobDialog extends StatefulWidget {
   final Job job;
@@ -115,7 +142,7 @@ class _SendNoticeForJobDialogState
     final primary = await _primaryContactForJob(widget.job);
 
     // Prefill subject/body from schedule if available.
-    final scheduleText = await _buildScheduleLine(widget.job);
+    final scheduleText = _noticeScheduleLine(widget.jobActivity);
     final defaultSubject = widget.initialSubject ?? 'Scheduled Job Notice';
     final defaultBody =
         widget.initialBody ??
@@ -140,9 +167,11 @@ ${Strings.isNotBlank(_system.businessNumber) ? '${Strings.orElseOnBlank(_system.
 
     // SMS body is shorter; keep it simple and template-friendly.
     _smsBodyCtl = TextEditingController(
-      text:
-          '${noticeSmsGreetingForContact(primary)} your job is scheduled. '
-          '$scheduleText\n${_system.businessName}',
+      text: noticeSmsBodyForActivity(
+        activity: widget.jobActivity,
+        contact: primary,
+        businessName: _system.businessName,
+      ),
     );
 
     // Smart default: prefer SMS tab and preselect primary contact mobile.
@@ -376,21 +405,6 @@ Add additional recipients who should receive a copy of the email.'''),
     }
     final updated = widget.jobActivity.copyWith(noticeSentDate: DateTime.now());
     await DaoJobActivity().update(updated);
-  }
-
-  // Formats a single-line schedule summary for message bodies.
-  Future<String> _buildScheduleLine(Job job) async {
-    // Use your existing date/time formatting helpers if available.
-    final start = widget.jobActivity.start; // Localtime assumed
-    final end = widget.jobActivity.end;
-    final dateStr = '''
-${start.year}-${start.month.toString().padLeft(2, '0')}-${start.day.toString().padLeft(2, '0')}''';
-    final startStr =
-        '''${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}''';
-    final endStr =
-        '''${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}''';
-
-    return 'Date: $dateStr, Time: $startStr – $endStr';
   }
 
   /// Tries (in order) to find the primary contact for the job.
