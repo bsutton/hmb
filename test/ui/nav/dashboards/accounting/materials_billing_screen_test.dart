@@ -11,6 +11,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 
 import '../../../../database/management/db_utility_test_helper.dart';
+import '../../../ui_test_helpers.dart';
 
 void main() {
   setUp(setupTestDb);
@@ -102,6 +103,8 @@ void main() {
 Future<void> _pumpUntil(WidgetTester tester, Finder finder) async {
   for (var attempt = 0; attempt < 100; attempt++) {
     await tester.pump(const Duration(milliseconds: 20));
+    await pumpDeferredStates(tester);
+    await pumpLoadingIndicators(tester);
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 20)),
     );

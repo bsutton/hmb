@@ -3,6 +3,7 @@ library;
 
 import 'dart:async';
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
@@ -392,7 +393,7 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(home: Scaffold(body: JobListScreen())),
     );
-    await _pumpAsyncWork(tester);
+    await pumpDeferredStates(tester);
 
     final enabledAdd = find.byWidgetPredicate(
       (widget) => widget is HMBButtonAdd && widget.enabled,
@@ -517,7 +518,10 @@ void main() {
         ),
       ),
     );
-    await _pumpAsyncWork(tester);
+    final state = tester.state<DeferredState<GmailJobImportScreen>>(
+      find.byType(GmailJobImportScreen),
+    );
+    await runAsyncAndPump(tester, () => state.initialised);
 
     expect(find.text('Recent email'), findsOneWidget);
 

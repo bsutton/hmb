@@ -6,6 +6,7 @@ import 'package:hmb/ui/crud/system/system_contact_screen.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../database/management/db_utility_test_helper.dart';
+import '../../ui_test_helpers.dart';
 
 void main() {
   setUp(() async {
@@ -45,6 +46,10 @@ void main() {
 }
 
 Future<void> _pumpContactScreen(WidgetTester tester) async {
+  final state = tester.state<SystemContactInformationScreenState>(
+    find.byType(SystemContactInformationScreen),
+  );
+  await runAsyncAndPump(tester, () => state.initialised);
   for (var attempt = 0; attempt < 20; attempt++) {
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 50)),

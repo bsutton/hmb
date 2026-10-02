@@ -1,6 +1,7 @@
 @Tags(['flutter'])
 library;
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
@@ -20,6 +21,10 @@ void main() {
     String text, {
     int attempts = 30,
   }) async {
+    final state = tester.state<DeferredState<DialogTaskSelection>>(
+      find.byType(DialogTaskSelection),
+    );
+    await runAsyncAndPump(tester, () => state.initialised);
     for (var i = 0; i < attempts; i++) {
       if (find.text(text).evaluate().isNotEmpty) {
         return;

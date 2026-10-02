@@ -1,6 +1,8 @@
 @Tags(['flutter'])
 library;
 
+import 'dart:async';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
@@ -48,9 +50,13 @@ void main() {
         ),
       );
     });
+    final navigation = _QuoteNavigationObserver();
     await tester.pumpWidget(
       ToastificationWrapper(
-        child: MaterialApp(home: JobEstimateBuilderScreen(job: job)),
+        child: MaterialApp(
+          navigatorObservers: [navigation],
+          home: JobEstimateBuilderScreen(job: job),
+        ),
       ),
     );
     await _pumpUntilFound(tester, find.text('Raise Quote'));
@@ -64,6 +70,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 20));
     }
     await tester.tap(find.text('OK'));
+    await runAsyncAndPump(tester, () => navigation.opened.future);
     await _pumpUntilFound(tester, find.byType(QuoteListScreen));
     final screen = tester.widget<QuoteListScreen>(find.byType(QuoteListScreen));
     expect(screen.job?.id, job.id);
@@ -232,6 +239,7 @@ void main() {
 }
 
 Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
+  await pumpDeferredStates(tester);
   for (var attempt = 0; attempt < 40; attempt++) {
     await tester.pump(const Duration(milliseconds: 20));
     if (finder.evaluate().isNotEmpty) {
@@ -243,4 +251,16 @@ Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
     );
   }
   fail('Timed out waiting for $finder');
+}
+
+class _QuoteNavigationObserver extends NavigatorObserver {
+  final opened = Completer<void>();
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    if (previousRoute != null && route is PageRoute && !opened.isCompleted) {
+      opened.complete();
+    }
+  }
 }

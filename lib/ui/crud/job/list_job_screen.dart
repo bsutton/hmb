@@ -15,6 +15,7 @@
 
 import 'dart:async';
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -45,7 +46,7 @@ class JobListScreen extends StatefulWidget {
   _JobListScreenState createState() => _JobListScreenState();
 }
 
-class _JobListScreenState extends State<JobListScreen> {
+class _JobListScreenState extends DeferredState<JobListScreen> {
   static const _kStorageOrderKey = 'job_list_filter_order';
   static const _kStorageShowCurrentKey = 'job_list_filter_show_current';
   static const _kStorageShowOldKey = 'job_list_filter_show_old';
@@ -115,10 +116,7 @@ class _JobListScreenState extends State<JobListScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    unawaited(_restoreFilters());
-  }
+  Future<void> asyncInitState() => _restoreFilters();
 
   Future<void> _restoreFilters() async {
     final savedOrder = await _storage.read(key: _kStorageOrderKey);
@@ -155,8 +153,6 @@ class _JobListScreenState extends State<JobListScreen> {
         }
       }
     });
-
-    await _entityListKey.currentState?.refresh();
   }
 
   Future<void> _persistFilters() async {
@@ -185,49 +181,54 @@ class _JobListScreenState extends State<JobListScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Surface(
-    elevation: SurfaceElevation.e0,
-    child: HMBColumn(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Flexible(
-          child: EntityListScreen<Job>(
-            entityNameSingular: 'Job',
-            entityNamePlural: JobListScreen.pageTitle,
-            key: _entityListKey,
-            dao: DaoJob(),
-            onEdit: (job) => JobEditScreen(job: job),
-            fetchList: _fetchJobs,
-            listCardTitle: (job) => HMBCardTitle(job.summary),
-            onAdd: _addJob,
-            cardHeight: null,
-            filterSheetBuilder: _buildFilterSheet,
-            isFilterActive: () =>
-                !_showCurrentJobs ||
-                _showOldJobs ||
-                _order != JobOrder.active ||
-                _selectedBillingTypes.length != BillingType.values.length,
-            onFilterReset: () {
-              _showCurrentJobs = true;
-              _showOldJobs = false;
-              _order = JobOrder.active;
-              _selectedBillingTypes = {
-                BillingType.timeAndMaterial,
-                BillingType.fixedPrice,
-              };
-              unawaited(_persistFilters());
-            },
-            background: (job) async => job.status.getColour(),
-            listCard: (job) =>
-                ListJobCard(job: job, key: ValueKey(job.hashCode)),
-            buildActionItems: _buildActionItems,
-            canEdit: (job) => !job.isStock,
-            canDelete: (job) => !job.isStock,
-            confirmDelete: _confirmJobDelete,
-            scrollToTopOnReturn: true,
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
+    waitingBuilder: (_) => const SizedBox.shrink(),
+    errorBuilder: (_, error) => const Text('Could not load job filters.'),
+    builder: (context) => Surface(
+      elevation: SurfaceElevation.e0,
+      child: HMBColumn(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: EntityListScreen<Job>(
+              entityNameSingular: 'Job',
+              entityNamePlural: JobListScreen.pageTitle,
+              key: _entityListKey,
+              dao: DaoJob(),
+              onEdit: (job) => JobEditScreen(job: job),
+              fetchList: _fetchJobs,
+              listCardTitle: (job) => HMBCardTitle(job.summary),
+              onAdd: _addJob,
+              cardHeight: null,
+              filterSheetBuilder: _buildFilterSheet,
+              isFilterActive: () =>
+                  !_showCurrentJobs ||
+                  _showOldJobs ||
+                  _order != JobOrder.active ||
+                  _selectedBillingTypes.length != BillingType.values.length,
+              onFilterReset: () {
+                _showCurrentJobs = true;
+                _showOldJobs = false;
+                _order = JobOrder.active;
+                _selectedBillingTypes = {
+                  BillingType.timeAndMaterial,
+                  BillingType.fixedPrice,
+                };
+                unawaited(_persistFilters());
+              },
+              background: (job) async => job.status.getColour(),
+              listCard: (job) =>
+                  ListJobCard(job: job, key: ValueKey(job.hashCode)),
+              buildActionItems: _buildActionItems,
+              canEdit: (job) => !job.isStock,
+              canDelete: (job) => !job.isStock,
+              confirmDelete: _confirmJobDelete,
+              scrollToTopOnReturn: true,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     ),
   );
 

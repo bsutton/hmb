@@ -20,6 +20,7 @@ void main() {
     String text, {
     int attempts = 30,
   }) async {
+    await pumpReadOnlyFutureBuilders(tester, find.byType(ListMilestoneScreen));
     for (var i = 0; i < attempts; i++) {
       if (find.text(text).evaluate().isNotEmpty) {
         return;

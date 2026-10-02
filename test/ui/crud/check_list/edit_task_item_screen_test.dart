@@ -1,6 +1,7 @@
 @Tags(['flutter'])
 library;
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/crud/base_nested/edit_nested_screen.dart';
@@ -51,13 +52,13 @@ void main() {
     expect(find.text('Loading...'), findsNothing);
     expect(find.byType(LinearProgressIndicator), findsNothing);
 
-    await pumpUntilCondition(
-      tester,
-      () =>
-          find.text('Description').evaluate().isNotEmpty &&
-          !June.getState(BlockingOverlayState.new).blocked,
-      'task item defaults and blocking actions to finish',
+    final state = tester.state<DeferredState<TaskItemEditScreen>>(
+      find.byType(TaskItemEditScreen),
     );
+    await runAsyncAndPump(tester, () async {
+      await state.initialised;
+      await June.getState(BlockingOverlayState.new).waitForAllActions;
+    });
     await tester.pumpAndSettle();
 
     expect(find.text('Loading...'), findsNothing);
@@ -101,15 +102,10 @@ void main() {
           ),
         ),
       );
-      for (var attempt = 0; attempt < 30; attempt++) {
-        await tester.pump();
-        if (find.text('Description').evaluate().isNotEmpty) {
-          break;
-        }
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 50)),
-        );
-      }
+      final state = tester.state<DeferredState<TaskItemEditScreen>>(
+        find.byType(TaskItemEditScreen),
+      );
+      await runAsyncAndPump(tester, () => state.initialised);
       tester
               .widget<HMBTextField>(
                 find.byWidgetPredicate(

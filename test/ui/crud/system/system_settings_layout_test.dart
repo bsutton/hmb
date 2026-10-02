@@ -95,6 +95,7 @@ void main() {
 }
 
 Future<void> _pumpUntilVisible(WidgetTester tester, String text) async {
+  await pumpDeferredStates(tester);
   for (var attempt = 0; attempt < 20; attempt++) {
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 50)),

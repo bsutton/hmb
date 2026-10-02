@@ -336,10 +336,12 @@ void main() {
         ),
       ),
     );
+    await pumpDeferredStates(tester);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Select Jobs'));
     await tester.pump();
+    await pumpLoadingIndicators(tester);
     await waitForFinder(tester, find.textContaining(activeJob.summary));
 
     expect(find.textContaining(activeJob.summary), findsOneWidget);
@@ -347,6 +349,7 @@ void main() {
 
     await tester.tap(find.widgetWithText(SwitchListTile, 'Show inactive jobs'));
     await tester.pump();
+    await pumpLoadingIndicators(tester);
     await waitForFinder(tester, find.textContaining(inactiveJob.summary));
 
     expect(showInactiveJobs, isTrue);

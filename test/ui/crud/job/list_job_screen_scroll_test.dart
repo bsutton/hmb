@@ -48,20 +48,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(home: Scaffold(body: JobListScreen())),
       );
-      final listFinder = find.byType(EntityListScreen<Job>);
-      for (var attempt = 0; attempt < 100; attempt++) {
-        await tester.pump();
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 20)),
-        );
-        if (listFinder.evaluate().isNotEmpty &&
-            tester
-                .state<EntityListScreenState<Job>>(listFinder)
-                .entityList
-                .isNotEmpty) {
-          break;
-        }
-      }
+      await pumpDeferredStates(tester);
       final entries = tester
           .state<EntityListScreenState<Job>>(find.byType(EntityListScreen<Job>))
           .entityList;
@@ -177,6 +164,7 @@ void main() {
 }
 
 Future<void> _pumpUntilJobsLoad(WidgetTester tester) async {
+  await pumpDeferredStates(tester);
   for (var attempt = 0; attempt < 30; attempt++) {
     await tester.pump();
     if (find.text('Recent job 3').evaluate().isNotEmpty) {

@@ -3,6 +3,7 @@ library;
 
 import 'dart:async';
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/dao/dao_contact_role.dart';
@@ -10,6 +11,7 @@ import 'package:hmb/dao/dao_job_party.dart';
 import 'package:hmb/entity/contact_role.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/crud/contact/contact_roles_screen.dart';
+import 'package:hmb/ui/crud/job/edit_job_card.dart';
 import 'package:hmb/ui/crud/job/edit_job_screen.dart';
 import 'package:hmb/ui/crud/job/job_edit_section.dart';
 import 'package:hmb/ui/crud/job/job_parties_screen.dart';
@@ -721,6 +723,29 @@ Future<void> pumpUntil(WidgetTester tester, Finder finder) async {
   var stable = 0;
   for (var attempt = 0; attempt < 300; attempt++) {
     await tester.pump(const Duration(milliseconds: 20));
+    // A pushed route may mount on this frame, with a nested editor mounting
+    // only after its parent finishes loading.
+    final editors = tester.stateList<DeferredState<JobEditScreen>>(
+      find.byType(JobEditScreen),
+    );
+    await runAsyncAndPump(
+      tester,
+      () => Future.wait(editors.map((state) => state.initialised)),
+    );
+    final cards = tester.stateList<DeferredState<EditJobCard>>(
+      find.byType(EditJobCard),
+    );
+    await runAsyncAndPump(
+      tester,
+      () => Future.wait(cards.map((state) => state.initialised)),
+    );
+    await pumpReadOnlyFutureBuilders(
+      tester,
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is EditJobCard && widget.section == JobEditSection.notes,
+      ),
+    );
     await runAsyncAndPump(tester, () async {
       await Future<void>.delayed(const Duration(milliseconds: 10));
     });

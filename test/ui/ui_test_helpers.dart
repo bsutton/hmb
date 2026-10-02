@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 
 Future<Job> createJobWithCustomer({
@@ -125,4 +127,67 @@ Future<T> runAsyncAndPump<T>(
     Error.throwWithStackTrace(failure!, failureStack!);
   }
   return result;
+}
+
+/// Wait for the read-only FutureBuilder tree beneath a mounted widget.
+/// Completed outer queries may reveal further builders, so follow their actual
+/// futures instead of guessing a database latency with a fixed frame count.
+Future<void> pumpReadOnlyFutureBuilders(
+  WidgetTester tester,
+  Finder root,
+) async {
+  final seen = <Future<dynamic>>{};
+  while (true) {
+    final futures = tester
+        .widgetList<FutureBuilder<dynamic>>(
+          find.descendant(
+            of: root,
+            matching: find.byWidgetPredicate(
+              (widget) => widget is FutureBuilder<dynamic>,
+            ),
+          ),
+        )
+        .map((builder) => builder.future)
+        .whereType<Future<dynamic>>()
+        .where(seen.add)
+        .toList();
+    if (futures.isEmpty) {
+      return;
+    }
+    await runAsyncAndPump(tester, () => Future.wait(futures));
+  }
+}
+
+/// Await nested asynchronous initialization that mounts more deferred widgets.
+Future<void> pumpDeferredStates(WidgetTester tester) async {
+  final seen = <Future<void>>{};
+  while (true) {
+    await tester.pump();
+    final futures = <Future<void>>[];
+    for (final element in find.byWidgetPredicate((_) => true).evaluate()) {
+      if (element is StatefulElement && element.state is DeferredState) {
+        final future = (element.state as DeferredState).initialised;
+        if (seen.add(future)) {
+          futures.add(future);
+        }
+      }
+    }
+    if (futures.isEmpty) {
+      return;
+    }
+    await runAsyncAndPump(tester, () => Future.wait(futures));
+  }
+}
+
+/// Let real I/O progress while a widget displays its loading indicator.
+/// Like awaiting a query future, a load that never completes is still bounded
+/// by the test framework's timeout, not an assumed database response time.
+Future<void> pumpLoadingIndicators(WidgetTester tester) async {
+  while (find.byType(CircularProgressIndicator).evaluate().isNotEmpty ||
+      find.byType(LinearProgressIndicator).evaluate().isNotEmpty) {
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+  }
 }

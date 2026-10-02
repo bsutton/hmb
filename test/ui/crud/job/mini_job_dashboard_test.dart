@@ -1,9 +1,13 @@
 @Tags(['flutter'])
 library;
 
+import 'dart:async';
+
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
+import 'package:hmb/ui/crud/job/estimator/edit_job_estimate_screen.dart';
 import 'package:hmb/ui/crud/job/mini_job_dashboard.dart';
 import 'package:hmb/util/dart/local_date.dart';
 import 'package:hmb/util/dart/money_ex.dart';
@@ -60,19 +64,26 @@ void main() {
       );
     });
 
+    final navigation = _EstimateNavigationObserver();
     await tester.pumpWidget(
       MaterialApp(
+        navigatorObservers: [navigation],
         home: Scaffold(body: MiniJobDashboard(job: job)),
       ),
     );
     await _pumpUntilFound(tester, find.text('Estimate'));
 
     await tester.tap(find.text('Estimate'));
+    await runAsyncAndPump(tester, () => navigation.opened.future);
     await _pumpUntilFound(tester, find.text('Switch to Fixed Price'));
 
     expect(find.text('Estimates Require Fixed Price'), findsOneWidget);
 
     await tester.tap(find.text('Switch to Fixed Price'));
+    final state = tester.state<DeferredState<JobEstimateBuilderScreen>>(
+      find.byType(JobEstimateBuilderScreen),
+    );
+    await runAsyncAndPump(tester, () => state.initialised);
     await _pumpUntilFound(tester, find.textContaining('Estimate Complete:'));
 
     expect(find.text('Estimates Require Fixed Price'), findsNothing);
@@ -125,4 +136,16 @@ Future<void> _insertInvoice(
   );
   await DaoInvoice().insert(invoice);
   await DaoInvoice().update(invoice.copyWith(invoiceNum: invoiceNum));
+}
+
+class _EstimateNavigationObserver extends NavigatorObserver {
+  final opened = Completer<void>();
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    if (previousRoute != null && route is PageRoute && !opened.isCompleted) {
+      opened.complete();
+    }
+  }
 }
