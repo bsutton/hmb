@@ -60,7 +60,14 @@ void main() {
           PauseJob,
           RejectJob,
         },
-        JobStatus.toBeScheduled: {ScheduleJob, StartWork, PauseJob, RejectJob},
+        JobStatus.toBeScheduled: {
+          QuoteUnapproved,
+          QuoteNeedsRevision,
+          ScheduleJob,
+          StartWork,
+          PauseJob,
+          RejectJob,
+        },
         JobStatus.scheduled: {
           ScheduleRemoved,
           StartWork,
@@ -108,23 +115,31 @@ void main() {
       }
     });
 
-    test('every job state is reachable from prospecting', () async {
-      final reached = <JobStatus>{JobStatus.prospecting};
-      var changed = true;
-      while (changed) {
-        changed = false;
-        for (final from in reached.toList()) {
-          final job = await _insertJob(from);
-          for (final factory in eventFactory.values) {
-            final target = targetForJobEvent(from, factory(job));
-            if (target != null && reached.add(target)) {
-              changed = true;
+    test(
+      'every current workflow state is reachable from prospecting',
+      () async {
+        final reached = <JobStatus>{JobStatus.prospecting};
+        var changed = true;
+        while (changed) {
+          changed = false;
+          for (final from in reached.toList()) {
+            final job = await _insertJob(from);
+            for (final factory in eventFactory.values) {
+              final target = targetForJobEvent(from, factory(job));
+              if (target != null && reached.add(target)) {
+                changed = true;
+              }
             }
           }
         }
-      }
-      expect(reached, JobStatus.values.toSet());
-    });
+        // AwaitingPayment is retained for existing persisted jobs. Quote
+        // approval now proceeds to scheduling instead of entering that state.
+        expect(
+          reached,
+          JobStatus.values.toSet()..remove(JobStatus.awaitingPayment),
+        );
+      },
+    );
 
     test('every allowed edge is implemented by fsm2 and dispatcher', () async {
       for (final status in JobStatus.values) {

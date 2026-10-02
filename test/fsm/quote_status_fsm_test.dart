@@ -1,5 +1,6 @@
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
+import 'package:hmb/fsm/job_status_fsm.dart';
 import 'package:hmb/fsm/lifecycle_event_dispatcher.dart';
 import 'package:hmb/fsm/lifecycle_models.dart';
 import 'package:hmb/fsm/lifecycle_rules.dart';
@@ -146,8 +147,17 @@ void main() {
       ApproveQuoteEvent.new,
       context: LifecycleContext(source: 'test.approve'),
     );
-    expect((await DaoJob().getById(job.id))?.status, JobStatus.awaitingPayment);
+    expect((await DaoJob().getById(job.id))?.status, JobStatus.toBeScheduled);
     expect((await DaoQuote().getById(quote.id))?.state, QuoteState.approved);
+
+    expect(
+      (await DaoToDo().getOpenByJob(
+        job.id,
+      )).where((todo) => todo.title == 'Schedule job'),
+      hasLength(1),
+    );
+    await markJobActive(job.id);
+    expect((await DaoJob().getById(job.id))?.status, JobStatus.toBeScheduled);
 
     final audit = await DaoLifecycleTransition().getByJob(job.id);
     expect(audit.where((row) => row.aggregateType == 'quote'), hasLength(2));
@@ -362,6 +372,57 @@ void main() {
       );
     },
   );
+
+  for (final status in [JobStatus.awaitingPayment, JobStatus.toBeScheduled]) {
+    test(
+      'unapproving the last approved quote from $status awaits approval',
+      () async {
+        final job = await _insertJob(status);
+        final quote = await _insertQuote(QuoteState.approved, job: job);
+        await DaoQuote().unapproveQuote(quote.id);
+        expect(
+          (await DaoJob().getById(job.id))?.status,
+          JobStatus.awaitingApproval,
+        );
+        expect((await DaoQuote().getById(quote.id))?.state, QuoteState.sent);
+      },
+    );
+  }
+
+  test(
+    'rejecting the last approved unscheduled quote returns to quoting',
+    () async {
+      final job = await _insertJob(JobStatus.toBeScheduled);
+      final quote = await _insertQuote(QuoteState.approved, job: job);
+      await DaoQuote().rejectQuote(quote.id);
+      expect((await DaoJob().getById(job.id))?.status, JobStatus.quoting);
+    },
+  );
+
+  test(
+    'unapproval preserves another approved quote on an unscheduled job',
+    () async {
+      final job = await _insertJob(JobStatus.toBeScheduled);
+      final quote = await _insertQuote(QuoteState.approved, job: job);
+      await _insertQuote(QuoteState.approved, job: job);
+      await DaoQuote().unapproveQuote(quote.id);
+      expect((await DaoJob().getById(job.id))?.status, JobStatus.toBeScheduled);
+    },
+  );
+
+  for (final status in [JobStatus.scheduled, JobStatus.inProgress]) {
+    test(
+      'quote approval and reversal preserve the active job $status',
+      () async {
+        final job = await _insertJob(status);
+        final quote = await _insertQuote(QuoteState.sent, job: job);
+        await DaoQuote().approveQuote(quote.id);
+        expect((await DaoJob().getById(job.id))?.status, status);
+        await DaoQuote().unapproveQuote(quote.id);
+        expect((await DaoJob().getById(job.id))?.status, status);
+      },
+    );
+  }
 
   test('invalid quote event leaves state and audit untouched', () async {
     final quote = await _insertQuote(QuoteState.withdrawn);

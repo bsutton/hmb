@@ -96,7 +96,7 @@ Future<StateMachine> buildJobMachine(Job job) =>
         )
         ..state<AwaitingApproval>(
           (state) => state
-            ..on<ApproveQuote, AwaitingPayment>()
+            ..on<ApproveQuote, ToBeScheduled>()
             ..on<QuoteNeedsRevision, Quoting>()
             ..on<ProceedToScheduling, ToBeScheduled>()
             ..on<StartWork, InProgress>()
@@ -115,6 +115,8 @@ Future<StateMachine> buildJobMachine(Job job) =>
         )
         ..state<ToBeScheduled>(
           (state) => state
+            ..on<QuoteUnapproved, AwaitingApproval>()
+            ..on<QuoteNeedsRevision, Quoting>()
             ..on<ScheduleJob, Scheduled>()
             ..on<StartWork, InProgress>()
             ..on<PauseJob, OnHold>()

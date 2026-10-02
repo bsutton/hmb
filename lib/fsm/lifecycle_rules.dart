@@ -34,7 +34,7 @@ JobStatus? targetForJobEvent(JobStatus from, JobEvent event) => switch (from) {
     _ => null,
   },
   JobStatus.awaitingApproval => switch (event) {
-    ApproveQuote() => JobStatus.awaitingPayment,
+    ApproveQuote() => JobStatus.toBeScheduled,
     ProceedToScheduling() => JobStatus.toBeScheduled,
     StartWork() => JobStatus.inProgress,
     PauseJob() => JobStatus.onHold,
@@ -52,6 +52,8 @@ JobStatus? targetForJobEvent(JobStatus from, JobEvent event) => switch (from) {
     _ => null,
   },
   JobStatus.toBeScheduled => switch (event) {
+    QuoteUnapproved() => JobStatus.awaitingApproval,
+    QuoteNeedsRevision() => JobStatus.quoting,
     ScheduleJob() => JobStatus.scheduled,
     StartWork() => JobStatus.inProgress,
     PauseJob() => JobStatus.onHold,

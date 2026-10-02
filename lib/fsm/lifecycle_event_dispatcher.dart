@@ -430,7 +430,8 @@ class LifecycleEventDispatcher {
         job.status == JobStatus.awaitingApproval) {
       jobEvent = ApproveQuote(job);
     } else if (event is UnapproveQuote &&
-        job.status == JobStatus.awaitingPayment) {
+        (job.status == JobStatus.awaitingPayment ||
+            job.status == JobStatus.toBeScheduled)) {
       final otherApproved = await transaction.rawQuery(
         'SELECT 1 FROM quote WHERE job_id = ? AND id != ? '
         'AND state IN (?, ?) LIMIT 1',
@@ -470,7 +471,8 @@ class LifecycleEventDispatcher {
     Transaction transaction,
   ) async {
     if (job.status != JobStatus.awaitingApproval &&
-        job.status != JobStatus.awaitingPayment) {
+        job.status != JobStatus.awaitingPayment &&
+        job.status != JobStatus.toBeScheduled) {
       return null;
     }
 
@@ -493,7 +495,8 @@ class LifecycleEventDispatcher {
     }
     final hasSent = states.contains(QuoteState.sent);
     if (hasSent) {
-      return job.status == JobStatus.awaitingPayment
+      return job.status == JobStatus.awaitingPayment ||
+              job.status == JobStatus.toBeScheduled
           ? QuoteUnapproved(job)
           : null;
     }
