@@ -4,10 +4,54 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/ui/widgets/blocking_ui.dart';
 import 'package:hmb/util/dart/log.dart';
+import 'package:june/june.dart';
 import 'package:material_ui/material_ui.dart';
 
 void main() {
   setUpAll(() => Log.configure(Directory.current.path));
+
+  testWidgets('overlapping actions remain blocked until both finish', (
+    tester,
+  ) async {
+    final first = Completer<void>();
+    final second = Completer<void>();
+    final firstResult = BlockingUI().runAndWait(
+      () => first.future,
+      label: 'first',
+    );
+    final secondResult = BlockingUI().runAndWait(
+      () => second.future,
+      label: 'second',
+    );
+    try {
+      await tester.pump();
+      first.complete();
+      await firstResult;
+      await tester.pump();
+      final state = June.getState(BlockingOverlayState.new);
+      expect(state.blocked, isTrue);
+      expect(state.topActionOrNull?.label, 'second');
+      var allFinished = false;
+      unawaited(state.waitForAllActions.then((_) => allFinished = true));
+      await tester.pump();
+      expect(allFinished, isFalse);
+      second.complete();
+      await secondResult;
+      await tester.pump();
+      expect(state.blocked, isFalse);
+      expect(state.topActionOrNull, isNull);
+      expect(allFinished, isTrue);
+    } finally {
+      if (!first.isCompleted) {
+        first.complete();
+      }
+      if (!second.isCompleted) {
+        second.complete();
+      }
+      await Future.wait([firstResult, secondResult]);
+      await tester.pump(const Duration(milliseconds: 1));
+    }
+  });
 
   testWidgets('fast failures reach the caller without an overlay error', (
     tester,

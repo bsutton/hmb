@@ -6,6 +6,7 @@ import 'package:hmb/util/dart/money_ex.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../database/management/db_utility_test_helper.dart';
+import 'ui_test_helpers.dart';
 
 void main() {
   setUp(setupTestDb);
@@ -22,10 +23,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(home: QuickBooksExportScreen(invoice: invoice)),
     );
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 100)),
-    );
-    await tester.pumpAndSettle();
+    await pumpUntilFound(tester, find.text('Destination: sandbox company'));
     expect(find.text('Destination: sandbox company'), findsOneWidget);
     expect(find.textContaining('reconciled separately'), findsOneWidget);
     expect(find.text('Confirm and export'), findsNothing);

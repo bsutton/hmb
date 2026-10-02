@@ -376,11 +376,12 @@ class BlockingOverlayState extends JuneState {
   ///
   /// end
   ///
-  void end() {
-    _count--;
-    assert(_count >= 0, 'bad');
-
-    actions.pop();
+  void end(RunningSlowAction<dynamic> action) {
+    // Concurrent actions need not finish in stack order. Keep every pending
+    // action visible until that exact action has completed.
+    final removed = actions.stack.remove(action);
+    assert(removed, 'Completed blocking action must be registered');
+    _count = actions.stack.length;
 
     // Log.e('end count=$count');
     // Log.d(
@@ -439,10 +440,11 @@ class BlockingUI {
     Future<void> Function()? onCancel,
   }) {
     final overlay = June.getState(BlockingOverlayState.new);
-    final actionRunner = RunningSlowAction<T>(
+    late final RunningSlowAction<T> actionRunner;
+    actionRunner = RunningSlowAction<T>(
       label,
       slowAction,
-      overlay.end,
+      () => overlay.end(actionRunner),
       onCancel: onCancel,
     );
 

@@ -71,6 +71,11 @@ Future<Database> setupTestDb() async {
   );
   testDb = DatabaseHelper().database;
 
+  // This is a disposable fixture copy, not a durability/crash-recovery test.
+  // Keep SQLite transactions and rollback journals, but avoid forcing a disk
+  // sync for every tiny fixture write across parallel test isolates.
+  await testDb!.execute('PRAGMA synchronous = OFF');
+
   return testDb!;
 }
 

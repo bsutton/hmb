@@ -15,6 +15,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -38,7 +39,8 @@ class IhServerIntegrationScreen extends StatefulWidget {
       IhServerIntegrationScreenState();
 }
 
-class IhServerIntegrationScreenState extends State<IhServerIntegrationScreen> {
+class IhServerIntegrationScreenState
+    extends DeferredState<IhServerIntegrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _urlController = TextEditingController();
   final _tokenController = TextEditingController();
@@ -49,23 +51,25 @@ class IhServerIntegrationScreenState extends State<IhServerIntegrationScreen> {
   void initState() {
     super.initState();
     setAppTitle('ihserver Integration');
-    _initializeControllers();
   }
 
-  void _initializeControllers() {
-    unawaited(
-      Future.wait([
+  @override
+  Future<void> asyncInitState() async {
+    final results = await BlockingUI().runAndWait(
+      () => Future.wait([
         DaoSystem().get(),
         DaoSystem().getIhserverCredentials(),
-      ]).then((results) {
-        final system = results[0] as SystemConfiguration;
-        final credentials = results[1] as IhserverCredentials;
-        _urlController.text = system.ihserverUrl ?? '';
-        _tokenController.text = credentials.token ?? '';
-        _enabled = system.enableIhserverIntegration;
-        setState(() {});
-      }),
+      ]),
+      label: 'Loading ihserver settings',
     );
+    if (!mounted) {
+      return;
+    }
+    final system = results[0] as SystemConfiguration;
+    final credentials = results[1] as IhserverCredentials;
+    _urlController.text = system.ihserverUrl ?? '';
+    _tokenController.text = credentials.token ?? '';
+    _enabled = system.enableIhserverIntegration;
   }
 
   @override
@@ -122,7 +126,13 @@ class IhServerIntegrationScreenState extends State<IhServerIntegrationScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
+    waitingBuilder: (_) => const SizedBox.shrink(),
+    builder: _buildReady,
+  );
+
+  Widget _buildReady(BuildContext context) {
     final form = _buildForm();
     if (widget.showButtons) {
       return Scaffold(

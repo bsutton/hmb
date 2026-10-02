@@ -285,7 +285,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.undo));
     await waitForText(tester, 'Return Item');
 
-    expect(find.widgetWithText(HMBButton, 'Cancel'), findsOneWidget);
+    expect(find.widgetWithText(HMBCancelButton, 'Cancel'), findsOneWidget);
     expect(find.widgetWithText(HMBButton, 'Return'), findsOneWidget);
   });
 

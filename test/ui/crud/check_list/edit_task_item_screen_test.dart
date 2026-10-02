@@ -10,11 +10,13 @@ import 'package:hmb/ui/widgets/blocking_ui.dart';
 import 'package:hmb/ui/widgets/fields/hmb_text_field.dart';
 import 'package:hmb/ui/widgets/select/hmb_droplist.dart';
 import 'package:hmb/util/dart/money_ex.dart';
+import 'package:june/june.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 
 import '../../../database/management/db_utility_test_helper.dart';
 import '../../../util/settings_test_helper.dart';
+import '../../ui_test_helpers.dart';
 
 void main() {
   setUpAll(prepareSettingsTest);
@@ -49,15 +51,13 @@ void main() {
     expect(find.text('Loading...'), findsNothing);
     expect(find.byType(LinearProgressIndicator), findsNothing);
 
-    for (var attempt = 0; attempt < 30; attempt++) {
-      if (find.text('Description').evaluate().isNotEmpty) {
-        break;
-      }
-      await tester.runAsync(() async {
-        await Future<void>.delayed(const Duration(milliseconds: 50));
-      });
-      await tester.pump();
-    }
+    await pumpUntilCondition(
+      tester,
+      () =>
+          find.text('Description').evaluate().isNotEmpty &&
+          !June.getState(BlockingOverlayState.new).blocked,
+      'task item defaults and blocking actions to finish',
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Loading...'), findsNothing);

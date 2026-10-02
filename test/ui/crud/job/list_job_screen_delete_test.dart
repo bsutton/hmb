@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/crud/job/list_job_screen.dart';
+import 'package:hmb/ui/widgets/hmb_button.dart';
 import 'package:hmb/util/dart/local_date.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 import 'package:material_ui/material_ui.dart';
@@ -43,7 +44,7 @@ void main() {
       find.text('Delete "Repair verandah" for "${customer.name}"?'),
       findsOneWidget,
     );
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Cancel'));
+    await tester.tap(find.widgetWithText(HMBCancelButton, 'Cancel'));
     await tester.pump();
     expect(await tester.runAsync(result), isFalse);
   });
@@ -85,7 +86,7 @@ void main() {
       find.textContaining('1h 30m logged across 1 time entry'),
       findsOneWidget,
     );
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Cancel'));
+    await tester.tap(find.widgetWithText(HMBCancelButton, 'Cancel'));
     await tester.pump();
     expect(await tester.runAsync(result), isFalse);
   });

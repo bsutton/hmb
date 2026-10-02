@@ -19,6 +19,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../dao/dao_message_template.dart';
 import '../../entity/message_template.dart';
+import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_droplist.dart';
@@ -96,8 +97,10 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
   @override
   Future<void> asyncInitState() async {
     _tabController = TabController(length: 2, vsync: this);
-    await widget.sourceContext.resolveEntities();
-    await _loadTemplates();
+    await BlockingUI().runAndWait(() async {
+      await widget.sourceContext.resolveEntities();
+      await _loadTemplates();
+    }, label: 'Loading message templates');
   }
 
   Future<void> _loadTemplates() async {
@@ -306,7 +309,16 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
+    waitingBuilder: (_) => Scaffold(
+      appBar: AppBar(title: const Text('Message Template')),
+      body: const SizedBox.shrink(),
+    ),
+    builder: _buildReady,
+  );
+
+  Widget _buildReady(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Message Template')),
     body: HMBColumn(
       children: [

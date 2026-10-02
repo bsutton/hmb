@@ -1,11 +1,13 @@
 @Tags(['flutter'])
 library;
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/crud/job/full_page_list_job_card.dart';
+import 'package:hmb/ui/crud/job/list_job_card.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -36,13 +38,13 @@ void main() {
         await setJobStatusForTest(job, status);
       });
       await tester.pumpWidget(MaterialApp(home: FullPageListJobCard(job)));
-      for (var attempt = 0; attempt < 30; attempt++) {
-        await tester.pump(const Duration(milliseconds: 20));
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 20)),
-        );
-      }
-      await tester.runAsync(() async {
+      // Await the write that records recency before verifying the database.
+      final state = tester.state<DeferredState<FullPageListJobCard>>(
+        find.byType(FullPageListJobCard),
+      );
+      await runAsyncAndPump(tester, () => state.initialised);
+      expect(find.byType(ListJobCard), findsOneWidget);
+      await runAsyncAndPump(tester, () async {
         final viewed = (await DaoJob().getById(job.id))!;
         expect(viewed.status, status);
         expect(viewed.lastActive, isTrue);

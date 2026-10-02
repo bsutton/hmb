@@ -21,8 +21,8 @@ import 'ansi_color.dart';
 
 /// Logging class
 class Log extends Logger {
-  static late Log _self;
-  static late String _localPath;
+  static var _self = Log._internal('');
+  static var _localPath = '/log.dart';
   static final _recentLogs = <String, DateTime>{};
 
   /// The default log level.

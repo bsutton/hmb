@@ -157,7 +157,7 @@ void main() {
 
     await tester.tap(find.text('Edit Item'));
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(HMBButton, 'Cancel'), findsOneWidget);
+    expect(find.widgetWithText(HMBCancelButton, 'Cancel'), findsOneWidget);
     expect(find.widgetWithText(HMBButton, 'Save'), findsOneWidget);
     await tester.tap(find.text('Packages'));
     await tester.pumpAndSettle();

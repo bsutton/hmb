@@ -1,6 +1,8 @@
 @Tags(['flutter'])
 library;
 
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/ui/crud/system/chatgpt_integration_screen.dart';
 import 'package:hmb/ui/crud/system/ihserver_integration_screen.dart';
@@ -9,6 +11,7 @@ import 'package:hmb/ui/crud/system/xero_integration_screen.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../database/management/db_utility_test_helper.dart';
+import '../../ui_test_helpers.dart';
 
 void main() {
   setUp(() async {
@@ -18,6 +21,42 @@ void main() {
   tearDown(() async {
     await tearDownTestDb();
   });
+
+  testWidgets(
+    'ihserver initialization can finish after the screen is removed',
+    (tester) async {
+      final acquired = Completer<void>();
+      final release = Completer<void>();
+      late Future<void> blocker;
+      await runAsyncAndPump(tester, () async {
+        blocker = testDb!.transaction((_) async {
+          acquired.complete();
+          await release.future;
+        });
+        await acquired.future;
+      });
+      try {
+        await tester.pumpWidget(
+          const MaterialApp(home: IhServerIntegrationScreen()),
+        );
+        final state = tester.state<IhServerIntegrationScreenState>(
+          find.byType(IhServerIntegrationScreen),
+        );
+        await tester.pumpWidget(const SizedBox.shrink());
+        release.complete();
+        await runAsyncAndPump(tester, () async {
+          await blocker;
+          await state.initialised;
+        });
+        expect(tester.takeException(), isNull);
+      } finally {
+        if (!release.isCompleted) {
+          release.complete();
+        }
+        await runAsyncAndPump(tester, () => blocker);
+      }
+    },
+  );
 
   for (final scenario in const [
     _ScreenScenario(

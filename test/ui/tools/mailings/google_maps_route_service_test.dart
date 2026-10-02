@@ -1015,11 +1015,25 @@ Future<MailingRecipient> _insertMailingRecipient({
     labelLayoutId: LabelLayout.all.first.id,
   );
   await DaoMailing().insert(mailing);
-  await DaoMailingRecipient().populateForMailing(mailing.id);
-
-  return (await DaoMailingRecipient().getByMailing(
-    mailing.id,
-  )).singleWhere((recipient) => recipient.customerId == customer.id);
+  // Route tests need this recipient, not a new snapshot of every customer
+  // created so far. Repeated population makes bulk setup quadratic.
+  final recipient = MailingRecipient.forInsert(
+    mailingId: mailing.id,
+    customerId: customer.id,
+    contactId: contact.id,
+    siteId: site.id,
+    contactName: contact.fullname.trim(),
+    customerName: customer.name,
+    siteName: site.name,
+    addressLine1: site.addressLine1,
+    addressLine2: site.addressLine2,
+    suburb: site.suburb,
+    state: site.state,
+    postcode: site.postcode,
+    selected: DaoMailingRecipient.hasMailableAddress(site),
+  );
+  await DaoMailingRecipient().insert(recipient);
+  return recipient;
 }
 
 Future<void> _markSiteValid(
