@@ -48,6 +48,8 @@ class HMBSearchState extends State<HMBSearch> {
   String? filter;
 
   void clear() {
+    _debounceTimer?.cancel();
+    _focusNode.unfocus();
     filter = null;
     filterController?.clear();
   }
@@ -81,24 +83,25 @@ class HMBSearchState extends State<HMBSearch> {
   }
 
   @override
-  Widget build(BuildContext context) => HMBTextField(
-    labelText: widget.label,
-    focusNode: _focusNode,
-    controller: filterController!,
-    onChanged: (newValue) {
-      filter = newValue;
-      _debounceTimer?.cancel();
-      _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-        unawaited(widget.onSearch(filter));
-      });
-    },
-    suffixIcon: HMBClearIcon(
-      onPressed: () async {
+  Widget build(BuildContext context) => TapRegion(
+    onTapOutside: (_) => _focusNode.unfocus(),
+    child: HMBTextField(
+      labelText: widget.label,
+      focusNode: _focusNode,
+      controller: filterController!,
+      onChanged: (newValue) {
+        filter = newValue;
         _debounceTimer?.cancel();
-        filterController?.clear();
-        filter = null;
-        await widget.onSearch(filter);
+        _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+          unawaited(widget.onSearch(filter));
+        });
       },
+      suffixIcon: HMBClearIcon(
+        onPressed: () async {
+          clear();
+          await widget.onSearch(filter);
+        },
+      ),
     ),
   );
 }
