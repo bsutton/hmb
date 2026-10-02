@@ -1,6 +1,8 @@
 @Tags(['flutter'])
 library;
 
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
@@ -35,8 +37,10 @@ void main() {
       customer = (await DaoCustomer().getByJob(job.id))!;
     });
 
-    final result = await _pumpDeleteHarness(tester, job);
+    final harness = await _pumpDeleteHarness(tester, job);
+    final firstDialog = harness.navigation.nextDialog;
     await tester.tap(find.text('Start deletion'));
+    await runAsyncAndPump(tester, () => firstDialog);
     await _pumpUntilFound(tester, find.text('Delete Job'));
 
     expect(find.text('Delete Job'), findsOneWidget);
@@ -46,7 +50,7 @@ void main() {
     );
     await tester.tap(find.widgetWithText(HMBCancelButton, 'Cancel'));
     await tester.pump();
-    expect(await tester.runAsync(result), isFalse);
+    expect(await tester.runAsync(harness.result), isFalse);
   });
 
   testWidgets('job deletion requires confirmation for logged time', (
@@ -75,10 +79,14 @@ void main() {
       );
     });
 
-    final result = await _pumpDeleteHarness(tester, job);
+    final harness = await _pumpDeleteHarness(tester, job);
+    final firstDialog = harness.navigation.nextDialog;
     await tester.tap(find.text('Start deletion'));
+    await runAsyncAndPump(tester, () => firstDialog);
     await _pumpUntilFound(tester, find.text('Delete Job'));
+    final loggedTimeDialog = harness.navigation.nextDialog;
     await tester.tap(find.widgetWithText(ElevatedButton, 'Delete'));
+    await runAsyncAndPump(tester, () => loggedTimeDialog);
     await _pumpUntilFound(tester, find.text('Delete Logged Time?'));
 
     expect(find.text('Delete Logged Time?'), findsOneWidget);
@@ -88,7 +96,7 @@ void main() {
     );
     await tester.tap(find.widgetWithText(HMBCancelButton, 'Cancel'));
     await tester.pump();
-    expect(await tester.runAsync(result), isFalse);
+    expect(await tester.runAsync(harness.result), isFalse);
   });
 
   testWidgets('invoiced jobs cannot enter the deletion flow', (tester) async {
@@ -108,9 +116,9 @@ void main() {
       );
     });
 
-    final result = await _pumpDeleteHarness(tester, job);
+    final harness = await _pumpDeleteHarness(tester, job);
     await tester.tap(find.text('Start deletion'));
-    expect(await tester.runAsync(result), isFalse);
+    expect(await tester.runAsync(harness.result), isFalse);
     await tester.pump();
 
     expect(find.text('Delete Job'), findsNothing);
@@ -120,14 +128,16 @@ void main() {
   });
 }
 
-Future<Future<bool> Function()> _pumpDeleteHarness(
-  WidgetTester tester,
-  Job job,
-) async {
+Future<
+  ({Future<bool> Function() result, _DeletionNavigationObserver navigation})
+>
+_pumpDeleteHarness(WidgetTester tester, Job job) async {
   Future<bool>? result;
+  final navigation = _DeletionNavigationObserver();
   await tester.pumpWidget(
     ToastificationWrapper(
       child: MaterialApp(
+        navigatorObservers: [navigation],
         home: Scaffold(
           body: Builder(
             builder: (context) => ElevatedButton(
@@ -139,7 +149,7 @@ Future<Future<bool> Function()> _pumpDeleteHarness(
       ),
     ),
   );
-  return () => result!;
+  return (result: () => result!, navigation: navigation);
 }
 
 Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
@@ -153,4 +163,19 @@ Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
     );
   }
   fail('Expected UI did not appear: $finder');
+}
+
+class _DeletionNavigationObserver extends NavigatorObserver {
+  var _nextDialog = Completer<void>();
+
+  Future<void> get nextDialog => _nextDialog.future;
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    if (route is PopupRoute) {
+      _nextDialog.complete();
+      _nextDialog = Completer<void>();
+    }
+  }
 }

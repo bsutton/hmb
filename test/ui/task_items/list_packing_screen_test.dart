@@ -86,6 +86,7 @@ void main() {
     });
 
     await tester.pumpWidget(const MaterialApp(home: PackingScreen()));
+    await pumpDeferredStates(tester);
     await tester.pumpAndSettle();
     await waitForText(tester, 'Stock material item');
 
