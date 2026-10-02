@@ -362,29 +362,20 @@ class WizardState extends State<Wizard> {
   void _hideKeyboard() => FocusScope.of(context).unfocus();
 
   Future<void> _showStep() async {
+    if (!mounted) {
+      return;
+    }
+    // Reset while the outgoing body still has its full scroll extent. A long
+    // off-screen step can otherwise retain its animated height and leave the
+    // next step below the viewport. A delayed post-frame callback also has no
+    // guarantee that another frame will be scheduled after the animation ends.
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+    }
     setState(() {
-      // force a rebuild of the steps
+      // Rebuild with the newly selected step.
     });
-
-    // We need to scroll to the newly tapped step.
-    // The delay is so the cross fade has a chance to complete.
-    // This is a little hack, but there is no apparent way to hook
-    // the cross fade completion so we just share a common duration.
-    Future.delayed(crossFadeDuration, () {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
-          _scrollController.jumpTo(0);
-        }
-      });
-    });
-
-    // if (_scrollController.hasClients) {
-    //   await _scrollController.animateTo(
-    //     0,
-    //     duration: const Duration(milliseconds: 300),
-    //     curve: Curves.easeOut,
-    //   );
-    // }
+    await WidgetsBinding.instance.endOfFrame;
   }
 
   Widget _buildBody() {

@@ -8,6 +8,7 @@ import 'package:hmb/ui/crud/receipt/edit_receipt_screen.dart';
 import 'package:hmb/ui/widgets/fields/hmb_text_field.dart';
 import 'package:hmb/ui/widgets/select/hmb_droplist.dart';
 import 'package:hmb/ui/widgets/select/hmb_select_job.dart';
+import 'package:hmb/ui/widgets/wizard.dart';
 import 'package:hmb/util/dart/log.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 import 'package:material_ui/material_ui.dart';
@@ -36,6 +37,7 @@ void main() {
     WidgetTester tester, {
     bool withJobs = false,
     bool withUnavailableMatch = false,
+    int lineCount = 1,
   }) async {
     jobs.clear();
     items.clear();
@@ -74,25 +76,27 @@ void main() {
         receiptDate: DateTime(2026, 9, 23),
         jobId: withJobs ? jobs.first.id : null,
         supplierId: supplier.id,
-        totalExcludingTax: MoneyEx.dollars(10),
-        tax: MoneyEx.dollars(1),
-        totalIncludingTax: MoneyEx.dollars(11),
+        totalExcludingTax: MoneyEx.dollars(10 * lineCount),
+        tax: MoneyEx.dollars(lineCount),
+        totalIncludingTax: MoneyEx.dollars(11 * lineCount),
       );
       await DaoReceipt().insert(receipt);
-      await DaoReceiptLineItem().insert(
-        ReceiptLineItem.forInsert(
-          receiptId: receipt.id,
-          description: 'Paint',
-          quantity: 1,
-          unitPrice: MoneyEx.dollars(10),
-          lineTotalExTax: MoneyEx.dollars(10),
-          taxAmount: MoneyEx.dollars(1),
-          lineTotalIncTax: MoneyEx.dollars(11),
-          matchedTaskItemId: withUnavailableMatch ? items.last.id : null,
-          confidence: 100,
-          source: 'manual',
-        ),
-      );
+      for (var index = 0; index < lineCount; index++) {
+        await DaoReceiptLineItem().insert(
+          ReceiptLineItem.forInsert(
+            receiptId: receipt.id,
+            description: 'Paint',
+            quantity: 1,
+            unitPrice: MoneyEx.dollars(10),
+            lineTotalExTax: MoneyEx.dollars(10),
+            taxAmount: MoneyEx.dollars(1),
+            lineTotalIncTax: MoneyEx.dollars(11),
+            matchedTaskItemId: withUnavailableMatch ? items.last.id : null,
+            confidence: 100,
+            source: 'manual',
+          ),
+        );
+      }
       return receipt;
     });
     await tester.pumpWidget(
@@ -103,6 +107,38 @@ void main() {
     await tester.tap(find.text('Next'));
     await waitFor(tester, field('Line Total Incl. Tax'));
   }
+
+  testWidgets('many receipt lines advance to visible totals and return', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await openLines(tester, lineCount: 20);
+    await pumpDeferredStates(tester);
+    final scroll = tester
+        .widget<ListView>(
+          find.descendant(
+            of: find.byType(Wizard),
+            matching: find.byType(ListView),
+          ),
+        )
+        .controller!;
+    expect(scroll.position.maxScrollExtent, greaterThan(800));
+    scroll.jumpTo(scroll.position.maxScrollExtent);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Next'));
+    await waitFor(tester, find.text('Use Line Totals'));
+    expect(find.text('Use Line Totals').hitTestable(), findsOneWidget);
+    await tester.tap(find.text('Back'));
+    await waitFor(tester, field('Description').first);
+    expect(field('Description').first.hitTestable(), findsOneWidget);
+    expect(field('Description'), findsNWidgets(20));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 11));
+  });
 
   testWidgets('new line is focused and its description uses the full row', (
     tester,
