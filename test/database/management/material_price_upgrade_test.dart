@@ -10,12 +10,16 @@ import 'package:hmb/database/versions/pre_upgrade/pre_upgrade_208.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
+import 'test_database_config.dart';
+
 void main() {
   test('v208 replaces legacy material columns with item prices', () async {
     final dbPath = join(createTempDir(), 'material_price_v208.db');
     final db = await CliDatabaseFactory().openDatabase(
       dbPath,
-      options: OpenDatabaseOptions(),
+      options: OpenDatabaseOptions(
+        onConfigure: configureDisposableTestDatabase,
+      ),
     );
 
     try {

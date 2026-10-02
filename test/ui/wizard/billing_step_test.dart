@@ -5,6 +5,7 @@ import 'package:toastification/toastification.dart';
 
 import '../../database/management/db_utility_test_helper.dart';
 import '../../util/settings_test_helper.dart';
+import '../ui_test_helpers.dart';
 
 void main() {
   setUpAll(prepareSettingsTest);
@@ -47,19 +48,7 @@ Future<void> _pumpBillingStep(
   GlobalKey<SystemBillingScreenState> key,
 ) async {
   expect(key.currentState, isNotNull);
-  for (var attempt = 0; attempt < 20; attempt++) {
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 50)),
-    );
-    await tester.pump();
-    final exception = tester.takeException();
-    if (exception != null) {
-      fail('Billing onboarding failed to initialise: $exception');
-    }
-    if (find.text('Tax Jurisdiction').evaluate().isNotEmpty) {
-      await tester.pump(const Duration(milliseconds: 1));
-      return;
-    }
-  }
-  fail('Billing onboarding did not render the form.');
+  await runAsyncAndPump(tester, () => key.currentState!.initialised);
+  expect(tester.takeException(), isNull);
+  expect(find.text('Tax Jurisdiction'), findsOneWidget);
 }

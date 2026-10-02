@@ -633,8 +633,12 @@ class _JobCreatorState extends DeferredState<JobCreator> {
       if (!mounted) {
         return null;
       }
-      final confirmed = await showDialog<bool>(
+      final route = DialogRoute<bool>(
         context: context,
+        themes: InheritedTheme.capture(
+          from: context,
+          to: Navigator.of(context, rootNavigator: true).context,
+        ),
         builder: (context) => AlertDialog(
           title: Text(
             suggestion == null ? 'Add contact' : 'Review new contact',
@@ -705,6 +709,13 @@ class _JobCreatorState extends DeferredState<JobCreator> {
           ],
         ),
       );
+      final confirmed = await Navigator.of(
+        context,
+        rootNavigator: true,
+      ).push(route);
+      // A popped dialog stays mounted during its reverse transition. Its
+      // text fields must release these controllers before they are disposed.
+      await route.completed;
       if (confirmed != true || !mounted) {
         return null;
       }

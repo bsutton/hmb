@@ -10,12 +10,16 @@ import 'package:hmb/database/versions/pre_upgrade/pre_upgrade_154.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
+import 'test_database_config.dart';
+
 void main() {
   test('prev154Upgrade repairs legacy backup history schema', () async {
     final dbPath = join(createTempDir(), 'backup_history_legacy.db');
     final db = await CliDatabaseFactory().openDatabase(
       dbPath,
-      options: OpenDatabaseOptions(),
+      options: OpenDatabaseOptions(
+        onConfigure: configureDisposableTestDatabase,
+      ),
     );
 
     try {

@@ -12,12 +12,16 @@ import 'package:hmb/database/versions/implementations/project_script_source.dart
 import 'package:hmb/entity/contact.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
+import 'test_database_config.dart';
+
 void main() {
   test('v213 preserves roles, primary and existing billing outcomes', () async {
     final directory = Directory.systemTemp.createTempSync('hmb_role_upgrade_');
     final db = await CliDatabaseFactory().openDatabase(
       '${directory.path}/test.db',
-      options: OpenDatabaseOptions(),
+      options: OpenDatabaseOptions(
+        onConfigure: configureDisposableTestDatabase,
+      ),
     );
     try {
       final source = _JobPartiesScriptSource();

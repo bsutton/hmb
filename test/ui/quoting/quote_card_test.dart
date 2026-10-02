@@ -1,6 +1,7 @@
 @Tags(['flutter'])
 library;
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
@@ -20,14 +21,18 @@ void main() {
     String text, {
     int attempts = 30,
   }) async {
+    final state = tester.state<DeferredState<QuoteCard>>(
+      find.byType(QuoteCard),
+    );
+    await runAsyncAndPump(tester, () => state.initialised);
     for (var i = 0; i < attempts; i++) {
       if (find.text(text).evaluate().isNotEmpty) {
         return;
       }
-      await tester.runAsync(() async {
+      await runAsyncAndPump(tester, () async {
         await Future<void>.delayed(const Duration(milliseconds: 50));
       });
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
     }
     throw TestFailure('Timed out waiting for text: $text');
   }
@@ -43,7 +48,7 @@ void main() {
   testWidgets('reject dialog offers quote-only and whole-job scopes', (
     tester,
   ) async {
-    final quote = await tester.runAsync(() async {
+    final quote = await runAsyncAndPump(tester, () async {
       final job = await createJobWithCustomer(
         billingType: BillingType.fixedPrice,
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
@@ -70,7 +75,7 @@ void main() {
       ToastificationWrapper(
         child: MaterialApp(
           home: Scaffold(
-            body: QuoteCard(quote: quote!, onStateChanged: (_) {}),
+            body: QuoteCard(quote: quote, onStateChanged: (_) {}),
           ),
         ),
       ),
@@ -99,7 +104,7 @@ void main() {
   testWidgets('unapprove button rolls approved quote back to sent', (
     tester,
   ) async {
-    final quote = await tester.runAsync(() async {
+    final quote = await runAsyncAndPump(tester, () async {
       final job = await createJobWithCustomer(
         billingType: BillingType.fixedPrice,
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
@@ -123,7 +128,7 @@ void main() {
       ToastificationWrapper(
         child: MaterialApp(
           home: Scaffold(
-            body: QuoteCard(quote: quote!, onStateChanged: (_) {}),
+            body: QuoteCard(quote: quote, onStateChanged: (_) {}),
           ),
         ),
       ),
@@ -131,11 +136,8 @@ void main() {
     await tester.pumpAndSettle();
     await waitForText(tester, 'Unapprove');
 
-    final updatedQuote = await tester.runAsync(() async {
-      // Start the database-backed action in the real async zone. Starting
-      // it in FakeAsync can leave its transaction waiting for a pump while
-      // the following real database read waits for that transaction's lock.
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Unapprove'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Unapprove'));
+    final updatedQuote = await runAsyncAndPump(tester, () async {
       Quote? updated;
       for (var attempt = 0; attempt < 20; attempt++) {
         updated = await DaoQuote().getById(quote.id);
@@ -155,7 +157,7 @@ void main() {
   });
 
   testWidgets('withdrawn button marks quote withdrawn', (tester) async {
-    final quote = await tester.runAsync(() async {
+    final quote = await runAsyncAndPump(tester, () async {
       final job = await createJobWithCustomer(
         billingType: BillingType.fixedPrice,
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
@@ -178,7 +180,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: QuoteCard(quote: quote!, onStateChanged: (_) {}),
+          body: QuoteCard(quote: quote, onStateChanged: (_) {}),
         ),
       ),
     );
@@ -211,7 +213,7 @@ void main() {
   testWidgets('rejected quote shows status without reject action or overflow', (
     tester,
   ) async {
-    final quote = await tester.runAsync(() async {
+    final quote = await runAsyncAndPump(tester, () async {
       final job = await createJobWithCustomer(
         billingType: BillingType.fixedPrice,
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
@@ -238,7 +240,7 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: SingleChildScrollView(
-            child: QuoteCard(quote: quote!, onStateChanged: (_) {}),
+            child: QuoteCard(quote: quote, onStateChanged: (_) {}),
           ),
         ),
       ),

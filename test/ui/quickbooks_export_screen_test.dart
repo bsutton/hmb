@@ -1,3 +1,4 @@
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/invoice.dart';
 import 'package:hmb/ui/invoicing/quickbooks_export_screen.dart';
@@ -23,7 +24,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(home: QuickBooksExportScreen(invoice: invoice)),
     );
-    await pumpUntilFound(tester, find.text('Destination: sandbox company'));
+    final state = tester.state<DeferredState<QuickBooksExportScreen>>(
+      find.byType(QuickBooksExportScreen),
+    );
+    await runAsyncAndPump(tester, () => state.initialised);
     expect(find.text('Destination: sandbox company'), findsOneWidget);
     expect(find.textContaining('reconciled separately'), findsOneWidget);
     expect(find.text('Confirm and export'), findsNothing);

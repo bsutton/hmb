@@ -31,7 +31,7 @@ void main() {
     tester,
   ) async {
     late Job job;
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       job = await createJobWithCustomer(
         billingType: BillingType.fixedPrice,
         hourlyRate: MoneyEx.dollars(100),
@@ -61,13 +61,13 @@ void main() {
     );
     if (booking.value != true) {
       await tester.tap(find.text('Bill booking Fee'));
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
     }
     await tester.tap(find.text('OK'));
     await _pumpUntilFound(tester, find.byType(QuoteListScreen));
     final screen = tester.widget<QuoteListScreen>(find.byType(QuoteListScreen));
     expect(screen.job?.id, job.id);
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       final quote = (await DaoQuote().getByJobId(job.id)).single;
       expect(quote.jobId, job.id);
       expect(quote.totalAmount, MoneyEx.dollars(50));
@@ -94,7 +94,7 @@ void main() {
     late Job job;
     final jobMargin = Percentage.tryParse('20')!;
     final itemMargin = Percentage.tryParse('25')!;
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       job = await createJobWithCustomer(
         billingType: BillingType.fixedPrice,
         hourlyRate: MoneyEx.dollars(100),
@@ -151,7 +151,7 @@ void main() {
     await _pumpUntilFound(tester, find.text('Select All'));
     await tester.tap(find.text('OK'));
     await _pumpUntilFound(tester, find.byType(QuoteListScreen));
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       final quote = (await DaoQuote().getByJobId(job.id)).single;
       expect(quote.totalAmount, MoneyEx.dollars(245));
       expect(quote.quoteMargin, Percentage.zero);
@@ -170,7 +170,7 @@ void main() {
     tester,
   ) async {
     late Job job;
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       job = await createJobWithCustomer(
         billingType: BillingType.fixedPrice,
         hourlyRate: MoneyEx.zero,
@@ -203,7 +203,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Labour:'), findsNothing);
     await tester.tap(find.text('Raise Quote'));
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(
@@ -222,7 +222,7 @@ void main() {
       tester.widget<QuoteListScreen>(find.byType(QuoteListScreen)).job?.id,
       job.id,
     );
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       expect(await DaoQuote().getByJobId(job.id), isEmpty);
     });
     await tester.pumpWidget(const SizedBox.shrink());
@@ -233,11 +233,12 @@ void main() {
 
 Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
   for (var attempt = 0; attempt < 40; attempt++) {
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
     if (finder.evaluate().isNotEmpty) {
       return;
     }
-    await tester.runAsync(
+    await runAsyncAndPump(
+      tester,
       () => Future<void>.delayed(const Duration(milliseconds: 50)),
     );
   }

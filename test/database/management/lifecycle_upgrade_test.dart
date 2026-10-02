@@ -11,12 +11,16 @@ import 'package:hmb/database/versions/implementations/project_script_source.dart
 import 'package:path/path.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
+import 'test_database_config.dart';
+
 void main() {
   test('v212 creates lifecycle audit and retires ToBeBilled', () async {
     final dbPath = join(createTempDir(), 'lifecycle_v212.db');
     final db = await CliDatabaseFactory().openDatabase(
       dbPath,
-      options: OpenDatabaseOptions(),
+      options: OpenDatabaseOptions(
+        onConfigure: configureDisposableTestDatabase,
+      ),
     );
     try {
       await db.execute('''

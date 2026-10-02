@@ -1,6 +1,7 @@
 @Tags(['flutter'])
 library;
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
@@ -52,7 +53,11 @@ void main() {
         child: MaterialApp(home: JobEstimateBuilderScreen(job: job)),
       ),
     );
-    await _pumpUntilFound(tester, find.text('Raise Quote'));
+    final state = tester.state<DeferredState<JobEstimateBuilderScreen>>(
+      find.byType(JobEstimateBuilderScreen),
+    );
+    await runAsyncAndPump(tester, () => state.initialised);
+    expect(find.text('Raise Quote'), findsOneWidget);
 
     expect(find.text('Estimate Complete: No'), findsOneWidget);
     expect(tester.widget<Text>(find.text(taskName)).maxLines, isNull);
@@ -65,17 +70,4 @@ void main() {
     // Drain the diagnostic timers retained by asynchronous helpers.
     await tester.pump(const Duration(seconds: 10));
   });
-}
-
-Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
-  for (var attempt = 0; attempt < 40; attempt++) {
-    await tester.pump();
-    if (finder.evaluate().isNotEmpty) {
-      return;
-    }
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 50)),
-    );
-  }
-  fail('Timed out waiting for $finder');
 }

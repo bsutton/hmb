@@ -1,6 +1,7 @@
 @Tags(['flutter'])
 library;
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
@@ -25,7 +26,7 @@ void main() {
       late Job job;
       late Quote quote;
       late Contact other;
-      await tester.runAsync(() async {
+      await runAsyncAndPump(tester, () async {
         job = await createJobWithCustomer(
           billingType: BillingType.fixedPrice,
           hourlyRate: MoneyEx.dollars(100),
@@ -62,32 +63,37 @@ void main() {
           ),
         ),
       );
-      await _waitFor(tester, find.text('Send...'));
+      final state = tester.state<DeferredState<QuoteCard>>(
+        find.byType(QuoteCard),
+      );
+      await runAsyncAndPump(tester, () => state.initialised);
+      expect(find.text('Send...'), findsOneWidget);
       await tester.tap(find.text('Send...'));
       await _waitFor(tester, find.byType(HMBDroplist<ContactAndEmail>));
       var field = tester.widget<HMBDroplist<ContactAndEmail>>(
         find.byType(HMBDroplist<ContactAndEmail>),
       );
-      final choices = (await tester.runAsync(() => field.items(null)))!;
+      final choices = await runAsyncAndPump(tester, () => field.items(null));
       final selected = choices.singleWhere(
         (choice) => choice.contact.id == other.id,
       );
       field.onChanged(selected);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
       await tester.tap(find.text('Select Task Photos'));
       await _waitFor(tester, find.byType(SelectQuoteTaskPhotosDialog));
       Navigator.of(
         tester.element(find.byType(SelectQuoteTaskPhotosDialog)),
       ).pop();
+      await tester.pumpAndSettle();
       await _waitFor(tester, find.byType(HMBDroplist<ContactAndEmail>));
       field = tester.widget<HMBDroplist<ContactAndEmail>>(
         find.byType(HMBDroplist<ContactAndEmail>),
       );
       expect(
-        (await tester.runAsync(field.selectedItem))?.email,
+        (await runAsyncAndPump(tester, field.selectedItem))?.email,
         'alex@example.com',
       );
-      await tester.runAsync(() async {
+      await runAsyncAndPump(tester, () async {
         final unchanged = (await DaoJob().getById(job.id))!;
         expect(unchanged.billingContactId, job.billingContactId);
         expect(unchanged.contactId, job.contactId);
@@ -105,7 +111,8 @@ Future<void> _waitFor(WidgetTester tester, Finder finder) async {
     if (finder.evaluate().isNotEmpty) {
       return;
     }
-    await tester.runAsync(
+    await runAsyncAndPump(
+      tester,
       () => Future<void>.delayed(const Duration(milliseconds: 20)),
     );
   }

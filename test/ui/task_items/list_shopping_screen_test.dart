@@ -108,6 +108,10 @@ void main() {
     });
 
     await tester.pumpWidget(const MaterialApp(home: ShoppingScreen()));
+    final state = tester.state<ShoppingScreenState>(
+      find.byType(ShoppingScreen),
+    );
+    await runAsyncAndPump(tester, () => state.initialised);
     await tester.pumpAndSettle();
     await waitForText(tester, 'Buy material item');
 
@@ -168,6 +172,10 @@ void main() {
     });
 
     await tester.pumpWidget(const MaterialApp(home: ShoppingScreen()));
+    final state = tester.state<ShoppingScreenState>(
+      find.byType(ShoppingScreen),
+    );
+    await runAsyncAndPump(tester, () => state.initialised);
     await tester.pumpAndSettle();
     await waitForText(
       tester,
@@ -390,6 +398,10 @@ void main() {
 
   testWidgets('purchased and returns share the history range', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: ShoppingScreen()));
+    final state = tester.state<ShoppingScreenState>(
+      find.byType(ShoppingScreen),
+    );
+    await runAsyncAndPump(tester, () => state.initialised);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('To Purchase').first);

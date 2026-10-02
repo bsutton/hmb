@@ -9,12 +9,16 @@ import 'package:hmb/database/versions/implementations/project_script_source.dart
 import 'package:path/path.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
+import 'test_database_config.dart';
+
 void main() {
   test('v166 adds persisted sheet direction columns', () async {
     final dbPath = join(createTempDir(), 'plaster_sheet_direction_v166.db');
     final db = await CliDatabaseFactory().openDatabase(
       dbPath,
-      options: OpenDatabaseOptions(),
+      options: OpenDatabaseOptions(
+        onConfigure: configureDisposableTestDatabase,
+      ),
     );
 
     try {
@@ -53,7 +57,9 @@ void main() {
     final dbPath = join(createTempDir(), 'plaster_framing_v167.db');
     final db = await CliDatabaseFactory().openDatabase(
       dbPath,
-      options: OpenDatabaseOptions(),
+      options: OpenDatabaseOptions(
+        onConfigure: configureDisposableTestDatabase,
+      ),
     );
 
     try {
@@ -99,7 +105,9 @@ void main() {
     final dbPath = join(createTempDir(), 'plaster_framing_v169.db');
     final db = await CliDatabaseFactory().openDatabase(
       dbPath,
-      options: OpenDatabaseOptions(),
+      options: OpenDatabaseOptions(
+        onConfigure: configureDisposableTestDatabase,
+      ),
     );
 
     try {
@@ -153,7 +161,9 @@ void main() {
     final dbPath = join(createTempDir(), 'plaster_square_set_v178.db');
     final db = await CliDatabaseFactory().openDatabase(
       dbPath,
-      options: OpenDatabaseOptions(),
+      options: OpenDatabaseOptions(
+        onConfigure: configureDisposableTestDatabase,
+      ),
     );
 
     try {

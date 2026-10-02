@@ -9,6 +9,8 @@ import 'package:hmb/database/versions/implementations/project_script_source.dart
 import 'package:path/path.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
+import 'test_database_config.dart';
+
 void main() {
   test(
     'v185 normalises single receipt job allocations to tax-exclusive total',
@@ -16,7 +18,9 @@ void main() {
       final dbPath = join(createTempDir(), 'accounting_v185.db');
       final db = await CliDatabaseFactory().openDatabase(
         dbPath,
-        options: OpenDatabaseOptions(),
+        options: OpenDatabaseOptions(
+          onConfigure: configureDisposableTestDatabase,
+        ),
       );
 
       try {
@@ -104,7 +108,9 @@ CREATE TABLE receipt_job_allocation (
       final dbPath = join(createTempDir(), 'accounting_v186.db');
       final db = await CliDatabaseFactory().openDatabase(
         dbPath,
-        options: OpenDatabaseOptions(),
+        options: OpenDatabaseOptions(
+          onConfigure: configureDisposableTestDatabase,
+        ),
       );
 
       try {
@@ -198,7 +204,9 @@ CREATE TABLE receipt_job_allocation (
     final dbPath = join(createTempDir(), 'accounting_v187.db');
     final db = await CliDatabaseFactory().openDatabase(
       dbPath,
-      options: OpenDatabaseOptions(),
+      options: OpenDatabaseOptions(
+        onConfigure: configureDisposableTestDatabase,
+      ),
     );
 
     try {

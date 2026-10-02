@@ -9,12 +9,16 @@ import 'package:hmb/database/versions/implementations/project_script_source.dart
 import 'package:path/path.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
+import 'test_database_config.dart';
+
 void main() {
   test('v165 is idempotent for plaster room constraints', () async {
     final dbPath = join(createTempDir(), 'plaster_room_constraint_v165.db');
     final db = await CliDatabaseFactory().openDatabase(
       dbPath,
-      options: OpenDatabaseOptions(),
+      options: OpenDatabaseOptions(
+        onConfigure: configureDisposableTestDatabase,
+      ),
     );
 
     try {

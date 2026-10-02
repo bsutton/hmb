@@ -24,10 +24,10 @@ void main() {
       if (find.text(text).evaluate().isNotEmpty) {
         return;
       }
-      await tester.runAsync(() async {
+      await runAsyncAndPump(tester, () async {
         await Future<void>.delayed(const Duration(milliseconds: 50));
       });
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
     }
     throw TestFailure('Timed out waiting for text: $text');
   }
@@ -41,7 +41,7 @@ void main() {
   });
 
   testWidgets('summary counts exclude voided milestones', (tester) async {
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       final job = await createJobWithCustomer(
         billingType: BillingType.fixedPrice,
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
@@ -95,7 +95,7 @@ void main() {
   testWidgets('hides summaries where all active milestones are invoiced', (
     tester,
   ) async {
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       final job = await createJobWithCustomer(
         billingType: BillingType.fixedPrice,
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),

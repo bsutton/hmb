@@ -55,18 +55,21 @@ void main() {
           receivedAt: DateTime.utc(2026, 8, 14),
           hasAttachments: false,
         );
-        final otherJob = await tester.runAsync(
+        final otherJob = await runAsyncAndPump(
+          tester,
           () => createJobWithCustomer(
             billingType: BillingType.timeAndMaterial,
             hourlyRate: MoneyEx.zero,
             summary: 'Billing account fixture',
           ),
         );
-        final billingCustomer = await tester.runAsync(
-          () => DaoCustomer().getById(otherJob!.customerId),
+        final billingCustomer = await runAsyncAndPump(
+          tester,
+          () => DaoCustomer().getById(otherJob.customerId),
         );
-        final billingContact = await tester.runAsync(
-          () => DaoContact().getById(otherJob!.contactId),
+        final billingContact = await runAsyncAndPump(
+          tester,
+          () => DaoContact().getById(otherJob.contactId),
         );
         await tester.pumpWidget(
           ToastificationWrapper(
@@ -136,7 +139,8 @@ void main() {
             await tester.pumpAndSettle();
             expect(find.text('Sam Access'), findsOneWidget);
             expect(
-              await tester.runAsync(
+              await runAsyncAndPump(
+                tester,
                 () => DaoContact().getByEmail('draft-access@example.test'),
               ),
               isEmpty,
@@ -173,7 +177,8 @@ void main() {
             await tester.pumpAndSettle();
             expect(find.text('Site Contact'), findsOneWidget);
             expect(
-              await tester.runAsync(
+              await runAsyncAndPump(
+                tester,
                 () => DaoJobSourceEmail().getByMessage(
                   accountEmail: source.accountEmail,
                   messageId: source.messageId,
@@ -197,7 +202,7 @@ void main() {
                     widget.title == 'Billing contact',
               ),
             );
-            await tester.runAsync(() async {
+            await runAsyncAndPump(tester, () async {
               expect(
                 (await customerPicker.selectedItem())?.name,
                 source.senderName,
@@ -227,11 +232,12 @@ void main() {
                     widget.title == 'Billing contact',
               ),
             );
-            final choices = await tester.runAsync(
+            final choices = await runAsyncAndPump(
+              tester,
               () => billingPicker.items(null),
             );
             expect(
-              choices!.map((contact) => contact.id),
+              choices.map((contact) => contact.id),
               contains(billingContact!.id),
             );
             expect(
@@ -239,7 +245,7 @@ void main() {
               isNot(contains(source.senderEmail)),
             );
             expect(
-              (await tester.runAsync(billingPicker.selectedItem))?.id,
+              (await runAsyncAndPump(tester, billingPicker.selectedItem))?.id,
               billingContact.id,
             );
             billingPicker.onChanged(billingContact);
@@ -284,7 +290,7 @@ void main() {
         await tester.pumpAndSettle();
         await _pumpAsyncWork(tester);
 
-        await tester.runAsync(() async {
+        await runAsyncAndPump(tester, () async {
           final imported = await DaoJobSourceEmail().getByMessage(
             accountEmail: source.accountEmail,
             messageId: source.messageId,
@@ -472,13 +478,14 @@ void main() {
         ),
       ),
     );
-    await tester.pump();
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.pump(const Duration(milliseconds: 20));
 
     final overlay = June.getState(BlockingOverlayState.new);
     expect(overlay.blocked, isTrue);
     expect(overlay.topAction.canCancel, isTrue);
-    await tester.runAsync(
+    await runAsyncAndPump(
+      tester,
       () => Future<void>.delayed(const Duration(milliseconds: 1100)),
     );
     await tester.pump(const Duration(milliseconds: 1100));
@@ -679,10 +686,11 @@ class _PaginatedGmailImportService extends GmailImportService {
 
 Future<void> _pumpAsyncWork(WidgetTester tester) async {
   for (var attempt = 0; attempt < 20; attempt++) {
-    await tester.pump();
-    await tester.runAsync(
+    await tester.pump(const Duration(milliseconds: 20));
+    await runAsyncAndPump(
+      tester,
       () => Future<void>.delayed(const Duration(milliseconds: 25)),
     );
   }
-  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 20));
 }

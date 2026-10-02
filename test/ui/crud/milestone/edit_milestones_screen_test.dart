@@ -3,10 +3,12 @@
 @Tags(['flutter'])
 library;
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/crud/milestone/edit_milestone_payment.dart';
+import 'package:hmb/ui/widgets/icons/hmb_add_button.dart';
 import 'package:hmb/util/dart/local_date.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
@@ -22,15 +24,19 @@ void main() {
     String text, {
     int attempts = 30,
   }) async {
+    final state = tester.state<DeferredState<EditMilestonesScreen>>(
+      find.byType(EditMilestonesScreen),
+    );
+    await runAsyncAndPump(tester, () => state.initialised);
     for (var i = 0; i < attempts; i++) {
       if (find.textContaining(text).evaluate().isNotEmpty ||
           find.text(text).evaluate().isNotEmpty) {
         return;
       }
-      await tester.runAsync(() async {
+      await runAsyncAndPump(tester, () async {
         await Future<void>.delayed(const Duration(milliseconds: 50));
       });
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
     }
     throw TestFailure('Timed out waiting for text: $text');
   }
@@ -46,7 +52,7 @@ void main() {
   testWidgets('progress invoices are deducted before redistribution', (
     tester,
   ) async {
-    final quoteId = await tester.runAsync(() async {
+    final quoteId = await runAsyncAndPump(tester, () async {
       final job = await createJobWithCustomer(
         billingType: BillingType.fixedPrice,
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
@@ -84,29 +90,11 @@ void main() {
       return quoteId;
     });
     await tester.pumpWidget(
-      MaterialApp(home: EditMilestonesScreen(quoteId: quoteId!)),
+      MaterialApp(home: EditMilestonesScreen(quoteId: quoteId)),
     );
     await waitForText(tester, 'Quote Total');
-    await tester.runAsync(() async {
-      await tester.tap(find.byTooltip('Add Milestone'));
-    });
-    // The third tile can be below the lazy list's viewport. Wait for the DAO
-    // write rather than requiring that off-screen tile to be built.
-    for (var attempt = 0; attempt < 100; attempt++) {
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 20)),
-      );
-      await tester.pump();
-      final ready = await tester.runAsync(() async {
-        final rows = await DaoMilestone().getByQuoteId(quoteId);
-        return rows.length == 3 &&
-            rows.every((row) => row.paymentAmount.minorUnits.toInt() == 10000);
-      });
-      if (ready!) {
-        break;
-      }
-    }
-    await tester.runAsync(() async {
+    await addMilestone(tester);
+    await runAsyncAndPump(tester, () async {
       final milestones = await DaoMilestone().getByQuoteId(quoteId);
       expect(milestones, hasLength(3));
       expect(
@@ -117,7 +105,7 @@ void main() {
   });
 
   testWidgets('add milestone allowed before quote approval', (tester) async {
-    final quoteId = await tester.runAsync(() async {
+    final quoteId = await runAsyncAndPump(tester, () async {
       final job = await createJobWithCustomer(
         billingType: BillingType.fixedPrice,
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
@@ -135,23 +123,19 @@ void main() {
       return quoteId;
     });
     await tester.pumpWidget(
-      MaterialApp(home: EditMilestonesScreen(quoteId: quoteId!)),
+      MaterialApp(home: EditMilestonesScreen(quoteId: quoteId)),
     );
     await tester.pumpAndSettle();
     await waitForText(tester, 'Quote Total');
 
-    final iconButtonFinder = find.ancestor(
-      of: find.byIcon(Icons.add).first,
-      matching: find.byType(IconButton),
-    );
-    await tester.tap(iconButtonFinder.first);
+    await addMilestone(tester);
     await tester.pumpAndSettle();
     await waitForText(tester, 'Milestone 1');
     expect(find.text('Milestone 1'), findsOneWidget);
   });
 
   testWidgets('add milestone when approved', (tester) async {
-    final quoteId = await tester.runAsync(() async {
+    final quoteId = await runAsyncAndPump(tester, () async {
       final job = await createJobWithCustomer(
         billingType: BillingType.fixedPrice,
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
@@ -170,19 +154,23 @@ void main() {
     });
 
     await tester.pumpWidget(
-      MaterialApp(home: EditMilestonesScreen(quoteId: quoteId!)),
+      MaterialApp(home: EditMilestonesScreen(quoteId: quoteId)),
     );
     await tester.pumpAndSettle();
     await waitForText(tester, 'Quote Total');
 
-    final iconButtonFinder = find.ancestor(
-      of: find.byIcon(Icons.add).first,
-      matching: find.byType(IconButton),
-    );
-
-    await tester.tap(iconButtonFinder.first);
+    await addMilestone(tester);
     await tester.pumpAndSettle();
     await waitForText(tester, 'Milestone 1');
     expect(find.text('Milestone 1'), findsOneWidget);
   });
+}
+
+Future<void> addMilestone(WidgetTester tester) async {
+  final button = tester.widget<HMBButtonAdd>(find.byType(HMBButtonAdd));
+  expect(button.enabled, isTrue);
+  expect(button.onAdd, isNotNull);
+  // The async callback includes insertion and redistribution. Wait for that
+  // operation rather than guessing how quickly the database will finish.
+  await runAsyncAndPump(tester, button.onAdd!);
 }

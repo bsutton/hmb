@@ -6,6 +6,8 @@ import 'package:hmb/database/versions/db_upgrade.dart';
 import 'package:hmb/entity/task.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
+import 'test_database_config.dart';
+
 void main() {
   test(
     'v218 keeps legacy task details and adds optional comparison fields',
@@ -15,7 +17,9 @@ void main() {
       );
       final db = await CliDatabaseFactory().openDatabase(
         '${directory.path}/test.db',
-        options: OpenDatabaseOptions(),
+        options: OpenDatabaseOptions(
+          onConfigure: configureDisposableTestDatabase,
+        ),
       );
       try {
         for (final path in [

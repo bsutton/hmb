@@ -29,7 +29,7 @@ import '../../ui_test_helpers.dart';
 void main() {
   Future<Job> seed(WidgetTester tester) async {
     late Job job;
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       await setupTestDb();
       job = await createJobWithCustomer(
         billingType: BillingType.timeAndMaterial,
@@ -54,7 +54,7 @@ void main() {
       final job = await seed(tester);
       late Completer<void> release;
       late Future<void> blocker;
-      await tester.runAsync(() async {
+      await runAsyncAndPump(tester, () async {
         final acquired = Completer<void>();
         release = Completer<void>();
         blocker = testDb!.transaction((_) async {
@@ -86,7 +86,7 @@ void main() {
         );
       } finally {
         release.complete();
-        await tester.runAsync(() => blocker);
+        await runAsyncAndPump(tester, () => blocker);
         await pumpUntil(
           tester,
           section == null
@@ -206,7 +206,7 @@ void main() {
       await tester.pageBack();
       await pumpUntil(tester, find.text('1 note(s)'));
       expect(scroll.position.pixels, closeTo(offset, 1));
-      await tester.runAsync(() async {
+      await runAsyncAndPump(tester, () async {
         final notes = await DaoActivity().getByJob(
           job.id,
           type: ActivityType.note,
@@ -221,7 +221,7 @@ void main() {
     tester,
   ) async {
     final job = await seed(tester);
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       await DaoJob().setReferringCustomer(job.id, job.customerId);
     });
     await tester.pumpWidget(
@@ -237,7 +237,7 @@ void main() {
     await pumpUntil(tester, find.text('Remove referring business?'));
     await tester.tap(find.text('Remove'));
     await pumpUntil(tester, find.text('Add referring business'));
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       final saved = (await DaoJob().getById(job.id))!;
       expect(saved.referrerCustomerId, isNull);
       expect(saved.customerId, job.customerId);
@@ -259,7 +259,7 @@ void main() {
     (tester) async {
       final job = await seed(tester);
       late Contact contact;
-      await tester.runAsync(() async {
+      await runAsyncAndPump(tester, () async {
         contact = (await DaoContact().getById(job.contactId))!
           ..defaultRoleId = ContactRole.owner;
         await DaoContact().update(contact);
@@ -286,7 +286,7 @@ void main() {
       );
       await tester.tap(find.text('Cancel'));
       await pumpUntil(tester, find.text('Add party'));
-      await tester.runAsync(() async {
+      await runAsyncAndPump(tester, () async {
         expect(await DaoJobParty().getByJob(job.id), hasLength(2));
         expect(
           (await DaoContact().getById(contact.id))!.defaultRoleId,
@@ -303,7 +303,7 @@ void main() {
     final job = await seed(tester);
     late Job related;
     late Job unrelated;
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       related = await createJobWithCustomer(
         billingType: BillingType.timeAndMaterial,
         hourlyRate: MoneyEx.zero,
@@ -332,7 +332,7 @@ void main() {
     final filter = tester.widget<HMBDroplist<int>>(
       find.byType(HMBDroplist<int>),
     );
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       expect(await filter.selectedItem(), job.customerId);
       final customers = await filter.items(null);
       expect(
@@ -349,8 +349,8 @@ void main() {
       );
     });
     filter.onChanged(related.customerId);
-    await tester.pump();
-    await tester.runAsync(() async {
+    await tester.pump(const Duration(milliseconds: 20));
+    await runAsyncAndPump(tester, () async {
       final contacts = await tester
           .widget<HMBDroplist<Contact>>(find.byType(HMBDroplist<Contact>))
           .items(null);
@@ -371,7 +371,7 @@ void main() {
   ) async {
     final job = await seed(tester);
     late int source;
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       source = await DaoContactRole().create('Old dispatch');
       final contact = (await DaoContact().getById(job.contactId))!
         ..defaultRoleId = source;
@@ -409,7 +409,7 @@ void main() {
         builtin: true,
       ),
     );
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
     await tester.tap(find.text('Reassign all uses'));
     await pumpUntil(tester, find.text('Reassign all uses?'));
     await tester.tap(find.text('Reassign'));
@@ -417,7 +417,7 @@ void main() {
       tester,
       find.text('Contact defaults: 0 · Job assignments: 0'),
     );
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       expect(
         (await DaoContact().getById(job.contactId))!.defaultRoleId,
         ContactRole.site,
@@ -499,7 +499,7 @@ void main() {
     await pumpUntil(tester, find.text('Select a Site'));
     await tester.tap(find.text('Save'));
     await pumpUntil(tester, find.text('No site selected'));
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       expect((await DaoJob().getById(job.id))!.siteId, isNull);
     });
     expect(tester.takeException(), isNull);
@@ -509,7 +509,8 @@ void main() {
     'summary has roles and actions, without edit fields or dashlets',
     (tester) async {
       final job = await seed(tester);
-      await tester.runAsync(
+      await runAsyncAndPump(
+        tester,
         () => DaoJobParty().save(
           jobId: job.id,
           contactId: job.contactId!,
@@ -543,7 +544,7 @@ void main() {
       await tester.enterText(find.byType(TextFormField).first, 'Discard this');
       await tester.tap(find.text('Cancel'));
       await pumpUntil(tester, find.text('Job actions'));
-      await tester.runAsync(() async {
+      await runAsyncAndPump(tester, () async {
         expect((await DaoJob().getById(job.id))!.summary, 'Test Job');
       });
       await tester.tap(edit);
@@ -552,14 +553,14 @@ void main() {
         find.byType(TextFormField).first,
         'Updated summary',
       );
-      await tester.runAsync(() async {
+      await runAsyncAndPump(tester, () async {
         final latest = (await DaoJob().getById(job.id))!
           ..internalNotes = 'Newer notes';
         await DaoJob().update(latest);
       });
       await tester.tap(find.text('Save'));
       await pumpUntil(tester, find.text('Job actions'));
-      await tester.runAsync(() async {
+      await runAsyncAndPump(tester, () async {
         final saved = (await DaoJob().getById(job.id))!;
         expect(saved.summary, 'Updated summary');
         expect(saved.internalNotes, 'Newer notes');
@@ -575,7 +576,7 @@ void main() {
     final job = await seed(tester);
     late Job other;
     late Customer otherCustomer;
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       other = await createJobWithCustomer(
         billingType: BillingType.timeAndMaterial,
         hourlyRate: MoneyEx.dollars(95),
@@ -594,7 +595,7 @@ void main() {
     var contacts = tester.widget<HMBDroplist<Contact>>(
       find.byType(HMBDroplist<Contact>),
     );
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       expect((await billTo.selectedItem())!.id, job.customerId);
       expect((await contacts.items(null)).map((c) => c.id), [job.contactId]);
     });
@@ -606,21 +607,22 @@ void main() {
     contacts = tester.widget<HMBDroplist<Contact>>(
       find.byType(HMBDroplist<Contact>),
     );
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       expect((await contacts.selectedItem())?.id, other.contactId);
       expect((await contacts.items(null)).map((c) => c.id), [other.contactId]);
     });
-    final selected = await tester.runAsync(
+    final selected = await runAsyncAndPump(
+      tester,
       () => DaoContact().getById(other.contactId),
     );
     contacts.onChanged(selected);
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       await Future<void>.delayed(const Duration(milliseconds: 50));
     });
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
     await tester.tap(find.text('Save'));
     await pumpUntil(tester, find.text('Job actions'));
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       final saved = (await DaoJob().getById(job.id))!;
       expect(saved.customerId, job.customerId);
       expect(saved.billingCustomerId, other.customerId);
@@ -639,7 +641,7 @@ void main() {
     tester,
   ) async {
     final job = await seed(tester);
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       await DaoTask().insert(
         Task.forInsert(
           jobId: job.id,
@@ -663,7 +665,7 @@ void main() {
       'billing saves automatic recipient; reset old defaults: $resetDefaults',
       (tester) async {
         final job = await seed(tester);
-        await tester.runAsync(() async {
+        await runAsyncAndPump(tester, () async {
           job.billingContactId = null;
           await DaoJob().update(job);
           job.legacyBillingContactId = job.contactId;
@@ -695,11 +697,11 @@ void main() {
         await pumpUntil(tester, find.byType(TextFormField));
         if (resetDefaults) {
           await tester.tap(find.text('Reset contact'));
-          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 20));
         }
         await tester.tap(find.text('Save'));
         await pumpUntil(tester, find.text('Open billing'));
-        await tester.runAsync(() async {
+        await runAsyncAndPump(tester, () async {
           final saved = (await DaoJob().getById(job.id))!;
           expect(saved.billingContactId, isNull);
           expect(saved.billToCustomerId, isNull);
@@ -719,7 +721,7 @@ Future<void> pumpUntil(WidgetTester tester, Finder finder) async {
   var stable = 0;
   for (var attempt = 0; attempt < 300; attempt++) {
     await tester.pump(const Duration(milliseconds: 20));
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       await Future<void>.delayed(const Duration(milliseconds: 10));
     });
     if (finder.evaluate().isNotEmpty &&

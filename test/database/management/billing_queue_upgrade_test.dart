@@ -6,6 +6,8 @@ import 'package:hmb/database/factory/cli_database_factory.dart';
 import 'package:hmb/database/versions/db_upgrade.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
+import 'test_database_config.dart';
+
 void main() {
   test(
     'v214 queues existing jobs without changing source flags or links',
@@ -13,7 +15,9 @@ void main() {
       final directory = Directory.systemTemp.createTempSync('billing_upgrade_');
       final db = await CliDatabaseFactory().openDatabase(
         '${directory.path}/db',
-        options: OpenDatabaseOptions(),
+        options: OpenDatabaseOptions(
+          onConfigure: configureDisposableTestDatabase,
+        ),
       );
       try {
         for (final path in [

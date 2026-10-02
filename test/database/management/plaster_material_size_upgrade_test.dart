@@ -9,6 +9,8 @@ import 'package:hmb/database/versions/implementations/project_script_source.dart
 import 'package:path/path.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
+import 'test_database_config.dart';
+
 void main() {
   test(
     'v164 migrates plaster material sizes from project to supplier',
@@ -16,7 +18,9 @@ void main() {
       final dbPath = join(createTempDir(), 'plaster_material_v163.db');
       final db = await CliDatabaseFactory().openDatabase(
         dbPath,
-        options: OpenDatabaseOptions(),
+        options: OpenDatabaseOptions(
+          onConfigure: configureDisposableTestDatabase,
+        ),
       );
 
       try {
@@ -114,7 +118,9 @@ CREATE TABLE supplier (
     final dbPath = join(createTempDir(), 'plaster_material_v173.db');
     final db = await CliDatabaseFactory().openDatabase(
       dbPath,
-      options: OpenDatabaseOptions(),
+      options: OpenDatabaseOptions(
+        onConfigure: configureDisposableTestDatabase,
+      ),
     );
 
     try {

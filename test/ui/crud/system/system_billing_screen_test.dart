@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../database/management/db_utility_test_helper.dart';
 import '../../../util/settings_test_helper.dart';
+import '../../ui_test_helpers.dart';
 
 void main() {
   setUpAll(prepareSettingsTest);
@@ -46,19 +47,10 @@ void main() {
 }
 
 Future<void> _pumpBillingScreen(WidgetTester tester) async {
-  for (var attempt = 0; attempt < 20; attempt++) {
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 50)),
-    );
-    await tester.pump();
-    final exception = tester.takeException();
-    if (exception != null) {
-      fail('Billing failed to initialise: $exception');
-    }
-    if (find.text('Rates').evaluate().isNotEmpty) {
-      await tester.pump(const Duration(milliseconds: 1));
-      return;
-    }
-  }
-  fail('Billing did not render the form.');
+  final state = tester.state<SystemBillingScreenState>(
+    find.byType(SystemBillingScreen),
+  );
+  await runAsyncAndPump(tester, () => state.initialised);
+  expect(tester.takeException(), isNull);
+  expect(find.text('Rates'), findsOneWidget);
 }

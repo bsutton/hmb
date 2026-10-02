@@ -5,6 +5,8 @@ import 'package:hmb/database/factory/cli_database_factory.dart';
 import 'package:hmb/database/versions/db_upgrade.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
+import 'test_database_config.dart';
+
 void main() {
   test(
     'QuickBooks migration preserves old invoices and restricts deletion',
@@ -12,7 +14,9 @@ void main() {
       final directory = Directory.systemTemp.createTempSync('qbo_upgrade_');
       final db = await CliDatabaseFactory().openDatabase(
         '${directory.path}/test.db',
-        options: OpenDatabaseOptions(),
+        options: OpenDatabaseOptions(
+          onConfigure: configureDisposableTestDatabase,
+        ),
       );
       try {
         await db.execute('PRAGMA foreign_keys = ON');

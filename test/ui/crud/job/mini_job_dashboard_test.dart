@@ -53,7 +53,7 @@ void main() {
     tester,
   ) async {
     late Job job;
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       job = await createJobWithCustomer(
         billingType: BillingType.timeAndMaterial,
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
@@ -78,7 +78,7 @@ void main() {
     expect(find.text('Estimates Require Fixed Price'), findsNothing);
     expect(find.text('Estimate Builder'), findsOneWidget);
 
-    await tester.runAsync(() async {
+    await runAsyncAndPump(tester, () async {
       final updated = await DaoJob().getById(job.id);
       expect(updated?.billingType, BillingType.fixedPrice);
     });
@@ -91,11 +91,12 @@ Future<void> _pumpUntilFound(
   int attempts = 40,
 }) async {
   for (var i = 0; i < attempts; i++) {
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
     if (finder.evaluate().isNotEmpty) {
       return;
     }
-    await tester.runAsync(
+    await runAsyncAndPump(
+      tester,
       () => Future<void>.delayed(const Duration(milliseconds: 50)),
     );
   }

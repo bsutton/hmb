@@ -22,6 +22,7 @@ import 'package:path/path.dart';
 import 'package:sqflite_common/sqflite.dart';
 
 import 'backup_providers/test_backup_provider.dart';
+import 'test_database_config.dart';
 
 Database? testDb;
 late String testDbPath;
@@ -71,10 +72,7 @@ Future<Database> setupTestDb() async {
   );
   testDb = DatabaseHelper().database;
 
-  // This is a disposable fixture copy, not a durability/crash-recovery test.
-  // Keep SQLite transactions and rollback journals, but avoid forcing a disk
-  // sync for every tiny fixture write across parallel test isolates.
-  await testDb!.execute('PRAGMA synchronous = OFF');
+  await configureDisposableTestDatabase(testDb!);
 
   return testDb!;
 }
