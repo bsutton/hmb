@@ -119,7 +119,12 @@ class TripCaptureService {
       }
       final point = await currentPoint();
       if (point != null) {
-        await DaoTripLog().observe(point, DateTime.now());
+        final originAddress = await _configuredOriginAddress(settings);
+        await DaoTripLog().observe(
+          point,
+          DateTime.now(),
+          originAddress: originAddress,
+        );
         status.value = 'Location checked';
       } else {
         status.value = 'No location fix. Check location permission and GPS.';
@@ -144,20 +149,45 @@ class TripCaptureService {
       return;
     }
     final client = http.Client();
+    var failed = 0;
     try {
-      for (final trip in await DaoTripLog().pendingRoutes()) {
-        final current = await DaoTripLog().settings();
-        if (!current.enabled || !current.routeLookupEnabled) {
-          return;
+      int? afterId;
+      while (true) {
+        final pending = await DaoTripLog().pendingRoutes(afterId: afterId);
+        if (pending.isEmpty) {
+          break;
         }
-        final route = await TripRouteClient(
-          client,
-        ).distance(trip.from, trip.to, key);
-        await DaoTripLog().saveRoute(trip, route.$1, route.$2);
+        for (final trip in pending) {
+          afterId = trip.id;
+          final current = await DaoTripLog().settings();
+          if (!current.enabled || !current.routeLookupEnabled) {
+            return;
+          }
+          try {
+            final route = await TripRouteClient(
+              client,
+            ).distanceFromTrip(trip, key);
+            await DaoTripLog().saveRoute(trip, route.$1, route.$2);
+          } catch (_) {
+            // Keep this trip pending and continue with other route requests.
+            failed++;
+          }
+        }
       }
+      status.value = failed == 0
+          ? 'Road distances updated.'
+          : '$failed road distance(s) could not be calculated. '
+                'Check Maps setup and retry.';
     } finally {
       client.close();
     }
+  }
+
+  Future<String?> _configuredOriginAddress(TripSettings settings) async {
+    if (settings.originType == TripOriginType.alternateAddress) {
+      return settings.alternateOriginAddress.trim();
+    }
+    return (await DaoSystem().get()).address.trim();
   }
 }
 
@@ -166,12 +196,34 @@ class TripRouteClient {
   TripRouteClient(this.client);
 
   /// https://developers.google.com/maps/documentation/routes/compute_route_directions
-  Future<(int, int)> distance(TripPoint from, TripPoint to, String key) async {
+  Future<(int, int)> distance(TripPoint from, TripPoint to, String key) {
     Map<String, Object> waypoint(TripPoint point) => {
       'location': {
         'latLng': {'latitude': point.latitude, 'longitude': point.longitude},
       },
     };
+    return _distance(waypoint(from), waypoint(to), key);
+  }
+
+  Future<(int, int)> distanceFromTrip(TripLog trip, String key) {
+    final origin = trip.fromAddress?.trim();
+    if (origin != null && origin.isNotEmpty) {
+      return _distance({'address': origin}, _waypoint(trip.to), key);
+    }
+    return distance(trip.from, trip.to, key);
+  }
+
+  Map<String, Object> _waypoint(TripPoint point) => {
+    'location': {
+      'latLng': {'latitude': point.latitude, 'longitude': point.longitude},
+    },
+  };
+
+  Future<(int, int)> _distance(
+    Map<String, Object> origin,
+    Map<String, Object> destination,
+    String key,
+  ) async {
     final response = await client
         .post(
           Uri.parse(
@@ -183,8 +235,8 @@ class TripRouteClient {
             'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration',
           },
           body: jsonEncode({
-            'origin': waypoint(from),
-            'destination': waypoint(to),
+            'origin': origin,
+            'destination': destination,
             'travelMode': 'DRIVE',
           }),
         )

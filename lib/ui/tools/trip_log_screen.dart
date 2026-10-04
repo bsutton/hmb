@@ -1,10 +1,16 @@
+import 'dart:async';
+
 import 'package:deferred_state/deferred_state.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../api/trip_capture_service.dart';
+import '../../dao/dao_system.dart';
 import '../../dao/dao_trip_log.dart';
+import '../../entity/system.dart';
 import '../../entity/trip_log.dart';
+import '../../util/dart/measurement_type.dart';
 import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/layout/hmb_spacing.dart';
 import '../widgets/layout/layout.g.dart';
@@ -13,34 +19,37 @@ import '../widgets/widgets.g.dart';
 
 class TripLogScreen extends StatefulWidget {
   const TripLogScreen({super.key});
+
   @override
   State<TripLogScreen> createState() => _TripLogScreenState();
 }
 
 class _TripLogScreenState extends DeferredState<TripLogScreen> {
-  final _form = GlobalKey<FormState>();
-  final _latitude = TextEditingController();
-  final _longitude = TextEditingController();
-  final _homeName = TextEditingController();
-  final _rate = TextEditingController();
-  var _enabled = false;
-  var _maps = false;
   var _period = 'Today';
   var _start = DateTime.now();
   var _end = DateTime.now();
+  var _enabled = false;
+  var _routeLookupEnabled = false;
+  var _rateCentsPerKm = 0;
+  late SystemConfiguration _system;
   List<TripLog> _trips = [];
+
+  bool get _isImperial =>
+      _system.preferredUnitSystem == PreferredUnitSystem.imperial;
+
+  double get _kmPerUnit => _isImperial ? 1.609344 : 1;
+  String get _distanceUnit => _isImperial ? 'mi' : 'km';
 
   @override
   Future<void> asyncInitState() async {
-    await BlockingUI().runAndWait(() async {
-      final settings = await DaoTripLog().settings();
-      _enabled = settings.enabled;
-      _maps = settings.routeLookupEnabled;
-      _latitude.text = settings.home?.latitude.toString() ?? '';
-      _longitude.text = settings.home?.longitude.toString() ?? '';
-      _homeName.text = settings.homeLabel;
-      _rate.text = (settings.rateCentsPerKm / 100).toStringAsFixed(2);
-    });
+    final settings = await DaoTripLog().settings();
+    _system = await DaoSystem().get();
+    _enabled = settings.enabled;
+    _routeLookupEnabled = settings.routeLookupEnabled;
+    _rateCentsPerKm = settings.rateCentsPerKm;
+    if (_enabled && _routeLookupEnabled) {
+      await BlockingUI().runAndWait(TripCaptureService.instance.updateRoutes);
+    }
     await _selectPeriod('Today');
   }
 
@@ -88,54 +97,26 @@ class _TripLogScreenState extends DeferredState<TripLogScreen> {
     }
   }
 
-  Future<void> _save() async {
-    if (!_form.currentState!.validate()) {
+  Future<void> _openSettings(BuildContext context) async {
+    await context.push('/home/tools/trips/settings');
+    if (!mounted) {
       return;
     }
-    if (_enabled && !await TripCaptureService.instance.requestPermission()) {
-      HMBToast.error(
-        'Location permission is required. Enable it in device settings.',
-      );
-      return;
+    final settings = await DaoTripLog().settings();
+    setState(() {
+      _enabled = settings.enabled;
+      _routeLookupEnabled = settings.routeLookupEnabled;
+      _rateCentsPerKm = settings.rateCentsPerKm;
+    });
+    if (_enabled && _routeLookupEnabled) {
+      await BlockingUI().runAndWait(TripCaptureService.instance.updateRoutes);
     }
-    final latitude = double.tryParse(_latitude.text);
-    final longitude = double.tryParse(_longitude.text);
-    if ((latitude == null) != (longitude == null)) {
-      HMBToast.error('Enter both home coordinates, or leave both blank.');
-      return;
-    }
-    await BlockingUI().runAndWait(
-      () => DaoTripLog().saveSettings(
-        TripSettings(
-          enabled: _enabled,
-          routeLookupEnabled: _maps,
-          home: latitude == null ? null : TripPoint(latitude, longitude!),
-          homeLabel: _homeName.text.trim(),
-          rateCentsPerKm: (double.parse(_rate.text) * 100).round(),
-        ),
-      ),
-    );
-    HMBToast.info('Travel settings saved');
+    await _reload();
   }
 
-  Future<void> _setHome() async {
-    if (!await TripCaptureService.instance.requestPermission()) {
-      HMBToast.error('Enable location permission on an Android or iOS device.');
-      return;
-    }
-    final point = await BlockingUI().runAndWait(
-      TripCaptureService.instance.currentPoint,
-    );
-    if (point == null) {
-      HMBToast.error('Could not get a location fix.');
-      return;
-    }
-    if (mounted) {
-      setState(() {
-        _latitude.text = point.latitude.toString();
-        _longitude.text = point.longitude.toString();
-      });
-    }
+  Future<void> _retryRoutes() async {
+    await BlockingUI().runAndWait(TripCaptureService.instance.updateRoutes);
+    await _reload();
   }
 
   Future<void> _classify(TripLog trip) async {
@@ -143,276 +124,254 @@ class _TripLogScreenState extends DeferredState<TripLogScreen> {
       context: context,
       builder: (_) => _TripPurposeDialog(trip: trip),
     );
-    if (result != null) {
-      await BlockingUI().runAndWait(
-        () => DaoTripLog().classify(
-          trip.id,
-          business: result.$1,
-          purpose: result.$2,
-        ),
-      );
-      await _reload();
+    if (result == null) {
+      return;
     }
-  }
-
-  @override
-  void dispose() {
-    for (final controller in [_latitude, _longitude, _homeName, _rate]) {
-      controller.dispose();
-    }
-    super.dispose();
+    await BlockingUI().runAndWait(
+      () => DaoTripLog().classify(
+        trip.id,
+        business: result.$1,
+        purpose: result.$2,
+      ),
+    );
+    await _reload();
   }
 
   @override
   Widget build(BuildContext context) => HMBFullPageChildScreen(
     title: 'Trip log',
     maxContentWidth: 800,
+    actions: [
+      IconButton(
+        tooltip: 'Trip logging settings',
+        icon: const Icon(Icons.settings_outlined),
+        onPressed: () => unawaited(_openSettings(context)),
+      ),
+      const HelpButton.text(
+        tooltip: 'Trip logging help',
+        dialogTitle: 'About trip logging',
+        helpText: _helpText,
+      ),
+    ],
     child: DeferredBuilder(
       this,
       waitingBuilder: (_) => const SizedBox.shrink(),
       errorBuilder: (_, _) => const Text('Could not load the trip log.'),
       builder: (context) {
-        final km =
-            _trips.fold<int>(
-              0,
-              (sum, trip) => sum + (trip.distanceMetres ?? 0),
-            ) /
-            1000;
-        final businessKm =
-            _trips
-                .where((trip) => trip.business)
-                .fold<int>(0, (sum, trip) => sum + (trip.distanceMetres ?? 0)) /
-            1000;
-        final pending = _trips
-            .where((trip) => trip.distanceMetres == null)
-            .length;
-        final cost = businessKm * (double.tryParse(_rate.text) ?? 0);
+        final totalMetres = _trips.fold<int>(
+          0,
+          (sum, trip) => sum + (trip.distanceMetres ?? 0),
+        );
+        final businessMetres = _trips
+            .where((trip) => trip.business)
+            .fold<int>(0, (sum, trip) => sum + (trip.distanceMetres ?? 0));
+        final pending = _trips.where((trip) => trip.distanceMetres == null);
+        final businessDistance = businessMetres / 1000 / _kmPerUnit;
+        final cost = businessMetres / 1000 * _rateCentsPerKm / 100;
         return HMBFormList(
           spacing: HMBSpacing.kSectionGap,
           children: [
-            const Text(
-              'Checks your location only when you open/resume the app. '
-              'Trips over 500 m are logged. This is an approximate record, '
-              'Review missed stops and personal travel.',
-            ),
-            ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              childrenPadding: const EdgeInsets.symmetric(
-                vertical: HMBSpacing.kFieldGap,
-              ),
-              title: const Text('Travel settings'),
-              children: [
-                Form(
-                  key: _form,
-                  child: HMBFormSection(
-                    children: [
-                      HMBToggle(
-                        label: 'Enable trip logging',
-                        hint: 'Opt in to foreground location checks',
-                        initialValue: _enabled,
-                        onToggled: (value) => _enabled = value,
-                      ),
-                      HMBToggle(
-                        label: 'Use Google road distances',
-                        hint: 'Send trip endpoints to Google Routes',
-                        initialValue: _maps,
-                        onToggled: (value) => _maps = value,
-                      ),
-                      const Text(
-                        'Google lookups send start/end coordinates to Google. '
-                        'Requires a Google Maps API key; charges may apply. '
-                        'Trip records are stored in your database and backups. '
-                        'Off by default. Without lookup, road distances remain '
-                        'unknown—not straight-line estimates.',
-                      ),
-                      HMBTextField(
-                        controller: _homeName,
-                        labelText: 'Home / starting location name',
-                      ),
-                      HMBTextField(
-                        controller: _latitude,
-                        labelText: 'Home latitude (optional)',
-                        validator: (value) => _coordinate(value, 90),
-                      ),
-                      HMBTextField(
-                        controller: _longitude,
-                        labelText: 'Home longitude (optional)',
-                        validator: (value) => _coordinate(value, 180),
-                      ),
-                      HMBButtonSecondary(
-                        label: 'Use current location as home',
-                        hint: 'Get a single location fix',
-                        onPressed: _setHome,
-                      ),
-                      HMBTextField(
-                        controller: _rate,
-                        labelText: 'Cost per km (your own rate)',
-                        validator: (value) {
-                          final rate = double.tryParse(value ?? '');
-                          return rate == null || !rate.isFinite || rate < 0
-                              ? 'Enter a non-negative rate'
-                              : null;
-                        },
-                      ),
-                      const Text(
-                        'Cost estimates are not a tax deduction calculation. '
-                        'Trip times are inferred from app openings. First '
-                        'departures from home use estimated route duration.',
-                      ),
-                      HMBButtonPrimary(
-                        label: 'Save settings',
-                        hint: 'Save trip recording preferences',
-                        onPressed: _save,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            _loggingStatus(context),
             ValueListenableBuilder<String>(
               valueListenable: TripCaptureService.instance.status,
               builder: (_, status, _) => Text(status),
             ),
-            HMBFormSection(
-              children: [
-                HMBDroplist<String>(
-                  title: 'Period',
-                  selectedItem: () async => _period,
-                  items: (_) async => [
-                    'Today',
-                    'Yesterday',
-                    'This week',
-                    'This month',
-                    'Last month',
-                    'This year',
-                    'Last year',
-                    'Custom',
-                  ],
-                  format: (value) => value,
-                  onChanged: _selectPeriod,
-                ),
-                if (_period == 'Custom') ...[
-                  HMBDateTimeField(
-                    label: 'From',
-                    initialDateTime: _start,
-                    mode: HMBDateTimeFieldMode.dateOnly,
-                    onChanged: (value) =>
-                        _start = DateTime(value.year, value.month, value.day),
-                  ),
-                  HMBDateTimeField(
-                    label: 'Until (exclusive)',
-                    initialDateTime: _end,
-                    mode: HMBDateTimeFieldMode.dateOnly,
-                    onChanged: (value) =>
-                        _end = DateTime(value.year, value.month, value.day),
-                  ),
-                ],
-                HMBButtonSecondary(
-                  label: 'Refresh trips',
-                  hint: 'Refresh the trip summary',
-                  onPressed: _reload,
-                ),
-                HMBButtonSecondary(
-                  label: 'Retry road distances',
-                  hint: 'Retry pending Google lookups when enabled',
-                  onPressed: () async {
-                    try {
-                      await BlockingUI().runAndWait(
-                        TripCaptureService.instance.updateRoutes,
-                      );
-                      await _reload();
-                    } catch (_) {
-                      HMBToast.error(
-                        'Road lookup failed. Check Google Maps setup. '
-                        'Trips are retained.',
-                      );
-                    }
-                  },
-                ),
+            HMBDroplist<String>(
+              title: 'Period',
+              selectedItem: () async => _period,
+              items: (_) async => [
+                'Today',
+                'Yesterday',
+                'This week',
+                'This month',
+                'Last month',
+                'This year',
+                'Last year',
+                'Custom',
               ],
+              format: (value) => value,
+              onChanged: _selectPeriod,
+            ),
+            if (_period == 'Custom') ...[
+              HMBDateTimeField(
+                label: 'From',
+                initialDateTime: _start,
+                mode: HMBDateTimeFieldMode.dateOnly,
+                onChanged: (value) =>
+                    _start = DateTime(value.year, value.month, value.day),
+              ),
+              HMBDateTimeField(
+                label: 'Until (exclusive)',
+                initialDateTime: _end,
+                mode: HMBDateTimeFieldMode.dateOnly,
+                onChanged: (value) =>
+                    _end = DateTime(value.year, value.month, value.day),
+              ),
+            ],
+            HMBButtonSecondary(
+              label: 'Refresh trips',
+              hint: 'Refresh the trip summary',
+              onPressed: _reload,
             ),
             Surface(
               padding: const EdgeInsets.all(HMBSpacing.kPageInset),
-              child: HMBColumn(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
+              child: HMBFormSection(
                 children: [
                   Text(
-                    'Trip summary',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    'Total distance: '
+                    '${(totalMetres / 1000 / _kmPerUnit).toStringAsFixed(1)} '
+                    '$_distanceUnit',
                   ),
                   Text(
-                    '${km.toStringAsFixed(1)} km · '
-                    '${businessKm.toStringAsFixed(1)} business km',
+                    'Business distance: '
+                    '${businessDistance.toStringAsFixed(1)} $_distanceUnit',
                   ),
-                  Text('$pending trips with unknown road distance'),
-                  Text(
-                    'Business cost estimate: '
-                    '${cost.toStringAsFixed(2)}',
-                  ),
+                  Text('Business cost estimate: ${cost.toStringAsFixed(2)}'),
+                  Text('${pending.length} trips with unknown road distance'),
                 ],
               ),
             ),
-            for (final trip in _trips)
+            if (pending.isNotEmpty && !_routeLookupEnabled)
               Surface(
-                child: ListTile(
-                  title: Text(
-                    DateFormat('EEE d MMM, HH:mm').format(trip.arrivedAt),
-                  ),
-                  subtitle: Text(
-                    [
-                      if (trip.distanceMetres == null)
-                        'Road distance unknown'
-                      else
-                        _distanceLabel(trip),
-                      'Road distances are route estimates',
-                      if (trip.business)
-                        'Business'
-                      else
-                        'Unclassified / personal',
-                      if (trip.jobId != null)
-                        'Near job #${trip.jobId} (check association)',
-                      if (trip.purpose.isNotEmpty) trip.purpose,
-                    ].join('\n'),
-                  ),
-                  trailing: IconButton(
-                    tooltip: 'Classify trip',
-                    icon: const Icon(Icons.edit),
-                    onPressed: () => _classify(trip),
-                  ),
+                child: HMBColumn(
+                  children: [
+                    const Text(
+                      'Road distance lookup is off. Enable Google Routes in '
+                      'Trip logging settings to calculate road distances.',
+                    ),
+                    HMBButtonSecondary(
+                      label: 'Trip logging settings',
+                      hint: 'Configure road distance lookup',
+                      onPressed: () => _openSettings(context),
+                    ),
+                  ],
                 ),
               ),
-            if (_trips.isEmpty) const Text('No trips in this period.'),
+            if (_routeLookupEnabled && pending.isNotEmpty)
+              HMBButtonSecondary(
+                label: 'Retry unknown distances',
+                hint: 'Retry Google Routes lookups for pending trips',
+                onPressed: _retryRoutes,
+              ),
+            for (final trip in _trips) _tripCard(trip),
+            if (_trips.isEmpty)
+              const Surface(child: Text('No trips in this period.')),
+            const Text(
+              'Distances are route estimates. Review trips and local tax '
+              'rules before using totals for a claim.',
+            ),
           ],
         );
       },
     ),
   );
 
-  String? _coordinate(String? text, int limit) {
-    if (text == null || text.trim().isEmpty) {
-      return null;
-    }
-    final value = double.tryParse(text);
-    return value == null || !value.isFinite || value.abs() > limit
-        ? 'Enter a valid coordinate'
-        : null;
-  }
+  Widget _loggingStatus(BuildContext context) => Surface(
+    padding: const EdgeInsets.all(HMBSpacing.kPageInset),
+    child: HMBFormSection(
+      children: [
+        Text(
+          _enabled ? 'Trip logging is on' : 'Trip logging is off',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        Text(
+          _enabled
+              ? 'HMB checks your location when you open or resume the app.'
+              : 'HMB can record trips over 500 m while you use the app. '
+                    'Location is not tracked continuously.',
+        ),
+        if (!_enabled)
+          HMBButtonPrimary(
+            label: 'Set up trip logging',
+            hint: 'Choose whether to enable trip logging',
+            onPressed: () => _openSettings(context),
+          ),
+      ],
+    ),
+  );
+
+  Widget _tripCard(TripLog trip) => Surface(
+    padding: const EdgeInsets.all(HMBSpacing.kPageInset),
+    child: HMBFormSection(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                DateFormat('EEE d MMM, HH:mm').format(trip.arrivedAt),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            Text(_classificationLabel(trip)),
+          ],
+        ),
+        Text(
+          trip.distanceMetres == null
+              ? 'Road distance unknown'
+              : _distanceLabel(trip),
+        ),
+        if (trip.jobId != null) Text('Near job #${trip.jobId} (check match)'),
+        if (trip.purpose.isNotEmpty) Text(trip.purpose),
+        Wrap(
+          spacing: HMBSpacing.kRelated,
+          runSpacing: HMBSpacing.kRelated,
+          children: [
+            HMBButtonSecondary(
+              label: trip.classified ? 'Edit classification' : 'Classify trip',
+              hint: 'Choose Business or Personal and add trip notes',
+              onPressed: () => _classify(trip),
+            ),
+            if (trip.distanceMetres == null && _routeLookupEnabled)
+              HMBButtonSecondary(
+                label: 'Retry distance',
+                hint: 'Retry the road distance lookup for this trip',
+                onPressed: _retryRoutes,
+              ),
+          ],
+        ),
+      ],
+    ),
+  );
+
+  String _classificationLabel(TripLog trip) => !trip.classified
+      ? 'Needs review'
+      : trip.business
+      ? 'Business'
+      : 'Personal';
 
   String _distanceLabel(TripLog trip) =>
-      '${(trip.distanceMetres! / 1000).toStringAsFixed(1)} km';
+      '${(trip.distanceMetres! / 1000 / _kmPerUnit).toStringAsFixed(1)} '
+      '$_distanceUnit · route estimate';
+
+  static const _helpText =
+      'HMB checks location when the app opens or resumes. Trips over 500 m '
+      'are recorded. It does not track continuously. Trip times are inferred '
+      'from app activity. Review each trip and classify it as Business or '
+      'Personal. Road distance lookup is optional and requires Google Maps '
+      'setup. Check local tax rules before claiming travel.';
 }
 
 class _TripPurposeDialog extends StatefulWidget {
   final TripLog trip;
+
   const _TripPurposeDialog({required this.trip});
+
   @override
   State<_TripPurposeDialog> createState() => _TripPurposeDialogState();
 }
 
 class _TripPurposeDialogState extends State<_TripPurposeDialog> {
   late final _notes = TextEditingController(text: widget.trip.purpose);
-  late bool _business = widget.trip.business;
+  bool? _business;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.trip.classified) {
+      _business = widget.trip.business;
+    }
+  }
+
   @override
   void dispose() {
     _notes.dispose();
@@ -421,15 +380,18 @@ class _TripPurposeDialogState extends State<_TripPurposeDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Trip purpose'),
+    title: const Text('Classify trip'),
     scrollable: true,
-    content: HMBFormSection(
+    content: HMBColumn(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        HMBToggle(
-          label: 'Business trip',
-          hint: 'Confirm business travel',
-          initialValue: _business,
-          onToggled: (value) => _business = value,
+        const Text('Choose how to record this trip.'),
+        HMBSelectChips<bool>(
+          label: 'Trip type',
+          value: _business,
+          items: const [true, false],
+          format: (business) => business ? 'Business' : 'Personal',
+          onChanged: (value) => setState(() => _business = value),
         ),
         HMBTextField(controller: _notes, labelText: 'Purpose / notes'),
       ],
@@ -442,7 +404,8 @@ class _TripPurposeDialogState extends State<_TripPurposeDialog> {
       HMBButtonPrimary(
         label: 'Save',
         hint: 'Save trip classification',
-        onPressed: () => Navigator.pop(context, (_business, _notes.text)),
+        enabled: _business != null,
+        onPressed: () => Navigator.pop(context, (_business!, _notes.text)),
       ),
     ],
   );

@@ -61,6 +61,25 @@ void main() {
     },
   );
 
+  test('a configured address can be a trip origin', () async {
+    final dao = DaoTripLog();
+    await dao.saveSettings(const TripSettings(enabled: true));
+    final at = DateTime(2026, 1, 2, 9);
+    await dao.observe(
+      const TripPoint(-37.02, 145),
+      at,
+      originAddress: '1 Example Street, Melbourne',
+    );
+    final trip = (await dao.between(
+      at,
+      at.add(const Duration(days: 1)),
+    )).single;
+    expect(trip.fromAddress, '1 Example Street, Melbourne');
+    expect(trip.fromPoint, isNull);
+    expect(trip.to.latitude, -37.02);
+    expect(trip.distanceMetres, isNull);
+  });
+
   test(
     'disabling logging clears the anchor and classification is explicit',
     () async {

@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Issue 652 · Trip log mockups</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #121214;
+  --surface: #242424;
+  --surface-raised: #2c2c2c;
+  --field: #222;
+  --outline: #414145;
+  --field-outline: #929098;
+  --primary: #bb86fc;
+  --primary-container: #3d2e51;
+  --on-primary: #241331;
+  --text: #f1eff4;
+  --muted: #b9b7be;
+  --success: #8dcea1;
+  --warning: #ffc477;
+  --warning-container: #493b25;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.4 Inter, Roboto, ui-sans-serif, system-ui, sans-serif;
+}
+header {
+  padding: 28px max(20px, calc((100vw - 1180px) / 2));
+  background: var(--surface);
+  border-bottom: 1px solid var(--outline);
+}
+h1 { margin: 0; font-size: 24px; font-weight: 600; }
+header p { margin: 5px 0 0; color: var(--muted); }
+main { max-width: 1180px; margin: auto; padding: 24px 20px 56px; }
+.intro { max-width: 780px; margin: 0 0 24px; color: var(--muted); }
+.board { display: grid; grid-template-columns: repeat(2, minmax(300px, 1fr)); gap: 32px 24px; align-items: start; }
+.mock h2 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+.caption { min-height: 40px; margin: 0 0 12px; color: var(--muted); }
+.phone {
+  width: min(100%, 430px);
+  min-height: 720px;
+  margin: auto;
+  overflow: hidden;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  background: var(--bg);
+}
+.appbar { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 16px; border-bottom: 1px solid var(--outline); }
+.back { color: var(--muted); font-size: 24px; line-height: 1; }
+.app-title { flex: 1; font-size: 20px; font-weight: 600; }
+.toolbar-icon { display: inline-grid; flex: 0 0 44px; width: 44px; height: 44px; place-items: center; border: 0; background: transparent; color: var(--muted); font-size: 21px; }
+.help {
+  display: inline-grid;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--primary);
+  font: 24px/1 "Material Icons", "Arial Unicode MS", sans-serif;
+}
+.help::before { content: "?"; display: grid; width: 22px; height: 22px; place-items: center; border: 2px solid currentColor; border-radius: 50%; font: 600 14px/1 sans-serif; }
+.content { padding: 16px; }
+.page-heading { margin: 0 0 6px; font-size: 24px; font-weight: 600; }
+.body-copy { margin: 0; color: var(--muted); }
+.card { margin-top: 16px; padding: 16px; border: 1px solid var(--outline); border-radius: 8px; background: var(--surface); }
+.card-heading { margin: 0 0 8px; font-size: 16px; font-weight: 600; }
+.card-hint { margin: 0 0 12px; color: var(--muted); }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.toggle-copy strong { display: block; font-size: 16px; }
+.toggle-copy span { display: block; margin-top: 3px; color: var(--muted); }
+.switch { flex: 0 0 48px; height: 28px; padding: 4px; border: 2px solid var(--field-outline); border-radius: 20px; }
+.switch::after { display: block; width: 16px; height: 16px; border-radius: 50%; background: var(--field-outline); content: ""; }
+.switch.on { border-color: var(--primary); background: var(--primary-container); }
+.switch.on::after { width: 20px; height: 20px; margin: -2px 0 0 20px; background: var(--primary); }
+.divider { height: 1px; margin: 16px 0; background: var(--outline); }
+.choice { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; }
+.radio { flex: 0 0 20px; width: 20px; height: 20px; margin-top: 1px; border: 2px solid var(--muted); border-radius: 50%; }
+.radio.selected { border-color: var(--primary); }
+.radio.selected::after { display: block; width: 10px; height: 10px; margin: 3px; border-radius: 50%; background: var(--primary); content: ""; }
+.choice strong { display: block; }
+.choice p { margin: 3px 0 0; color: var(--muted); }
+.field { margin-top: 12px; padding: 8px 12px 10px; border: 1px solid var(--field-outline); border-radius: 6px; background: var(--field); }
+.field label { display: block; color: var(--muted); font-size: 12px; }
+.field b { display: block; margin-top: 3px; color: var(--text); font-size: 14px; font-weight: 400; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.button { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; margin-top: 12px; padding: 0 16px; border: 0; border-radius: 6px; background: var(--primary); color: var(--on-primary); font-weight: 600; }
+.button.secondary { border: 1px solid var(--primary); background: transparent; color: var(--primary); }
+.button.text { background: transparent; color: var(--primary); }
+.warning { padding: 12px; border-radius: 6px; background: var(--warning-container); color: var(--warning); }
+.warning strong { display: block; margin-bottom: 3px; }
+.inline-help { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; color: var(--muted); font-size: 12px; }
+.inline-help .mini-help { flex: 0 0 20px; color: var(--primary); font-weight: 700; text-align: center; }
+.select { display: flex; justify-content: space-between; align-items: center; min-height: 48px; margin-top: 16px; padding: 0 12px; border: 1px solid var(--field-outline); border-radius: 6px; background: var(--field); }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.stat { padding: 12px; border: 1px solid var(--outline); border-radius: 8px; background: var(--surface); }
+.stat span { display: block; color: var(--muted); font-size: 12px; }
+.stat b { display: block; margin-top: 3px; font-size: 20px; font-weight: 600; }
+.trip { margin-top: 12px; padding: 12px; border: 1px solid var(--outline); border-radius: 8px; background: var(--surface); }
+.trip-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.trip-title { font-weight: 600; }
+.chip { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border-radius: 16px; background: var(--primary-container); color: var(--text); font-size: 12px; font-weight: 600; }
+.chip.success { background: #26392b; color: var(--success); }
+.chip.warning { padding: 0 10px; background: var(--warning-container); color: var(--warning); }
+.trip p { margin: 6px 0 0; color: var(--muted); }
+.trip-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.dialog-scrim { display: grid; min-height: 400px; place-items: center; margin-top: 12px; padding: 20px; background: #0009; }
+.dialog { width: 100%; padding: 20px; border: 1px solid var(--outline); border-radius: 8px; background: var(--surface); }
+.dialog h3 { margin: 0 0 12px; font-size: 20px; }
+.dialog p { margin: 10px 0; color: var(--text); }
+.dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.dialog-actions .button { margin-top: 0; }
+.note { max-width: 760px; margin: 24px auto 0; color: var(--muted); font-size: 13px; }
+@media (max-width: 740px) { header { padding: 20px 16px; } main { padding: 20px 12px 40px; } .board { grid-template-columns: 1fr; gap: 28px; } .caption { min-height: 0; } .phone { min-height: auto; } }
+</style>
+</head>
+<body>
+<header><h1>Trip log · screen mockups</h1><p>Issue #652 · updated to HMB dark theme · proposed flow</p></header>
+<main>
+<p class="intro">The trip logging settings screen is shared by setup and Settings. A user first chooses whether to enable logging. When it is enabled, a separate origin card lets them use the business address or enter another address. Trip classification remains an explicit choice on each trip.</p>
+<div class="board">
+<section class="mock">
+<h2>1. Trip logging settings · alternate origin</h2>
+<p class="caption">Same screen body in the setup wizard and Settings. Business address is the default; this frame shows the alternate address option.</p>
+<div class="phone">
+<div class="appbar"><span class="back">‹</span><span class="app-title">Trip logging</span><button class="help" aria-label="Trip logging help" title="Trip logging help"></button></div>
+<div class="content">
+<h3 class="page-heading">Trip logging</h3><p class="body-copy">Choose whether HMB records trips while you use the app.</p>
+<div class="card"><div class="toggle-row"><div class="toggle-copy"><strong>Enable trip logging</strong><span>On</span></div><span class="switch on"></span></div></div>
+<div class="card"><h4 class="card-heading">Trip origin</h4><p class="card-hint">Choose the address where trips usually begin. This does not classify trips.</p>
+<div class="choice"><span class="radio"></span><div><strong>Use business address</strong><p>18 Smith Street, Richmond VIC 3121</p></div></div>
+<div class="divider"></div>
+<div class="choice"><span class="radio selected"></span><div><strong>Enter an alternate address</strong><p>Use a different starting address, such as your home.</p>
+<div class="field"><label>Address</label><b>4 Garden Lane</b></div><div class="field-row"><div class="field"><label>Suburb / city</label><b>Richmond</b></div><div class="field"><label>Postcode</label><b>3121</b></div></div><div class="field-row"><div class="field"><label>State / region</label><b>VIC</b></div><div class="field"><label>Country</label><b>Australia</b></div></div>
+</div></div></div>
+<div class="card"><h4 class="card-heading">Mileage estimate</h4><p class="card-hint">Rate is in your business currency and uses your preferred distance unit.</p><div class="field"><label>Rate per km</label><b>0.85</b></div></div>
+<div class="inline-help"><span class="mini-help">ⓘ</span><span>Location is checked when you open or resume HMB. It is not tracked continuously. Road distance lookup is optional.</span></div>
+<button class="button">Save</button>
+</div></div>
+</section>
+<section class="mock">
+<h2>2. Trip log · logging off</h2>
+<p class="caption">The log page explains the off state and links to the shared settings screen.</p>
+<div class="phone">
+<div class="appbar"><span class="back">‹</span><span class="app-title">Trip log</span><button class="toolbar-icon" aria-label="Trip logging settings" title="Trip logging settings">⚙</button><button class="help" aria-label="Trip logging help" title="Trip logging help"></button></div>
+<div class="content"><h3 class="page-heading">Trip log</h3>
+<div class="card"><div class="toggle-row"><div class="toggle-copy"><strong>Trip logging is off</strong><span>Enable it in Trip logging settings.</span></div><span class="chip">Off</span></div><div class="divider"></div><h4 class="card-heading">Record trips as you work</h4><p class="card-hint">HMB checks your location when you open or resume the app and records trips over 500 m. You can review and classify each trip later.</p><button class="button">Set up trip logging</button></div>
+<div class="card"><h4 class="card-heading">What is recorded?</h4><p class="card-hint">Trip records are stored in your HMB database and backups. Location access is required. Optional road distance lookup sends trip endpoints to Google when configured.</p></div>
+</div></div>
+</section>
+<section class="mock">
+<h2>3. Trip log · review trips</h2>
+<p class="caption">The help icon is visible in the app bar. Every unclassified trip has an explicit Classify action.</p>
+<div class="phone">
+<div class="appbar"><span class="back">‹</span><span class="app-title">Trip log</span><button class="toolbar-icon" aria-label="Trip logging settings" title="Trip logging settings">⚙</button><button class="help" aria-label="Trip logging help" title="Trip logging help"></button></div>
+<div class="content"><div class="card"><div class="toggle-row"><div class="toggle-copy"><strong>Trip logging is on</strong><span>Location checked when HMB opens or resumes.</span></div><span class="chip success">On</span></div></div>
+<div class="select"><span>This week</span><span>⌄</span></div>
+<div class="stats"><div class="stat"><span>Total distance</span><b>16.5 mi</b></div><div class="stat"><span>Business estimate</span><b>£14.03</b></div></div>
+<div class="divider"></div><h4 class="card-heading">Trips · 4</h4>
+<div class="trip"><div class="trip-head"><span class="trip-title">Today · 9:18 am</span><span class="chip success">Business</span></div><p>7.7 mi · route estimate</p><p>Quote visit · Job #248</p><div class="trip-actions"><button class="button secondary">Edit classification</button></div></div>
+<div class="trip"><div class="trip-head"><span class="trip-title">Today · 7:42 am</span><span class="chip warning">Needs review</span></div><p>Road distance unavailable</p><div class="trip-actions"><button class="button secondary">Classify trip</button><button class="button text">Retry distance</button></div></div>
+<div class="trip"><div class="trip-head"><span class="trip-title">Yesterday · 3:06 pm</span><span class="chip">Personal</span></div><p>5.1 mi · route estimate</p><div class="trip-actions"><button class="button secondary">Edit classification</button></div></div>
+<p class="inline-help">Distances and mileage rates use your preferred units and business currency.</p>
+</div></div>
+</section>
+<section class="mock">
+<h2>4. Classify trip</h2>
+<p class="caption">Tapping Classify trip opens an HMB dialog with clear Business and Personal options and optional purpose notes.</p>
+<div class="phone">
+<div class="appbar"><span class="back">‹</span><span class="app-title">Trip log</span><button class="toolbar-icon" aria-label="Trip logging settings" title="Trip logging settings">⚙</button><button class="help" aria-label="Trip logging help" title="Trip logging help"></button></div>
+<div class="content"><div class="trip"><div class="trip-head"><span class="trip-title">Today · 7:42 am</span><span class="chip warning">Needs review</span></div><p>Road distance unavailable</p><button class="button secondary">Classify trip</button></div>
+<div class="dialog-scrim"><div class="dialog"><h3>Classify trip</h3><p>Choose how to record this trip.</p>
+<div class="choice"><span class="radio selected"></span><div><strong>Business</strong><p>Keep this trip in business travel totals.</p></div></div>
+<div class="choice"><span class="radio"></span><div><strong>Personal</strong><p>Exclude this trip from business travel totals.</p></div></div>
+<div class="field"><label>Purpose / notes · optional</label><b>Visit supplier</b></div>
+<div class="dialog-actions"><button class="button secondary">Cancel</button><button class="button">Save</button></div>
+</div></div></div></div>
+</section>
+<section class="mock">
+<h2>5. Trip logging help</h2>
+<p class="caption">The ? icon in the app bar opens this shared help dialog. Short reminders remain beside relevant controls.</p>
+<div class="phone">
+<div class="appbar"><span class="back">‹</span><span class="app-title">Trip log</span><button class="toolbar-icon" aria-label="Trip logging settings" title="Trip logging settings">⚙</button><button class="help" aria-label="Trip logging help" title="Trip logging help"></button></div>
+<div class="content"><div class="dialog-scrim"><div class="dialog"><h3>About trip logging</h3><p>HMB checks location when the app opens or resumes. It records trips over 500 m and does not track continuously.</p><p>Trip times are inferred from app activity. Review the details and classify each trip as Business or Personal.</p><p>Road distances need Google Routes to be configured. If a route is unavailable, retry after checking Maps setup. No straight-line distance is substituted.</p><p>Origin and trip classification are separate choices. Check local tax rules before claiming travel.</p><div class="dialog-actions"><button class="button">Got it</button></div></div></div></div>
+</div>
+</section>
+</div>
+<p class="note">The origin defaults to the saved business address. Selecting “Enter an alternate address” reveals address fields; it does not change the trip’s Business or Personal classification. The rate label and unit follow the configured business currency and preferred distance unit (km or mi). This example shows miles.</p>
+</main>
+</body>
+</html>

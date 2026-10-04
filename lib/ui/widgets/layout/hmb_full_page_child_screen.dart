@@ -5,18 +5,24 @@ class HMBFullPageChildScreen extends StatelessWidget {
   final String title;
   final bool subdued;
   final double? maxContentWidth;
+  final List<Widget> actions;
 
   const HMBFullPageChildScreen({
     required this.child,
     required this.title,
     this.subdued = false,
     this.maxContentWidth,
+    this.actions = const [],
     super.key,
   });
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(leading: const BackButton(), title: Text(title)),
+    appBar: AppBar(
+      leading: const BackButton(),
+      title: Text(title),
+      actions: actions,
+    ),
     body: maxContentWidth == null
         ? child
         : Align(

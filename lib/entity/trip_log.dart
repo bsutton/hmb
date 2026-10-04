@@ -25,11 +25,15 @@ class TripPoint {
   }
 }
 
+enum TripOriginType { businessAddress, alternateAddress }
+
 class TripSettings {
   final bool enabled;
   final bool routeLookupEnabled;
   final TripPoint? home;
   final String homeLabel;
+  final TripOriginType originType;
+  final String alternateOriginAddress;
   final int rateCentsPerKm;
 
   const TripSettings({
@@ -37,6 +41,8 @@ class TripSettings {
     this.routeLookupEnabled = false,
     this.home,
     this.homeLabel = 'Home',
+    this.originType = TripOriginType.businessAddress,
+    this.alternateOriginAddress = '',
     this.rateCentsPerKm = 0,
   });
 
@@ -50,6 +56,10 @@ class TripSettings {
             (row['home_longitude']! as num).toDouble(),
           ),
     homeLabel: row['home_label'] as String? ?? 'Home',
+    originType: row['origin_type'] == 'alternate'
+        ? TripOriginType.alternateAddress
+        : TripOriginType.businessAddress,
+    alternateOriginAddress: row['alternate_origin_address'] as String? ?? '',
     rateCentsPerKm: row['rate_cents_per_km'] as int? ?? 0,
   );
 
@@ -60,6 +70,10 @@ class TripSettings {
     'home_latitude': home?.latitude,
     'home_longitude': home?.longitude,
     'home_label': homeLabel,
+    'origin_type': originType == TripOriginType.alternateAddress
+        ? 'alternate'
+        : 'business',
+    'alternate_origin_address': alternateOriginAddress,
     'rate_cents_per_km': rateCentsPerKm,
   };
 }
@@ -68,7 +82,8 @@ class TripLog {
   final int id;
   final DateTime? departedAt;
   final DateTime arrivedAt;
-  final TripPoint from;
+  final TripPoint? fromPoint;
+  final String? fromAddress;
   final TripPoint to;
   final bool fromHome;
   final int? distanceMetres;
@@ -77,17 +92,20 @@ class TripLog {
   final int? jobId;
   final String purpose;
   final bool business;
+  final bool classified;
 
   TripLog.fromMap(Map<String, Object?> row)
     : id = row['id']! as int,
-      departedAt = DateTime.tryParse(
-        row['departed_at'] as String? ?? '',
-      )?.toLocal(),
+      departedAt = DateTime.tryParse(row['departed_at'] as String? ?? '')
+          ?.toLocal(),
       arrivedAt = DateTime.parse(row['arrived_at']! as String).toLocal(),
-      from = TripPoint(
-        (row['from_latitude']! as num).toDouble(),
-        (row['from_longitude']! as num).toDouble(),
-      ),
+      fromPoint = row['from_latitude'] == null || row['from_longitude'] == null
+          ? null
+          : TripPoint(
+              (row['from_latitude']! as num).toDouble(),
+              (row['from_longitude']! as num).toDouble(),
+            ),
+      fromAddress = row['from_address'] as String?,
       to = TripPoint(
         (row['to_latitude']! as num).toDouble(),
         (row['to_longitude']! as num).toDouble(),
@@ -98,5 +116,10 @@ class TripLog {
       siteId = row['site_id'] as int?,
       jobId = row['job_id'] as int?,
       purpose = row['purpose'] as String? ?? '',
-      business = row['business'] == 1;
+      business = row['business'] == 1,
+      classified = row['classified'] == 1 || row['business'] == 1;
+
+  TripPoint get from =>
+      fromPoint ??
+      (throw StateError('This trip has an address origin, not coordinates.'));
 }

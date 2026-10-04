@@ -11,7 +11,8 @@ class DaoTripLog {
 
   Future<void> saveSettings(TripSettings settings) async {
     if (settings.rateCentsPerKm < 0 ||
-        (settings.home != null && !settings.home!.valid)) {
+        (settings.home != null && !settings.home!.valid) ||
+        settings.alternateOriginAddress.length > 1000) {
       throw ArgumentError('Invalid travel settings');
     }
     await _db.transaction((txn) async {
@@ -23,7 +24,11 @@ class DaoTripLog {
     });
   }
 
-  Future<int?> observe(TripPoint point, DateTime at) async {
+  Future<int?> observe(
+    TripPoint point,
+    DateTime at, {
+    String? originAddress,
+  }) async {
     if (!point.valid) {
       throw ArgumentError('Invalid coordinates');
     }
@@ -52,13 +57,18 @@ class DaoTripLog {
               (last['longitude']! as num).toDouble(),
             )
           : settings.home;
+      final addressOrigin = sameDay ? null : originAddress?.trim();
       int? id;
-      if (origin != null && origin.distanceTo(point) > 500) {
+      if ((origin != null && origin.distanceTo(point) > 500) ||
+          (origin == null &&
+              addressOrigin != null &&
+              addressOrigin.isNotEmpty)) {
         id = await txn.insert('trip_log', {
           'departed_at': sameDay ? lastAt.toUtc().toIso8601String() : null,
           'arrived_at': at.toUtc().toIso8601String(),
-          'from_latitude': origin.latitude,
-          'from_longitude': origin.longitude,
+          'from_latitude': origin?.latitude,
+          'from_longitude': origin?.longitude,
+          'from_address': origin == null ? addressOrigin : null,
           'to_latitude': point.latitude,
           'to_longitude': point.longitude,
           'from_home': sameDay ? 0 : 1,
@@ -120,9 +130,12 @@ class DaoTripLog {
         orderBy: 'arrived_at DESC',
       )).map(TripLog.fromMap).toList();
 
-  Future<List<TripLog>> pendingRoutes() async => (await _db.query(
+  Future<List<TripLog>> pendingRoutes({int? afterId}) async => (await _db.query(
     'trip_log',
-    where: 'distance_metres IS NULL',
+    where: afterId == null
+        ? 'distance_metres IS NULL'
+        : 'distance_metres IS NULL AND id > ?',
+    whereArgs: afterId == null ? null : [afterId],
     orderBy: 'id',
     limit: 20,
   )).map(TripLog.fromMap).toList();
@@ -154,7 +167,11 @@ class DaoTripLog {
   }) async {
     await _db.update(
       'trip_log',
-      {'business': business ? 1 : 0, 'purpose': purpose.trim()},
+      {
+        'business': business ? 1 : 0,
+        'classified': 1,
+        'purpose': purpose.trim(),
+      },
       where: 'id = ?',
       whereArgs: [id],
     );

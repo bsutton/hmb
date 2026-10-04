@@ -24,6 +24,7 @@ import 'contact_page.dart';
 import 'integration_page.dart';
 import 'intro_step.dart';
 import 'storage_page.dart';
+import 'trip_logging_page.dart';
 
 class SetupWizard extends StatefulWidget {
   /// True if launched from the settings dashboard
@@ -51,6 +52,7 @@ class _SetupWizardState extends State<SetupWizard> {
       BillingWizardStep(),
       StorageWizardStep(),
       ContactWizardStep(),
+      TripLoggingWizardStep(),
       IntegrationWizardStep(),
     ];
 
