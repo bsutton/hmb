@@ -2,6 +2,34 @@ import 'package:hmb/api/chat_gpt/job_assist_api_client.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('parses unique additional task suggestions', () {
+    final suggestions = parseAdditionalTaskSuggestions('''
+      {
+        "tasks": [
+          {"name": "Replace tap washer", "description": "Kitchen tap."},
+          {"name": " replace tap washer ", "description": "Duplicate."},
+          {"name": "Repair fence gate", "description": "Adjust latch."}
+        ]
+      }
+    ''');
+
+    expect(suggestions.map((suggestion) => suggestion.name), [
+      'Replace tap washer',
+      'Repair fence gate',
+    ]);
+    expect(suggestions.first.description, 'Kitchen tap.');
+  });
+
+  test('limits additional task suggestions to six', () {
+    final tasks = List.generate(
+      8,
+      (index) => '{"name":"Task $index"}',
+    ).join(',');
+    final suggestions = parseAdditionalTaskSuggestions('{"tasks":[$tasks]}');
+
+    expect(suggestions, hasLength(6));
+  });
+
   test('filters duplicate task item suggestions', () {
     final filtered = filterTaskItemAssistSuggestions(
       [
