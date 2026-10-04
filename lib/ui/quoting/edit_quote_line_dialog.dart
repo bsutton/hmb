@@ -17,6 +17,7 @@ import 'package:money2/money2.dart';
 import '../../entity/invoice_line.dart';
 import '../../entity/quote_line.dart';
 import '../widgets/hmb_button.dart';
+import '../widgets/layout/hmb_form_section.dart';
 
 class EditQuoteLineDialog extends StatefulWidget {
   final QuoteLine line;
@@ -53,7 +54,7 @@ class _EditQuoteLineDialogState extends State<EditQuoteLineDialog> {
   Widget build(BuildContext context) => AlertDialog(
     title: const Text('Edit Quote Line'),
     content: SingleChildScrollView(
-      child: ListBody(
+      child: HMBFormSection(
         children: <Widget>[
           TextField(
             controller: _descriptionController,

@@ -152,10 +152,9 @@ class XeroIntegrationScreenState extends State<XeroIntegrationScreen> {
 
   Form _buildForm() => Form(
     key: _formKey,
-    child: HMBColumn(
+    child: HMBFormSection(
       children: [
         const Text('Enable Xero integration to upload Invoices to Xero'),
-        const HMBSpacer(height: true),
 
         // ← New switch:
         SwitchListTile(

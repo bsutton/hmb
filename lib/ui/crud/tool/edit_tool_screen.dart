@@ -115,8 +115,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
       entityName: 'Tool',
       dao: DaoTool(),
       entityState: this,
-      editor: (tool, {required isNew}) => HMBColumn(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      editor: (tool, {required isNew}) => HMBFormSection(
         children: [
           HMBTextField(
             controller: _nameController,

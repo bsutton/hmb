@@ -607,8 +607,7 @@ class JobPartyAssignmentEditorState
       errorBuilder: (_, error) => const Text('Could not load customers.'),
       builder: (context) => Form(
         key: _form,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+        child: HMBFormList(
           children: [
             HMBDroplist<int>(
               key: ValueKey('customer-$_effectiveCustomerId'),
@@ -652,7 +651,6 @@ class JobPartyAssignmentEditorState
                 _contact = null;
               }),
             ),
-            const SizedBox(height: 12),
             HMBDroplist<Contact>(
               key: ValueKey((
                 _effectiveCustomerId,
@@ -665,7 +663,6 @@ class JobPartyAssignmentEditorState
               onChanged: _selectContact,
               onAdd: _createContact,
             ),
-            const SizedBox(height: 12),
             ContactRoleSelector(
               roleId: _roleId,
               required: true,
@@ -679,14 +676,12 @@ class JobPartyAssignmentEditorState
                 _roleChosen = true;
               }),
             ),
-            const SizedBox(height: 12),
             const Text(
               'The contact’s default role is a suggestion. '
               'Changing this assignment only affects this job. '
               'Billing contacts '
               'must belong to the Bill To customer selected in Billing.',
             ),
-            const SizedBox(height: 16),
             HMBSaveCancelButtons(
               saveHint: 'Save this assignment',
               cancelHint: 'Discard assignment changes',

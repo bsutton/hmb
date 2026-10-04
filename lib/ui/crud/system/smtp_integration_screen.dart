@@ -193,8 +193,7 @@ class _SmtpIntegrationScreenState extends State<SmtpIntegrationScreen> {
             children: [
               Form(
                 key: _formKey,
-                child: HMBColumn(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                child: HMBFormSection(
                   children: [
                     const Text(
                       'Configure SMTP so HMB can send emails with attachments.',

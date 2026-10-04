@@ -111,8 +111,7 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
           Text('Stop Timer'),
         ],
       ),
-      content: HMBColumn(
-        mainAxisSize: MainAxisSize.min,
+      content: HMBFormSection(
         children: [
           HMBText('Current Time: ${formatDateTime(DateTime.now())}'),
           if (widget.showTask) buildTaskDetails(),

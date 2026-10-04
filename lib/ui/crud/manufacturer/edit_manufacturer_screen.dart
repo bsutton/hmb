@@ -66,8 +66,7 @@ class ManufacturerEditScreenState extends State<ManufacturerEditScreen>
     dao: DaoManufacturer(),
     entityState: this,
     crossValidator: _validateDuplicateName,
-    editor: (manufacturer, {required isNew}) => HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    editor: (manufacturer, {required isNew}) => HMBFormSection(
       children: [
         HMBTextField(
           controller: _nameController,

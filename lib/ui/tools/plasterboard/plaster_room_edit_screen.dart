@@ -12,6 +12,7 @@ import '../../../entity/entity.g.dart';
 import '../../../util/dart/plaster_geometry.dart';
 import '../../widgets/blocking_ui.dart';
 import '../../widgets/hmb_button.dart';
+import '../../widgets/layout/hmb_form_section.dart';
 import 'plaster_project_screen.dart';
 import 'plaster_room_preview.dart';
 
@@ -173,14 +174,12 @@ class _PlasterRoomEditScreenState extends DeferredState<PlasterRoomEditScreen> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: HMBFormList(
         children: [
           TextField(
             controller: _nameController,
             decoration: const InputDecoration(labelText: 'Room Name'),
           ),
-          const SizedBox(height: 12),
           TextField(
             controller: _ceilingHeightController,
             decoration: InputDecoration(
@@ -190,20 +189,16 @@ class _PlasterRoomEditScreenState extends DeferredState<PlasterRoomEditScreen> {
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
-          const SizedBox(height: 16),
           Text('Room Diagram', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
           Center(
             child: PlasterRoomPreview(room: _room, lines: _lines),
           ),
-          const SizedBox(height: 12),
           HMBButton(
             label: 'Edit Diagram',
             hint: 'Open the full screen diagram editor',
             onPressed: _openDiagramEditor,
           ),
           if (_error != null) ...[
-            const SizedBox(height: 12),
             Text(_error!, style: const TextStyle(color: Colors.redAccent)),
           ],
         ],

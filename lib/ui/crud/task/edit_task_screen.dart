@@ -149,9 +149,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       await _insertTask(task!, transaction);
     },
     entityState: this,
-    editor: (task) => HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
+    editor: (task) => HMBFormSection(
       children: [
         HMBTextField(
           controller: _nameController,

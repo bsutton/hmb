@@ -22,7 +22,7 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/flutter/hmb_theme.dart';
 import '../../widgets/hmb_toast.dart';
-import '../../widgets/layout/hmb_column.dart';
+import '../../widgets/layout/hmb_form_section.dart';
 import '../../widgets/select/select.g.dart';
 import '../base_nested/edit_nested_screen.dart';
 
@@ -116,8 +116,7 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
   );
 
   Widget _buildEditor() => SingleChildScrollView(
-    child: HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    child: HMBFormSection(
       children: [
         // Supplier selector
         HMBDroplist<Supplier>(

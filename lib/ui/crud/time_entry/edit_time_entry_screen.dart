@@ -23,7 +23,7 @@ import '../../../entity/time_entry.dart';
 import '../../dialog/long_duration_dialog.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
-import '../../widgets/layout/layout.g.dart' show HMBColumn;
+import '../../widgets/layout/layout.g.dart' show HMBFormSection;
 import '../../widgets/time_entry_billing_fields.dart';
 import '../base_nested/edit_nested_screen.dart';
 
@@ -183,8 +183,7 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
 
       return true;
     },
-    editor: (timeEntry) => HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    editor: (timeEntry) => HMBFormSection(
       children: [
         GestureDetector(
           onTap: () async {

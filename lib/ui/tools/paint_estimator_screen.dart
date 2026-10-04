@@ -168,8 +168,7 @@ class _PaintEstimatorScreenState extends DeferredState<PaintEstimatorScreen> {
       errorBuilder: (_, _) => const Text('Could not load room layouts.'),
       builder: (context) => Form(
         key: _form,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+        child: HMBFormList(
           children: [
             const Text(
               'Uses existing room layouts. Edit dimensions and openings '
@@ -202,7 +201,6 @@ class _PaintEstimatorScreenState extends DeferredState<PaintEstimatorScreen> {
                 'This project has no rooms. Add one in the room layout editor.',
               ),
             if (_room != null) ...[
-              const SizedBox(height: 16),
               Text(
                 'Paint surfaces',
                 style: Theme.of(context).textTheme.titleMedium,

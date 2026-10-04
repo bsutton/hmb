@@ -24,8 +24,7 @@ class TimeEntryBillingFields extends StatelessWidget {
       ? const Text(
           'Billing options are locked while this time is on an invoice.',
         )
-      : HMBColumn(
-          mainAxisSize: MainAxisSize.min,
+      : HMBFormSection(
           children: [
             HMBToggle(
               label: 'Billable time',

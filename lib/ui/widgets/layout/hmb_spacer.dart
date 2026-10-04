@@ -13,6 +13,8 @@
 
 import 'package:material_ui/material_ui.dart';
 
+import 'hmb_spacing.dart';
+
 class HMBSpacer extends StatelessWidget {
   final bool width;
   final bool height;
@@ -20,6 +22,8 @@ class HMBSpacer extends StatelessWidget {
   const HMBSpacer({this.width = false, this.height = false, super.key});
 
   @override
-  Widget build(BuildContext context) =>
-      SizedBox(width: width ? 12.0 : null, height: height ? 12.0 : null);
+  Widget build(BuildContext context) => SizedBox(
+    width: width ? HMBSpacing.kRelated : null,
+    height: height ? HMBSpacing.kRelated : null,
+  );
 }

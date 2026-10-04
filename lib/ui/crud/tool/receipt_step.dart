@@ -28,8 +28,7 @@ class ReceiptStep extends WizardStep {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.all(16),
-    child: HMBColumn(
-      leadingSpace: true,
+    child: HMBFormSection(
       children: [
         CapturePhoto(
           tool: wizard.tool!,

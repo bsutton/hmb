@@ -241,7 +241,7 @@ class _BookingRequestReviewDialogState
             const HMBSpacer(height: true),
             Form(
               key: _formKey,
-              child: HMBColumn(
+              child: HMBFormSection(
                 children: [
                   HMBTextField(
                     controller: _businessName,

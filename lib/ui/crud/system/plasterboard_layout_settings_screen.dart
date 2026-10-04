@@ -126,7 +126,7 @@ class _PlasterboardLayoutSettingsScreenState
         key: _formKey,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          child: HMBColumn(
+          child: HMBFormSection(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(

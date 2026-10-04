@@ -17,6 +17,7 @@ import '../../../dao/dao.dart';
 import '../../../entity/entity.dart';
 import '../../widgets/form_validation.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/layout/hmb_spacing.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/save_and_close.dart';
 import '../base_nested/list_nested_screen.dart';
@@ -80,38 +81,40 @@ class EntityEditScreenState<E extends Entity<E>>
             : 'Add ${widget.entityName}',
       ),
     ),
-    body: Padding(
-      padding: const EdgeInsets.all(4),
-      child: Form(
-        key: _formKey,
-        child: HMBColumn(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _commandButtons(context),
+    body: Form(
+      key: _formKey,
+      child: HMBColumn(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _commandButtons(context),
 
-            /// Inject the entity-specific editor.
-            Expanded(
-              child: SingleChildScrollView(
-                key: PageStorageKey(
-                  /// the entity id's are not unique across tables
-                  /// so we use the createdDate which is in reality
-                  /// unique in all realworld scenarios.
-                  widget.entityState.currentEntity?.createdDate,
-                ),
-                // controller: widget.scrollController ??
-                //     ScrollController(), // Attach the controller here
-                padding: const EdgeInsets.all(4),
-                child: ParentSaveScope(
-                  ensureSaved: _ensureSavedForChildAction,
-                  child: widget.editor(
-                    widget.entityState.currentEntity,
-                    isNew: isNew,
-                  ),
+          /// Inject the entity-specific editor.
+          Expanded(
+            child: SingleChildScrollView(
+              key: PageStorageKey(
+                /// the entity id's are not unique across tables
+                /// so we use the createdDate which is in reality
+                /// unique in all realworld scenarios.
+                widget.entityState.currentEntity?.createdDate,
+              ),
+              // controller: widget.scrollController ??
+              //     ScrollController(), // Attach the controller here
+              padding: const EdgeInsets.fromLTRB(
+                HMBSpacing.kPageInset,
+                0,
+                HMBSpacing.kPageInset,
+                HMBSpacing.kPageInset,
+              ),
+              child: ParentSaveScope(
+                ensureSaved: _ensureSavedForChildAction,
+                child: widget.editor(
+                  widget.entityState.currentEntity,
+                  isNew: isNew,
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     ),
   );

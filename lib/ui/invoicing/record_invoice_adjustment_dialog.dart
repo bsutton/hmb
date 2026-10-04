@@ -18,6 +18,7 @@ import '../../entity/entity.g.dart';
 import '../../util/dart/money_ex.dart';
 import '../widgets/fields/fields.g.dart';
 import '../widgets/hmb_button.dart';
+import '../widgets/layout/hmb_form_section.dart';
 
 class InvoiceAdjustmentRequest {
   final Money amount;
@@ -50,8 +51,7 @@ Future<InvoiceAdjustmentRequest?> showRecordInvoiceAdjustmentDialog({
       content: Form(
         key: formKey,
         child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: HMBFormSection(
             children: [
               HMBMoneyField(
                 controller: amountController,

@@ -20,6 +20,7 @@ import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
+import '../widgets/layout/hmb_form_section.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'email_delivery.dart';
 import 'email_self_warning.dart';
@@ -103,7 +104,7 @@ $businessDetails
     builder: (context) => AlertDialog(
       title: const Text('Send Email'),
       content: SingleChildScrollView(
-        child: ListBody(
+        child: HMBFormSection(
           children: <Widget>[
             HMBDroplist<String>(
               title: 'Recipients',

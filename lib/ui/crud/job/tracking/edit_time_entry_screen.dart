@@ -22,7 +22,7 @@ import '../../../../entity/entity.g.dart';
 import '../../../dialog/long_duration_dialog.dart';
 import '../../../widgets/fields/fields.g.dart';
 import '../../../widgets/hmb_toast.dart';
-import '../../../widgets/layout/hmb_column.dart';
+import '../../../widgets/layout/hmb_form_section.dart';
 import '../../../widgets/select/select.g.dart';
 import '../../../widgets/time_entry_billing_fields.dart';
 import '../../base_nested/edit_nested_screen.dart';
@@ -207,8 +207,7 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
         }
         return true;
       },
-      editor: (timeEntry) => HMBColumn(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      editor: (timeEntry) => HMBFormSection(
         children: [
           HMBDroplist<Task>(
             title: 'Select Task',

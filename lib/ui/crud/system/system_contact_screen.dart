@@ -174,7 +174,7 @@ class SystemContactInformationScreenState
     this,
     builder: (context) => Form(
       key: _formKey,
-      child: HMBColumn(
+      child: HMBFormSection(
         children: [
           HMBTextField(
             controller: _firstNameController!,

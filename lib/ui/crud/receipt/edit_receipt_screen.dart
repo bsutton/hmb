@@ -327,8 +327,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     return true;
   }
 
-  Widget _buildReceiptCapture() => HMBColumn(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget _buildReceiptCapture() => HMBFormSection(
     children: [
       _buildStepIntro('Capture the receipt source details.'),
       // Date
@@ -411,8 +410,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       (total, line) => total + line.lineTotalIncTax,
     );
 
-    return HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return HMBFormSection(
       children: [
         _buildStepIntro('Review the receipt totals.'),
         if (_lineItems.isNotEmpty) ...[
@@ -421,7 +419,6 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
             '$lineIncTaxTotal incl. tax.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
-          const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerLeft,
             child: HMBButton.withIcon(
@@ -440,7 +437,6 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
               },
             ),
           ),
-          const SizedBox(height: 12),
         ],
         // MONEY FIELDS: dollars entry
         HMBMoneyField(
@@ -466,7 +462,6 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
           showSearch: false,
         ),
         if (_taxMode == _ReceiptTaxMode.customRate) ...[
-          const SizedBox(height: 8),
           HMBTextField(
             controller: _customTaxRateController,
             labelText: 'Custom Tax Rate (%)',
@@ -474,7 +469,6 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
             onChanged: (_) => _applyTaxMode(),
           ),
         ],
-        const SizedBox(height: 8),
         HMBMoneyField(
           fieldKey: TestKeys.receiptTaxField,
           controller: _taxCtrl,
@@ -1415,8 +1409,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
             content: Form(
               key: formKey,
               child: SingleChildScrollView(
-                child: HMBColumn(
-                  mainAxisSize: MainAxisSize.min,
+                child: HMBFormSection(
                   children: [
                     HMBSelectJob(
                       selectedJob: selectedJob,

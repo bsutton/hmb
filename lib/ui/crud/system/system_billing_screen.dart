@@ -42,6 +42,7 @@ import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/icons/help_button.dart';
+import '../../widgets/layout/hmb_spacing.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/save_and_close.dart';
 import '../../widgets/select/hmb_droplist.dart';
@@ -319,245 +320,264 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
       padding: EdgeInsets.fromLTRB(16, topPadding, 16, 16),
       child: Form(
         key: _formKey,
-        child: HMBColumn(
+        child: HMBFormSection(
+          spacing: HMBSpacing.kSectionGap,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const HMBTextHeadline2('Rates'),
-            HMBMoneyField(
-              controller: _defaultHourlyRateController,
-              labelText: 'Default Hourly Rate',
-              fieldName: 'default hourly rate',
-              nonZero: false,
-            ),
-            HelpWrapper(
-              title: 'What is the Booking Fee',
-              tooltip: 'Booking Fee',
-              helpText: '''
+            HMBFormSection(
+              children: [
+                const HMBTextHeadline2('Rates'),
+                HMBMoneyField(
+                  controller: _defaultHourlyRateController,
+                  labelText: 'Default Hourly Rate',
+                  fieldName: 'default hourly rate',
+                  nonZero: false,
+                ),
+                HelpWrapper(
+                  title: 'What is the Booking Fee',
+                  tooltip: 'Booking Fee',
+                  helpText: '''
 The booking fee can be applied as a surcharge to each Job.
 Sometime this is referred to as a Surcharge, Callout Fee or Admin Fee''',
-              child: HMBMoneyField(
-                controller: _defaultBookingFeeController,
-                labelText: 'Default Booking Fee',
-                fieldName: 'default Booking Fee',
-                nonZero: false,
-              ),
-            ),
-            HMBTextField(
-              controller: _defaultProfitMarginController,
-              labelText: 'Default Profit Margin (%)',
-              keyboardType: TextInputType.number,
-              validator: (value) => Percentage.tryParse(value ?? '') == null
-                  ? 'Enter a valid percentage'
-                  : null,
-            ).help('Default Profit Margin', '''
+                  child: HMBMoneyField(
+                    controller: _defaultBookingFeeController,
+                    labelText: 'Default Booking Fee',
+                    fieldName: 'default Booking Fee',
+                    nonZero: false,
+                  ),
+                ),
+                HMBTextField(
+                  controller: _defaultProfitMarginController,
+                  labelText: 'Default Profit Margin (%)',
+                  keyboardType: TextInputType.number,
+                  validator: (value) => Percentage.tryParse(value ?? '') == null
+                      ? 'Enter a valid percentage'
+                      : null,
+                ).help('Default Profit Margin', '''
 Used as the starting estimate margin for new Jobs.
 In the estimate editor, a zero Task Item margin uses the Job margin.
 A non-zero Task Item margin replaces the Job margin for that item.'''),
-            HMBTextField(
-              controller: _financialYearStartMonthController,
-              labelText: 'Financial Year Start Month',
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                final parsed = int.tryParse(value ?? '');
-                if (parsed == null || parsed < 1 || parsed > 12) {
-                  return 'Enter a month number from 1 to 12';
-                }
-                return null;
-              },
-            ).help('Financial Year Start Month', '''
+                HMBTextField(
+                  controller: _financialYearStartMonthController,
+                  labelText: 'Financial Year Start Month',
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    final parsed = int.tryParse(value ?? '');
+                    if (parsed == null || parsed < 1 || parsed > 12) {
+                      return 'Enter a month number from 1 to 12';
+                    }
+                    return null;
+                  },
+                ).help('Financial Year Start Month', '''
 Used by accounting reports. Enter 1 for January, 4 for April, 7 for July.'''),
-            const HMBTextHeadline2('Payment'),
-            HMBTextField(
-              controller: _bsbController,
-              labelText: 'BSB',
-              keyboardType: TextInputType.number,
-            ).help('BSB', '''
+              ],
+            ),
+            HMBFormSection(
+              children: [
+                const HMBTextHeadline2('Payment'),
+                HMBTextField(
+                  controller: _bsbController,
+                  labelText: 'BSB',
+                  keyboardType: TextInputType.number,
+                ).help('BSB', '''
 Enter the Bank State Branch (BSB) for your bank account 
 where customers will deposit payments.
 The BSB will appear on Invoices.'''),
-            HMBTextField(
-              controller: _accountNoController,
-              labelText: 'Account Number',
-              keyboardType: TextInputType.number,
-            ).help('BSB', '''
+                HMBTextField(
+                  controller: _accountNoController,
+                  labelText: 'Account Number',
+                  keyboardType: TextInputType.number,
+                ).help('BSB', '''
 Your bank account no. where customers will deposit payments.
 The account no. will appear on invoices'''),
-            HMBTextField(
-              controller: _paymentTermsInDaysController,
-              labelText: 'Payment Terms (in Days)',
-              keyboardType: TextInputType.number,
-            ).help('Payment Terms', '''
+                HMBTextField(
+                  controller: _paymentTermsInDaysController,
+                  labelText: 'Payment Terms (in Days)',
+                  keyboardType: TextInputType.number,
+                ).help('Payment Terms', '''
 Used to calculate the due date on invoices.
 The due date will be calculated as Today plus the enter Payment Terms'''),
-            HMBTextArea(
-              controller: _paymentOptionsController,
-              labelText: 'Payment Options',
-            ).help('Payment Options', '''
+                HMBTextArea(
+                  controller: _paymentOptionsController,
+                  labelText: 'Payment Options',
+                ).help('Payment Options', '''
 Appears on your invoice
 and can be use to communicate information to your customer on how to make a payment
 and what forms of payment you accept.'''),
-            const HMBTextHeadline2('Invoices and Quotes'),
-            SwitchListTile(
-              title: const Text('Show BSB/Account'),
-              value: _showBsbAccountOnInvoice,
-              onChanged: (value) {
-                setState(() {
-                  _showBsbAccountOnInvoice = value;
-                });
-              },
+              ],
             ),
-            SwitchListTile(
-              title: const Text('Show Payment Link'),
-              value: _showPaymentLinkOnInvoice,
-              onChanged: (value) {
-                setState(() {
-                  _showPaymentLinkOnInvoice = value;
-                });
-              },
+            HMBFormSection(
+              children: [
+                const HMBTextHeadline2('Invoices and Quotes'),
+                SwitchListTile(
+                  title: const Text('Show BSB/Account'),
+                  value: _showBsbAccountOnInvoice,
+                  onChanged: (value) {
+                    setState(() {
+                      _showBsbAccountOnInvoice = value;
+                    });
+                  },
+                ),
+                SwitchListTile(
+                  title: const Text('Show Payment Link'),
+                  value: _showPaymentLinkOnInvoice,
+                  onChanged: (value) {
+                    setState(() {
+                      _showPaymentLinkOnInvoice = value;
+                    });
+                  },
+                ),
+                if (_showPaymentLinkOnInvoice)
+                  HMBTextField(
+                    controller: _paymentLinkUrlController,
+                    labelText: 'Payment Link URL',
+                    keyboardType: TextInputType.url,
+                    validator: (value) => !UriEx.isValid(value)
+                        ? 'Payment link must be a valid URL'
+                        : null,
+                  ).help(
+                    'Payment Link',
+                    'A link to details on how the user can pay. Appears on Invoices and Quotes. e.g. https://mysite/payment.html',
+                  ),
+              ],
             ),
-            if (_showPaymentLinkOnInvoice)
-              HMBTextField(
-                controller: _paymentLinkUrlController,
-                labelText: 'Payment Link URL',
-                keyboardType: TextInputType.url,
-                validator: (value) => !UriEx.isValid(value)
-                    ? 'Payment link must be a valid URL'
-                    : null,
-              ).help(
-                'Payment Link',
-                'A link to details on how the user can pay. Appears on Invoices and Quotes. e.g. https://mysite/payment.html',
-              ),
-            const HMBTextHeadline2('Tax'),
-            SwitchListTile(
-              title: const Text('Tax Registered'),
-              value: _taxRegistered,
-              onChanged: (value) {
-                setState(() {
-                  _taxRegistered = value;
-                  if (_taxRegistered &&
-                      _taxDisplayMode == TaxDisplayMode.none) {
-                    _taxDisplayMode = TaxDisplayMode.exclusive;
-                  }
-                });
-              },
-            ),
-            HMBDroplist<TaxScheme>(
-              title: 'Tax Jurisdiction',
-              selectedItem: () async => _taxScheme,
-              items: (filter) async {
-                final schemes = await DaoTaxScheme().getAll(
-                  orderByClause: 'display_name ASC',
-                );
-                final query = filter?.trim().toLowerCase() ?? '';
-                if (query.isEmpty) {
-                  return schemes;
-                }
-                return schemes
-                    .where(
-                      (scheme) =>
-                          scheme.displayName.toLowerCase().contains(query) ||
-                          scheme.taxLabel.toLowerCase().contains(query) ||
-                          scheme.countryCode.toLowerCase().contains(query),
-                    )
-                    .toList();
-              },
-              format: _formatTaxScheme,
-              onChanged: (value) {
-                unawaited(
-                  _setTaxScheme(value).then((_) {
-                    if (mounted) {
-                      setState(() {});
+            HMBFormSection(
+              children: [
+                const HMBTextHeadline2('Tax'),
+                SwitchListTile(
+                  title: const Text('Tax Registered'),
+                  value: _taxRegistered,
+                  onChanged: (value) {
+                    setState(() {
+                      _taxRegistered = value;
+                      if (_taxRegistered &&
+                          _taxDisplayMode == TaxDisplayMode.none) {
+                        _taxDisplayMode = TaxDisplayMode.exclusive;
+                      }
+                    });
+                  },
+                ),
+                HMBDroplist<TaxScheme>(
+                  title: 'Tax Jurisdiction',
+                  selectedItem: () async => _taxScheme,
+                  items: (filter) async {
+                    final schemes = await DaoTaxScheme().getAll(
+                      orderByClause: 'display_name ASC',
+                    );
+                    final query = filter?.trim().toLowerCase() ?? '';
+                    if (query.isEmpty) {
+                      return schemes;
                     }
-                  }),
-                );
-              },
-            ).help('Tax Jurisdiction', '''
+                    return schemes
+                        .where(
+                          (scheme) =>
+                              scheme.displayName.toLowerCase().contains(
+                                query,
+                              ) ||
+                              scheme.taxLabel.toLowerCase().contains(query) ||
+                              scheme.countryCode.toLowerCase().contains(query),
+                        )
+                        .toList();
+                  },
+                  format: _formatTaxScheme,
+                  onChanged: (value) {
+                    unawaited(
+                      _setTaxScheme(value).then((_) {
+                        if (mounted) {
+                          setState(() {});
+                        }
+                      }),
+                    );
+                  },
+                ).help('Tax Jurisdiction', '''
 Controls tax labels, default tax codes, and tax summary reporting.'''),
-            if (_taxRegistered) ...[
-              HMBDroplist<TaxDisplayMode>(
-                title: 'PDF Tax Display',
-                selectedItem: () async => _taxDisplayMode,
-                items: (filter) async => TaxDisplayMode.values
-                    .where((mode) => mode != TaxDisplayMode.none)
-                    .toList(),
-                format: _formatTaxDisplayMode,
-                onChanged: (value) {
-                  setState(() {
-                    _taxDisplayMode = value ?? TaxDisplayMode.exclusive;
-                  });
-                },
-              ).help('PDF Tax Display', '''
+                if (_taxRegistered) ...[
+                  HMBDroplist<TaxDisplayMode>(
+                    title: 'PDF Tax Display',
+                    selectedItem: () async => _taxDisplayMode,
+                    items: (filter) async => TaxDisplayMode.values
+                        .where((mode) => mode != TaxDisplayMode.none)
+                        .toList(),
+                    format: _formatTaxDisplayMode,
+                    onChanged: (value) {
+                      setState(() {
+                        _taxDisplayMode = value ?? TaxDisplayMode.exclusive;
+                      });
+                    },
+                  ).help('PDF Tax Display', '''
 Controls if quote/invoice PDFs show an inclusive/exclusive tax notice.'''),
-              HMBTextField(
-                controller: _taxLabelController,
-                labelText: 'Tax Label',
-                validator: (value) {
-                  if (_taxRegistered && Strings.isBlank(value)) {
-                    return 'Enter a tax label, e.g. GST or VAT';
-                  }
-                  return null;
-                },
-              ).help('Tax Label', '''
+                  HMBTextField(
+                    controller: _taxLabelController,
+                    labelText: 'Tax Label',
+                    validator: (value) {
+                      if (_taxRegistered && Strings.isBlank(value)) {
+                        return 'Enter a tax label, e.g. GST or VAT';
+                      }
+                      return null;
+                    },
+                  ).help('Tax Label', '''
 Displayed on PDFs as the jurisdiction label, e.g. GST, VAT, Sales Tax.'''),
-              HMBTextField(
-                controller: _taxRateController,
-                labelText: 'Tax Rate (%) (optional)',
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                validator: (value) {
-                  if (Strings.isBlank(value)) {
-                    return null;
-                  }
-                  final parsed = num.tryParse(value!.trim());
-                  if (parsed == null || parsed < 0) {
-                    return 'Enter a valid positive percentage';
-                  }
-                  return null;
-                },
-              ).help('Tax Rate', '''
+                  HMBTextField(
+                    controller: _taxRateController,
+                    labelText: 'Tax Rate (%) (optional)',
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (value) {
+                      if (Strings.isBlank(value)) {
+                        return null;
+                      }
+                      final parsed = num.tryParse(value!.trim());
+                      if (parsed == null || parsed < 0) {
+                        return 'Enter a valid positive percentage';
+                      }
+                      return null;
+                    },
+                  ).help('Tax Rate', '''
 Optional rate shown in brackets on PDFs, e.g. GST (10%).'''),
-            ],
-            HMBDroplist<LogoAspectRatio>(
-              title: 'Logo Aspect Ratio',
-              selectedItem: () async => _logoAspectRatio,
-              items: (filter) async => LogoAspectRatio.values,
-              format: (logoType) => logoType.name,
-              onChanged: (value) {
-                setState(() {
-                  _logoAspectRatio = value ?? LogoAspectRatio.square;
-                });
-              },
-            ).help('Logo Aspect Ration', '''
+                ],
+                HMBDroplist<LogoAspectRatio>(
+                  title: 'Logo Aspect Ratio',
+                  selectedItem: () async => _logoAspectRatio,
+                  items: (filter) async => LogoAspectRatio.values,
+                  format: (logoType) => logoType.name,
+                  onChanged: (value) {
+                    setState(() {
+                      _logoAspectRatio = value ?? LogoAspectRatio.square;
+                    });
+                  },
+                ).help('Logo Aspect Ration', '''
 The shape of your Logo. Your logo will appear on Invoices and Quotes.'''),
-            HMBButton.withIcon(
-              label: 'Upload Logo',
-              hint:
-                  '''Upload a image which will be displayed on Invoices and Quotes''',
-              icon: const Icon(Icons.upload_file),
-              onPressed: _pickLogo,
-            ),
-            if (Strings.isNotBlank(_logoFile) && exists(_logoFile!)) ...[
-              Image.file(
-                File(_logoFile!),
-                width: _logoAspectRatio.width.toDouble(),
-                height: _logoAspectRatio.height.toDouble(),
-              ),
-            ],
-            ListTile(
-              title: const Text('Billing Colour'),
-              trailing: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: _billingColour,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(),
+                HMBButton.withIcon(
+                  label: 'Upload Logo',
+                  hint:
+                      '''Upload a image which will be displayed on Invoices and Quotes''',
+                  icon: const Icon(Icons.upload_file),
+                  onPressed: _pickLogo,
                 ),
-              ),
-              onTap: _pickBillingColour,
-            ).help('Billing Colour', '''
+                if (Strings.isNotBlank(_logoFile) && exists(_logoFile!)) ...[
+                  Image.file(
+                    File(_logoFile!),
+                    width: _logoAspectRatio.width.toDouble(),
+                    height: _logoAspectRatio.height.toDouble(),
+                  ),
+                ],
+                ListTile(
+                  title: const Text('Billing Colour'),
+                  trailing: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: _billingColour,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(),
+                    ),
+                  ),
+                  onTap: _pickBillingColour,
+                ).help('Billing Colour', '''
 The colour theme that will be used on you Invoices and Quotes.'''),
+              ],
+            ),
           ],
         ),
       ),

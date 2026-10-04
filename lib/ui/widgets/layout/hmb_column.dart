@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import 'hmb_spacing.dart';
+
 class HMBColumn extends StatelessWidget {
   final CrossAxisAlignment crossAxisAlignment;
   final MainAxisAlignment mainAxisAlignment;
@@ -16,7 +18,7 @@ class HMBColumn extends StatelessWidget {
     this.mainAxisSize = MainAxisSize.max,
     this.leadingSpace = false,
     super.key,
-    this.spacing = 8,
+    this.spacing = HMBSpacing.kCompact,
   });
 
   @override

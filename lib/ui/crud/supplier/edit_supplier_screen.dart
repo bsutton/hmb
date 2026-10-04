@@ -26,6 +26,7 @@ import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_crud_contact.dart';
 import '../../widgets/hmb_crud_site.dart';
+import '../../widgets/layout/hmb_spacing.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../base_full_screen/edit_entity_screen.dart';
@@ -82,8 +83,8 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
     dao: DaoSupplier(),
     entityState: this,
     crossValidator: _validateDuplicateName,
-    editor: (supplier, {required isNew}) => HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    editor: (supplier, {required isNew}) => HMBFormSection(
+      spacing: HMBSpacing.kSectionGap,
       children: [
         HMBFormSection(
           children: [

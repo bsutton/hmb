@@ -106,14 +106,13 @@ class ChatGptIntegrationScreenState extends State<ChatGptIntegrationScreen> {
 
   Form _buildForm() => Form(
     key: _formKey,
-    child: HMBColumn(
+    child: HMBFormSection(
       children: [
         const Text(
           'Store your OpenAI API key to enable job summaries and task '
           'extraction during booking import, and receipt line extraction '
           'from receipt photos.',
         ),
-        const HMBSpacer(height: true),
         TextFormField(
           controller: _apiKeyController,
           decoration: const InputDecoration(labelText: 'OpenAI API Key'),
