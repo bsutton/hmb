@@ -17,6 +17,7 @@ import 'package:june/june.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 
+import '../../../api/chat_gpt/job_assist_api_client.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/log.dart';
@@ -26,14 +27,21 @@ import '../base_full_screen/list_entity_screen.dart';
 import '../base_nested/list_nested_screen.dart';
 import 'edit_task_screen.dart';
 import 'list_task_card.dart';
+import 'task_instructions_screen.dart';
 
 class TaskListScreen extends StatefulWidget {
   final Parent<Job> parent;
   final bool extended;
+  final AnalyzeTaskInstructions? analyzeInstructions;
+  final SaveTaskInstructions? saveInstructions;
+  final void Function(int count)? onInstructionsSaved;
 
   const TaskListScreen({
     required this.parent,
     required this.extended,
+    this.analyzeInstructions,
+    this.saveInstructions,
+    this.onInstructionsSaved,
     super.key,
   });
 
@@ -58,12 +66,26 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final job = widget.parent.parent!;
     final showCompleted = June.getState(
       ShowInActiveTasksState.new,
     )._showInActiveTasks;
     return HMBColumn(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (!job.isStock)
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+              child: HMBButton.smallWithIcon(
+                label: 'Add from Instructions',
+                icon: const Icon(Icons.auto_awesome),
+                hint: 'Use customer email or SMS instructions to propose tasks',
+                onPressed: _addFromInstructions,
+              ),
+            ),
+          ),
         Flexible(
           child: EntityListScreen<Task>(
             entityNameSingular: 'Task',
@@ -108,6 +130,64 @@ class _TaskListScreenState extends State<TaskListScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _addFromInstructions() async {
+    final job = widget.parent.parent!;
+    final count = await Navigator.of(context).push<int>(
+      MaterialPageRoute(
+        builder: (_) => TaskInstructionsScreen(
+          job: job,
+          analyze: widget.analyzeInstructions ?? _analyzeInstructions,
+          save: widget.saveInstructions ?? _saveInstructions,
+        ),
+      ),
+    );
+    if (!mounted || count == null) {
+      return;
+    }
+    await _listKey.currentState?.refresh(scrollToTop: true);
+    final onInstructionsSaved = widget.onInstructionsSaved;
+    if (onInstructionsSaved != null) {
+      onInstructionsSaved(count);
+    } else {
+      HMBToast.info('Added $count ${count == 1 ? 'task' : 'tasks'}.');
+    }
+  }
+
+  Future<List<TaskInstructionDraft>> _analyzeInstructions(
+    String instructions,
+  ) async {
+    final job = widget.parent.parent!;
+    final existingTasks = await DaoTask().getTasksByJob(job.id);
+    final suggestions = await JobAssistApiClient()
+        .analyzeAdditionalInstructions(
+          instructions: instructions,
+          jobSummary: job.summary,
+          jobDescription: job.description,
+          existingTasks: existingTasks
+              .map((task) => '${task.name}: ${task.description}')
+              .toList(),
+        );
+    if (suggestions == null) {
+      throw StateError(
+        'AI task suggestions require an OpenAI API key in '
+        'Settings | Integrations | ChatGPT.',
+      );
+    }
+    return suggestions
+        .map(
+          (suggestion) => TaskInstructionDraft(
+            name: suggestion.name,
+            description: suggestion.description,
+          ),
+        )
+        .toList();
+  }
+
+  Future<int> _saveInstructions(List<TaskInstructionDraft> drafts) {
+    final job = widget.parent.parent!;
+    return saveTaskInstructionDrafts(jobId: job.id, drafts: drafts);
   }
 
   Future<bool> onDelete(Task task) async {
@@ -176,6 +256,31 @@ class _TaskListScreenState extends State<TaskListScreen> {
     summary: false,
     onTimerStarted: () => unawaited(_timerStarted()),
   );
+}
+
+Future<int> saveTaskInstructionDrafts({
+  required int jobId,
+  required List<TaskInstructionDraft> drafts,
+}) {
+  final tasks = drafts.where((draft) => draft.name.trim().isNotEmpty).toList();
+  if (tasks.isEmpty) {
+    return Future.value(0);
+  }
+
+  return DatabaseHelper.instance.database.transaction((transaction) async {
+    for (final draft in tasks) {
+      await DaoTask().insert(
+        Task.forInsert(
+          jobId: jobId,
+          name: draft.name.trim(),
+          description: draft.description.trim(),
+          status: TaskStatus.awaitingApproval,
+        ),
+        transaction,
+      );
+    }
+    return tasks.length;
+  });
 }
 
 class ShowInActiveTasksState extends JuneState {
