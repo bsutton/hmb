@@ -149,6 +149,7 @@ class DaoTripLog {
       {
         'distance_metres': metres,
         'duration_seconds': seconds,
+        'distance_source': 'route',
         if (trip.departedAt == null)
           'departed_at': trip.arrivedAt
               .subtract(Duration(seconds: seconds))
@@ -158,6 +159,110 @@ class DaoTripLog {
       where: 'id = ?',
       whereArgs: [trip.id],
     );
+  }
+
+  Future<void> saveManualDistance(int tripId, int metres) async {
+    if (metres <= 0) {
+      throw ArgumentError('Trip distance must be greater than zero');
+    }
+    await _db.update(
+      'trip_log',
+      {'distance_metres': metres, 'distance_source': 'manual'},
+      where: 'id = ?',
+      whereArgs: [tripId],
+    );
+  }
+
+  Future<int?> startGpsTrip(
+    TripPoint point,
+    DateTime at, {
+    int? siteId,
+    int? jobId,
+  }) async {
+    if (!point.valid) throw ArgumentError('Invalid coordinates');
+    return _db.transaction((txn) async {
+      final settings = TripSettings.fromMap(
+        (await txn.query('trip_settings')).single,
+      );
+      if (!settings.enabled || !settings.gpsTrackingEnabled) return null;
+      if (settings.activeGpsTripId != null) return settings.activeGpsTripId;
+      final id = await txn.insert('trip_log', {
+        'departed_at': at.toUtc().toIso8601String(),
+        'arrived_at': at.toUtc().toIso8601String(),
+        'from_latitude': point.latitude,
+        'from_longitude': point.longitude,
+        'to_latitude': point.latitude,
+        'to_longitude': point.longitude,
+        'from_home': 0,
+        'distance_metres': 0,
+        'duration_seconds': 0,
+        'distance_source': 'gps',
+        'site_id': siteId,
+        'job_id': jobId,
+      });
+      await txn.update('trip_settings', {
+        'active_gps_trip_id': id,
+      }, where: 'id = 1');
+      return id;
+    });
+  }
+
+  Future<void> recordGpsPosition(
+    int tripId,
+    TripPoint point,
+    DateTime at,
+  ) async {
+    if (!point.valid) throw ArgumentError('Invalid coordinates');
+    await _db.transaction((txn) async {
+      final rows = await txn.query(
+        'trip_log',
+        where: 'id = ?',
+        whereArgs: [tripId],
+      );
+      if (rows.isEmpty) return;
+      final trip = rows.single;
+      final previousAt = DateTime.parse(trip['arrived_at']! as String);
+      final nextAt = at.toUtc();
+      if (!nextAt.isAfter(previousAt)) return;
+      final previous = TripPoint(
+        (trip['to_latitude']! as num).toDouble(),
+        (trip['to_longitude']! as num).toDouble(),
+      );
+      final addedMetres = previous.distanceTo(point).round();
+      if (addedMetres < 10) return;
+      await txn.update(
+        'trip_log',
+        {
+          'arrived_at': nextAt.toIso8601String(),
+          'to_latitude': point.latitude,
+          'to_longitude': point.longitude,
+          'distance_metres': (trip['distance_metres']! as int) + addedMetres,
+          'duration_seconds': nextAt
+              .difference(DateTime.parse(trip['departed_at']! as String))
+              .inSeconds,
+          'distance_source': 'gps',
+        },
+        where: 'id = ?',
+        whereArgs: [tripId],
+      );
+    });
+  }
+
+  Future<void> finishGpsTrip(int tripId) async {
+    await _db.transaction((txn) async {
+      await txn.update(
+        'trip_settings',
+        {'active_gps_trip_id': null},
+        where: 'id = 1 AND active_gps_trip_id = ?',
+        whereArgs: [tripId],
+      );
+    });
+  }
+
+  Future<void> clearActiveGpsTrip() async {
+    await _db.update('trip_settings', {
+      'active_gps_trip_id': null,
+    }, where: 'id = 1');
   }
 
   Future<void> classify(

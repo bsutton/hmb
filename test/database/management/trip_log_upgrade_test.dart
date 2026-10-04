@@ -76,6 +76,11 @@ void main() {
       )) {
         await db.execute(sql);
       }
+      for (final sql in await parseSqlFile(
+        await File('assets/sql/upgrade_scripts/v223.sql').readAsString(),
+      )) {
+        await db.execute(sql);
+      }
       final trip = (await db.query('trip_log')).single;
       expect(trip['id'], 1);
       expect(trip['distance_metres'], 12000);
@@ -84,6 +89,11 @@ void main() {
       expect(trip['purpose'], 'Existing trip');
       expect(trip['classified'], 1);
       expect(trip['from_address'], isNull);
+      expect(trip['distance_source'], 'route');
+      final settings = TripSettings.fromMap(
+        (await db.query('trip_settings')).single,
+      );
+      expect(settings.gpsTrackingEnabled, isFalse);
       expect(
         await db.rawQuery("PRAGMA table_info('trip_log')"),
         contains(

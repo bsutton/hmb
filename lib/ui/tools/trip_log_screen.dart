@@ -119,6 +119,29 @@ class _TripLogScreenState extends DeferredState<TripLogScreen> {
     await _reload();
   }
 
+  Future<void> _editMileage(TripLog trip) async {
+    final currentDistance = trip.distanceMetres == null
+        ? null
+        : trip.distanceMetres! / 1000 / _kmPerUnit;
+    final distance = await showDialog<double>(
+      context: context,
+      builder: (_) => _TripDistanceDialog(
+        unit: _distanceUnit,
+        initialDistance: currentDistance,
+      ),
+    );
+    if (distance == null) {
+      return;
+    }
+    await BlockingUI().runAndWait(
+      () => DaoTripLog().saveManualDistance(
+        trip.id,
+        (distance * _kmPerUnit * 1000).round(),
+      ),
+    );
+    await _reload();
+  }
+
   Future<void> _classify(TripLog trip) async {
     final result = await showDialog<(bool, String)>(
       context: context,
@@ -307,8 +330,8 @@ class _TripLogScreenState extends DeferredState<TripLogScreen> {
         ),
         Text(
           trip.distanceMetres == null
-              ? 'Road distance unknown'
-              : _distanceLabel(trip),
+              ? 'Distance not entered'
+              : '${_distanceLabel(trip)} · ${_distanceSourceLabel(trip)}',
         ),
         if (trip.jobId != null) Text('Near job #${trip.jobId} (check match)'),
         if (trip.purpose.isNotEmpty) Text(trip.purpose),
@@ -320,6 +343,13 @@ class _TripLogScreenState extends DeferredState<TripLogScreen> {
               label: trip.classified ? 'Edit classification' : 'Classify trip',
               hint: 'Choose Business or Personal and add trip notes',
               onPressed: () => _classify(trip),
+            ),
+            HMBButtonSecondary(
+              label: trip.distanceMetres == null
+                  ? 'Enter mileage'
+                  : 'Edit mileage',
+              hint: 'Enter or correct the distance travelled',
+              onPressed: () => _editMileage(trip),
             ),
             if (trip.distanceMetres == null && _routeLookupEnabled)
               HMBButtonSecondary(
@@ -341,7 +371,14 @@ class _TripLogScreenState extends DeferredState<TripLogScreen> {
 
   String _distanceLabel(TripLog trip) =>
       '${(trip.distanceMetres! / 1000 / _kmPerUnit).toStringAsFixed(1)} '
-      '$_distanceUnit · route estimate';
+      '$_distanceUnit';
+
+  String _distanceSourceLabel(TripLog trip) => switch (trip.distanceSource) {
+    TripDistanceSource.route => 'Route estimate',
+    TripDistanceSource.gps => 'GPS recorded',
+    TripDistanceSource.manual => 'Manually entered',
+    null => 'Distance recorded',
+  };
 
   static const _helpText =
       'HMB checks location when the app opens or resumes. Trips over 500 m '
@@ -406,6 +443,75 @@ class _TripPurposeDialogState extends State<_TripPurposeDialog> {
         hint: 'Save trip classification',
         enabled: _business != null,
         onPressed: () => Navigator.pop(context, (_business!, _notes.text)),
+      ),
+    ],
+  );
+}
+
+class _TripDistanceDialog extends StatefulWidget {
+  final String unit;
+  final double? initialDistance;
+
+  const _TripDistanceDialog({required this.unit, this.initialDistance});
+
+  @override
+  State<_TripDistanceDialog> createState() => _TripDistanceDialogState();
+}
+
+class _TripDistanceDialogState extends State<_TripDistanceDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final _distance = TextEditingController(
+    text: widget.initialDistance?.toStringAsFixed(1) ?? '',
+  );
+
+  @override
+  void dispose() {
+    _distance.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text(
+      widget.initialDistance == null ? 'Enter mileage' : 'Edit mileage',
+    ),
+    content: Form(
+      key: _formKey,
+      child: HMBColumn(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Enter the distance travelled in ${widget.unit}. '
+            'This value will be marked as manually entered.',
+          ),
+          HMBTextField(
+            controller: _distance,
+            labelText: 'Distance (${widget.unit})',
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            validator: (value) {
+              final distance = double.tryParse(value ?? '');
+              return distance == null || !distance.isFinite || distance <= 0
+                  ? 'Enter a distance greater than zero'
+                  : null;
+            },
+          ),
+        ],
+      ),
+    ),
+    actions: [
+      HMBCancelButton(
+        hint: 'Leave the distance unchanged',
+        onPressed: () => Navigator.pop(context),
+      ),
+      HMBButtonPrimary(
+        label: 'Save',
+        hint: 'Save manually entered mileage',
+        onPressed: () {
+          if (!_formKey.currentState!.validate()) {
+            return;
+          }
+          Navigator.pop(context, double.parse(_distance.text));
+        },
       ),
     ],
   );

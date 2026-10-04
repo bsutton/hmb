@@ -57,9 +57,69 @@ void main() {
       trip = (await dao.between(at, at.add(const Duration(days: 1)))).single;
       expect(trip.departedAt, at.subtract(const Duration(minutes: 10)));
       expect(trip.distanceMetres, 3000);
+      expect(trip.distanceSource, TripDistanceSource.route);
       expect(await dao.pendingRoutes(), isEmpty);
     },
   );
+
+  test(
+    'manual trip distance is saved in metres and marked as manual',
+    () async {
+      final dao = DaoTripLog();
+      await dao.saveSettings(const TripSettings(enabled: true));
+      final at = DateTime(2026, 1, 3, 9);
+      final id = await dao.observe(
+        const TripPoint(-37.02, 145),
+        at,
+        originAddress: '1 Example Street, Melbourne',
+      );
+
+      await dao.saveManualDistance(id!, 12400);
+
+      final trip = (await dao.between(
+        at,
+        at.add(const Duration(days: 1)),
+      )).single;
+      expect(trip.distanceMetres, 12400);
+      expect(trip.distanceSource, TripDistanceSource.manual);
+      expect(await dao.pendingRoutes(), isEmpty);
+      await expectLater(dao.saveManualDistance(id, 0), throwsArgumentError);
+    },
+  );
+
+  test('GPS trip records distance and can be stopped', () async {
+    final dao = DaoTripLog();
+    await dao.saveSettings(
+      const TripSettings(enabled: true, gpsTrackingEnabled: true),
+    );
+    final start = DateTime.utc(2026, 1, 3, 9);
+    final id = await dao.startGpsTrip(
+      const TripPoint(-37, 145),
+      start,
+      siteId: 3,
+      jobId: 4,
+    );
+    expect(id, isNotNull);
+    expect((await dao.settings()).activeGpsTripId, id);
+
+    await dao.recordGpsPosition(
+      id!,
+      const TripPoint(-37.001, 145),
+      start.add(const Duration(minutes: 2)),
+    );
+    final trip = (await dao.between(
+      start.subtract(const Duration(minutes: 1)),
+      start.add(const Duration(days: 1)),
+    )).single;
+    expect(trip.distanceSource, TripDistanceSource.gps);
+    expect(trip.distanceMetres, greaterThan(100));
+    expect(trip.durationSeconds, 120);
+    expect(trip.siteId, 3);
+    expect(trip.jobId, 4);
+
+    await dao.finishGpsTrip(id);
+    expect((await dao.settings()).activeGpsTripId, isNull);
+  });
 
   test('a configured address can be a trip origin', () async {
     final dao = DaoTripLog();
