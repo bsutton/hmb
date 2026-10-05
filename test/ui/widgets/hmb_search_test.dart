@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/ui/widgets/hmb_search.dart';
 import 'package:hmb/ui/widgets/icons/hmb_add_button.dart';
 import 'package:hmb/ui/widgets/icons/hmb_clear_icon.dart';
+import 'package:hmb/ui/widgets/layout/hmb_spacing.dart';
 import 'package:hmb/ui/widgets/select/hmb_filter_line.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -98,5 +99,68 @@ void main() {
     final addRight = tester.getTopRight(find.byIcon(Icons.add)).dx;
 
     expect(393 - addRight, greaterThanOrEqualTo(8));
+  });
+  for (final width in [320.0, 800.0]) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets('search Add spacing at $width pixels and $scale scale', (
+        tester,
+      ) async {
+        await tester.binding.setSurfaceSize(Size(width, 600));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        var additions = 0;
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: TextScaler.linear(scale)),
+              child: child!,
+            ),
+            home: Scaffold(
+              body: HMBFilterLine(
+                lineBuilder: (_) => HMBSearchWithAdd(
+                  onSearch: (_) {},
+                  onAdd: () => additions++,
+                ),
+                sheetBuilder: (_) => const Text('Filters'),
+                onReset: null,
+                isActive: () => false,
+              ),
+            ),
+          ),
+        );
+        final search = find.byType(TextFormField);
+        final add = find.byType(HMBButtonAdd);
+        expect(
+          tester.getTopLeft(add).dx - tester.getTopRight(search).dx,
+          HMBSpacing.kRelated,
+        );
+        expect(tester.takeException(), isNull);
+        await tester.tap(add);
+        expect(additions, 1);
+        await tester.tap(search);
+        await tester.pumpAndSettle();
+        expect(add, findsNothing);
+        expect(tester.getSize(search).width, width);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+
+  testWidgets('hidden Add leaves the full width available for search', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: HMBSearchWithAdd(
+            showAdd: false,
+            onSearch: (_) {},
+            onAdd: () {},
+          ),
+        ),
+      ),
+    );
+    expect(find.byType(HMBButtonAdd), findsNothing);
+    expect(tester.getSize(find.byType(TextFormField)).width, 800);
   });
 }

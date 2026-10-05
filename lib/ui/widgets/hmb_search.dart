@@ -18,6 +18,7 @@ import 'package:material_ui/material_ui.dart';
 import 'fields/hmb_text_field.dart';
 import 'icons/hmb_add_button.dart';
 import 'icons/hmb_clear_icon.dart';
+import 'layout/hmb_spacing.dart';
 
 /// I fyou need to be able to programatically clear the filter
 /// then pass in a [HMBSearchController]
@@ -156,12 +157,14 @@ class _HMBSearchWithAddState extends State<HMBSearchWithAdd> {
                 controller: widget.controller,
               ),
             ),
-            if (widget.showAdd && !_focused)
+            if (widget.showAdd && !_focused) ...[
+              const SizedBox(width: HMBSpacing.kRelated),
               HMBButtonAdd(
                 onAdd: () async => widget.onAdd(),
                 enabled: true,
                 hint: widget.hint,
               ),
+            ],
           ],
         ),
       );
