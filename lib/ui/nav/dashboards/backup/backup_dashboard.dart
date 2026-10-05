@@ -436,7 +436,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         ),
       if (_syncRunning)
         const Text(
-          'Photo sync running. Tap Sync Photos to cancel.',
+          'Tap to cancel',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 16),
         ),
