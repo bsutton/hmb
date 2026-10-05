@@ -63,7 +63,9 @@ class JobSource extends Source<Job> {
 
   @override
   void revise(SourceContext sourceContext) {
-    sourceContext.job = job;
+    sourceContext
+      ..job = job
+      ..site = null;
   }
 }
 

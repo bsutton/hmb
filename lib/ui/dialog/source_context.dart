@@ -67,6 +67,8 @@ class SourceContext {
   /// The fetching is done in a hierarchical order based on the importance
   /// of each entity type.
   Future<void> resolveEntities() async {
+    job ??= await DaoJob().getById(jobActivity?.jobId ?? invoice?.jobId);
+    await resolveSite();
     var currentHash = -1;
     var newHash = -1;
 
@@ -88,16 +90,28 @@ class SourceContext {
       if (job != null) {
         customer ??= await DaoCustomer().getByJob(job!.id);
         contact ??= await DaoContact().getPrimaryForJob(job!.id);
-        site ??= await DaoSite().getById(job!.siteId);
         jobActivity ??= await DaoJobActivity().getMostRecentByJob(job!.id);
       }
 
       /// Try by customer.
       if (customer != null) {
         contact ??= await DaoContact().getPrimaryForCustomer(customer!.id);
-        site ??= (await DaoSite().getByCustomer(customer!.id)).firstOrNull;
+        await resolveSite();
       }
     } while (currentHash != (newHash = _buildHash()));
+  }
+
+  /// A job's site is authoritative. Customer-only messages may infer a site
+  /// only when there is exactly one; never guess among several properties.
+  Future<void> resolveSite() async {
+    if (job != null) {
+      if (site?.id != job!.siteId) {
+        site = await DaoSite().getById(job!.siteId);
+      }
+    } else if (site == null && customer != null) {
+      final sites = await DaoSite().getByCustomer(customer!.id);
+      site = sites.length == 1 ? sites.single : null;
+    }
   }
 
   int _buildHash() => Object.hashAll([

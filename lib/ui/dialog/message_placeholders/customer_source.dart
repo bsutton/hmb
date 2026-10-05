@@ -37,7 +37,10 @@ class CustomerSource extends Source<Customer> {
         this.customer = customer;
         customerNotifier.value = customer;
         // Reset site and contact when customer changes
-        onChanged.call(customer, ResetFields(site: true, contact: true));
+        onChanged.call(
+          customer,
+          ResetFields(site: true, contact: true, job: true),
+        );
       },
     ),
   );
@@ -56,6 +59,11 @@ class CustomerSource extends Source<Customer> {
 
   @override
   void revise(SourceContext sourceContext) {
-    sourceContext.customer = customer;
+    sourceContext
+      ..customer = customer
+      ..job = null
+      ..site = null
+      ..contact = null
+      ..jobActivity = null;
   }
 }

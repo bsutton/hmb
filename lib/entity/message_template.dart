@@ -50,6 +50,15 @@ class MessageTemplate extends Entity<MessageTemplate> {
   static String normalizeMessage(String message) =>
       message.replaceAll(r'\n', '\n').replaceAll(r'\r', '\r');
 
+  /// Keep custom wording, adding the site field only when it is absent.
+  String get messageWithSiteAddress {
+    final text = normalizeMessage(message);
+    if (messageType != MessageType.sms || text.contains('{{site.address}}')) {
+      return text;
+    }
+    return '${text.isEmpty ? '' : '$text\n\n'}Site: {{site.address}}';
+  }
+
   MessageTemplate copyWith({
     String? title,
     String? message,
@@ -86,7 +95,7 @@ class MessageTemplate extends Entity<MessageTemplate> {
   Map<String, dynamic> toMap() => {
     'id': id,
     'title': title,
-    'message': normalizeMessage(message),
+    'message': messageWithSiteAddress,
     'message_type': messageType.name, // Store the enum as a string
     'owner': owner.index,
     'enabled': enabled ? 1 : 0,

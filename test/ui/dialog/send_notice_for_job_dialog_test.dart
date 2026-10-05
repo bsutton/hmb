@@ -63,7 +63,7 @@ void main() {
           businessName: 'Test Business',
         ),
         'Hi Ada Lovelace, would 2026-03-05 at 09:05 – 10:30 work for you?'
-        '\nTest Business',
+        '\nSite address unavailable\nTest Business',
       );
     });
 
@@ -81,7 +81,7 @@ void main() {
           businessName: 'Test Business',
         ),
         'Hi, would 2026-04-06 at 14:15 – 16:00 work for you?'
-        '\nTest Business',
+        '\nSite address unavailable\nTest Business',
       );
     });
 
@@ -97,7 +97,8 @@ void main() {
             businessName: 'Test Business',
           ),
           'Hi Ada Lovelace, your job is scheduled. '
-          'Date: 2026-03-05, Time: 09:05 – 10:30\nTest Business',
+          'Date: 2026-03-05, Time: 09:05 – 10:30'
+          '\nSite address unavailable\nTest Business',
         );
       });
     }

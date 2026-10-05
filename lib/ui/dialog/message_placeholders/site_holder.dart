@@ -26,5 +26,8 @@ class SiteHolder extends PlaceHolder<Site> {
     : super(name: tagName, base: _tagBase, source: siteSource);
 
   @override
-  Future<String> value() async => siteSource.value?.address ?? '';
+  Future<String> value() async {
+    final address = siteSource.value?.address.trim() ?? '';
+    return address.isEmpty ? 'Site address unavailable' : address;
+  }
 }

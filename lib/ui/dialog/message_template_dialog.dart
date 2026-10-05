@@ -145,7 +145,9 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
         }
       }
       if (canUse) {
-        filtered.add(template);
+        filtered.add(
+          template.copyWith(message: template.messageWithSiteAddress),
+        );
       }
     }
     return filtered;
@@ -176,7 +178,7 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
       case 'job':
         return widget.sourceContext.job != null;
       case 'site':
-        return widget.sourceContext.site != null;
+        return true;
       case 'customer':
         return widget.sourceContext.customer != null;
       case 'contact':
@@ -224,10 +226,20 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
 
         // Listen to source changes and propagate them to
         // other sources and the preview window.
-        placeholder.listen = (value, reset) {
+        placeholder.listen = (value, reset) async {
           placeholder.source.revise(widget.sourceContext);
-          _reset(placeholder.source, reset);
-          _refreshPreview();
+          if (reset.site) {
+            await BlockingUI().runAndWait(() async {
+              await widget.sourceContext.resolveSite();
+              if (mounted) {
+                _reset(placeholder.source, reset);
+                _refreshPreview();
+              }
+            }, label: 'Loading site address');
+          } else {
+            _reset(placeholder.source, reset);
+            _refreshPreview();
+          }
         };
         nextPlaceholders[name] = placeholder;
       }

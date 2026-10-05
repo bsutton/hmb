@@ -52,18 +52,23 @@ String noticeSmsBodyForActivity({
   required JobActivity activity,
   required Contact? contact,
   required String? businessName,
+  Site? site,
 }) {
   final greeting = noticeSmsGreetingForContact(contact);
+  final address = site?.address.trim() ?? '';
+  final siteLine = address.isEmpty
+      ? 'Site address unavailable'
+      : 'Site: $address';
   if (activity.status == JobActivityStatus.proposed) {
     final date = formatDate(activity.start, format: 'Y-m-d');
     final start = formatTime(activity.start, 'HH:mm');
     final end = formatTime(activity.end, 'HH:mm');
     return '$greeting would $date at $start – $end work for you?'
-        '\n$businessName';
+        '\n$siteLine\n$businessName';
   }
 
   return '$greeting your job is scheduled. '
-      '${_noticeScheduleLine(activity)}\n$businessName';
+      '${_noticeScheduleLine(activity)}\n$siteLine\n$businessName';
 }
 
 String _noticeScheduleLine(JobActivity activity) {
@@ -140,6 +145,7 @@ class _SendNoticeForJobDialogState
   Future<void> asyncInitState() async {
     _system = await DaoSystem().get();
     final primary = await _primaryContactForJob(widget.job);
+    final site = await DaoSite().getById(widget.job.siteId);
 
     // Prefill subject/body from schedule if available.
     final scheduleText = _noticeScheduleLine(widget.jobActivity);
@@ -171,6 +177,7 @@ ${Strings.isNotBlank(_system.businessNumber) ? '${Strings.orElseOnBlank(_system.
         activity: widget.jobActivity,
         contact: primary,
         businessName: _system.businessName,
+        site: site,
       ),
     );
 
