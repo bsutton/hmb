@@ -24,6 +24,7 @@ class SiteSource extends Source<Site> {
   final customerNotifier = ValueNotifier<Customer?>(null);
 
   Site? site;
+  var _hasJob = false;
 
   SiteSource() : super(name: 'site');
 
@@ -34,7 +35,8 @@ class SiteSource extends Source<Site> {
       key: ValueKey(customer),
       title: 'Site',
       selectedItem: () async => value,
-      items: (filter) => DaoSite().getByCustomer(customer?.id),
+      items: (filter) async =>
+          _hasJob ? [?site] : await DaoSite().getByCustomer(customer?.id),
       format: (site) => site.address,
       onChanged: (site) {
         this.site = site;
@@ -52,6 +54,7 @@ class SiteSource extends Source<Site> {
       return;
     }
 
+    _hasJob = sourceContext.job != null;
     customerNotifier.value = sourceContext.customer;
     site = sourceContext.site;
   }

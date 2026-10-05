@@ -102,16 +102,26 @@ void main() {
     await tester.tap(find.text('Feedback test template'));
     await settleAsync(tester);
 
-    var editor = tester.widget<TextFormField>(find.byType(TextFormField));
-    expect(editor.controller?.text, 'Please leave feedback');
+    var editor = tester.widget<TextFormField>(
+      find.widgetWithText(TextFormField, 'Edit Message'),
+    );
+    expect(
+      editor.controller?.text,
+      'Please leave feedback\n\nSite: {{site.address}}',
+    );
 
     await tester.tap(find.text('Feedback test template'));
     await pumpUntilFound(tester, find.text('Appointment test template'));
     await tester.tap(find.text('Appointment test template'));
     await tester.pump();
 
-    editor = tester.widget<TextFormField>(find.byType(TextFormField));
-    expect(editor.controller?.text, 'Your appointment is tomorrow');
+    editor = tester.widget<TextFormField>(
+      find.widgetWithText(TextFormField, 'Edit Message'),
+    );
+    expect(
+      editor.controller?.text,
+      'Your appointment is tomorrow\n\nSite: {{site.address}}',
+    );
 
     // Selection returns immediately; recency is recorded in the background.
     await pumpUntilCondition(
