@@ -1,5 +1,5 @@
 -- Preserve cancelled bookings for history and durable cleanup retries.
-CREATE TABLE cancelled_schedule (
+CREATE TABLE IF NOT EXISTS cancelled_schedule (
   activity_id INTEGER PRIMARY KEY,
   job_id INTEGER NOT NULL,
   activity_json TEXT NOT NULL,

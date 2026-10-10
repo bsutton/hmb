@@ -101,25 +101,67 @@ void main() {
     expect((await DaoJob().getById(second.id))!.contactId, second.contactId);
   });
 
-  test('billing reassignment rejects a contact outside Bill To', () async {
-    final job = await makeJob();
-    final other = await makeJob();
-    final source = await DaoContactRole().create('Accounts liaison');
-    await DaoJobParty().save(
-      jobId: job.id,
-      contactId: other.contactId!,
-      roleId: source,
-    );
-    await expectLater(
-      DaoContactRole().reassign(source, ContactRole.billing),
-      throwsA(predicate((error) => error.toString().contains('Bill To'))),
-    );
-    expect((await DaoContactRole().getUsage(source)).assignments, hasLength(1));
-    expect(
-      (await DaoJob().getById(job.id))!.billingContactId,
-      job.billingContactId,
-    );
-  });
+  test(
+    'billing reassignment preserves an existing singleton assignment',
+    () async {
+      final job = await makeJob();
+      final other = await makeJob();
+      final source = await DaoContactRole().create('Accounts liaison');
+      await DaoJobParty().save(
+        jobId: job.id,
+        contactId: other.contactId!,
+        roleId: source,
+      );
+      await expectLater(
+        DaoContactRole().reassign(source, ContactRole.billing),
+        throwsA(
+          predicate(
+            (error) =>
+                error.toString().contains('already has a Billing Contact'),
+          ),
+        ),
+      );
+      expect(
+        (await DaoContactRole().getUsage(source)).assignments,
+        hasLength(1),
+      );
+      expect(
+        (await DaoJob().getById(job.id))!.billingContactId,
+        job.billingContactId,
+      );
+    },
+  );
+
+  test(
+    'billing role reassignment accepts an external customer contact',
+    () async {
+      final job = await makeJob();
+      final other = await makeJob();
+      final source = await DaoContactRole().create('External accounts liaison');
+      final existingBilling = (await DaoJobParty().getByJob(
+        job.id,
+      )).singleWhere((party) => party.role.id == ContactRole.billing);
+      await DaoJobParty().delete(job.id, existingBilling.id);
+      await DaoJobParty().save(
+        jobId: job.id,
+        contactId: other.contactId!,
+        roleId: source,
+      );
+
+      await DaoContactRole().reassign(source, ContactRole.billing);
+
+      final saved = (await DaoJob().getById(job.id))!;
+      expect(saved.billingContactId, other.contactId);
+      expect(saved.billingCustomerId, job.billingCustomerId);
+      expect(saved.customerId, job.customerId);
+      expect((await DaoContactRole().getUsage(source)).assignments, isEmpty);
+      final parties = await DaoJobParty().getByJob(job.id);
+      expect(
+        parties.where((party) => party.role.id == ContactRole.billing),
+        hasLength(1),
+      );
+    },
+  );
 
   test(
     'rejects invalid and identical replacement roles without changes',
