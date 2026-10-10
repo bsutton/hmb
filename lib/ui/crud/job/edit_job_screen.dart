@@ -350,8 +350,20 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     children: [
       HMBDroplist<Customer>(
         title: 'Bill To customer',
+        sortByRecent: false,
         selectedItem: () => DaoCustomer().getById(_billToId),
-        items: (filter) => DaoCustomer().getByFilter(filter),
+        items: (filter) async => await DaoCustomer().getByFilter(
+          filter,
+          preferredCustomerId: currentEntity?.customerId,
+          relatedCustomerIds: [?_billToId, ?currentEntity?.referrerCustomerId],
+          relatedContactIds: [
+            if (currentEntity != null)
+              for (final party in await DaoJobParty().getByJob(
+                currentEntity!.id,
+              ))
+                party.contact.id,
+          ],
+        ),
         format: (value) => value.name,
         onChanged: (value) => setState(() {
           final billToId = value?.id ?? customer?.id;
@@ -370,7 +382,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
         title: 'Billing contact',
         required: false,
         selectedItem: _displayBillingContact,
-        items: (filter) async => (await billingContactsForCustomer(_billToId))
+        items: (filter) async => (await DaoContact().getAll())
             .where(
               (value) => value.fullname.toLowerCase().contains(
                 (filter ?? '').toLowerCase(),

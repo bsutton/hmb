@@ -37,6 +37,7 @@ class HMBSelectContact extends StatefulWidget {
   final String title;
   final bool showEmail;
   final bool showRole;
+  final bool allowOtherCustomers;
 
   const HMBSelectContact({
     required this.initialContact,
@@ -45,6 +46,7 @@ class HMBSelectContact extends StatefulWidget {
     this.title = 'Contact',
     this.showEmail = false,
     this.showRole = false,
+    this.allowOtherCustomers = false,
     super.key,
   });
 
@@ -62,7 +64,9 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
 
   /// Fetch all contacts for the given customer.
   Future<List<Contact>> _getContacts(String? filter) async {
-    final contacts = await DaoContact().getByCustomer(widget.customer?.id);
+    final contacts = widget.allowOtherCustomers
+        ? await DaoContact().getAll()
+        : await DaoContact().getByCustomer(widget.customer?.id);
     if (Strings.isBlank(filter)) {
       return contacts;
     }
@@ -111,7 +115,7 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
   Widget build(BuildContext context) => DeferredBuilder(
     this,
     builder: (context) {
-      if (widget.customer == null) {
+      if (widget.customer == null && !widget.allowOtherCustomers) {
         return const Center(child: Text('Contacts: Select a customer first.'));
       } else {
         return HMBDroplist<Contact>(
@@ -125,7 +129,7 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
             showEmail: widget.showEmail,
           ),
           required: false,
-          onAdd: _addContact,
+          onAdd: widget.customer == null ? null : _addContact,
           addLabel: 'Add Contact',
         );
       }

@@ -286,6 +286,16 @@ void main() {
             .roleId,
         ContactRole.owner,
       );
+      await tester.scrollUntilVisible(
+        find.text('Cancel'),
+        100,
+        scrollable: find
+            .descendant(
+              of: find.byType(JobPartyAssignmentEditor),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
       await tester.tap(find.text('Cancel'));
       await pumpUntil(tester, find.text('Add party'));
       await runAsyncAndPump(tester, () async {
@@ -574,70 +584,95 @@ void main() {
     },
   );
 
-  testWidgets('billing contacts follow the Bill To customer', (tester) async {
-    final job = await seed(tester);
-    late Job other;
-    late Customer otherCustomer;
-    await runAsyncAndPump(tester, () async {
-      other = await createJobWithCustomer(
-        billingType: BillingType.timeAndMaterial,
-        hourlyRate: MoneyEx.dollars(95),
+  for (final crossBilling in [false, true]) {
+    testWidgets('billing defaults and cross-customer choices: $crossBilling', (
+      tester,
+    ) async {
+      final job = await seed(tester);
+      late Job other;
+      late Customer otherCustomer;
+      await runAsyncAndPump(tester, () async {
+        other = await createJobWithCustomer(
+          billingType: BillingType.timeAndMaterial,
+          hourlyRate: MoneyEx.dollars(95),
+        );
+        otherCustomer = (await DaoCustomer().getById(other.customerId))!;
+      });
+      await showEditor(tester, job);
+      await pumpUntil(tester, find.text('Job actions'));
+      final editBilling = find.byKey(
+        const ValueKey('edit-job-section-billing'),
       );
-      otherCustomer = (await DaoCustomer().getById(other.customerId))!;
-    });
-    await showEditor(tester, job);
-    await pumpUntil(tester, find.text('Job actions'));
-    final editBilling = find.byKey(const ValueKey('edit-job-section-billing'));
-    await tester.ensureVisible(editBilling);
-    await tester.tap(editBilling);
-    await pumpUntil(tester, find.text('Bill To customer'));
-    final billTo = tester.widget<HMBDroplist<Customer>>(
-      find.byType(HMBDroplist<Customer>),
-    );
-    var contacts = tester.widget<HMBDroplist<Contact>>(
-      find.byType(HMBDroplist<Contact>),
-    );
-    await runAsyncAndPump(tester, () async {
-      expect((await billTo.selectedItem())!.id, job.customerId);
-      expect((await contacts.items(null)).map((c) => c.id), [job.contactId]);
-    });
-    billTo.onChanged(otherCustomer);
-    await pumpUntil(
-      tester,
-      find.byKey(ValueKey('billing-contact-${other.customerId}-null-true-0')),
-    );
-    contacts = tester.widget<HMBDroplist<Contact>>(
-      find.byType(HMBDroplist<Contact>),
-    );
-    await runAsyncAndPump(tester, () async {
-      expect((await contacts.selectedItem())?.id, other.contactId);
-      expect((await contacts.items(null)).map((c) => c.id), [other.contactId]);
-    });
-    final selected = await runAsyncAndPump(
-      tester,
-      () => DaoContact().getById(other.contactId),
-    );
-    contacts.onChanged(selected);
-    await runAsyncAndPump(tester, () async {
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-    });
-    await tester.pump(const Duration(milliseconds: 20));
-    await tester.tap(find.text('Save'));
-    await pumpUntil(tester, find.text('Job actions'));
-    await runAsyncAndPump(tester, () async {
-      final saved = (await DaoJob().getById(job.id))!;
-      expect(saved.customerId, job.customerId);
-      expect(saved.billingCustomerId, other.customerId);
-      expect(saved.billingContactId, isNull);
+      await tester.ensureVisible(editBilling);
+      await tester.tap(editBilling);
+      await pumpUntil(tester, find.text('Bill To customer'));
+      final billTo = tester.widget<HMBDroplist<Customer>>(
+        find.byType(HMBDroplist<Customer>),
+      );
+      var contacts = tester.widget<HMBDroplist<Contact>>(
+        find.byType(HMBDroplist<Contact>),
+      );
+      await runAsyncAndPump(tester, () async {
+        expect((await billTo.selectedItem())!.id, job.customerId);
+        expect(
+          (await contacts.items(null)).map((c) => c.id),
+          containsAll([job.contactId, other.contactId]),
+        );
+        expect((await billTo.items(null)).first.id, job.customerId);
+      });
+      billTo.onChanged(otherCustomer);
+      await pumpUntil(
+        tester,
+        find.byKey(ValueKey('billing-contact-${other.customerId}-null-true-0')),
+      );
+      contacts = tester.widget<HMBDroplist<Contact>>(
+        find.byType(HMBDroplist<Contact>),
+      );
+      await runAsyncAndPump(tester, () async {
+        expect((await contacts.selectedItem())?.id, other.contactId);
+        expect(
+          (await contacts.items(null)).map((c) => c.id),
+          containsAll([job.contactId, other.contactId]),
+        );
+      });
+      final selected = await runAsyncAndPump(
+        tester,
+        () => DaoContact().getById(
+          crossBilling ? job.contactId : other.contactId,
+        ),
+      );
+      contacts.onChanged(selected);
+      await runAsyncAndPump(tester, () async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.tap(find.text('Save'));
+      await pumpUntil(tester, find.text('Job actions'));
+      await runAsyncAndPump(tester, () async {
+        final saved = (await DaoJob().getById(job.id))!;
+        expect(saved.customerId, job.customerId);
+        expect(saved.billingCustomerId, other.customerId);
+        expect(saved.billingContactId, crossBilling ? job.contactId : null);
+        expect(
+          (await DaoJobParty().getByJob(
+            job.id,
+          )).where((party) => party.role.id == ContactRole.billing),
+          hasLength(crossBilling ? 1 : 0),
+        );
+      });
+      await tester.ensureVisible(editBilling);
+      await tester.tap(editBilling);
+      await pumpUntil(tester, find.text('Bill To customer'));
+      final reopened = tester.widget<HMBDroplist<Contact>>(
+        find.byType(HMBDroplist<Contact>),
+      );
       expect(
-        (await DaoJobParty().getByJob(
-          job.id,
-        )).where((party) => party.role.id == ContactRole.billing),
-        isEmpty,
+        (await runAsyncAndPump(tester, reopened.selectedItem))?.id,
+        crossBilling ? job.contactId : other.contactId,
       );
+      expect(tester.takeException(), isNull);
     });
-    expect(tester.takeException(), isNull);
-  });
+  }
 
   testWidgets('billing summary shows mixed task overrides and job default', (
     tester,

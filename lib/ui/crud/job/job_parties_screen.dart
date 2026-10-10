@@ -345,7 +345,6 @@ class JobPartyAssignmentEditor extends StatefulWidget {
   final JobParty? party;
   final List<JobParty> parties;
   final List<Contact> draftContacts;
-  final List<Contact> draftBillingContacts;
   final List<int> relatedCustomerIds;
   final Map<int, int?> draftContactCustomerIds;
   final String newCustomerName;
@@ -372,7 +371,6 @@ class JobPartyAssignmentEditor extends StatefulWidget {
     this.draftContactCustomerIds = const {},
     this.newCustomerName = 'New job customer',
     this.draftContacts = const [],
-    this.draftBillingContacts = const [],
     super.key,
   });
   @override
@@ -388,15 +386,12 @@ class JobPartyAssignmentEditorState
   var _roleChosen = false;
   var _saving = false;
   final _createdContacts = <Contact>[];
-  final _createdBillingContacts = <Contact>[];
   final _createdContactCustomers = <int, int?>{};
   final _customers = <int, Customer>{};
   final _relatedCustomerIds = <int>{};
   int? _customerFilterId;
 
-  int? get _effectiveCustomerId => _roleId == ContactRole.billing
-      ? widget.billToCustomerId
-      : _customerFilterId;
+  int? get _effectiveCustomerId => _customerFilterId;
 
   @override
   Future<void> asyncInitState() async {
@@ -411,32 +406,43 @@ class JobPartyAssignmentEditorState
       ...widget.relatedCustomerIds,
       ...widget.draftContactCustomerIds.values.whereType<int>(),
     ]);
-    for (final party in widget.parties) {
-      final owner = party.contact.id < 0
-          ? null
-          : await DaoCustomer().getByContact(party.contact.id);
-      if (owner != null) {
-        _relatedCustomerIds.add(owner.id);
-      }
-    }
+    _relatedCustomerIds.addAll(
+      (await DaoCustomer().getByContactIds([
+        for (final party in widget.parties) party.contact.id,
+        if (widget.party case final party?) party.contact.id,
+      ])).map((customer) => customer.id),
+    );
     if (widget.party case final party?) {
       _customerFilterId = party.contact.id < 0
           ? widget.draftContactCustomerIds[party.contact.id]
           : (await DaoCustomer().getByContact(party.contact.id))?.id ??
                 widget.customerId;
     }
+    if (_customerFilterId != null &&
+        !_customers.containsKey(_customerFilterId)) {
+      _customerFilterId = -2;
+    }
   }
+
+  String _customerLabel(int id) => id == -2
+      ? 'All customers'
+      : _customers[id]?.name ?? widget.newCustomerName;
 
   Future<List<Contact>> _filteredContacts(String? filter) async {
     final customerId = _effectiveCustomerId;
     final contacts = <int, Contact>{
-      for (final contact in await billingContactsForCustomer(customerId))
+      for (final contact
+          in customerId == -2
+              ? await DaoContact().getAll()
+              : await billingContactsForCustomer(customerId))
         contact.id: contact,
       for (final contact in widget.draftContacts)
-        if (widget.draftContactCustomerIds[contact.id] == customerId)
+        if (customerId == -2 ||
+            widget.draftContactCustomerIds[contact.id] == customerId)
           contact.id: contact,
       for (final contact in _createdContacts)
-        if (_createdContactCustomers[contact.id] == customerId)
+        if (customerId == -2 ||
+            _createdContactCustomers[contact.id] == customerId)
           contact.id: contact,
     };
     return contacts.values
@@ -469,7 +475,9 @@ class JobPartyAssignmentEditorState
   Future<void> _createContact() async {
     if (widget.createContact != null) {
       final billing = _roleId == ContactRole.billing;
-      final ownerId = _effectiveCustomerId;
+      final ownerId = _effectiveCustomerId == -2
+          ? widget.customerId
+          : _effectiveCustomerId;
       final contact = await widget.createContact!(
         billing: billing,
         customerId: ownerId,
@@ -477,16 +485,15 @@ class JobPartyAssignmentEditorState
       if (mounted && contact != null) {
         _createdContacts.add(contact);
         _createdContactCustomers[contact.id] = ownerId;
-        if (billing) {
-          _createdBillingContacts.add(contact);
-        }
         _selectContact(contact);
       }
       return;
     }
 
     final customer = await BlockingUI().runAndWait(
-      () => DaoCustomer().getById(_effectiveCustomerId),
+      () => DaoCustomer().getById(
+        _effectiveCustomerId == -2 ? widget.customerId : _effectiveCustomerId,
+      ),
     );
     if (!mounted) {
       return;
@@ -568,15 +575,6 @@ class JobPartyAssignmentEditorState
         HMBToast.error('That contact already has this role on the job.');
         return;
       }
-      if (role.id == ContactRole.billing &&
-          ![
-            ...await billingContactsForCustomer(widget.billToCustomerId),
-            ...widget.draftBillingContacts,
-            ..._createdBillingContacts,
-          ].any((contact) => contact.id == _contact!.id)) {
-        HMBToast.error('Choose a contact belonging to the Bill To customer.');
-        return;
-      }
       await BlockingUI().runAndWait(
         () => widget.onSave(_contact!, role, replace: replace),
       );
@@ -611,20 +609,23 @@ class JobPartyAssignmentEditorState
           children: [
             HMBDroplist<int>(
               key: ValueKey('customer-$_effectiveCustomerId'),
-              title: _roleId == ContactRole.billing
-                  ? 'Customer (Bill To)'
-                  : 'Customer filter',
+              title: 'Customer filter',
               sortByRecent: false,
               selectedItem: () async => _effectiveCustomerId ?? -1,
               items: (filter) async {
                 final ids =
-                    (_roleId == ContactRole.billing
-                          ? [_effectiveCustomerId ?? -1]
-                          : [
-                              if (widget.customerId == null) -1,
-                              ..._customers.keys,
-                            ])
+                    [if (widget.customerId == null) -1, ..._customers.keys, -2]
                       ..sort((a, b) {
+                        if (a == b) {
+                          return 0;
+                        }
+                        final associated = widget.customerId ?? -1;
+                        if (a == associated || b == associated) {
+                          return a == associated ? -1 : 1;
+                        }
+                        if (a == -2 || b == -2) {
+                          return a == -2 ? 1 : -1;
+                        }
                         final aRelated =
                             a == -1 || _relatedCustomerIds.contains(a);
                         final bRelated =
@@ -632,20 +633,20 @@ class JobPartyAssignmentEditorState
                         if (aRelated != bRelated) {
                           return aRelated ? -1 : 1;
                         }
-                        return (_customers[a]?.name ?? widget.newCustomerName)
-                            .compareTo(
-                              _customers[b]?.name ?? widget.newCustomerName,
-                            );
+                        final byName = _customerLabel(a)
+                            .toLowerCase()
+                            .compareTo(_customerLabel(b).toLowerCase());
+                        return byName == 0 ? a.compareTo(b) : byName;
                       });
                 return ids
                     .where(
-                      (id) => (_customers[id]?.name ?? widget.newCustomerName)
-                          .toLowerCase()
-                          .contains((filter ?? '').toLowerCase()),
+                      (id) => _customerLabel(
+                        id,
+                      ).toLowerCase().contains((filter ?? '').toLowerCase()),
                     )
                     .toList();
               },
-              format: (id) => _customers[id]?.name ?? widget.newCustomerName,
+              format: _customerLabel,
               onChanged: (id) => setState(() {
                 _customerFilterId = id == -1 ? null : id;
                 _contact = null;
@@ -668,10 +669,6 @@ class JobPartyAssignmentEditorState
               required: true,
               title: 'Role on this job',
               onChanged: (role) => setState(() {
-                if (role?.id == ContactRole.billing &&
-                    _roleId != ContactRole.billing) {
-                  _contact = null;
-                }
                 _roleId = role?.id;
                 _roleChosen = true;
               }),
@@ -679,8 +676,8 @@ class JobPartyAssignmentEditorState
             const Text(
               'The contact’s default role is a suggestion. '
               'Changing this assignment only affects this job. '
-              'Billing contacts '
-              'must belong to the Bill To customer selected in Billing.',
+              'Contacts can belong to any customer. '
+              'The Bill To customer is selected separately in Billing.',
             ),
             HMBSaveCancelButtons(
               saveHint: 'Save this assignment',
