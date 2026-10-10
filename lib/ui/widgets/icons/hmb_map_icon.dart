@@ -16,6 +16,7 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 
+import '../../../api/trip_capture_service.dart';
 import '../../../entity/job.dart';
 import '../../../entity/site.dart';
 import '../../../integrations/google_calendar/google_calendar_sync.dart';
@@ -82,6 +83,19 @@ class HMBMapIcon extends StatelessWidget {
   }
 
   Future<void> _openMap(BuildContext context, Site site) async {
+    final tracking = await TripCaptureService.instance
+        .startGpsTrackingFromNavigation(siteId: site.id, jobId: job?.id);
+    if (tracking == NavigationTrackingResult.permissionDenied) {
+      HMBToast.info(
+        'Allow background location for HMB to record distance during '
+        'navigation. Directions will still open.',
+      );
+    } else if (tracking == NavigationTrackingResult.locationDisabled) {
+      HMBToast.info(
+        await TripCaptureService.instance.locationUnavailableMessage(),
+      );
+    }
+    if (!context.mounted) return;
     await GoogleMaps.openMap(context, site);
     final callback = onMapClicked;
     if (callback != null) {

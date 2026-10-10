@@ -17,6 +17,7 @@ import 'package:june/june.dart';
 // lib/src/ui/nav/home_scaffold.dart
 import 'package:material_ui/material_ui.dart';
 
+import '../../api/trip_capture_service.dart';
 import '../../dao/dao_job.dart';
 import '../../util/flutter/app_title.dart';
 import '../widgets/hmb_start_time_entry.dart';
@@ -47,6 +48,18 @@ class HomeScaffold extends StatelessWidget {
               Text(formatAppTitle(title.title, activeJob: activeJob)),
         ),
       ),
+      actions: [
+        ValueListenableBuilder<bool>(
+          valueListenable: TripCaptureService.instance.isGpsTracking,
+          builder: (context, tracking, _) => tracking
+              ? IconButton(
+                  icon: const Icon(Icons.gps_fixed),
+                  tooltip: 'GPS trip tracking active. Tap to stop.',
+                  onPressed: () => _confirmStopGpsTracking(context),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
     ),
     body: HMBColumn(
       mainAxisSize: MainAxisSize.min,
@@ -72,4 +85,30 @@ class HomeScaffold extends StatelessWidget {
       ],
     ),
   );
+
+  Future<void> _confirmStopGpsTracking(BuildContext context) async {
+    final stop = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Stop GPS tracking?'),
+        content: const Text(
+          'The current GPS trip will be saved and background tracking '
+          'will stop.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep tracking'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Stop tracking'),
+          ),
+        ],
+      ),
+    );
+    if (stop ?? false) {
+      await TripCaptureService.instance.stopGpsTracking();
+    }
+  }
 }

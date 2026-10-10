@@ -27,9 +27,13 @@ class TripPoint {
 
 enum TripOriginType { businessAddress, alternateAddress }
 
+enum TripDistanceSource { route, gps, manual }
+
 class TripSettings {
   final bool enabled;
   final bool routeLookupEnabled;
+  final bool gpsTrackingEnabled;
+  final int? activeGpsTripId;
   final TripPoint? home;
   final String homeLabel;
   final TripOriginType originType;
@@ -39,6 +43,8 @@ class TripSettings {
   const TripSettings({
     this.enabled = false,
     this.routeLookupEnabled = false,
+    this.gpsTrackingEnabled = false,
+    this.activeGpsTripId,
     this.home,
     this.homeLabel = 'Home',
     this.originType = TripOriginType.businessAddress,
@@ -49,6 +55,8 @@ class TripSettings {
   factory TripSettings.fromMap(Map<String, Object?> row) => TripSettings(
     enabled: row['enabled'] == 1,
     routeLookupEnabled: row['route_lookup_enabled'] == 1,
+    gpsTrackingEnabled: row['gps_tracking_enabled'] == 1,
+    activeGpsTripId: row['active_gps_trip_id'] as int?,
     home: row['home_latitude'] == null || row['home_longitude'] == null
         ? null
         : TripPoint(
@@ -67,6 +75,8 @@ class TripSettings {
     'id': 1,
     'enabled': enabled ? 1 : 0,
     'route_lookup_enabled': routeLookupEnabled ? 1 : 0,
+    'gps_tracking_enabled': gpsTrackingEnabled ? 1 : 0,
+    'active_gps_trip_id': activeGpsTripId,
     'home_latitude': home?.latitude,
     'home_longitude': home?.longitude,
     'home_label': homeLabel,
@@ -87,6 +97,7 @@ class TripLog {
   final TripPoint to;
   final bool fromHome;
   final int? distanceMetres;
+  final TripDistanceSource? distanceSource;
   final int? durationSeconds;
   final int? siteId;
   final int? jobId;
@@ -96,8 +107,9 @@ class TripLog {
 
   TripLog.fromMap(Map<String, Object?> row)
     : id = row['id']! as int,
-      departedAt = DateTime.tryParse(row['departed_at'] as String? ?? '')
-          ?.toLocal(),
+      departedAt = DateTime.tryParse(
+        row['departed_at'] as String? ?? '',
+      )?.toLocal(),
       arrivedAt = DateTime.parse(row['arrived_at']! as String).toLocal(),
       fromPoint = row['from_latitude'] == null || row['from_longitude'] == null
           ? null
@@ -112,6 +124,12 @@ class TripLog {
       ),
       fromHome = row['from_home'] == 1,
       distanceMetres = row['distance_metres'] as int?,
+      distanceSource = switch (row['distance_source']) {
+        'route' => TripDistanceSource.route,
+        'gps' => TripDistanceSource.gps,
+        'manual' => TripDistanceSource.manual,
+        _ => null,
+      },
       durationSeconds = row['duration_seconds'] as int?,
       siteId = row['site_id'] as int?,
       jobId = row['job_id'] as int?,

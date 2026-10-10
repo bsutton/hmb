@@ -15,14 +15,15 @@ import 'package:sqflite_common/sqlite_api.dart';
 import 'test_database_config.dart';
 
 void main() {
-  test('combined registry contains unique versions through v224', () async {
+  test('combined registry contains unique versions through v225', () async {
     final source = ProjectScriptSource();
     final paths = await source.upgradeScripts();
     final versions = paths.map(extractVerionForSQLUpgradeScript).toList();
     expect(versions.toSet(), hasLength(versions.length));
     expect(versions.where((version) => version == 223), hasLength(1));
     expect(versions.where((version) => version == 224), hasLength(1));
-    expect(await getLatestVersion(source), 224);
+    expect(versions.where((version) => version == 225), hasLength(1));
+    expect(await getLatestVersion(source), 225);
     for (final path in paths) {
       expect(File(path).existsSync(), isTrue, reason: path);
     }
@@ -34,6 +35,7 @@ void main() {
     (222, 222, false),
     (223, 223, false),
     (224, 224, false),
+    (225, 225, false),
     // Interrupted open: HMB recorded a migration before SQLite user_version.
     (222, 223, false),
     (223, 224, false),
@@ -100,13 +102,22 @@ void main() {
         final jobsBefore = await db.query('job');
         final activitiesBefore = await db.query('job_activity');
         final source = _RecordingSource();
-        await upgrade(224, source);
-        expect(await getUpgradeResumeVersion(db, previous.$1), 224);
+        await upgrade(225, source);
+        expect(await getUpgradeResumeVersion(db, previous.$1), 225);
         final applied = source.loadedVersions.where((v) => v >= 223).toList();
         expect(applied, [
           if (previous.$2 < 223) 223,
           if (previous.$2 < 224) 224,
+          if (previous.$2 < 225) 225,
         ]);
+        final tripSettings = await db.query('trip_settings');
+        expect(tripSettings.single['gps_tracking_enabled'], 0);
+        expect(tripSettings.single.containsKey('active_gps_trip_id'), isTrue);
+        final tripColumns = await db.rawQuery('PRAGMA table_info(trip_log)');
+        expect(
+          tripColumns.any((row) => row['name'] == 'distance_source'),
+          isTrue,
+        );
         final jobsAfter = await db.query('job');
         expect(
           jobsAfter.map((row) => row['id']),
@@ -139,7 +150,7 @@ void main() {
         // A repeated/resumed upgrade must neither duplicate the SMS suffix
         // nor recreate the archive table, discard history, or duplicate audit.
         source.loadedVersions.clear();
-        await upgrade(224, source);
+        await upgrade(225, source);
         expect(source.loadedVersions, isEmpty);
         expect(
           await db.query(
@@ -153,10 +164,10 @@ void main() {
         final versions = await db.query(
           'version',
           columns: ['db_version'],
-          where: 'db_version IN (223, 224)',
+          where: 'db_version IN (223, 224, 225)',
           orderBy: 'id',
         );
-        expect(versions.map((row) => row['db_version']), [223, 224]);
+        expect(versions.map((row) => row['db_version']), [223, 224, 225]);
       } finally {
         await db.close();
         directory.deleteSync(recursive: true);

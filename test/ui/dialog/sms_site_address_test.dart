@@ -105,7 +105,7 @@ void main() {
         }
       }
       final sql = File(
-        'assets/sql/upgrade_scripts/v223.sql',
+        'assets/sql/upgrade_scripts/v225.sql',
       ).readAsStringSync();
       await testDb!.execute(sql);
       await testDb!.execute(sql);

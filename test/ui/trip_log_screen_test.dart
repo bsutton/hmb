@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hmb/dao/dao_trip_log.dart';
@@ -46,6 +47,21 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.runAsync(setupTestDb);
       addTearDown(tearDownTestDb);
+      const locationChannel = MethodChannel('flutter.baseflow.com/geolocator');
+      final messenger = tester.binding.defaultBinaryMessenger
+        ..setMockMethodCallHandler(
+          locationChannel,
+          (call) async => switch (call.method) {
+            'isLocationServiceEnabled' => false,
+            'checkPermission' => 0,
+            _ => throw StateError(
+              'Unexpected location request: ${call.method}',
+            ),
+          },
+        );
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(locationChannel, null),
+      );
       final router = GoRouter(
         initialLocation: '/home/tools/trips',
         routes: [

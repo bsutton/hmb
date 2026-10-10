@@ -5,44 +5,93 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 
 import '../dao/dao_system.dart';
 import '../dao/dao_trip_log.dart';
 import '../database/management/database_helper.dart';
 import '../entity/trip_log.dart';
 
-/// One foreground fix per resume; no timer, background service or tracking.
+enum NavigationTrackingResult {
+  disabled,
+  started,
+  alreadyTracking,
+  permissionDenied,
+  locationDisabled,
+  noLocationFix,
+}
+
+/// Captures a foreground fix on resume and optional GPS navigation sessions.
 class TripCaptureService {
   static final instance = TripCaptureService();
   // Cancelled after the first fix, timeout, pause or app disposal.
   // ignore: cancel_subscriptions
-  StreamSubscription<Position>? _positions;
+  StreamSubscription<Position>? _fixPositions;
+  StreamSubscription<Position>? _gpsPositions;
   Completer<Position?>? _fix;
   var _busy = false;
+  int? _activeGpsTripId;
+  int? _gpsSiteId;
+  int? _gpsJobId;
+  Future<void> _gpsUpdateTail = Future<void>.value();
   final status = ValueNotifier<String>('Trip logging is off');
+  final isGpsTracking = ValueNotifier<bool>(false);
 
   bool get supported =>
       !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS);
 
-  Future<bool> requestPermission() async {
+  Future<LocationPermission> requestPermission() async {
     if (!supported) {
-      return false;
+      return LocationPermission.denied;
     }
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
-    return permission == LocationPermission.whileInUse ||
-        permission == LocationPermission.always;
+    return permission;
+  }
+
+  Future<bool> _requestBackgroundPermission() async {
+    final foreground = await Permission.locationWhenInUse.request();
+    if (!foreground.isGranted) {
+      return false;
+    }
+    final background = await Permission.locationAlways.status;
+    if (background.isGranted) {
+      return true;
+    }
+    return (await Permission.locationAlways.request()).isGranted;
+  }
+
+  Future<bool> requestGpsBackgroundPermission() =>
+      _requestBackgroundPermission();
+
+  Future<String> locationUnavailableMessage() async {
+    if (!supported) {
+      return 'Automatic trip capture is available on Android and iOS.';
+    }
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      return 'Device location is off. Turn it on to capture trips.';
+    }
+    return switch (await Geolocator.checkPermission()) {
+      LocationPermission.denied =>
+        'Location access is off. Allow it to capture trips.',
+      LocationPermission.deniedForever =>
+        'Location access is blocked. Allow it for HMB in app settings.',
+      LocationPermission.whileInUse || LocationPermission.always =>
+        'No location fix. Check the device GPS and try again.',
+      LocationPermission.unableToDetermine =>
+        'Location permission could not be checked. Try again.',
+    };
   }
 
   Future<void> cancelFix() async {
     final pending = _fix;
-    final positions = _positions;
+    final positions = _fixPositions;
     _fix = null;
-    _positions = null;
+    _fixPositions = null;
     if (pending != null && !pending.isCompleted) {
       pending.complete(null);
     }
@@ -66,7 +115,7 @@ class TripCaptureService {
     }
     final fix = Completer<Position?>();
     _fix = fix;
-    _positions =
+    _fixPositions =
         Geolocator.getPositionStream(
           locationSettings: const LocationSettings(
             accuracy: LocationAccuracy.high,
@@ -103,6 +152,146 @@ class TripCaptureService {
     }
   }
 
+  Future<NavigationTrackingResult> startGpsTrackingFromNavigation({
+    int? siteId,
+    int? jobId,
+  }) async {
+    if (!supported) {
+      status.value = 'GPS trip tracking is available on Android and iOS.';
+      return NavigationTrackingResult.disabled;
+    }
+    if (!await DatabaseHelper().waitUntilOpen()) {
+      return NavigationTrackingResult.disabled;
+    }
+    final settings = await DaoTripLog().settings();
+    if (!settings.enabled || !settings.gpsTrackingEnabled) {
+      return NavigationTrackingResult.disabled;
+    }
+    if (_gpsPositions != null || _activeGpsTripId != null) {
+      return NavigationTrackingResult.alreadyTracking;
+    }
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      status.value = 'Device location is off. Turn it on to track this trip.';
+      return NavigationTrackingResult.locationDisabled;
+    }
+    if (!await _requestBackgroundPermission()) {
+      status.value =
+          'Allow background location for HMB to track trips during navigation.';
+      return NavigationTrackingResult.permissionDenied;
+    }
+
+    _gpsSiteId = siteId;
+    _gpsJobId = jobId;
+    _gpsPositions =
+        Geolocator.getPositionStream(
+          locationSettings: _gpsLocationSettings(),
+        ).listen(
+          _queueGpsPosition,
+          onError: (Object _) {
+            status.value = 'GPS tracking stopped receiving location updates.';
+          },
+        );
+    isGpsTracking.value = true;
+    status.value = 'GPS trip tracking is active.';
+    return NavigationTrackingResult.started;
+  }
+
+  Future<void> restoreGpsTracking() async {
+    if (!supported || _gpsPositions != null) {
+      return;
+    }
+    if (!await DatabaseHelper().waitUntilOpen()) {
+      return;
+    }
+    final settings = await DaoTripLog().settings();
+    final tripId = settings.activeGpsTripId;
+    if (!settings.enabled || !settings.gpsTrackingEnabled || tripId == null) {
+      return;
+    }
+    if (!await Geolocator.isLocationServiceEnabled() ||
+        !(await Permission.locationAlways.status).isGranted) {
+      return;
+    }
+    _activeGpsTripId = tripId;
+    _gpsPositions = Geolocator.getPositionStream(
+      locationSettings: _gpsLocationSettings(),
+    ).listen(_queueGpsPosition);
+    isGpsTracking.value = true;
+    status.value = 'GPS trip tracking is active.';
+  }
+
+  LocationSettings _gpsLocationSettings() => switch (defaultTargetPlatform) {
+    TargetPlatform.android => AndroidSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 25,
+      intervalDuration: const Duration(seconds: 10),
+      foregroundNotificationConfig: const ForegroundNotificationConfig(
+        notificationTitle: 'HMB trip tracking',
+        notificationText: 'Recording GPS distance for your active trip',
+        notificationChannelName: 'Trip tracking',
+        enableWakeLock: true,
+        setOngoing: true,
+      ),
+    ),
+    TargetPlatform.iOS => AppleSettings(
+      accuracy: LocationAccuracy.high,
+      activityType: ActivityType.automotiveNavigation,
+      distanceFilter: 25,
+      pauseLocationUpdatesAutomatically: false,
+      showBackgroundLocationIndicator: true,
+    ),
+    _ => const LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 25,
+    ),
+  };
+
+  void _queueGpsPosition(Position position) {
+    _gpsUpdateTail = _gpsUpdateTail
+        .catchError((Object _) {})
+        .then((_) => _recordGpsPosition(position));
+  }
+
+  Future<void> _recordGpsPosition(Position position) async {
+    if (position.accuracy > 50 ||
+        DateTime.now().difference(position.timestamp).abs() >
+            const Duration(minutes: 2)) {
+      return;
+    }
+    final point = TripPoint(position.latitude, position.longitude);
+    if (!point.valid) {
+      return;
+    }
+    _activeGpsTripId ??= await DaoTripLog().startGpsTrip(
+      point,
+      position.timestamp,
+      siteId: _gpsSiteId,
+      jobId: _gpsJobId,
+    );
+    final tripId = _activeGpsTripId;
+    if (tripId != null) {
+      await DaoTripLog().recordGpsPosition(tripId, point, position.timestamp);
+    }
+  }
+
+  Future<void> stopGpsTracking() async {
+    final subscription = _gpsPositions;
+    _gpsPositions = null;
+    await subscription?.cancel();
+    await _gpsUpdateTail;
+    final tripId = _activeGpsTripId;
+    if (tripId != null) {
+      await DaoTripLog().finishGpsTrip(tripId);
+    } else if (await DatabaseHelper().waitUntilOpen()) {
+      await DaoTripLog().clearActiveGpsTrip();
+    }
+    _activeGpsTripId = null;
+    _gpsSiteId = null;
+    _gpsJobId = null;
+    isGpsTracking.value = false;
+    status.value = 'GPS trip tracking stopped.';
+  }
+
   Future<void> onResume() async {
     if (_busy || !supported) {
       return;
@@ -113,6 +302,7 @@ class TripCaptureService {
         return;
       }
       final settings = await DaoTripLog().settings();
+      await restoreGpsTracking();
       if (!settings.enabled) {
         status.value = 'Trip logging is off';
         return;
@@ -127,7 +317,7 @@ class TripCaptureService {
         );
         status.value = 'Location checked';
       } else {
-        status.value = 'No location fix. Check location permission and GPS.';
+        status.value = await locationUnavailableMessage();
       }
       await updateRoutes();
     } catch (_) {

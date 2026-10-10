@@ -1,4 +1,5 @@
 import 'package:deferred_state/deferred_state.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -29,10 +30,13 @@ class TripLogSettingsScreenState extends DeferredState<TripLogSettingsScreen> {
   final _rate = TextEditingController();
   late TripSettings _settings;
   late SystemConfiguration _system;
-  var _enabled = false;
+  bool _enabled = false;
   var _routeLookupEnabled = false;
+  var _gpsTrackingEnabled = false;
   TripOriginType _originType = TripOriginType.businessAddress;
   var _hasMapsKey = false;
+  var _locationServicesEnabled = false;
+  var _locationPermission = LocationPermission.denied;
 
   bool get _isImperial =>
       _system.preferredUnitSystem == PreferredUnitSystem.imperial;
@@ -45,8 +49,13 @@ class TripLogSettingsScreenState extends DeferredState<TripLogSettingsScreen> {
     _system = await DaoSystem().get();
     final credentials = await DaoSystem().getGoogleMapsCredentials();
     _hasMapsKey = credentials.apiKey?.trim().isNotEmpty ?? false;
+    if (TripCaptureService.instance.supported) {
+      _locationServicesEnabled = await Geolocator.isLocationServiceEnabled();
+      _locationPermission = await Geolocator.checkPermission();
+    }
     _enabled = _settings.enabled;
     _routeLookupEnabled = _settings.routeLookupEnabled;
+    _gpsTrackingEnabled = _settings.gpsTrackingEnabled;
     _originType = _settings.originType;
     _alternateOrigin.text = _settings.alternateOriginAddress;
     _rate.text = (_settings.rateCentsPerKm / 100 * _distanceUnitInKm)
@@ -63,12 +72,6 @@ class TripLogSettingsScreenState extends DeferredState<TripLogSettingsScreen> {
   Future<bool> save({required bool close}) async {
     if (!_formKey.currentState!.validate()) {
       HMBToast.error('Fix the errors and try again.');
-      return false;
-    }
-    if (_enabled && !await TripCaptureService.instance.requestPermission()) {
-      HMBToast.error(
-        'Location permission is required. Enable it in device settings.',
-      );
       return false;
     }
     if (_enabled &&
@@ -95,12 +98,20 @@ class TripLogSettingsScreenState extends DeferredState<TripLogSettingsScreen> {
     final updated = TripSettings(
       enabled: _enabled,
       routeLookupEnabled: _routeLookupEnabled,
+      gpsTrackingEnabled: _gpsTrackingEnabled,
+      activeGpsTripId: _enabled && _gpsTrackingEnabled
+          ? _settings.activeGpsTripId
+          : null,
       home: keepLegacyPoint ? _settings.home : null,
       homeLabel: _settings.homeLabel,
       originType: _originType,
       alternateOriginAddress: alternateAddress,
       rateCentsPerKm: (rate * 100 / _distanceUnitInKm).round(),
     );
+    if ((!_enabled || !_gpsTrackingEnabled) &&
+        TripCaptureService.instance.isGpsTracking.value) {
+      await TripCaptureService.instance.stopGpsTracking();
+    }
     await BlockingUI().runAndWait(() => DaoTripLog().saveSettings(updated));
     _settings = updated;
     if (_enabled && _routeLookupEnabled) {
@@ -173,6 +184,32 @@ class TripLogSettingsScreenState extends DeferredState<TripLogSettingsScreen> {
             ),
           ),
           if (_enabled) ...[
+            if (!_locationServicesEnabled ||
+                (_locationPermission != LocationPermission.whileInUse &&
+                    _locationPermission != LocationPermission.always) ||
+                (_gpsTrackingEnabled &&
+                    _locationPermission != LocationPermission.always))
+              _locationAccessCard(context),
+            Surface(
+              padding: const EdgeInsets.all(HMBSpacing.kPageInset),
+              child: HMBFormSection(
+                children: [
+                  HMBToggle(
+                    label: 'Track trips with GPS while navigating',
+                    hint: 'Start GPS when you open directions from a job',
+                    initialValue: _gpsTrackingEnabled,
+                    onToggled: (value) =>
+                        setState(() => _gpsTrackingEnabled = value),
+                  ),
+                  const Text(
+                    'GPS continues in the background until you stop it from '
+                    'the tracking indicator. Background GPS uses more battery. '
+                    'Location access is requested when you first start '
+                    'navigation tracking.',
+                  ),
+                ],
+              ),
+            ),
             Surface(
               padding: const EdgeInsets.all(HMBSpacing.kPageInset),
               child: HMBFormSection(
@@ -304,6 +341,74 @@ class TripLogSettingsScreenState extends DeferredState<TripLogSettingsScreen> {
         ),
       ],
     );
+  }
+
+  Widget _locationAccessCard(BuildContext context) => Surface(
+    child: HMBFormSection(
+      children: [
+        Text('Location access', style: _sectionStyle(context)),
+        Text(_locationAccessMessage),
+        HMBButtonSecondary(
+          label: _locationAccessButtonLabel,
+          hint: 'Update location access for trip capture',
+          onPressed: _openLocationSettings,
+        ),
+      ],
+    ),
+  );
+
+  String get _locationAccessMessage {
+    if (!TripCaptureService.instance.supported) {
+      return 'Automatic trip capture is available on Android and iOS.';
+    }
+    if (!_locationServicesEnabled) {
+      return 'Device location is off. Turn it on to capture trips.';
+    }
+    if (_gpsTrackingEnabled &&
+        _locationPermission == LocationPermission.whileInUse) {
+      return 'Allow background location to keep recording while you use '
+          'navigation outside HMB.';
+    }
+    return switch (_locationPermission) {
+      LocationPermission.denied =>
+        'Location access is off. Allow it to capture trips.',
+      LocationPermission.deniedForever =>
+        'Location access is blocked for HMB. Allow it in app settings.',
+      _ => 'HMB needs location access to capture trips.',
+    };
+  }
+
+  String get _locationAccessButtonLabel {
+    if (!_locationServicesEnabled) {
+      return 'Turn on device location';
+    }
+    if (_gpsTrackingEnabled &&
+        _locationPermission == LocationPermission.whileInUse) {
+      return 'Allow background location';
+    }
+    return _locationPermission == LocationPermission.deniedForever
+        ? 'Open app settings'
+        : 'Allow location access';
+  }
+
+  Future<void> _openLocationSettings() async {
+    if (!_locationServicesEnabled) {
+      await Geolocator.openLocationSettings();
+    } else if (_locationPermission == LocationPermission.deniedForever) {
+      await Geolocator.openAppSettings();
+    } else if (_gpsTrackingEnabled &&
+        _locationPermission == LocationPermission.whileInUse) {
+      await TripCaptureService.instance.requestGpsBackgroundPermission();
+    } else {
+      await TripCaptureService.instance.requestPermission();
+    }
+    if (TripCaptureService.instance.supported) {
+      _locationServicesEnabled = await Geolocator.isLocationServiceEnabled();
+      _locationPermission = await Geolocator.checkPermission();
+    }
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _openMapsSettings() async {
