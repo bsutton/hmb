@@ -27,6 +27,7 @@ import '../crud/job/full_page_list_job_card.dart';
 import '../crud/milestone/edit_milestone_payment.dart';
 import '../dialog/email_dialog_for_job.dart';
 import '../invoicing/dialog_select_tasks.dart';
+import '../scheduling/cleanup_cancelled_schedule.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/media/pdf_preview.dart';
 import '../widgets/select/hmb_droplist.dart';
@@ -531,6 +532,7 @@ To approve it, reply to this email with:
                     await _updateQuote(() async {
                       if (action == _RejectAction.quoteAndJob) {
                         await DaoQuote().rejectQuoteAndJob(quote.id);
+                        await cleanupCancelledSchedule(jobId: quote.jobId);
                       } else {
                         await DaoQuote().rejectQuote(quote.id);
                       }

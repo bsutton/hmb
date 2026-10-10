@@ -187,7 +187,8 @@ void main() {
             status,
             resumeStatus: _resumeStatusFor(status),
           );
-          if (targetForJobEvent(status, factory(job)) != null) {
+          if (targetForJobEvent(status, factory(job)) != null ||
+              (status == JobStatus.rejected && factory(job) is RejectJob)) {
             continue;
           }
           await expectLater(

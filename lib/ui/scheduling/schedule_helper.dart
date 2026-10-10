@@ -24,6 +24,7 @@ import '../../util/flutter/hmb_theme.dart';
 import '../../util/flutter/notifications/local_notifs.dart';
 import '../dialog/send_notice_for_job_dialog.dart';
 import '../widgets/hmb_toast.dart';
+import 'cleanup_cancelled_schedule.dart';
 import 'job_activity_dialog.dart';
 import 'job_activity_ex.dart';
 import 'sync_schedule_calendar.dart';
@@ -174,20 +175,24 @@ mixin ScheduleHelper {
     );
   }
 
-  Future<void> _syncActivityReminder(JobActivityEx activity) async {
-    final counts = await DaoTaskItem().getReminderCounts(activity.job);
-    final synced = await LocalNotifs().syncForJobActivity(
-      activity.jobActivity,
-      jobSummary: activity.job.summary,
-      shoppingCount: counts.shopping,
-      packingCount: counts.packing,
-    );
-    if (!synced) {
-      HMBToast.info(
-        'Schedule saved, but reminder notifications are unavailable.',
+  Future<void> _syncActivityReminder(JobActivityEx activity) =>
+      cancelledScheduleCleanup().syncReminderIfScheduled(
+        activity.jobActivity.id,
+        () async {
+          final counts = await DaoTaskItem().getReminderCounts(activity.job);
+          final synced = await LocalNotifs().syncForJobActivity(
+            activity.jobActivity,
+            jobSummary: activity.job.summary,
+            shoppingCount: counts.shopping,
+            packingCount: counts.packing,
+          );
+          if (!synced) {
+            HMBToast.info(
+              'Schedule saved, but reminder notifications are unavailable.',
+            );
+          }
+        },
       );
-    }
-  }
 
   /// header style
   HeaderStyle headerStyle() => const HeaderStyle(

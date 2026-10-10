@@ -1,6 +1,7 @@
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../dao/billing_executor.dart';
+import '../dao/cancelled_schedule.dart';
 import '../dao/dao.g.dart';
 import '../entity/entity.g.dart';
 import 'job_events.dart';
@@ -201,6 +202,16 @@ class LifecycleEventDispatcher {
         throw LifecycleException('Job $jobId no longer exists.');
       }
       final event = buildEvent(job);
+      if (event is RejectJob && job.status == JobStatus.rejected) {
+        await CancelledSchedule.archiveJob(job.id, transaction);
+        return LifecycleResult(
+          entity: job,
+          event: event.name,
+          from: job.status.id,
+          to: job.status.id,
+          changed: false,
+        );
+      }
       final target = targetForJobEvent(job.status, event);
       if (target == null) {
         throw LifecycleException(
@@ -263,6 +274,7 @@ class LifecycleEventDispatcher {
 
     if (target == JobStatus.rejected) {
       await _rejectQuotesForJob(job.id, context, transaction);
+      await CancelledSchedule.archiveJob(job.id, transaction);
     }
 
     await DaoLifecycleTransition().insert(
@@ -377,9 +389,11 @@ class LifecycleEventDispatcher {
     Dao.notifier(DaoQuote());
     Dao.notifier(DaoMilestone());
     Dao.notifier(DaoToDo());
+    Dao.notifier(DaoJobActivity());
   }
 
   void _notifyQuoteCommand(Quote quote) {
+    Dao.notifier(DaoJobActivity());
     Dao.notifier(DaoQuote(), quote.id);
     Dao.notifier(DaoJob(), quote.jobId);
     Dao.notifier(DaoMilestone());

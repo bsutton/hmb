@@ -17,6 +17,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../util/dart/app_settings.dart';
 import '../../../util/flutter/app_title.dart';
+import '../../scheduling/cleanup_cancelled_schedule.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
 
@@ -30,12 +31,15 @@ class GoogleCalendarIntegrationScreen extends StatefulWidget {
 
 class _GoogleCalendarIntegrationScreenState
     extends DeferredState<GoogleCalendarIntegrationScreen> {
+  var _pendingCleanup = 0;
+
   bool _enabled = AppSettings.googleCalendarSyncEnabledDefault;
 
   @override
   Future<void> asyncInitState() async {
     setAppTitle('Google Calendar Integration');
     _enabled = await AppSettings.getGoogleCalendarSyncEnabled();
+    _pendingCleanup = await cancelledScheduleCleanup().pendingCount();
   }
 
   Future<bool> _save({required bool close}) async {
@@ -78,6 +82,31 @@ class _GoogleCalendarIntegrationScreenState
                   'view that calendar may see where you travelled.',
                 ),
                 const HMBSpacer(height: true),
+                if (_pendingCleanup > 0) ...[
+                  Text(
+                    '$_pendingCleanup cancelled booking(s) still need '
+                    'calendar or reminder cleanup. Enable sync and connect '
+                    'your Google account in Backup, then retry.',
+                  ),
+                  HMBButtonSecondary(
+                    label: 'Retry cancelled booking cleanup',
+                    hint:
+                        'Remove calendar events and reminders '
+                        'for cancelled bookings',
+                    onPressed: () async {
+                      await AppSettings.setGoogleCalendarSyncEnabled(
+                        enabled: _enabled,
+                      );
+                      await cleanupCancelledSchedule();
+                      final pending = await cancelledScheduleCleanup()
+                          .pendingCount();
+                      if (mounted) {
+                        setState(() => _pendingCleanup = pending);
+                      }
+                    },
+                  ),
+                  const HMBSpacer(height: true),
+                ],
                 SwitchListTile(
                   title: const Text('Google Calendar and safety sync'),
                   subtitle: const Text(

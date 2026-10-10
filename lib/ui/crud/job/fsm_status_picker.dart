@@ -10,6 +10,7 @@ import '../../../entity/entity.g.dart';
 import '../../../fsm/job_status_fsm.dart'
     show Next, buildJobMachine, nextFromFsm;
 import '../../../fsm/lifecycle_models.dart';
+import '../../scheduling/cleanup_cancelled_schedule.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
 import 'edit_job_card.dart';
@@ -133,6 +134,9 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
     });
     try {
       final updated = await BlockingUI().runAndWait(step.fire);
+      if (updated.status == JobStatus.rejected) {
+        await cleanupCancelledSchedule(jobId: updated.id);
+      }
       widget.job
         ..status = updated.status
         ..resumeStatus = updated.resumeStatus;

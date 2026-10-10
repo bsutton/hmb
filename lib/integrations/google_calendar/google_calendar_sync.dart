@@ -14,12 +14,15 @@
 */
 
 import 'package:googleapis/calendar/v3.dart' as calendar;
+import 'package:synchronized/synchronized.dart';
 
+import '../../dao/dao_job.dart';
 import '../../dao/dao_job_activity.dart';
 import '../../dao/dao_site.dart';
 import '../../database/management/backup_providers/google_drive/google_drive_auth.dart';
 import '../../entity/job.dart';
 import '../../entity/job_activity.dart';
+import '../../entity/job_status.dart';
 import '../../entity/site.dart';
 import '../../util/dart/app_settings.dart';
 
@@ -125,23 +128,52 @@ class ExternalCalendarSynchronizer {
 }
 
 class GoogleCalendarSyncService {
+  GoogleCalendarSyncService({this.synchronize});
+
+  /// Tests supply an in-memory gateway; production uses authenticated sync.
+  final Future<ExternalCalendarSyncResult> Function(
+    Future<void> Function(ExternalCalendarSynchronizer) operation,
+  )?
+  synchronize;
+  static final _activityLock = Lock();
+
   Future<ExternalCalendarSyncResult> upsertActivity({
     required JobActivity activity,
     required Job job,
-  }) async {
-    final site = await DaoSite().getByJob(job);
-    return _withSynchronizer(
-      (sync) => sync.upsert(
+  }) => _activityLock.synchronized(() async {
+    // The UI may have queued this request before cancellation or an edit.
+    final current = await DaoJobActivity().getById(activity.id);
+    final owner = current == null
+        ? null
+        : await DaoJob().getById(current.jobId);
+    if (current == null ||
+        owner == null ||
+        owner.status == JobStatus.rejected) {
+      return _deleteActivity(activity);
+    }
+    final site = await DaoSite().getByJob(owner);
+    return _withSynchronizer((sync) async {
+      await sync.upsert(
         ExternalCalendarEventDraft.forJobActivity(
-          activity: activity,
-          job: job,
+          activity: current,
+          job: owner,
           site: site,
         ),
-      ),
-    );
-  }
+      );
+      // Cancellation can commit while the remote write is in flight.
+      if (await DaoJobActivity().getById(activity.id) == null) {
+        await sync.deleteBySource(
+          key: 'hmbJobActivityId',
+          value: activity.id.toString(),
+        );
+      }
+    });
+  });
 
   Future<ExternalCalendarSyncResult> deleteActivity(JobActivity activity) =>
+      _activityLock.synchronized(() => _deleteActivity(activity));
+
+  Future<ExternalCalendarSyncResult> _deleteActivity(JobActivity activity) =>
       _withSynchronizer(
         (sync) => sync.deleteBySource(
           key: 'hmbJobActivityId',
@@ -172,6 +204,9 @@ class GoogleCalendarSyncService {
   Future<ExternalCalendarSyncResult> _withSynchronizer(
     Future<void> Function(ExternalCalendarSynchronizer sync) operation,
   ) async {
+    if (synchronize != null) {
+      return synchronize!(operation);
+    }
     if (!await AppSettings.getGoogleCalendarSyncEnabled()) {
       return ExternalCalendarSyncResult.disabled;
     }
