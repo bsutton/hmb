@@ -557,13 +557,6 @@ class _JobCreatorState extends DeferredState<JobCreator> {
               ),
           party: party,
           draftContacts: [?draft, ..._pendingContacts.map((entry) => entry.$1)],
-          draftBillingContacts: [
-            if (_billToCustomer == null) ...[?draft],
-            for (final pending in _pendingContacts)
-              if (pending.$2?.id ==
-                  (_billToCustomer?.id ?? _selectedCustomer?.id))
-                pending.$1,
-          ],
           onSave: (contact, role, {required replace}) async {
             saved = true;
             if (party != null) {
@@ -602,9 +595,11 @@ class _JobCreatorState extends DeferredState<JobCreator> {
     final surname = TextEditingController(text: suggestion?.surname);
     final email = TextEditingController(text: suggestion?.email);
     final phone = TextEditingController(text: suggestion?.phone);
-    var owner =
-        customerOverride ??
-        (billing ? _billToCustomer ?? _selectedCustomer : _selectedCustomer);
+    // A null selection in the party editor means the new job customer,
+    // even when billing is assigned to a different existing customer.
+    var owner = suggestion == null
+        ? customerOverride
+        : (billing ? _billToCustomer ?? _selectedCustomer : _selectedCustomer);
     final customers = suggestion == null
         ? <Customer>[]
         : await BlockingUI().runAndWait(() => DaoCustomer().getAll());
@@ -1104,6 +1099,7 @@ class _JobCreatorState extends DeferredState<JobCreator> {
         ),
       HMBDroplist<Customer>(
         title: 'Bill To customer',
+        sortByRecent: false,
         selectedItem: () async => _billingCustomerSelection,
         items: (filter) async => [
           if (_selectedCustomer == null &&
@@ -1111,7 +1107,16 @@ class _JobCreatorState extends DeferredState<JobCreator> {
                 (filter ?? '').toLowerCase(),
               ))
             _newBillingCustomer,
-          ...await DaoCustomer().getByFilter(filter),
+          ...await DaoCustomer().getByFilter(
+            filter,
+            preferredCustomerId: _selectedCustomer?.id,
+            relatedCustomerIds: [
+              ?_billToCustomer?.id,
+              ?_selectedReferrerCustomer?.id,
+              for (final pending in _pendingContacts) ?pending.$2?.id,
+            ],
+            relatedContactIds: _parties().map((party) => party.contact.id),
+          ),
         ],
         format: (customer) => customer.name,
         onChanged: (customer) => setState(() {
@@ -1133,13 +1138,23 @@ class _JobCreatorState extends DeferredState<JobCreator> {
         required: false,
         selectedItem: () async =>
             _billingContact ?? await _defaultBillingContact(),
-        items: (filter) async => (await _billingContacts())
-            .where(
-              (contact) => contact.fullname.toLowerCase().contains(
-                (filter ?? '').toLowerCase(),
-              ),
-            )
-            .toList(),
+        items: (filter) async =>
+            <int, Contact>{
+                  for (final contact in await DaoContact().getAll())
+                    contact.id: contact,
+                  for (final contact in await _billingContacts())
+                    contact.id: contact,
+                  for (final draft in [?_draftPrimaryContactForCurrentFields()])
+                    draft.id: draft,
+                  for (final pending in _pendingContacts)
+                    pending.$1.id: pending.$1,
+                }.values
+                .where(
+                  (contact) => contact.fullname.toLowerCase().contains(
+                    (filter ?? '').toLowerCase(),
+                  ),
+                )
+                .toList(),
         format: (contact) => contact.fullname.trim(),
         onChanged: (contact) async {
           final automatic = await _defaultBillingContact();
@@ -1654,15 +1669,6 @@ class _JobCreatorState extends DeferredState<JobCreator> {
             pending.$1,
             pending.$2 ?? customer,
             transaction,
-          );
-        }
-        if (_billingContact != null &&
-            !(await billingContactsForCustomer(
-              _billToCustomer?.id ?? customer.id,
-              transaction,
-            )).any((candidate) => candidate.id == _billingContact!.id)) {
-          throw StateError(
-            'Choose a billing contact belonging to the Bill To customer.',
           );
         }
         final primaryContact = _resolvedPrimaryContact();

@@ -89,11 +89,52 @@ where j.id =?
     return toList(data).first;
   }
 
-  Future<List<Customer>> getByFilter(String? filter) async {
+  /// Prioritise the job customer, then related parties, retaining search order.
+  Future<List<Customer>> getByFilter(
+    String? filter, {
+    int? preferredCustomerId,
+    Iterable<int> relatedCustomerIds = const [],
+    Iterable<int> relatedContactIds = const [],
+  }) async {
+    final customers = await _getByFilter(filter);
+    final related = {
+      ...relatedCustomerIds,
+      for (final customer in await getByContactIds(relatedContactIds))
+        customer.id,
+    };
+    return [
+      ...customers.where((c) => c.id == preferredCustomerId),
+      ...customers.where(
+        (c) => c.id != preferredCustomerId && related.contains(c.id),
+      ),
+      ...customers.where(
+        (c) => c.id != preferredCustomerId && !related.contains(c.id),
+      ),
+    ];
+  }
+
+  /// A contact can be linked to several customers through customer_contact.
+  Future<List<Customer>> getByContactIds(Iterable<int> contactIds) async {
+    final ids = contactIds.where((id) => id > 0).toSet().toList();
+    if (ids.isEmpty) {
+      return [];
+    }
+    return toList(
+      await withoutTransaction().rawQuery(
+        'SELECT DISTINCT c.* FROM customer c '
+        'JOIN customer_contact cc ON cc.customer_id = c.id '
+        'WHERE cc.contact_id IN (${List.filled(ids.length, '?').join(',')}) '
+        'ORDER BY c.name COLLATE NOCASE, c.id',
+        ids,
+      ),
+    );
+  }
+
+  Future<List<Customer>> _getByFilter(String? filter) async {
     final db = withoutTransaction();
 
     if (Strings.isBlank(filter)) {
-      return await getAll(orderByClause: 'modifiedDate desc');
+      return await getAll(orderByClause: 'modifiedDate desc, id');
     }
     final text = filter!.trim();
     final mobileText = text.replaceAll(' ', '');
@@ -124,7 +165,7 @@ or exists (
     coalesce(s.postcode, '')
   ) like ?
 )
-order by c.modifiedDate desc
+order by c.modifiedDate desc, c.id
 ''',
         ['''%$text%''', '''%$mobileText%''', '''%$text%'''],
       ),

@@ -171,6 +171,7 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
               JuneBuilder<CustomerBillingContact>(
                 CustomerBillingContact.new,
                 builder: (billingContactState) => HMBSelectContact(
+                  allowOtherCustomers: true,
                   title: 'Billing Contact',
                   initialContact: billingContactState.contact?.id,
                   customer: customer,

@@ -331,6 +331,7 @@ You can set a default booking fee from System | Billing screen''');
       builder: (context, billingCustomer) => JuneBuilder(
         JobBillingContact.new,
         builder: (state) => HMBSelectContact(
+          allowOtherCustomers: true,
           key: ValueKey('${state.contactId}-${billingCustomer?.id}'),
           title: 'Billing Contact',
           initialContact: state.contactId,
@@ -373,30 +374,8 @@ You can set a default booking fee from System | Billing screen''');
     ),
   );
 
-  Future<List<Contact>> _primaryContactChoices() async {
-    final ids = <int>{};
-    final contacts = <Contact>[];
-
-    Future<void> addCustomerContacts(int? customerId) async {
-      if (customerId == null) {
-        return;
-      }
-      final list = await DaoContact().getByCustomer(customerId);
-      for (final contact in list) {
-        if (ids.add(contact.id)) {
-          contacts.add(contact);
-        }
-      }
-    }
-
-    final selectedCustomerId = June.getState(SelectedCustomer.new).customerId;
-    final customerId = selectedCustomerId ?? widget.customer?.id;
-    await addCustomerContacts(customerId);
-    await addCustomerContacts(
-      June.getState(SelectedReferrerCustomer.new).customerId,
-    );
-    return contacts;
-  }
+  Future<List<Contact>> _primaryContactChoices() async =>
+      await DaoContact().getAll();
 
   String _displayContact(Contact contact) {
     final fullName = '${contact.firstName} ${contact.surname}'.trim();
@@ -481,6 +460,7 @@ You can set a default booking fee from System | Billing screen''');
       June.getState(SelectedReferrerCustomer.new).customerId,
     ),
     builder: (context, referrerCustomer) => HMBSelectContact(
+      allowOtherCustomers: true,
       title: 'Referrer Contact',
       key: ValueKey(
         '${June.getState(SelectedReferrerContact.new).contactId}'
@@ -504,6 +484,7 @@ You can set a default booking fee from System | Billing screen''');
     builder: (context, customer) => JuneBuilder(
       SelectedTenantContact.new,
       builder: (tenantState) => HMBSelectContact(
+        allowOtherCustomers: true,
         title: 'Tenant',
         key: ValueKey('${tenantState.contactId}-${customer?.id}'),
         initialContact: tenantState.contactId,

@@ -38,9 +38,13 @@ void main() {
 
   tearDown(tearDownTestDb);
 
-  for (final separateSite in [false, true]) {
+  for (final (separateSite, crossBilling) in [
+    (false, false),
+    (true, false),
+    (false, true),
+  ]) {
     testWidgets(
-      'new customer import retains contact and addresses ($separateSite)',
+      'customer import keeps contacts ($separateSite, $crossBilling)',
       (tester) async {
         await prepareSettingsTest();
         await tester.binding.setSurfaceSize(const Size(1200, 1000));
@@ -214,6 +218,24 @@ void main() {
               );
             });
           }
+          if (step == 5 && crossBilling) {
+            final picker = tester.widget<HMBDroplist<Contact>>(
+              find.byWidgetPredicate(
+                (w) =>
+                    w is HMBDroplist<Contact> && w.title == 'Billing contact',
+              ),
+            );
+            expect(
+              (await runAsyncAndPump(
+                tester,
+                () => picker.items(null),
+              )).map((c) => c.id),
+              contains(billingContact!.id),
+            );
+            picker.onChanged(billingContact);
+            await _pumpAsyncWork(tester);
+            await tester.pumpAndSettle();
+          }
           if (step == 5 && separateSite) {
             tester
                 .widget<HMBDroplist<Customer>>(
@@ -243,7 +265,7 @@ void main() {
             );
             expect(
               choices.map((contact) => contact.emailAddress),
-              isNot(contains(source.senderEmail)),
+              contains(source.senderEmail),
             );
             expect(
               (await runAsyncAndPump(tester, billingPicker.selectedItem))?.id,
@@ -308,16 +330,29 @@ void main() {
           final contact = await DaoContact().getById(job.contactId);
           expect(contact, isNotNull);
           expect(contact!.emailAddress, source.senderEmail);
-          expect(job.billingContactId, isNull);
+          expect(
+            job.billingContactId,
+            crossBilling ? billingContact!.id : null,
+          );
           expect(
             (await DaoJobParty().getByJob(
               job.id,
             )).where((party) => party.role.id == ContactRole.billing),
-            isEmpty,
+            hasLength(crossBilling ? 1 : 0),
           );
+          if (crossBilling) {
+            expect(job.billingCustomerId, job.customerId);
+            expect(job.customerId, isNot(billingCustomer!.id));
+            expect(
+              (await DaoContact().getByCustomer(
+                job.customerId,
+              )).any((c) => c.id == billingContact!.id),
+              isFalse,
+            );
+          }
           expect(
             (await resolveJobBillingContact(job)).contact?.id,
-            separateSite ? billingContact!.id : contact.id,
+            (separateSite || crossBilling) ? billingContact!.id : contact.id,
           );
           if (separateSite) {
             expect(job.billingCustomerId, billingCustomer!.id);

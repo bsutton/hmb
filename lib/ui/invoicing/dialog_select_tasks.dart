@@ -232,7 +232,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
     }
 
     _customer = (await getBillingCustomerForJob(widget.job))!;
-    _contacts = await DaoContact().getByCustomer(_customer.id);
+    _contacts = await DaoContact().getAll();
     _selectedContact = widget.contact;
   }
 
@@ -311,6 +311,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
           children: [
             if (_contacts.isNotEmpty)
               HMBSelectContact(
+                allowOtherCustomers: true,
                 title: 'Billing Contact',
 
                 initialContact: _selectedContact.id,

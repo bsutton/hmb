@@ -8,7 +8,6 @@ import 'dao.dart';
 import 'dao_contact.dart';
 import 'dao_contact_role.dart';
 import 'dao_job.dart';
-import 'job_billing_contact.dart';
 
 class DaoJobParty {
   Database get _db => DatabaseHelper.instance.database;
@@ -54,16 +53,6 @@ class DaoJobParty {
           await DaoContact().getById(contactId, txn) == null ||
           job == null) {
         throw HMBException('Select a valid contact and role.');
-      }
-      if (roleId == ContactRole.billing &&
-          !(await billingContactsForCustomer(
-            job.billingCustomerId,
-            txn,
-          )).any((contact) => contact.id == contactId)) {
-        throw HMBException(
-          'Choose a contact belonging to the Bill To customer. '
-          'Change the Bill To customer in Billing first if needed.',
-        );
       }
       final previous = assignmentId == null
           ? <Map<String, Object?>>[]

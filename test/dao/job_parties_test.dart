@@ -219,35 +219,124 @@ void main() {
     );
   });
 
-  test('billing assignment belongs to the selected Bill To customer', () async {
-    final job = await makeJob();
-    final other = await makeJob();
-    await expectLater(
-      DaoJobParty().save(
+  for (final roleId in [
+    ContactRole.primary,
+    ContactRole.billing,
+    ContactRole.site,
+    ContactRole.projectManager,
+    ContactRole.referrer,
+    ContactRole.owner,
+    ContactRole.tenant,
+    ContactRole.bodyCorporateManager,
+    ContactRole.authoriser,
+    -1,
+  ]) {
+    test('role $roleId saves cross-customer and same-customer edits', () async {
+      final job = await makeJob();
+      final other = await makeJob();
+      final role = roleId == -1
+          ? await DaoContactRole().create('Inspector')
+          : roleId;
+      final own = (await DaoContact().getById(job.contactId))!;
+      final foreign = (await DaoContact().getById(other.contactId))!;
+      final owner = (await DaoCustomer().getById(other.customerId))!;
+      await DaoContactCustomer().insertJoin(foreign, owner);
+      final count = (await DaoContact().getAll()).length;
+      final parties = DaoJobParty();
+      await parties.save(
         jobId: job.id,
-        contactId: other.contactId!,
-        roleId: ContactRole.billing,
+        contactId: foreign.id,
+        roleId: role,
         replaceSingleton: true,
-      ),
-      throwsException,
-    );
-    var saved = (await DaoJob().getById(job.id))!;
-    expect(saved.billingCustomerId, job.customerId);
-    expect(saved.billingContactId, job.contactId);
-    saved
-      ..billToCustomerId = other.customerId
-      ..billingContactId = null;
-    await DaoJob().update(saved);
-    await DaoJobParty().save(
-      jobId: job.id,
-      contactId: other.contactId!,
-      roleId: ContactRole.billing,
-      replaceSingleton: true,
-    );
-    saved = (await DaoJob().getById(job.id))!;
-    expect(saved.billingCustomerId, other.customerId);
-    expect(saved.billingContactId, other.contactId);
-  });
+      );
+      var assignment = (await parties.getByJob(
+        job.id,
+      )).singleWhere((p) => p.role.id == role);
+      expect(assignment.contact.id, foreign.id);
+      var saved = (await DaoJob().getById(job.id))!;
+      expect(saved.customerId, job.customerId);
+      expect(saved.billingCustomerId, job.customerId);
+      await DaoJob().update(saved.copyWith(summary: 'Unrelated edit'));
+      expect(
+        (await parties.getByJob(
+          job.id,
+        )).singleWhere((p) => p.role.id == role).contact.id,
+        foreign.id,
+      );
+      if (role == ContactRole.billing) {
+        expect((await resolveJobBillingContact(saved)).contact!.id, foreign.id);
+        final invoice = Invoice.forInsert(
+          jobId: job.id,
+          dueDate: LocalDate.today(),
+          totalAmount: MoneyEx.dollars(100),
+          billingContactId: null,
+        );
+        await DaoInvoice().insert(invoice);
+        final loaded = (await DaoInvoice().getById(invoice.id))!;
+        expect(loaded.billingCustomerId, job.customerId);
+        expect((await requireInvoiceBillingContact(loaded)).id, foreign.id);
+        expect(
+          (await requireInvoiceBillingContact(loaded)).bestEmail,
+          foreign.bestEmail,
+        );
+      }
+      await parties.save(
+        jobId: job.id,
+        assignmentId: assignment.id,
+        contactId: own.id,
+        roleId: role,
+      );
+      assignment = (await parties.getByJob(
+        job.id,
+      )).singleWhere((p) => p.role.id == role);
+      expect(assignment.contact.id, own.id);
+      saved = (await DaoJob().getById(job.id))!;
+      expect(saved.billingCustomerId, job.customerId);
+      expect((await DaoCustomer().getByContact(foreign.id))!.id, owner.id);
+      expect((await DaoContact().getAll()).length, count);
+      expect(
+        (await DaoContact().getByCustomer(
+          job.customerId,
+        )).any((c) => c.id == foreign.id),
+        isFalse,
+      );
+    });
+  }
+
+  test(
+    'customer search prioritises the associated customer without duplicates',
+    () async {
+      final first = await makeJob();
+      final second = await makeJob();
+      final dao = DaoCustomer();
+      final normal = await dao.getByFilter(null);
+      final preferred = await dao.getByFilter(
+        null,
+        preferredCustomerId: first.customerId,
+      );
+      expect(preferred.first.id, first.customerId);
+      expect(preferred.map((c) => c.id).toSet().length, preferred.length);
+      expect(
+        preferred.skip(1).map((c) => c.id),
+        normal.where((c) => c.id != first.customerId).map((c) => c.id),
+      );
+      expect(preferred.map((c) => c.id), contains(second.customerId));
+      expect(
+        (await dao.getByFilter(
+          null,
+          preferredCustomerId: -999,
+        )).map((c) => c.id),
+        normal.map((c) => c.id),
+      );
+      expect(
+        await dao.getByFilter(
+          'no such customer 658',
+          preferredCustomerId: first.customerId,
+        ),
+        isEmpty,
+      );
+    },
+  );
 
   test(
     'Bill To without a contact never falls back to the job customer',
@@ -406,6 +495,54 @@ void main() {
       final saved = (await DaoJob().getById(job.id))!;
       expect(saved.billingContactId, isNull);
       expect(saved.legacyBillingContactId, isNull);
+    },
+  );
+  test(
+    'customer priority includes every party association without duplicates',
+    () async {
+      final job = await makeJob();
+      final first = await makeJob();
+      final second = await makeJob();
+      final unrelated = await makeJob();
+      final contact = (await DaoContact().getById(first.contactId))!;
+      for (final id in [first.customerId, second.customerId]) {
+        await DaoContactCustomer().insertJoin(
+          contact,
+          (await DaoCustomer().getById(id))!,
+        );
+      }
+      final dao = DaoCustomer();
+      final associated = await dao.getByContactIds([
+        contact.id,
+        contact.id,
+        -1,
+      ]);
+      expect(
+        associated.map((c) => c.id),
+        unorderedEquals([first.customerId, second.customerId]),
+      );
+      final ordered = await dao.getByFilter(
+        null,
+        preferredCustomerId: job.customerId,
+        relatedCustomerIds: [first.customerId!, first.customerId!],
+        relatedContactIds: [contact.id, contact.id],
+      );
+      expect(ordered.first.id, job.customerId);
+      expect(
+        ordered.skip(1).take(2).map((c) => c.id),
+        unorderedEquals([first.customerId, second.customerId]),
+      );
+      expect(ordered.map((c) => c.id).toSet().length, ordered.length);
+      expect(ordered.skip(3).map((c) => c.id), contains(unrelated.customerId));
+      final normal = await dao.getByFilter(null);
+      expect(
+        (await dao.getByFilter(
+          null,
+          relatedContactIds: [-1, -999],
+        )).map((c) => c.id),
+        normal.map((c) => c.id),
+      );
+      expect(await dao.getByContactIds([]), isEmpty);
     },
   );
 }
