@@ -103,6 +103,9 @@ class _TripLogScreenState extends DeferredState<TripLogScreen> {
       return;
     }
     final settings = await DaoTripLog().settings();
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _enabled = settings.enabled;
       _routeLookupEnabled = settings.routeLookupEnabled;
