@@ -127,6 +127,46 @@ void main() {
     }
   });
 
+  for (final initial in [JobStatus.prospecting, JobStatus.quoting]) {
+    test('sending and resending from $initial awaits approval', () async {
+      final job = await _insertJob(initial);
+      // A nonzero booking fee must not turn a quote send into payment waiting.
+      job.bookingFee = MoneyEx.dollars(100);
+      await DaoJob().update(job);
+      final quote = await _insertQuote(QuoteState.reviewing, job: job);
+      for (var send = 0; send < 2; send++) {
+        await DaoQuote().markQuoteSent(quote.id);
+        expect(
+          (await DaoJob().getById(job.id))!.status,
+          JobStatus.awaitingApproval,
+        );
+        final sent = (await DaoQuote().getById(quote.id))!;
+        expect(sent.state, QuoteState.sent);
+        expect(sent.dateSent, isNotNull);
+      }
+      expect(
+        (await DaoToDo().getOpenByJob(
+          job.id,
+        )).where((todo) => todo.title == 'Schedule job'),
+        isEmpty,
+      );
+    });
+  }
+
+  for (final status in JobStatus.values.where(
+    (status) => status != JobStatus.prospecting && status != JobStatus.quoting,
+  )) {
+    test(
+      'sending a quote preserves the existing $status business stage',
+      () async {
+        final job = await _insertJob(status);
+        final quote = await _insertQuote(QuoteState.sent, job: job);
+        await DaoQuote().markQuoteSent(quote.id);
+        expect((await DaoJob().getById(job.id))!.status, status);
+      },
+    );
+  }
+
   test('send and approval advance the job and audit both aggregates', () async {
     final job = await _insertJob(JobStatus.quoting);
     final quote = await _insertQuote(QuoteState.reviewing, job: job);
