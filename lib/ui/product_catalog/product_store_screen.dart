@@ -40,11 +40,13 @@ class _ProductStoreScreenState extends DeferredState<ProductStoreScreen> {
   var _locationStatus = 'Near saved sample home (fictional coordinates).';
   var _onlyStock = false;
   var _saving = false;
+  var _loadRevision = 0;
 
   @override
   Future<void> asyncInitState() => _load();
 
   Future<void> _load() async {
+    final revision = ++_loadRevision;
     try {
       await BlockingUI().runAndWait(() async {
         final stores = await widget.catalog.stores();
@@ -52,7 +54,7 @@ class _ProductStoreScreenState extends DeferredState<ProductStoreScreen> {
           widget.product.id,
         );
         final defaultId = await widget.preferences.readDefaultStore();
-        if (!mounted) {
+        if (!mounted || revision != _loadRevision) {
           return;
         }
         _stores = stores
@@ -71,7 +73,7 @@ class _ProductStoreScreenState extends DeferredState<ProductStoreScreen> {
         _error = null;
       }, label: 'Finding demo stores');
     } catch (_) {
-      if (mounted) {
+      if (mounted && revision == _loadRevision) {
         _error = 'Could not load demo stores. Try again.';
       }
     }

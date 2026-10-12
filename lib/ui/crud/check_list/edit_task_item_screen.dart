@@ -38,6 +38,7 @@ import '../../../util/dart/fixed_ex.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../../util/flutter/platform_ex.dart';
+import '../../product_catalog/product_suggestions.dart';
 import '../../product_catalog/task_product_picker.dart';
 import '../../task_items/material_price_editor.dart';
 import '../../widgets/blocking_ui.dart';
@@ -254,6 +255,13 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
             }),
           ),
           _chooseItemType(taskItem),
+          if (widget.forEstimate &&
+              June.getState(SelectedCheckListItemType.new).selected !=
+                  TaskItemType.labour)
+            ProductSuggestions(
+              description: _descriptionController,
+              purpose: _purposeController,
+            ),
           if (June.getState(SelectedCheckListItemType.new).selected !=
               TaskItemType.labour)
             TaskProductPicker(

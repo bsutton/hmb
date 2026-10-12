@@ -1,5 +1,6 @@
 import 'package:fdb_helper/fdb_helper.dart';
 import 'package:hmb/api/product_catalog/catalog_preferences.dart';
+import 'package:hmb/ui/product_catalog/product_suggestions.dart';
 import 'package:hmb/ui/product_catalog/task_product_picker.dart';
 import 'package:hmb/ui/widgets/blocking_ui.dart';
 import 'package:hmb/ui/widgets/fields/hmb_text_field.dart';
@@ -54,6 +55,11 @@ class _CatalogPreviewState extends State<CatalogPreview> {
               'Isolated preview · fictional task · no application database',
             ),
             HMBTextField(controller: _description, labelText: 'Description'),
+            ProductSuggestions(
+              description: _description,
+              purpose: _purpose,
+              preferences: _preferences,
+            ),
             TaskProductPicker(
               description: _description,
               purpose: _purpose,

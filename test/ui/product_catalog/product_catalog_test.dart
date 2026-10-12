@@ -149,7 +149,7 @@ void main() {
     await tester.scrollUntilVisible(
       find.textContaining('No sample products match'),
       200,
-        scrollable: find.byType(Scrollable).first,
+      scrollable: find.byType(Scrollable).first,
     );
     expect(find.textContaining('No sample products match'), findsOneWidget);
     expect(tester.takeException(), isNull);

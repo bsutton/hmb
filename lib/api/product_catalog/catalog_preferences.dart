@@ -15,7 +15,8 @@ class SavedCatalogPreferences implements CatalogPreferences {
   @override
   Future<String?> readDefaultStore() async {
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
-    return settings[_key] as String?;
+    final value = settings[_key];
+    return value is String ? value : null;
   }
 
   @override

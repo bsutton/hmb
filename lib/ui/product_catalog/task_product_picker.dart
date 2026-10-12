@@ -33,7 +33,9 @@ class TaskProductPicker extends StatelessWidget {
       ),
     );
     if (context.mounted && selection != null) {
-      description.text = selection.fillEmptyDescription(description.text);
+      if (description.text.trim().isEmpty) {
+        description.text = selection.fillEmptyDescription('');
+      }
       purpose.text = selection.appendToPurpose(purpose.text);
     }
   }
