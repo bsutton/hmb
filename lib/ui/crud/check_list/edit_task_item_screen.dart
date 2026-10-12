@@ -38,6 +38,7 @@ import '../../../util/dart/fixed_ex.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../../util/flutter/platform_ex.dart';
+import '../../product_catalog/task_product_picker.dart';
 import '../../task_items/material_price_editor.dart';
 import '../../widgets/blocking_ui.dart';
 import '../../widgets/fields/hmb_text_area.dart';
@@ -253,6 +254,12 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
             }),
           ),
           _chooseItemType(taskItem),
+          if (June.getState(SelectedCheckListItemType.new).selected !=
+              TaskItemType.labour)
+            TaskProductPicker(
+              description: _descriptionController,
+              purpose: _purposeController,
+            ),
           HMBTextArea(controller: _purposeController, labelText: 'Purpose'),
           if (June.getState(SelectedCheckListItemType.new).selected !=
               null) ...[
