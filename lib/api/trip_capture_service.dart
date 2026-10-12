@@ -33,7 +33,7 @@ class TripCaptureService {
   int? _activeGpsTripId;
   int? _gpsSiteId;
   int? _gpsJobId;
-  Future<void> _gpsUpdateTail = Future<void>.value();
+  var _gpsUpdateTail = Future<void>.value();
   final status = ValueNotifier<String>('Trip logging is off');
   final isGpsTracking = ValueNotifier<bool>(false);
 
@@ -237,7 +237,6 @@ class TripCaptureService {
       accuracy: LocationAccuracy.high,
       activityType: ActivityType.automotiveNavigation,
       distanceFilter: 25,
-      pauseLocationUpdatesAutomatically: false,
       showBackgroundLocationIndicator: true,
     ),
     _ => const LocationSettings(
@@ -275,9 +274,9 @@ class TripCaptureService {
   }
 
   Future<void> stopGpsTracking() async {
-    final subscription = _gpsPositions;
+    final cancellation = _gpsPositions?.cancel();
     _gpsPositions = null;
-    await subscription?.cancel();
+    await cancellation;
     await _gpsUpdateTail;
     final tripId = _activeGpsTripId;
     if (tripId != null) {

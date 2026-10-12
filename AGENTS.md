@@ -9,6 +9,12 @@ Migrations are done via raw sql scripts for sqllite on android 11+ and are store
 ## Build, Test, and Development Commands
 Run `flutter pub get` after cloning or when dependencies change. Use `flutter run` to launch the app on a connected device or emulator. `dart run tool/build.dart --assets --build --install` refreshes the asset manifest, builds an APK, and sideloads it—omit flags to limit steps. For release artifacts, use `dart run tool/build.dart --release`; it bumps versions and strips unused WASM modules before building an app bundle.
 
+Before whole-repository analysis, resolve the nested room-editor example:
+`flutter pub get --enforce-lockfile --directory packages/room_editor/example`.
+It has its own declared dependencies and package imports. Also run
+`cd packages/room_editor/example && flutter test --no-pub` alongside the root
+test suite.
+
 ## Coding Style & Naming Conventions
 Follow Dart's 2-space indentation and keep lines under 80 characters. Use `dart format .` before committing and ensure `flutter analyze` passes; the repo inherits rules from `analysis_options.yaml` via `package:lint_hard`. Name classes and enums in PascalCase, public members and locals in lowerCamelCase, and constants with a leading `k`. Keep widgets small and composable, and place shared theming or utilities in existing directories instead of duplicating helpers.
 

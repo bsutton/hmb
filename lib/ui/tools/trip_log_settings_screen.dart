@@ -30,13 +30,13 @@ class TripLogSettingsScreenState extends DeferredState<TripLogSettingsScreen> {
   final _rate = TextEditingController();
   late TripSettings _settings;
   late SystemConfiguration _system;
-  bool _enabled = false;
+  var _enabled = false;
   var _routeLookupEnabled = false;
   var _gpsTrackingEnabled = false;
   TripOriginType _originType = TripOriginType.businessAddress;
   var _hasMapsKey = false;
   var _locationServicesEnabled = false;
-  var _locationPermission = LocationPermission.denied;
+  LocationPermission _locationPermission = LocationPermission.denied;
 
   bool get _isImperial =>
       _system.preferredUnitSystem == PreferredUnitSystem.imperial;

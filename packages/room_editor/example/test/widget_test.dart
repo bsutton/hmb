@@ -24,34 +24,10 @@ void main() {
         unitSystem: RoomEditorUnitSystem.metric,
         plasterCeiling: true,
         lines: const [
-          (
-            id: 1,
-            seqNo: 1,
-            startX: 0,
-            startY: 0,
-            length: 3600
-          ),
-          (
-            id: 2,
-            seqNo: 2,
-            startX: 3600,
-            startY: 0,
-            length: 2400
-          ),
-          (
-            id: 3,
-            seqNo: 3,
-            startX: 3600,
-            startY: 2400,
-            length: 3600
-          ),
-          (
-            id: 4,
-            seqNo: 4,
-            startX: 0,
-            startY: 2400,
-            length: 2400
-          ),
+          (id: 1, seqNo: 1, startX: 0, startY: 0, length: 3600),
+          (id: 2, seqNo: 2, startX: 3600, startY: 0, length: 2400),
+          (id: 3, seqNo: 3, startX: 3600, startY: 2400, length: 3600),
+          (id: 4, seqNo: 4, startX: 0, startY: 2400, length: 2400),
         ],
         openings: const [],
       ),
@@ -73,6 +49,15 @@ void main() {
     await tester.tap(find.byIcon(Icons.straighten));
     await tester.pumpAndSettle();
 
-    expect(find.text('Set Length'), findsOneWidget);
+    expect(find.text('Wall Length'), findsOneWidget);
+    final lengthField = tester.widget<TextField>(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      ),
+    );
+    // Metric geometry uses tenths of a millimetre internally.
+    expect(lengthField.controller!.text, '360');
+    expect(lengthField.enabled, isTrue);
   });
 }

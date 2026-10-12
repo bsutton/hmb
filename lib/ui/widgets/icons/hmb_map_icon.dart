@@ -95,7 +95,9 @@ class HMBMapIcon extends StatelessWidget {
         await TripCaptureService.instance.locationUnavailableMessage(),
       );
     }
-    if (!context.mounted) return;
+    if (!context.mounted) {
+      return;
+    }
     await GoogleMaps.openMap(context, site);
     final callback = onMapClicked;
     if (callback != null) {

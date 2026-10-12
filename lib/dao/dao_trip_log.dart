@@ -179,13 +179,19 @@ class DaoTripLog {
     int? siteId,
     int? jobId,
   }) async {
-    if (!point.valid) throw ArgumentError('Invalid coordinates');
-    return _db.transaction((txn) async {
+    if (!point.valid) {
+      throw ArgumentError('Invalid coordinates');
+    }
+    return await _db.transaction((txn) async {
       final settings = TripSettings.fromMap(
         (await txn.query('trip_settings')).single,
       );
-      if (!settings.enabled || !settings.gpsTrackingEnabled) return null;
-      if (settings.activeGpsTripId != null) return settings.activeGpsTripId;
+      if (!settings.enabled || !settings.gpsTrackingEnabled) {
+        return null;
+      }
+      if (settings.activeGpsTripId != null) {
+        return settings.activeGpsTripId;
+      }
       final id = await txn.insert('trip_log', {
         'departed_at': at.toUtc().toIso8601String(),
         'arrived_at': at.toUtc().toIso8601String(),
@@ -212,24 +218,32 @@ class DaoTripLog {
     TripPoint point,
     DateTime at,
   ) async {
-    if (!point.valid) throw ArgumentError('Invalid coordinates');
+    if (!point.valid) {
+      throw ArgumentError('Invalid coordinates');
+    }
     await _db.transaction((txn) async {
       final rows = await txn.query(
         'trip_log',
         where: 'id = ?',
         whereArgs: [tripId],
       );
-      if (rows.isEmpty) return;
+      if (rows.isEmpty) {
+        return;
+      }
       final trip = rows.single;
       final previousAt = DateTime.parse(trip['arrived_at']! as String);
       final nextAt = at.toUtc();
-      if (!nextAt.isAfter(previousAt)) return;
+      if (!nextAt.isAfter(previousAt)) {
+        return;
+      }
       final previous = TripPoint(
         (trip['to_latitude']! as num).toDouble(),
         (trip['to_longitude']! as num).toDouble(),
       );
       final addedMetres = previous.distanceTo(point).round();
-      if (addedMetres < 10) return;
+      if (addedMetres < 10) {
+        return;
+      }
       await txn.update(
         'trip_log',
         {

@@ -97,16 +97,16 @@ void main() {
       expect(
         await db.rawQuery("PRAGMA table_info('trip_log')"),
         contains(
-          predicate(
-            (Map<String, Object?> row) => row['name'] == 'from_address',
+          predicate<Map<String, Object?>>(
+            (row) => row['name'] == 'from_address',
           ),
         ),
       );
       expect(
         await db.rawQuery("PRAGMA index_list('trip_log')"),
         contains(
-          predicate(
-            (Map<String, Object?> row) => row['name'] == 'trip_log_arrived_idx',
+          predicate<Map<String, Object?>>(
+            (row) => row['name'] == 'trip_log_arrived_idx',
           ),
         ),
       );
