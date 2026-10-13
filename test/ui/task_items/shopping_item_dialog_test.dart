@@ -92,167 +92,181 @@ void main() {
     expect(controller.value?.unitCost, Money.fromInt(2400, isoCode: 'AUD'));
   });
 
-  testWidgets('shopping item edit preserves package pricing', (tester) async {
-    late Task task;
-    late TaskItem item;
+  for (final itemType in [
+    TaskItemType.materialsBuy,
+    TaskItemType.materialsStock,
+  ]) {
+    testWidgets('$itemType edit preserves saved pricing', (tester) async {
+      late Task task;
+      late TaskItem item;
 
-    await tester.runAsync(() async {
-      final job = await createJobWithCustomer(
-        billingType: BillingType.fixedPrice,
-        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
-        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
-        summary: 'Shopping Packet Job',
-      );
-      await setJobStatusForTest(job, JobStatus.scheduled);
+      await tester.runAsync(() async {
+        final job = await createJobWithCustomer(
+          billingType: BillingType.fixedPrice,
+          hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+          bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+          summary: 'Shopping Packet Job',
+        );
+        await setJobStatusForTest(job, JobStatus.scheduled);
 
-      task = Task.forInsert(
-        jobId: job.id,
-        name: 'Shopping Packet Task',
-        description: 'Task with packet shopping item',
-        status: TaskStatus.approved,
-      );
-      await DaoTask().insert(task);
+        task = Task.forInsert(
+          jobId: job.id,
+          name: 'Shopping Packet Task',
+          description: 'Task with packet shopping item',
+          status: TaskStatus.approved,
+        );
+        await DaoTask().insert(task);
 
-      item = TaskItem.forInsert(
-        taskId: task.id,
-        description: 'Packet material item',
-        purpose: '',
-        itemType: TaskItemType.materialsBuy,
-        margin: Percentage.zero,
-        measurementType: MeasurementType.length,
-        dimension1: Fixed.fromNum(1, decimalDigits: 3),
-        dimension2: Fixed.fromNum(1, decimalDigits: 3),
-        dimension3: Fixed.fromNum(1, decimalDigits: 3),
-        units: Units.m,
-        url: '',
-        labourEntryMode: LabourEntryMode.hours,
-        chargeMode: ChargeMode.calculated,
-        estimatedPrice: MaterialPrice.items(
-          quantity: Fixed.fromNum(1, decimalDigits: 3),
-          unitCost: Money.fromInt(100, isoCode: 'AUD'),
-        ),
-      );
-      await DaoTaskItem().insert(item);
-    });
+        item = TaskItem.forInsert(
+          taskId: task.id,
+          description: 'Packet material item',
+          purpose: '',
+          itemType: itemType,
+          margin: Percentage.zero,
+          measurementType: MeasurementType.length,
+          dimension1: Fixed.fromNum(1, decimalDigits: 3),
+          dimension2: Fixed.fromNum(1, decimalDigits: 3),
+          dimension3: Fixed.fromNum(1, decimalDigits: 3),
+          units: Units.m,
+          url: '',
+          labourEntryMode: LabourEntryMode.hours,
+          chargeMode: ChargeMode.calculated,
+          estimatedPrice: MaterialPrice.items(
+            quantity: Fixed.fromNum(1, decimalDigits: 3),
+            unitCost: Money.fromInt(100, isoCode: 'AUD'),
+          ),
+        );
+        await DaoTaskItem().insert(item);
+      });
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Builder(
-          builder: (context) => TextButton(
-            onPressed: () => showShoppingItemDialog(
-              context,
-              TaskItemContext(
-                task: task,
-                taskItem: item,
-                billingType: BillingType.fixedPrice,
-                wasReturned: false,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showShoppingItemDialog(
+                context,
+                TaskItemContext(
+                  task: task,
+                  taskItem: item,
+                  billingType: BillingType.fixedPrice,
+                  wasReturned: false,
+                ),
+                () async {},
               ),
-              () async {},
+              child: const Text('Edit Item'),
             ),
-            child: const Text('Edit Item'),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.tap(find.text('Edit Item'));
-    await tester.pumpAndSettle();
-    expect(find.widgetWithText(HMBCancelButton, 'Cancel'), findsOneWidget);
-    expect(find.widgetWithText(HMBButton, 'Save'), findsOneWidget);
-    await tester.tap(find.text('Packages'));
-    await tester.pumpAndSettle();
-
-    expect(
-      tester
-          .widget<TextFormField>(
-            find.widgetWithText(TextFormField, 'Number of packages'),
-          )
-          .controller!
-          .text,
-      '1',
-    );
-    expect(
-      tester
-          .widget<TextFormField>(
-            find.widgetWithText(TextFormField, 'Items per package'),
-          )
-          .controller!
-          .text,
-      '1',
-    );
-
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Cost per package'),
-      '12.00',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Items per package'),
-      '6',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Number of packages'),
-      '3',
-    );
-    tester.testTextInput.hide();
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Individual items'));
-    await tester.tap(find.text('Individual items'));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Packages'));
-    await tester.tap(find.text('Packages'));
-    await tester.pumpAndSettle();
-
-    expect(
-      tester
-          .widget<TextFormField>(
-            find.widgetWithText(TextFormField, 'Number of packages'),
-          )
-          .controller!
-          .text,
-      '3',
-    );
-    expect(
-      tester
-          .widget<TextFormField>(
-            find.widgetWithText(TextFormField, 'Items per package'),
-          )
-          .controller!
-          .text,
-      '6',
-    );
-    expect(
-      tester
-          .widget<TextFormField>(
-            find.widgetWithText(TextFormField, 'Cost per package'),
-          )
-          .controller!
-          .text,
-      '12.00',
-    );
-
-    await tester.tap(find.text('Save'));
-    await tester.pumpAndSettle();
-
-    await tester.runAsync(() async {
-      final reloaded = await DaoTaskItem().getById(item.id);
+      await tester.tap(find.text('Edit Item'));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.widgetWithText(TextFormField, 'Cost per item'),
+            )
+            .controller!
+            .text,
+        r'$1.00',
+      );
+      expect(find.widgetWithText(HMBCancelButton, 'Cancel'), findsOneWidget);
+      expect(find.widgetWithText(HMBButton, 'Save'), findsOneWidget);
+      await tester.tap(find.text('Packages'));
+      await tester.pumpAndSettle();
 
       expect(
-        reloaded!.estimatedPrice?.unitCost,
-        Money.fromInt(1200, isoCode: 'AUD'),
+        tester
+            .widget<TextFormField>(
+              find.widgetWithText(TextFormField, 'Number of packages'),
+            )
+            .controller!
+            .text,
+        '1',
       );
       expect(
-        reloaded.estimatedPrice?.quantity,
-        Fixed.fromNum(3, decimalDigits: 3),
+        tester
+            .widget<TextFormField>(
+              find.widgetWithText(TextFormField, 'Items per package'),
+            )
+            .controller!
+            .text,
+        '1',
+      );
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Cost per package'),
+        '12.00',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Items per package'),
+        '6',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Number of packages'),
+        '3',
+      );
+      tester.testTextInput.hide();
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Individual items'));
+      await tester.tap(find.text('Individual items'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Packages'));
+      await tester.tap(find.text('Packages'));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.widgetWithText(TextFormField, 'Number of packages'),
+            )
+            .controller!
+            .text,
+        '3',
       );
       expect(
-        reloaded.estimatedPrice?.itemsPerPackage,
-        Fixed.fromNum(6, decimalDigits: 3),
+        tester
+            .widget<TextFormField>(
+              find.widgetWithText(TextFormField, 'Items per package'),
+            )
+            .controller!
+            .text,
+        '6',
       );
       expect(
-        reloaded.estimatedPrice?.totalItemQuantity,
-        Fixed.fromNum(18, decimalDigits: 3),
+        tester
+            .widget<TextFormField>(
+              find.widgetWithText(TextFormField, 'Cost per package'),
+            )
+            .controller!
+            .text,
+        '12.00',
       );
-      expect(reloaded.actualPrice, isNull);
+
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      await tester.runAsync(() async {
+        final reloaded = await DaoTaskItem().getById(item.id);
+
+        expect(
+          reloaded!.estimatedPrice?.unitCost,
+          Money.fromInt(1200, isoCode: 'AUD'),
+        );
+        expect(
+          reloaded.estimatedPrice?.quantity,
+          Fixed.fromNum(3, decimalDigits: 3),
+        );
+        expect(
+          reloaded.estimatedPrice?.itemsPerPackage,
+          Fixed.fromNum(6, decimalDigits: 3),
+        );
+        expect(
+          reloaded.estimatedPrice?.totalItemQuantity,
+          Fixed.fromNum(18, decimalDigits: 3),
+        );
+        expect(reloaded.actualPrice, isNull);
+      });
     });
-  });
+  }
 }

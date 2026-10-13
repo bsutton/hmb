@@ -10,6 +10,9 @@ import 'package:hmb/util/dart/measurement_type.dart';
 import 'package:hmb/util/dart/units.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
+import 'package:hmb/ui/task_items/material_price_editor.dart';
+import 'package:hmb/ui/widgets/select/select.g.dart';
+import 'package:hmb/ui/widgets/icons/hmb_add_button.dart';
 
 import '../../database/management/db_utility_test_helper.dart';
 import '../ui_test_helpers.dart';
@@ -41,6 +44,80 @@ void main() {
   tearDown(() async {
     await tearDownTestDb();
   });
+
+  for (final changeDefaults in [false, true]) {
+    testWidgets(
+      'main packing Add saves defaults or edited values: $changeDefaults',
+      (tester) async {
+        late Job job;
+        await tester.runAsync(() async {
+          job = await createJobWithCustomer(
+            billingType: BillingType.fixedPrice,
+            hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+            bookingFee: Money.fromInt(0, isoCode: 'AUD'),
+            summary: 'Packing defaults',
+          );
+        });
+        await tester.pumpWidget(const MaterialApp(home: PackingScreen()));
+        await pumpDeferredStates(tester);
+        await tester.tap(find.byType(HMBButtonAdd));
+        await tester.pumpAndSettle();
+        final editor = tester.widget<MaterialPriceEditor>(
+          find.byType(MaterialPriceEditor),
+        );
+        expect(editor.controller.quantity.text, '1');
+        expect(editor.controller.unitCost.text, r'$0.00');
+        tester.widget<HMBSelectJob>(find.byType(HMBSelectJob)).onSelected!(job);
+        for (var i = 0; i < 15; i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+          await tester.pump();
+        }
+        tester
+            .widget<HMBDroplist<TaskItemType>>(
+              find.byType(HMBDroplist<TaskItemType>),
+            )
+            .onChanged(TaskItemType.materialsStock);
+        await tester.pump();
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Description'),
+          'Default packing item',
+        );
+        if (changeDefaults) {
+          await tester.enterText(
+            find.widgetWithText(TextFormField, 'Quantity'),
+            '3',
+          );
+          await tester.enterText(
+            find.widgetWithText(TextFormField, 'Cost per item'),
+            '4.50',
+          );
+        }
+        await tester.ensureVisible(find.text('Add'));
+        await tester.tap(find.text('Add'));
+        for (var i = 0; i < 15; i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+          await tester.pump();
+        }
+        expect(find.text('Add Packing Item'), findsNothing);
+        await tester.runAsync(() async {
+          final task = await DaoTask().defaultTaskForMaterials(job.id);
+          final item = (await DaoTaskItem().getByTask(task.id)).single;
+          expect(
+            item.estimatedPrice!.quantity,
+            Fixed.fromNum(changeDefaults ? 3 : 1),
+          );
+          expect(
+            item.estimatedPrice!.unitCost,
+            Money.fromInt(changeDefaults ? 450 : 0, isoCode: 'AUD'),
+          );
+        });
+      },
+    );
+  }
 
   testWidgets('shows move-to-shopping action for packing items', (
     tester,
