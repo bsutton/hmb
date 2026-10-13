@@ -57,6 +57,14 @@ void main() {
             bookingFee: Money.fromInt(0, isoCode: 'AUD'),
             summary: 'Packing defaults',
           );
+          await DaoTask().insert(
+            Task.forInsert(
+              jobId: job.id,
+              name: 'Packing task',
+              description: '',
+              status: TaskStatus.approved,
+            ),
+          );
         });
         await tester.pumpWidget(const MaterialApp(home: PackingScreen()));
         await pumpDeferredStates(tester);
