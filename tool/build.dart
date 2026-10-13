@@ -100,6 +100,7 @@ Create a signed release appbundle suitable to upload to Google Play store.''',
       results['previous-artifact'] as String? ??
       Platform.environment['HMB_PREVIOUS_ARTIFACT'];
   AndroidValidation? validation;
+  ValidatedArtifact? validatedApk;
   if (build || install) {
     if (previous == null || previous.isEmpty) {
       throw StateError(
@@ -108,11 +109,13 @@ Create a signed release appbundle suitable to upload to Google Play store.''',
       );
     }
     if (build &&
-        (results['clean'] as bool) &&
-        path.isWithin(path.absolute('build'), path.absolute(previous))) {
+        path.isWithin(
+          path.absolute('build'),
+          File(previous).resolveSymbolicLinksSync(),
+        )) {
       throw StateError(
         'Keep the previous artifact outside build/ '
-        'so cleaning cannot delete it.',
+        'so cleaning/building cannot delete or overwrite it.',
       );
     }
     validation = AndroidValidation(previousArtifact: previous)
@@ -124,6 +127,9 @@ Create a signed release appbundle suitable to upload to Google Play store.''',
   }
 
   if (build) {
+    if (!which('flutter').found) {
+      throw StateError('Missing flutter');
+    }
     final pathToPubSpec = DartProject.self.pathToPubSpec;
     final currentVersion = version(pubspecPath: pathToPubSpec)!;
     final newVersion = askForVersion(currentVersion);
@@ -144,14 +150,15 @@ Create a signed release appbundle suitable to upload to Google Play store.''',
       await buildAppBundle(newVersion, validation!);
     } else {
       buildApk();
-      await validation!.validate(_apkPath);
+      validatedApk = await validation!.validate(_apkPath);
     }
   }
 
   if (install) {
     if (!build) {
-      await validation!.validate(_apkPath);
+      validatedApk = await validation!.validate(_apkPath);
     }
+    await validatedApk!.assertUnchanged();
     installApk(device: device);
   }
 }
@@ -284,13 +291,16 @@ Future<void> buildAppBundle(
     '--no-pub',
     '--no-tree-shake-icons',
   ]);
-  await validation.validate('build/app/outputs/bundle/release/app-release.aab');
+  final validated = await validation.validate(
+    'build/app/outputs/bundle/release/app-release.aab',
+  );
 
   final targetPath = join(
     DartProject.self.pathToProjectRoot,
     'release',
     'hmb-$newVersion.aab',
   );
+  await validated.assertUnchanged();
   if (exists(targetPath)) {
     delete(targetPath);
   }

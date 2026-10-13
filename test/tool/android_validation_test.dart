@@ -7,6 +7,16 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../tool/lib/android_validation.dart';
 
 void main() {
+  test('artifact receipt rejects changed bytes before promotion', () async {
+    final temp = Directory.systemTemp.createTempSync('hmb-receipt-');
+    addTearDown(() => temp.deleteSync(recursive: true));
+    final artifact = File('${temp.path}/candidate.aab')
+      ..writeAsStringSync('tested bytes');
+    final receipt = await ValidatedArtifact.capture(artifact.path);
+    await receipt.assertUnchanged();
+    artifact.writeAsStringSync('different bytes');
+    await expectLater(receipt.assertUnchanged(), throwsStateError);
+  });
   test('real emulator welcome and dashboard hierarchies are ready', () {
     for (final screen in ['welcome', 'dashboard']) {
       final xml = File(

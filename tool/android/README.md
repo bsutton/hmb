@@ -15,7 +15,7 @@ original AAB and production signing configuration are not modified. Google Play
 signing/delivery and other ABI/device combinations still require release testing.
 
 The previous artifact must have a lower versionCode. Keep it outside `build/`,
-which is cleaned. APK upgrades require matching signing certificates (Android
+even with `--no-clean`, so compilation cannot overwrite it. APK upgrades require matching signing certificates (Android
 rejects mismatches). Preserve a previously validated artifact for the next run;
 the suite never silently promotes a failing candidate. `HMB_PREVIOUS_ARTIFACT`
 can supply the default. There is no validation-skip flag. `--no-clean` retains
@@ -23,7 +23,7 @@ incremental compilation for development, but still requires all final gates.
 
 ## Prerequisites (Linux x86_64)
 
-- Flutter/Dart, Java, Python 3, `unzip`, Android SDK command-line tools, platform
+- Flutter/Dart, dcli, Java, `unzip`, Android SDK command-line tools, platform
   tools and emulator; `ANDROID_HOME` or `android/local.properties` sets SDK path.
 - Install the official rootable AOSP image with
   `sdkmanager 'system-images;android-35;default;x86_64'` and accept SDK licenses
@@ -53,6 +53,12 @@ This exercises migrations actually present between the supplied versions; it doe
 not invent an older schema when both versions use the same schema. Logs, window
 XML and synthetic DB evidence are retained under `build/android-validation/`.
 AVD userdata is removed after the run. No customer database is used.
+The runner snapshots both input artifacts and records SHA-256 digests for
+the originals and every checked APK, including the installed split set, in
+`artifacts.json`. Changed input or split bytes fail validation; the build script
+checks the candidate digest again immediately before installation/promotion.
+The checker and synthetic fixture use Dart libraries already in the dependency
+lockfile. No Python interpreter or Python script is used by this suite.
 
 To validate already-built artifacts without a version bump or phone install:
 
@@ -63,7 +69,7 @@ dart run tool/android_validate.dart /path/candidate.apk /path/previous.apk
 Component-only diagnostic (not a substitute for the full gate):
 
 ```sh
-python3 tool/android/check_apk_components.py \
+./tool/android/check_apk_components.dart \
   --apkanalyzer "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" \
   /path/to/app.apk
 ```
@@ -72,6 +78,19 @@ For split APKs, pass all selected splits together. The checker covers applicatio
 activity, activity-alias targets, service, receiver and provider classes. It skips
 explicitly disabled metadata-only components and Android framework classes. It
 cannot establish constructor correctness or native library/runtime readiness.
+Both executable entry points use `#!/usr/bin/env dcli`; alternatively run them
+with `dart run`. Libraries in `tool/lib/` are not standalone scripts.
+
+Focused regression suite:
+
+```sh
+flutter test --no-pub test/tool
+```
+
+The startup check currently recognizes the English welcome/dashboard screens.
+It rejects system overlays and missing readiness, scans fatal Java/native/Dart
+log tokens and ANRs, and observes five seconds of process survival. It is a
+startup smoke test, not a full application/device/locale compatibility suite.
 
 ## Why cleaning alone was insufficient as a policy
 

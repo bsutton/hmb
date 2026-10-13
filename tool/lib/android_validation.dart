@@ -2,7 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
+import 'package:dcli/dcli.dart';
 import 'package:path/path.dart' as p;
+
+import 'apk_components.dart';
+import 'upgrade_fixture.dart';
 
 const hmbAndroidPackage = 'dev.onepub.handyman';
 const validationImage = 'system-images;android-35;default;x86_64';
@@ -24,6 +29,7 @@ class AndroidValidation {
   Process? _emulator;
   IOSink? _emulatorLog;
   final _commands = <String>[];
+  final _artifacts = <ValidatedArtifact>[];
 
   static String _sdkFromProperties() {
     final properties = File('android/local.properties');
@@ -58,8 +64,10 @@ class AndroidValidation {
       _analyzer,
       p.join(sdk, 'emulator', 'emulator'),
       p.join(sdk, 'cmdline-tools', 'latest', 'bin', 'avdmanager'),
+      'java',
+      if (artifact.endsWith('.aab')) ...['keytool', 'unzip'],
     ]) {
-      if (!File(executable).existsSync()) {
+      if (!which(executable).found) {
         throw StateError('Missing $executable');
       }
     }
@@ -122,7 +130,7 @@ class AndroidValidation {
   Future<String> _device(List<String> args, {bool allowFailure = false}) =>
       _run(_adb, ['-s', _serial, ...args], allowFailure: allowFailure);
 
-  Future<void> validate(String artifact) async {
+  Future<ValidatedArtifact> validate(String artifact) async {
     preflight(artifact);
     if (!File(artifact).existsSync()) {
       throw StateError('Missing candidate: $artifact');
@@ -138,9 +146,21 @@ class AndroidValidation {
     final avds = Directory(p.join(_scratch.path, 'avd'))..createSync();
     _environment = {...Platform.environment, 'ANDROID_AVD_HOME': avds.path};
     try {
+      // Freeze inputs before testing, and reject changes before promotion.
+      final candidateSource = await ValidatedArtifact.capture(artifact);
+      final previousSource = await ValidatedArtifact.capture(previousArtifact);
+      _artifacts.addAll([candidateSource, previousSource]);
+      final candidateCopy = await File(
+        artifact,
+      ).copy(p.join(_scratch.path, 'candidate${p.extension(artifact)}'));
+      final previousCopy = await File(
+        previousArtifact,
+      ).copy(p.join(_scratch.path, 'previous${p.extension(previousArtifact)}'));
+      await candidateSource.verifyCopy(candidateCopy.path);
+      await previousSource.verifyCopy(previousCopy.path);
       await _startEmulator();
-      final candidate = await _prepare(artifact, 'candidate');
-      final previous = await _prepare(previousArtifact, 'previous');
+      final candidate = await _prepare(candidateCopy.path, 'candidate');
+      final previous = await _prepare(previousCopy.path, 'previous');
       await _assertVersionOrder(previous.first, candidate.first);
       await _install(candidate, replace: false);
       await _coldStart('fresh');
@@ -151,12 +171,22 @@ class AndroidValidation {
       await _install(candidate, replace: true);
       await _coldStart('upgrade');
       await _database('verify', 'after-upgrade');
+      for (final artifact in _artifacts) {
+        await artifact.assertUnchanged();
+      }
+      File(p.join(_scratch.path, 'artifacts.json')).writeAsStringSync(
+        const JsonEncoder.withIndent('  ').convert([
+          for (final artifact in _artifacts)
+            {'path': artifact.path, 'sha256': artifact.digest},
+        ]),
+      );
       File(p.join(_scratch.path, 'PASS.txt')).writeAsStringSync(
         'Fresh release startup and same-signature upgrade passed.\n'
         'Candidate: ${File(artifact).absolute.path}\n'
         'Previous: ${File(previousArtifact).absolute.path}\n',
       );
       stdout.writeln('Android validation PASSED: ${_scratch.path}');
+      return candidateSource;
     } finally {
       File(
         p.join(_scratch.path, 'commands.log'),
@@ -343,12 +373,10 @@ class AndroidValidation {
   }
 
   Future<void> _check(List<String> apks) async {
-    await _run('python3', [
-      'tool/android/check_apk_components.py',
-      '--apkanalyzer',
-      _analyzer,
-      ...apks,
-    ]);
+    for (final apk in apks) {
+      _artifacts.add(await ValidatedArtifact.capture(apk));
+    }
+    await checkApkComponents(apks, _analyzer);
   }
 
   Future<void> _assertVersionOrder(String previous, String candidate) async {
@@ -494,11 +522,8 @@ class AndroidValidation {
         await _device(['pull', '$remoteDir/handyman.db$suffix', local.path]);
       }
     }
-    await _run('python3', [
-      'tool/android/upgrade_fixture.py',
-      action,
-      p.join(local.path, 'handyman.db'),
-    ]);
+    upgradeFixture(action, p.join(local.path, 'handyman.db'));
+    stdout.writeln('PASS: $action synthetic upgrade customer');
     if (action == 'seed') {
       await _device([
         'push',
@@ -536,6 +561,28 @@ class AndroidValidation {
       await Future<void>.delayed(const Duration(seconds: 1));
     }
     throw StateError('Timed out waiting for $label; see ${_scratch.path}');
+  }
+}
+
+/// Receipt binds promotion/installation to the artifact actually validated.
+class ValidatedArtifact {
+  ValidatedArtifact._(this.path, this.digest);
+
+  final String path;
+  final String digest;
+
+  static Future<ValidatedArtifact> capture(String path) async =>
+      ValidatedArtifact._(File(path).absolute.path, await _digest(path));
+
+  static Future<String> _digest(String path) async =>
+      (await sha256.bind(File(path).openRead()).first).toString();
+
+  Future<void> assertUnchanged() => verifyCopy(path);
+
+  Future<void> verifyCopy(String otherPath) async {
+    if (await _digest(otherPath) != digest) {
+      throw StateError('Artifact changed during validation: $otherPath');
+    }
   }
 }
 

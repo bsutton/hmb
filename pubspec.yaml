@@ -132,6 +132,7 @@ dependencies:
 
 dev_dependencies:
   args: ^2.5.0
+  crypto: ^3.0.7
   flutter_launcher_icons: ^0.14.0
   flutter_test:
     sdk: flutter
@@ -142,6 +143,7 @@ dev_dependencies:
   pub_release: ^11.0.0
   pubspec_manager: ^3.0.0
   test: ^1.25.15
+  xml: ^7.0.1
 
 flutter:
   # The following line ensures that the Material Icons font is
