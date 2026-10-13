@@ -29,8 +29,9 @@ class JobActivityDate extends PlaceHolder<JobActivity> {
     : super(name: tagName, base: _tagBase);
 
   @override
-  Future<String> value() async =>
-      formatLocalDate(source.value?.start.toLocalDate() ?? LocalDate.today());
+  Future<String> value() async => source.value == null
+      ? ''
+      : formatLocalDate(source.value!.start.toLocalDate());
 }
 
 class JobActivityTime extends PlaceHolder<JobActivity> {
@@ -59,5 +60,5 @@ class OriginalDate extends PlaceHolder<LocalDate> {
 
   @override
   Future<String> value() async =>
-      formatLocalDate(dateSource.date ?? LocalDate.today());
+      dateSource.date == null ? '' : formatLocalDate(dateSource.date!);
 }

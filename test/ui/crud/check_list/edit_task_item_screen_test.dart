@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/crud/base_nested/edit_nested_screen.dart';
 import 'package:hmb/ui/crud/check_list/edit_task_item_screen.dart';
+import 'package:hmb/ui/product_catalog/product_suggestions.dart';
 import 'package:hmb/ui/task_items/material_price_editor.dart';
 import 'package:hmb/ui/widgets/blocking_ui.dart';
 import 'package:hmb/ui/widgets/fields/hmb_text_field.dart';
@@ -123,6 +124,10 @@ void main() {
           )
           .onChanged(TaskItemType.materialsBuy);
       await tester.pumpAndSettle();
+      expect(
+        find.byType(ProductSuggestions),
+        forEstimate ? findsOneWidget : findsNothing,
+      );
       final pricing = tester
           .widget<MaterialPriceEditor>(find.byType(MaterialPriceEditor))
           .controller;
@@ -147,6 +152,13 @@ void main() {
       expect(form.validate(), isFalse);
       pricing.unitCost.text = 'invalid';
       expect(form.validate(), isFalse);
+      tester
+          .widget<HMBDroplist<TaskItemType>>(
+            find.byType(HMBDroplist<TaskItemType>),
+          )
+          .onChanged(TaskItemType.labour);
+      await tester.pumpAndSettle();
+      expect(find.byType(ProductSuggestions), findsNothing);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();
     });

@@ -28,14 +28,12 @@ Future<bool> showLongDurationDialog(
           '''The time entry duration is ${duration.inHours} hours. Do you want to continue?''',
         ),
         actions: [
-          HMBCancelButton(
-            hint: 'Edit the duration',
-            onPressed: () => Navigator.pop(context, false),
-          ),
-          HMBButton(
-            label: 'Continue',
-            hint: 'Save the long duration',
-            onPressed: () => Navigator.pop(context, true),
+          HMBSaveCancelButtons(
+            cancelHint: 'Edit the duration',
+            onCancel: () => Navigator.pop(context, false),
+            saveLabel: 'Continue',
+            saveHint: 'Save the long duration',
+            onSave: () => Navigator.pop(context, true),
           ),
         ],
       ),

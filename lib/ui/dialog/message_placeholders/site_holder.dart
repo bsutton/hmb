@@ -28,6 +28,6 @@ class SiteHolder extends PlaceHolder<Site> {
   @override
   Future<String> value() async {
     final address = siteSource.value?.address.trim() ?? '';
-    return address.isEmpty ? 'Site address unavailable' : address;
+    return address;
   }
 }

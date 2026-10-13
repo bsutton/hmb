@@ -16,9 +16,6 @@ void main() {
     });
 
     expect(template.message, 'Hello\nthere');
-    expect(
-      template.toMap()['message'],
-      'Hello\nthere\n\nSite: {{site.address}}',
-    );
+    expect(template.toMap()['message'], 'Hello\nthere');
   });
 }

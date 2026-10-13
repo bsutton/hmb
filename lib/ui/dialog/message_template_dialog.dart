@@ -18,6 +18,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../dao/dao_message_template.dart';
+import '../../dao/dao_site.dart';
 import '../../entity/message_template.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
@@ -27,11 +28,11 @@ import 'message_placeholders/noop_source.dart';
 import 'message_placeholders/place_holder.dart';
 import 'message_placeholders/placeholder_manager.dart';
 import 'message_placeholders/source.dart';
+import 'message_placeholders/text_holder.dart';
+import 'message_placeholders/text_source.dart';
 import 'source_context.dart';
 
-final _messagePlaceholderRegExp = RegExp(
-  r'\{\{([a-zA-Z]\w*(?:\.[a-zA-Z]\w*)*)\}\}',
-);
+final _messagePlaceholderRegExp = RegExp(r'\{\{([^{}]+)\}\}');
 
 List<String> extractMessagePlaceholderNames(String message) {
   final names = <String>[];
@@ -93,12 +94,23 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
   late TabController _tabController;
   final _messageController = TextEditingController();
   var _selectionGeneration = 0;
+  late final SourceContext _sourceContext;
+  var _manager = PlaceHolderManager();
+  var _canChooseSite = false;
+  String? _validationMessage;
 
   @override
   Future<void> asyncInitState() async {
+    _sourceContext = widget.sourceContext.copy();
     _tabController = TabController(length: 2, vsync: this);
     await BlockingUI().runAndWait(() async {
-      await widget.sourceContext.resolveEntities();
+      await _sourceContext.resolveEntities();
+      _canChooseSite =
+          _sourceContext.site != null ||
+          (_sourceContext.job == null &&
+              (await DaoSite().getByCustomer(
+                _sourceContext.customer?.id,
+              )).isNotEmpty);
       await _loadTemplates();
     }, label: 'Loading message templates');
   }
@@ -128,27 +140,30 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
         continue;
       }
 
-      final names = extractMessagePlaceholderNames(template.message);
-      var canUse = true;
-      for (final name in names) {
-        final placeholder = await PlaceHolderManager().resolvePlaceholder(
-          name,
-          widget.sourceContext,
-        );
-        if (placeholder == null) {
-          canUse = false;
-          break;
-        }
-        if (!_isBaseAvailable(placeholder.base)) {
-          canUse = false;
-          break;
-        }
-      }
-      if (canUse) {
-        filtered.add(
-          template.copyWith(message: template.messageWithSiteAddress),
+      // Persisted wording is intentional, including any explicit site field.
+      // Only job/site entry points add an address to otherwise generic SMS.
+      final needsSite =
+          _sourceContext.job != null || widget.sourceContext.site != null;
+      var message = template.message;
+      // v225 appended this line even to the built-in blank/signature draft.
+      // Recognize only that exact built-in body; preserve customized wording.
+      if (template.owner == MessageTemplateOwner.system &&
+          template.title.trim().toLowerCase() == 'blank' &&
+          const {
+            'Site: {{site.address}}',
+            '{{signature}}\n\nSite: {{site.address}}',
+          }.contains(message.trim())) {
+        message = message.replaceFirst(
+          RegExp(r'\s*Site: \{\{site.address\}\}$'),
+          '',
         );
       }
+      final draft = template.copyWith(message: message);
+      filtered.add(
+        needsSite
+            ? draft.copyWith(message: draft.messageWithSiteAddress)
+            : draft,
+      );
     }
     return filtered;
   }
@@ -173,16 +188,15 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
       case 'job_activity.original_date':
         return true;
       case 'job_activity':
-        return widget.sourceContext.jobActivity != null ||
-            widget.sourceContext.job != null;
+        return _sourceContext.jobActivity != null || _sourceContext.job != null;
       case 'job':
-        return widget.sourceContext.job != null;
+        return _sourceContext.job != null;
       case 'site':
         return true;
       case 'customer':
-        return widget.sourceContext.customer != null;
+        return _sourceContext.customer != null;
       case 'contact':
-        return widget.sourceContext.contact != null;
+        return _sourceContext.contact != null;
       default:
         return false;
     }
@@ -198,6 +212,18 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
       return;
     }
 
+    if (resetExisting) {
+      _manager = PlaceHolderManager();
+      for (final source in <Source<dynamic>>[
+        _manager.customerSource,
+        _manager.contactSource,
+        _manager.jobSource,
+        _manager.siteSource,
+        _manager.jobActivitySource,
+      ]) {
+        source.dependencyChanged(NoopSource(), _sourceContext);
+      }
+    }
     final names = extractMessagePlaceholderNames(selectedTemplate.message);
     final nextPlaceholders = <String, PlaceHolder<dynamic>>{};
 
@@ -208,40 +234,49 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
         continue;
       }
 
-      final placeholder = await PlaceHolderManager().resolvePlaceholder(
-        name,
-        widget.sourceContext,
-      );
+      var placeholder = await _manager.resolvePlaceholder(name, _sourceContext);
+      if (name == 'recipient.name' || name == 'supplier.name') {
+        final holder = DefaultHolder(name: name);
+        final source = holder.source as TextSource;
+        final value = name == 'recipient.name'
+            ? _sourceContext.recipientName
+            : _sourceContext.supplier?.name ?? '';
+        source.text = value;
+        source.controller.text = value;
+        placeholder = holder;
+      } else if (placeholder != null &&
+          (!_isBaseAvailable(placeholder.base) ||
+              placeholder.base == 'site' && !_canChooseSite)) {
+        placeholder = DefaultHolder(name: name);
+      }
       if (!mounted ||
           generation != null && generation != _selectionGeneration) {
         return;
       }
 
-      if (placeholder != null) {
+      final resolved = placeholder;
+      if (resolved != null) {
         /// provide each source with an initial value
-        placeholder.source.dependencyChanged(
-          NoopSource(),
-          widget.sourceContext,
-        );
+        resolved.source.dependencyChanged(NoopSource(), _sourceContext);
 
         // Listen to source changes and propagate them to
         // other sources and the preview window.
-        placeholder.listen = (value, reset) async {
-          placeholder.source.revise(widget.sourceContext);
+        resolved.listen = (value, reset) async {
+          resolved.source.revise(_sourceContext);
           if (reset.site) {
             await BlockingUI().runAndWait(() async {
-              await widget.sourceContext.resolveSite();
+              await _sourceContext.resolveSite();
               if (mounted) {
-                _reset(placeholder.source, reset);
+                _reset(resolved.source, reset);
                 _refreshPreview();
               }
             }, label: 'Loading site address');
           } else {
-            _reset(placeholder.source, reset);
+            _reset(resolved.source, reset);
             _refreshPreview();
           }
         };
-        nextPlaceholders[name] = placeholder;
+        nextPlaceholders[name] = resolved;
       }
     }
 
@@ -252,6 +287,7 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
 
   Future<void> _selectTemplate(MessageTemplate? template) async {
     final generation = ++_selectionGeneration;
+    _validationMessage = null;
     _selectedTemplate = template;
     _messageController.text = _selectedTemplate?.message ?? '';
     await _initializePlaceholders(resetExisting: true, generation: generation);
@@ -267,9 +303,11 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
       return;
     }
 
+    final generation = ++_selectionGeneration;
+    _validationMessage = null;
     _selectedTemplate = selectedTemplate.copyWith(message: value);
-    await _initializePlaceholders();
-    if (mounted) {
+    await _initializePlaceholders(generation: generation);
+    if (mounted && generation == _selectionGeneration) {
       setState(() {});
     }
   }
@@ -291,13 +329,17 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
     var previewMessage = _selectedTemplate!.message;
 
     // Replace  placeholders keys with the actual value
-    for (final key in placeholders.keys) {
-      final placeholder = placeholders[key];
-      final text = await placeholder!.value();
+    for (final entry in placeholders.entries.toList()) {
+      final key = entry.key;
+      final text = await entry.value.value();
       previewMessage = previewMessage.replaceAll(
         '{{$key}}',
-        text.isNotEmpty ? text : '[$key]',
+        text.trim().isNotEmpty ? text : '[Missing: $key]',
       );
+    }
+
+    if (previewMessage.contains('{{') || previewMessage.contains('}}')) {
+      return const Text('Complete or remove unfinished placeholders in Edit.');
     }
 
     /// the sql message_template
@@ -356,6 +398,12 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
                   },
                 ),
                 if (_selectedTemplate != null) _buildSourceWidgets(),
+                const Text(
+                  'Fill in missing values, or edit the message to remove '
+                  'fields you do not need. The recipient stays unchanged.',
+                ),
+                if (_validationMessage != null)
+                  Text(_validationMessage!, key: const Key('template-error')),
               ],
             ),
           ),
@@ -392,6 +440,9 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
                 child: SingleChildScrollView(
                   child: FutureBuilderEx(
                     future: _buildPreview(),
+                    waitingBuilder: (_) => const SizedBox.shrink(),
+                    errorBuilder: (_, error) =>
+                        const Text('Unable to preview this message.'),
                     builder: (context, widget) => widget!,
                   ),
                 ),
@@ -404,8 +455,10 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
     // Buttons at the bottom
     bottomNavigationBar: Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+      child: Wrap(
+        alignment: WrapAlignment.end,
+        spacing: 8,
+        runSpacing: 8,
         children: [
           HMBCancelButton(
             hint: "Don't select any Template",
@@ -416,17 +469,36 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
             hint: 'Select the template',
             onPressed: () async {
               if (_selectedTemplate != null) {
+                final generation = ++_selectionGeneration;
+                await _initializePlaceholders(generation: generation);
+                if (!mounted || generation != _selectionGeneration) {
+                  return;
+                }
+                final template = _selectedTemplate!;
                 final values = <String, String>{};
-                for (final MapEntry(:key, :value) in placeholders.entries) {
+                for (final MapEntry(:key, :value)
+                    in placeholders.entries.toList()) {
                   final field = value;
                   final fieldValue = await field.value();
                   values.addAll({key: fieldValue});
                 }
 
                 final selectedMessageTemplate = SelectedMessageTemplate(
-                  template: _selectedTemplate!,
+                  template: template,
                   values: values,
                 );
+                if (!mounted || generation != _selectionGeneration) {
+                  return;
+                }
+                final missing = selectedMessageTemplate.missingValues;
+                if (missing.isNotEmpty) {
+                  setState(() {
+                    _validationMessage =
+                        'Complete or remove: '
+                        '${missing.join(', ')}';
+                  });
+                  return;
+                }
                 if (context.mounted) {
                   Navigator.of(context).pop(selectedMessageTemplate);
                 }
@@ -442,13 +514,21 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
     final uniqueWidgets = <String, Widget>{};
 
     for (final placeholder in placeholders.values) {
-      if (uniqueWidgets.containsKey(placeholder.base)) {
+      // Entity selectors must not change the name/context while the phone
+      // number still points at the original recipient.
+      if (const ['customer', 'contact', 'job'].contains(placeholder.base)) {
+        continue;
+      }
+      final key = placeholder.base == 'text'
+          ? placeholder.name
+          : placeholder.base;
+      if (uniqueWidgets.containsKey(key)) {
         continue;
       }
 
       final widget = placeholder.source.widget();
       if (widget != null) {
-        uniqueWidgets[placeholder.base] = widget;
+        uniqueWidgets[key] = widget;
       }
     }
 
@@ -481,7 +561,7 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
   void _resetByScope(Source<dynamic> source, String scope) {
     for (final placeholder in placeholders.values) {
       if (placeholder.base == scope) {
-        placeholder.source.dependencyChanged(source, widget.sourceContext);
+        placeholder.source.dependencyChanged(source, _sourceContext);
       }
     }
   }
@@ -493,7 +573,24 @@ class SelectedMessageTemplate {
 
   SelectedMessageTemplate({required this.template, required this.values});
 
+  List<String> get missingValues {
+    final missing = extractMessagePlaceholderNames(
+      template.message,
+    ).where((name) => (values[name] ?? '').trim().isEmpty).toList();
+    var rendered = template.message;
+    for (final name in extractMessagePlaceholderNames(template.message)) {
+      rendered = rendered.replaceAll('{{$name}}', values[name] ?? '');
+    }
+    if (rendered.contains('{{') || rendered.contains('}}')) {
+      missing.add('unfinished placeholder (edit the message)');
+    }
+    return missing;
+  }
+
   String getFormattedMessage() {
+    if (missingValues.isNotEmpty) {
+      throw StateError('Missing template values: ${missingValues.join(', ')}');
+    }
     var message = template.message;
     values.forEach((key, value) {
       message = message.replaceAll('{{$key}}', value);

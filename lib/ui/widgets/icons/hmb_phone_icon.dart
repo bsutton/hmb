@@ -68,6 +68,13 @@ class HMBPhoneIcon extends StatelessWidget {
           'Would you like to make a call or send a text message?',
         ),
         actions: <Widget>[
+          HMBCancelButton(
+            hint: 'Take no action',
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+
           HMBButton(
             label: 'Call',
             hint: 'Open your phone dialer app to call this number',
@@ -99,12 +106,6 @@ class HMBPhoneIcon extends StatelessWidget {
                   Navigator.of(context).pop();
                 }
               }
-            },
-          ),
-          HMBCancelButton(
-            hint: 'Take no action',
-            onPressed: () {
-              Navigator.of(context).pop();
             },
           ),
         ],

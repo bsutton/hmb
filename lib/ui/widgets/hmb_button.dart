@@ -248,8 +248,9 @@ class HMBSaveCancelButtons extends StatelessWidget {
     spacing: 8,
     runSpacing: 8,
     children: [
-      SizedBox(
-        height: 48,
+      HMBCancelButton(hint: cancelHint, onPressed: onCancel),
+      ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
         child: HMBButtonPrimary(
           label: saveLabel,
           hint: saveHint,
@@ -257,7 +258,6 @@ class HMBSaveCancelButtons extends StatelessWidget {
           onPressed: onSave,
         ),
       ),
-      HMBCancelButton(hint: cancelHint, onPressed: onCancel),
     ],
   );
 }

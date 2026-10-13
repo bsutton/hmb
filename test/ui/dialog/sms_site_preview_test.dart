@@ -22,10 +22,18 @@ void main() {
       tester,
     ) async {
       await tester.runAsync(() async {
+        await testDb!.delete('message_template');
+        await DaoMessageTemplate().insert(
+          MessageTemplate.forInsert(
+            title: 'Blank',
+            message: '',
+            messageType: MessageType.sms,
+          ),
+        );
         await DaoMessageTemplate().insert(
           MessageTemplate.forInsert(
             title: '654 Preview regression',
-            message: 'My custom wording',
+            message: 'My custom wording\n\nSite: {{site.address}}',
             messageType: MessageType.sms,
           ),
         );
@@ -61,6 +69,7 @@ void main() {
       );
       await tester.tap(find.text('Compose'));
       await pumpUntilFound(tester, find.text('Choose a template'));
+      await tester.pumpAndSettle();
       await tester.tap(find.byType(HMBDroplist<MessageTemplate>));
       await pumpUntilFound(tester, find.text('654 Preview regression'));
       await tester.tap(find.text('654 Preview regression'));
@@ -80,9 +89,16 @@ void main() {
       );
       await tester.enterText(editor, 'Edited wording\nSite: {{site.address}}');
       await tester.pump();
-      await tester.tap(find.text('Preview'));
-      final address = site?.address ?? 'Site address unavailable';
+      if (missing) {
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'site.address'),
+          'Manually supplied address',
+        );
+        await tester.pump();
+      }
+      final address = site?.address ?? 'Manually supplied address';
       final expected = 'Edited wording\nSite: $address';
+      await tester.tap(find.text('Preview'));
       await pumpUntilCondition(
         tester,
         () => tester
@@ -106,6 +122,9 @@ void main() {
 
 class _FixedSiteContext extends SourceContext {
   _FixedSiteContext(Site? site) : super(site: site);
+
+  @override
+  SourceContext copy() => _FixedSiteContext(site);
 
   @override
   Future<void> resolveEntities() async {}

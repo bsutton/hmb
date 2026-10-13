@@ -52,7 +52,10 @@ class SupplierListScreen extends StatelessWidget {
               ContactText(label: '', contact: contact),
               HMBPhoneText(
                 phoneNo: contact?.bestPhone,
-                sourceContext: SourceContext(supplier: supplier),
+                sourceContext: SourceContext(
+                  supplier: supplier,
+                  contact: contact,
+                ),
               ),
               HMBEmailText(email: contact?.emailAddress),
               HMBSiteText(label: '', site: site),
