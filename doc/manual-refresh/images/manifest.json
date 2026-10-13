@@ -1,0 +1,93 @@
+{
+  "source_commit": "51a4d8e6846fedde31955cbdcc9c484ed44b5138",
+  "version": "0.42.0",
+  "branch": "docs/manual-refresh",
+  "capture_type": "Actual Flutter production widgets in test harness; not installed-app screenshots",
+  "logical_size": [
+    430,
+    932
+  ],
+  "pixel_ratio": 2,
+  "images": {
+    "accounting-reports-main.png": {
+      "sha256": "550112459959a4532073e231d2ee3695b3acc7b6c9021b82aa7add07503986f8",
+      "bytes": 63901,
+      "dimensions": [
+        860,
+        1864
+      ],
+      "context": "Static dashboard with title-only harness app bar; no database",
+      "visually_inspected": true
+    },
+    "billing-logo-main.png": {
+      "sha256": "c3057ba9e61506c2393de874852fcb440ed574f96465693ee8d4f843b35d7248",
+      "bytes": 97606,
+      "dimensions": [
+        860,
+        1864
+      ],
+      "context": "Actual HomeScaffold and production screen; sanitized sample database",
+      "visually_inspected": true
+    },
+    "billing-save-main.png": {
+      "sha256": "1d32812bb57849b6abeb744a2e3b1582e77204e25a305bdb19b11e5ed1291398",
+      "bytes": 94201,
+      "dimensions": [
+        860,
+        1864
+      ],
+      "context": "Actual HomeScaffold and production screen; sanitized sample database",
+      "visually_inspected": true
+    },
+    "integrations-main.png": {
+      "sha256": "7aadb59aeccbcc7f63425cf9091fdacb73e33a1b15615225139692f656219c42",
+      "bytes": 57066,
+      "dimensions": [
+        860,
+        1864
+      ],
+      "context": "Static dashboard with title-only harness app bar; no database",
+      "visually_inspected": true
+    },
+    "task-photos-main.png": {
+      "sha256": "9215fbaf08fe5be385c3a821faf09ff8ab8258ff82c763b67dd0eb99f7f0da7e",
+      "bytes": 92275,
+      "dimensions": [
+        860,
+        1864
+      ],
+      "context": "Actual TaskEditScreen scrolled to camera; sanitized sample database",
+      "visually_inspected": true
+    },
+    "timer-active-main.png": {
+      "sha256": "1dfac1b5dcbd88c99fa7728dfaf8c4b5ddfe73433fef6f53231a5398d23af0fa",
+      "bytes": 60857,
+      "dimensions": [
+        860,
+        1864
+      ],
+      "context": "Actual HomeScaffold and production screen; sanitized sample database",
+      "visually_inspected": true
+    },
+    "timer-start-main.png": {
+      "sha256": "fe9e85c6b04aa5b8259edb930efa8d7204e976bc64e170c76f75cc29ac073052",
+      "bytes": 53022,
+      "dimensions": [
+        860,
+        1864
+      ],
+      "context": "Actual HomeScaffold and production screen; sanitized sample database",
+      "visually_inspected": true
+    },
+    "timer-stop-main.png": {
+      "sha256": "5fb4a2e1ce6f6a653e8f4023f7f24eb9c1cb1aa6381251861da5e75878760b9d",
+      "bytes": 91223,
+      "dimensions": [
+        860,
+        1864
+      ],
+      "context": "Actual HomeScaffold and production screen; sanitized sample database",
+      "visually_inspected": true
+    }
+  }
+}

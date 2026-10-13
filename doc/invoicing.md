@@ -6,7 +6,7 @@ This document defines the intended rules for the new invoicing implementation.
 It is a forward-looking specification and does not describe current behavior.
 
 Quote lifecycle and amendment rules now live in
-[quote.md](/home/bsutton/git/hmb/doc/quote.md). This document focuses on how
+[quote.md](quote.md). This document focuses on how
 approved or unquoted work becomes invoiceable.
 
 Jobs have a 'default' billing type which is one of:
@@ -113,7 +113,7 @@ The booking fee is only billed once for a Job.
 
 #### Quoting
 We do not allow a quote to include T&M tasks. See
-[quote.md](/home/bsutton/git/hmb/doc/quote.md) for quote lifecycle and
+[quote.md](quote.md) for quote lifecycle and
 amendment rules.
 
 # jobs
@@ -229,7 +229,7 @@ These rules apply no matter where invoicing is initiated:
 - Task/Task Item billing behavior always follows effective task billing type.
 - Tasks in active quotes cannot be changed from FP to T&M without
   rejecting/withdrawing that quote first or following the quote revision flow
-  documented in [quote.md](/home/bsutton/git/hmb/doc/quote.md).
+  documented in [quote.md](quote.md).
 - Post-approval task additions are allowed; added tasks are not attached
  to the quoted unless included by amendment.
 

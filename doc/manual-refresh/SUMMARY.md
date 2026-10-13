@@ -1,0 +1,41 @@
+# Manual refresh review
+
+Local staging copied from the public GitBook manual; Git Sync source is unverified.
+These pages describe main 51a4d8e6, not an independently verified store release.
+Do not publish until the [audit blockers](AUDIT.md) are resolved.
+
+- [accounting/invoicing/fixed-price.md](accounting/invoicing/fixed-price.md)
+- [accounting/invoicing/integration/xero.md](accounting/invoicing/integration/xero.md)
+- [accounting/invoicing/integration.md](accounting/invoicing/integration.md)
+- [accounting/invoicing/time-and-materials-cost-plus.md](accounting/invoicing/time-and-materials-cost-plus.md)
+- [accounting/invoicing.md](accounting/invoicing.md)
+- [accounting/quotes-estimates/estimating-a-job/elements-of-an-estimate.md](accounting/quotes-estimates/estimating-a-job/elements-of-an-estimate.md)
+- [accounting/quotes-estimates/estimating-a-job.md](accounting/quotes-estimates/estimating-a-job.md)
+- [accounting/quotes-estimates/quoting-a-job/elements-a-quote.md](accounting/quotes-estimates/quoting-a-job/elements-a-quote.md)
+- [accounting/quotes-estimates/quoting-a-job.md](accounting/quotes-estimates/quoting-a-job.md)
+- [accounting/quotes-estimates/user-stories.md](accounting/quotes-estimates/user-stories.md)
+- [accounting/quotes-estimates.md](accounting/quotes-estimates.md)
+- [accounting/quoting.md](accounting/quoting.md)
+- [accounting/receipt-capture.md](accounting/receipt-capture.md)
+- [accounting.md](accounting.md)
+- [backups.md](backups.md)
+- [contributing.md](contributing.md)
+- [customers.md](customers.md)
+- [getting-started.md](getting-started.md)
+- [home.md](home.md)
+- [jobs.md](jobs.md)
+- [packing-list.md](packing-list.md)
+- [prerequisite.md](prerequisite.md)
+- [privacy.md](privacy.md)
+- [restoring.md](restoring.md)
+- [shopping-list.md](shopping-list.md)
+- [suppliers.md](suppliers.md)
+- [system/logos.md](system/logos.md)
+- [system.md](system.md)
+- [tasks/photos.md](tasks/photos.md)
+- [tasks/time-tracking.md](tasks/time-tracking.md)
+- [tasks.md](tasks.md)
+
+- [Tools](tools.md)
+- [Privacy evidence](PRIVACY_EVIDENCE.md)
+- [GitBook source discovery](GITBOOK_DISCOVERY.md)
