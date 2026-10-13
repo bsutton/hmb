@@ -118,7 +118,12 @@ class _TripLogScreenState extends DeferredState<TripLogScreen> {
   }
 
   Future<void> _retryRoutes() async {
-    await BlockingUI().runAndWait(TripCaptureService.instance.updateRoutes);
+    final tripCapture = TripCaptureService.instance;
+    await BlockingUI().runAndWait(tripCapture.updateRoutes);
+    final status = tripCapture.status.value;
+    if (status != 'Road distances updated.') {
+      HMBToast.error(status);
+    }
     await _reload();
   }
 

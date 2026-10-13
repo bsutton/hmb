@@ -339,6 +339,7 @@ class TripCaptureService {
     }
     final client = http.Client();
     var failed = 0;
+    String? firstFailure;
     try {
       int? afterId;
       while (true) {
@@ -357,16 +358,18 @@ class TripCaptureService {
               client,
             ).distanceFromTrip(trip, key);
             await DaoTripLog().saveRoute(trip, route.$1, route.$2);
-          } catch (_) {
-            // Keep this trip pending and continue with other route requests.
+          } catch (error) {
+            // Keep this trip pending and continue with other route requests,
+            // while retaining a useful reason for the user.
             failed++;
+            firstFailure ??= _routeFailureReason(error);
           }
         }
       }
       status.value = failed == 0
           ? 'Road distances updated.'
           : '$failed road distance(s) could not be calculated. '
-                'Check Maps setup and retry.';
+                '${firstFailure ?? 'Check Maps setup and retry.'}';
     } finally {
       client.close();
     }
@@ -378,6 +381,43 @@ class TripCaptureService {
     }
     return (await DaoSystem().get()).address.trim();
   }
+
+  String _routeFailureReason(Object error) {
+    if (error is TripRouteException) {
+      return switch (error.statusCode) {
+        400 => 'Google rejected a trip location. Check the trip endpoints.',
+        401 || 403 =>
+          'Google rejected the Maps API key, Routes API access, '
+              'or billing setup. Check Google Maps setup.',
+        404 =>
+          'Google Routes API was not found. Check that Routes API is '
+              'enabled for this key.',
+        429 =>
+          'Google Maps quota was exceeded. Try again later or check '
+              'your quota.',
+        >= 500 => 'Google Routes is temporarily unavailable. Try again later.',
+        _ =>
+          'Google Routes returned HTTP ${error.statusCode}. Check Maps '
+              'setup and retry.',
+      };
+    }
+    if (error is TimeoutException) {
+      return 'Google Routes timed out. Check your connection and retry.';
+    }
+    if (error is FormatException) {
+      return 'Google Routes returned an unreadable response. Try again.';
+    }
+    if (error is StateError && error.message == 'No driving route found') {
+      return 'Google could not find a driving route for a trip location.';
+    }
+    return 'Check your connection and Google Maps setup, then retry.';
+  }
+}
+
+class TripRouteException implements Exception {
+  final int statusCode;
+
+  const TripRouteException(this.statusCode);
 }
 
 class TripRouteClient {
@@ -431,7 +471,7 @@ class TripRouteClient {
         )
         .timeout(const Duration(seconds: 15));
     if (response.statusCode != 200) {
-      throw StateError('Route lookup failed');
+      throw TripRouteException(response.statusCode);
     }
     final routes =
         (jsonDecode(response.body) as Map<String, dynamic>)['routes']
