@@ -14,6 +14,7 @@
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart' hide StatefulBuilder;
 
+import 'layout/hmb_spacing.dart';
 import 'layout/layout.g.dart';
 import 'stateful_builder.dart';
 import 'text/hmb_text.dart';
@@ -185,7 +186,9 @@ class _HMBDateTimeFieldState extends State<HMBDateTimeField> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           HMBText(widget.label, bold: true),
-          HMBRow(
+          Wrap(
+            spacing: HMBSpacing.kCompact,
+            runSpacing: HMBSpacing.kCompact,
             children: [
               if (widget.mode != HMBDateTimeFieldMode.timeOnly) dateField(),
               if (widget.mode != HMBDateTimeFieldMode.dateOnly) timeField(),
