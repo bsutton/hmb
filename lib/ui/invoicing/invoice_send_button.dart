@@ -34,17 +34,19 @@ class BuildSendButton extends StatelessWidget {
   final BuildContext context;
   final bool mounted;
   final Invoice invoice;
+  final Future<void> Function()? onReturned;
 
   const BuildSendButton({
     required this.context,
     required this.mounted,
     required this.invoice,
+    this.onReturned,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) => HMBButton(
-    label: 'View/Send...',
+    label: invoice.sent ? 'View / resend' : 'Preview / send',
     hint: 'View and optionally email the Invoice',
     onPressed: () async {
       if (invoice.isExternallyDeletedOrVoided) {
@@ -160,6 +162,7 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
               ),
             ),
           );
+          await onReturned?.call();
         }
       }
     },

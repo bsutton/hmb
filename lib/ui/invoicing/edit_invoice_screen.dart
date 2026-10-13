@@ -14,13 +14,11 @@
 import 'dart:async';
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:strings/strings.dart';
 
 import '../../api/accounting/accounting_adaptor.dart';
-import '../../api/external_accounting.dart';
 import '../../dao/dao_invoice.dart';
 import '../../dao/dao_invoice_line.dart';
 import '../../dao/dao_invoice_line_group.dart';
@@ -44,22 +42,38 @@ import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/icons/hmb_delete_icon.dart';
 import '../widgets/icons/hmb_edit_icon.dart';
+import '../widgets/layout/hmb_spacing.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/layout/surface.dart';
 import 'apply_payment_to_invoice_dialog.dart';
 import 'edit_invoice_line_dialog.dart';
+import 'invoice_accounting_state.dart';
 import 'invoice_details.dart';
+import 'invoice_discount_dialog.dart';
+import 'invoice_editor_actions.dart';
 import 'invoice_send_button.dart';
 import 'quickbooks_export_screen.dart';
 import 'record_invoice_adjustment_dialog.dart';
-import 'record_invoice_payment_dialog.dart';
 import 'void_invoice_dialog.dart';
 import 'write_off_invoice_balance_dialog.dart';
 
 class InvoiceEditScreen extends StatefulWidget {
   final InvoiceDetails invoiceDetails;
+  final Future<InvoiceDetails> Function(int)? loadDetails;
+  final Future<InvoiceAccountingState> Function(int)? loadAccounting;
+  final Future<void> Function(Invoice)? prepareAccountingContact;
+  final Future<void> Function()? accountingLogin;
+  final Future<void> Function(Invoice)? accountingUpload;
 
-  const InvoiceEditScreen({required this.invoiceDetails, super.key});
+  const InvoiceEditScreen({
+    required this.invoiceDetails,
+    this.loadDetails,
+    this.loadAccounting,
+    this.prepareAccountingContact,
+    this.accountingLogin,
+    this.accountingUpload,
+    super.key,
+  });
 
   @override
   State<InvoiceEditScreen> createState() => _InvoiceEditScreenState();
@@ -70,53 +84,118 @@ enum _BillingContactFix { edit, change }
 class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   late final int invoiceId;
   late Future<InvoiceDetails> _invoiceDetails;
+  var _accounting = const InvoiceAccountingState(
+    destination: InvoiceAccountingDestination.none,
+  );
+  var _sendingToAccounting = false;
+  Object? _loadError;
+  var _accountingUnavailable = false;
+  String? _accountingError;
 
   @override
   Future<void> asyncInitState() async {
     invoiceId = widget.invoiceDetails.invoice.id;
-    await _reloadInvoice();
+    await BlockingUI().runAndWait(_reloadInvoice, label: 'Opening invoice');
   }
 
   Future<void> _reloadInvoice() async {
-    _invoiceDetails = InvoiceDetails.load(invoiceId);
+    try {
+      _invoiceDetails = (widget.loadDetails ?? InvoiceDetails.load)(invoiceId);
+      await _invoiceDetails;
+      _loadError = null;
+    } catch (error) {
+      // DeferredState must complete initialization even when a lookup fails.
+      _loadError = error;
+      return;
+    }
+    try {
+      _accounting =
+          await (widget.loadAccounting ?? InvoiceAccountingState.load)(
+            invoiceId,
+          );
+      _accountingUnavailable = false;
+      _accountingError = null;
+    } catch (_) {
+      _accountingUnavailable = true;
+      _accountingError =
+          'Could not load accounting settings. '
+          'Local invoice actions are still available.';
+    }
   }
 
+  Widget _buildLoadError() => HMBFormList(
+    children: [
+      const Text('Could not load this invoice. Please try again.'),
+      HMBButtonSecondary(
+        label: 'Retry',
+        hint: 'Reload invoice details',
+        onPressed: () async {
+          await BlockingUI().runAndWait(
+            _reloadInvoice,
+            label: 'Reloading invoice',
+          );
+          if (mounted) {
+            setState(() {});
+          }
+        },
+      ),
+    ],
+  );
+
   @override
-  Widget build(BuildContext context) => FutureBuilderEx<InvoiceDetails>(
-    future: _invoiceDetails,
-    waitingBuilder: (_) => const Center(child: CircularProgressIndicator()),
-    builder: (context, details) {
-      if (details == null) {
-        return const Center(child: Text('No invoice details found.'));
-      }
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text('Invoice #${widget.invoiceDetails.invoice.id}')),
+    body: DeferredBuilder(
+      this,
+      waitingBuilder: (_) => const SizedBox.shrink(),
+      errorBuilder: (_, _) => _buildLoadError(),
+      builder: (_) => _loadError != null
+          ? _buildLoadError()
+          : BlockingUITransition<InvoiceDetails>(
+              key: ObjectKey(_invoiceDetails),
+              slowAction: () => _invoiceDetails,
+              errorBuilder: (_, _) => _buildLoadError(),
+              builder: _buildInvoice,
+            ),
+    ),
+  );
 
-      final invoice = details.invoice;
-      final job = details.job;
-      final customer = details.customer;
-      final lineGroups = details.lineGroups;
-      final readOnlyInvoice = invoice.isExternallyDeletedOrVoided;
-      final canChangeInvoice =
-          !readOnlyInvoice && !invoice.isUploaded() && !invoice.sent;
+  Widget _buildInvoice(BuildContext context, InvoiceDetails? details) {
+    if (details == null) {
+      return const SizedBox.shrink();
+    }
+    final invoice = details.invoice;
+    final job = details.job;
+    final customer = details.customer;
+    final lineGroups = details.lineGroups;
+    final readOnlyInvoice = invoice.isExternallyDeletedOrVoided;
+    final actions = InvoiceEditorActions(details);
+    final canChangeInvoice = actions.canEdit;
 
-      // Show all details without expansions
-      return Scaffold(
-        appBar: AppBar(title: Text('Edit Invoice #${invoice.id}')),
-        body: SingleChildScrollView(
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 960),
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Surface(
             elevation: SurfaceElevation.e6,
-            child: HMBColumn(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: HMBFormSection(
+              spacing: HMBSpacing.kSectionGap,
               children: [
-                Text(
-                  '''Invoice #${invoice.id} - ${formatDate(invoice.createdDate)}''',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                HMBColumn(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Created ${formatDate(invoice.createdDate)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text('Customer: ${customer?.name ?? "N/A"}'),
+                    Text('Job: ${job.summary} #${job.id}'),
+                  ],
                 ),
-                Text('Customer: ${customer?.name ?? "N/A"}'),
-                Text('Job: ${job.summary} #${job.id}'),
                 _buildBillingContact(details, canChangeInvoice),
                 if (Strings.isNotBlank(invoice.voidDescription))
                   Text('Void description: ${invoice.voidDescription}'),
@@ -128,171 +207,237 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                       'Payment tracking: '
                       '${_paymentManagementLabel(invoice)}',
                     ),
-                    Text(
-                      'Accounting sync: '
-                      '${_syncStatusLabel(invoice.externalSyncStatus)}',
-                    ),
+                    if (invoice.externalSyncStatus !=
+                        InvoiceExternalSyncStatus.none)
+                      Text(
+                        'Accounting: '
+                        '${_syncStatusLabel(invoice.externalSyncStatus)}',
+                      ),
                   ],
                 ),
                 _buildLedgerSummary(details),
-                if (!invoice.isUploaded() && !readOnlyInvoice)
-                  HMBButtonSecondary(
-                    label: 'QuickBooks export',
-                    hint: 'Export an invoice snapshot to QuickBooks (preview)',
-                    onPressed: () async {
-                      await Navigator.of(context).push<void>(
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              QuickBooksExportScreen(invoice: invoice),
-                        ),
-                      );
-                    },
-                  ),
-                if (invoice.paymentSource == InvoicePaymentSource.unknown)
-                  const Text(
-                    'This invoice needs payment tracking review. Convert it '
-                    'to manual tracking if it is no longer managed in Xero.',
-                  ),
-                if (!readOnlyInvoice)
-                  FutureBuilderEx<bool>(
-                    future: ExternalAccounting().isEnabled(),
-                    builder: (context, accountingEnabled) => Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                if (!readOnlyInvoice) ...[
+                  _section('Delivery', [
+                    if (_accountingError != null) Text(_accountingError!),
+                    if (_accountingUnavailable)
+                      HMBButtonSecondary(
+                        label: 'Retry accounting settings',
+                        hint: 'Reload the accounting connection',
+                        onPressed: _reloadInvoiceAndRefresh,
+                      ),
+                    Wrap(
+                      spacing: HMBSpacing.kRelated,
+                      runSpacing: HMBSpacing.kCompact,
                       children: [
-                        if (!invoice.isUploaded() && !invoice.isManagedLocally)
-                          HMBButton(
-                            label: 'Upload to Xero',
-                            hint: 'Upload the invoice to Xero',
-                            onPressed: () {
-                              BlockingUI().run(() async {
-                                await _uploadInvoiceToXero();
-                              }, label: 'Uploading Invoice');
-                            },
-                          ),
-                        if (invoice.canConvertToManualTracking)
-                          HMBButton(
-                            label: 'Convert to Manual Tracking',
-                            hint:
-                                'Switch this invoice to manual payment '
-                                'tracking',
-                            onPressed: () async {
-                              await _convertToManualTracking();
-                            },
-                          ),
-                        if (_canRecordPayment(details))
-                          HMBButton(
-                            label: 'Record Payment',
-                            hint: 'Record a payment against this invoice',
-                            onPressed: () async {
-                              await _recordPayment(details);
-                            },
-                          ),
-                        if (_canRecordAdjustment(details))
-                          HMBButton(
-                            label: 'Add Adjustment',
-                            hint: 'Record an adjustment against this invoice',
-                            onPressed: () async {
-                              await _recordAdjustment(details);
-                            },
-                          ),
-                        if (_canWriteOffSmallBalance(details))
-                          HMBButton(
-                            label: 'Write Off Small Balance',
-                            hint: 'Write off a small unpaid invoice balance',
-                            onPressed: () async {
-                              await _writeOffBalance(
-                                details,
-                                smallBalance: true,
-                              );
-                            },
-                          ),
-                        if (_canWriteOffBalance(details) &&
-                            !_canWriteOffSmallBalance(details))
-                          HMBButton(
-                            label: 'Write Off',
-                            hint: 'Write off this unpaid invoice balance',
-                            onPressed: () async {
-                              await _writeOffBalance(details);
-                            },
-                          ),
-                        if (_canVoidInvoice(details))
-                          HMBButton(
-                            label: 'Void Invoice',
-                            hint: 'Void this sent invoice',
-                            onPressed: () async {
-                              if (await promptAndVoidInvoice(
-                                context: context,
-                                invoice: invoice,
-                              )) {
-                                await _reloadInvoice();
-                                if (!mounted) {
-                                  return;
-                                }
-                                setState(() {});
-                              }
-                            },
-                          ),
-                        if (canChangeInvoice)
-                          HMBButton(
-                            label: 'Add Discount',
-                            hint: 'Add a discount line to this invoice.',
-                            onPressed: () async {
-                              await _promptAddDiscount();
-                            },
-                          ),
                         BuildSendButton(
                           context: context,
                           mounted: mounted,
                           invoice: invoice,
+                          onReturned: _reloadInvoiceAndRefresh,
                         ),
+                        if (!invoice.isUploaded())
+                          HMBButtonSecondary(
+                            label: _accounting.hasSnapshotAttempt
+                                ? 'Review accounting export'
+                                : 'Upload',
+                            hint: _accounting.explanation,
+                            onPressed:
+                                !_accountingUnavailable &&
+                                    _accounting.canSend &&
+                                    !(_accounting.destination ==
+                                            InvoiceAccountingDestination
+                                                .synced &&
+                                        invoice.isManagedLocally) &&
+                                    !_sendingToAccounting
+                                ? _sendToAccounting
+                                : null,
+                          ),
                       ],
                     ),
-                  ),
-                // Show all line groups and lines inline
-                for (final group in lineGroups) ...[
-                  Text(
-                    group.group.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  for (final line in group.lines) ...[
-                    HMBListCard(
-                      title: line.description,
-                      actions: canChangeInvoice
-                          ? [
-                              HMBEditIcon(
-                                onPressed: () =>
-                                    _editInvoiceLine(context, line),
-                                hint: 'Edit Invoice Line',
-                              ),
-                              HMBDeleteIcon(
-                                onPressed: () => _deleteInvoiceLine(line),
-                                hint: 'Delete Invoice Line',
-                              ),
-                            ]
-                          : [],
-                      children: [
-                        Text(
-                          '''Qty: ${line.quantity}, Unit: ${line.unitPrice}, Status: ${line.status.description}''',
+                    if (!invoice.isUploaded() && !_accountingUnavailable)
+                      Text(
+                        _accounting.destination ==
+                                    InvoiceAccountingDestination.synced &&
+                                invoice.isManagedLocally
+                            ? 'Upload is unavailable for invoices with manual '
+                                  'payment tracking.'
+                            : _accounting.explanation,
+                      ),
+                  ]),
+                  if (actions.hasPaymentActions)
+                    _section('Manage payments', [
+                      if (invoice.paymentSource == InvoicePaymentSource.unknown)
+                        const Text(
+                          'Payment tracking needs review. Convert to '
+                          'manual tracking only if this invoice is '
+                          'no longer '
+                          'managed by your accounting software.',
                         ),
-                        Text('Total: ${line.lineTotal}'),
-                      ],
-                    ),
-                  ],
+                      if (actions.canAllocate || actions.canConvertTracking)
+                        Wrap(
+                          spacing: HMBSpacing.kRelated,
+                          runSpacing: HMBSpacing.kCompact,
+                          children: [
+                            if (_canApplyPayment(details))
+                              HMBButtonSecondary(
+                                label: 'Record or allocate payment',
+                                hint:
+                                    'Record a new payment or allocate '
+                                    'an existing payment',
+                                onPressed: () => _applyPayment(details),
+                              ),
+                            if (invoice.canConvertToManualTracking)
+                              HMBButtonSecondary(
+                                label: 'Convert to Manual Tracking',
+                                hint:
+                                    'Switch this invoice to manual payment '
+                                    'tracking',
+                                onPressed: () async {
+                                  await _convertToManualTracking();
+                                },
+                              ),
+                          ],
+                        ),
+                      if (actions.hasMoreActions)
+                        Material(
+                          type: MaterialType.transparency,
+                          child: ExpansionTile(
+                            title: const Text('More invoice actions'),
+                            tilePadding: EdgeInsets.zero,
+                            children: [
+                              Wrap(
+                                spacing: HMBSpacing.kRelated,
+                                runSpacing: HMBSpacing.kCompact,
+                                children: [
+                                  if (_canRecordAdjustment(details))
+                                    HMBButtonSecondary(
+                                      label: 'Add Adjustment',
+                                      hint:
+                                          'Record an adjustment '
+                                          'against this invoice',
+                                      onPressed: () async {
+                                        await _recordAdjustment(details);
+                                      },
+                                    ),
+                                  if (_canWriteOffSmallBalance(details))
+                                    HMBButtonSecondary(
+                                      label: 'Write Off Small Balance',
+                                      hint:
+                                          'Write off a small '
+                                          'unpaid invoice balance',
+                                      onPressed: () async {
+                                        await _writeOffBalance(
+                                          details,
+                                          smallBalance: true,
+                                        );
+                                      },
+                                    ),
+                                  if (_canWriteOffBalance(details) &&
+                                      !_canWriteOffSmallBalance(details))
+                                    HMBButtonSecondary(
+                                      label: 'Write Off',
+                                      hint:
+                                          'Write off this unpaid '
+                                          'invoice balance',
+                                      onPressed: () async {
+                                        await _writeOffBalance(details);
+                                      },
+                                    ),
+                                  if (_canVoidInvoice(details))
+                                    HMBButtonSecondary(
+                                      label: 'Void Invoice',
+                                      hint: 'Void this sent invoice',
+                                      onPressed: () async {
+                                        if (await promptAndVoidInvoice(
+                                          context: context,
+                                          invoice: invoice,
+                                        )) {
+                                          await _reloadInvoice();
+                                          if (!mounted) {
+                                            return;
+                                          }
+                                          setState(() {});
+                                        }
+                                      },
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                    ]),
                 ],
+                _section('Invoice items', [
+                  if (canChangeInvoice)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: HMBButtonSecondary(
+                        label: 'Add Discount',
+                        hint: 'Add a discount line to this invoice',
+                        onPressed: _promptAddDiscount,
+                      ),
+                    ),
+                  // Show all line groups and lines inline
+                  for (final group in lineGroups) ...[
+                    Text(
+                      group.group.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    for (final line in group.lines) ...[
+                      Surface(
+                        child: HMBFormSection(
+                          children: [
+                            Text(
+                              line.description,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            Text(
+                              'Quantity: ${line.quantity} · '
+                              'Unit price: ${line.unitPrice}',
+                            ),
+                            Text('Total: ${line.lineTotal}'),
+                            Text('Status: ${line.status.description}'),
+                            if (canChangeInvoice)
+                              Wrap(
+                                spacing: HMBSpacing.kRelated,
+                                children: [
+                                  HMBEditIcon(
+                                    onPressed: () =>
+                                        _editInvoiceLine(context, line),
+                                    hint: 'Edit Invoice Line',
+                                  ),
+                                  HMBDeleteIcon(
+                                    onPressed: () => _deleteInvoiceLine(line),
+                                    hint: 'Delete Invoice Line',
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ]),
               ],
             ),
           ),
         ),
-      );
-    },
+      ),
+    );
+  }
+
+  Widget _section(String title, List<Widget> children) => HMBFormSection(
+    children: [
+      Text(title, style: Theme.of(context).textTheme.titleMedium),
+      ...children,
+    ],
   );
 
   String _syncStatusLabel(InvoiceExternalSyncStatus status) => switch (status) {
     InvoiceExternalSyncStatus.none => 'Not synced',
-    InvoiceExternalSyncStatus.linked => 'Linked to Xero',
-    InvoiceExternalSyncStatus.deleted => 'Deleted in Xero',
-    InvoiceExternalSyncStatus.voided => 'Voided in Xero',
+    InvoiceExternalSyncStatus.linked => 'Linked to accounting',
+    InvoiceExternalSyncStatus.deleted => 'Deleted in accounting',
+    InvoiceExternalSyncStatus.voided => 'Voided in accounting',
   };
 
   Widget _buildBillingContact(InvoiceDetails details, bool canChangeInvoice) {
@@ -307,68 +452,65 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
         ? jobContact.bestEmail
         : 'no email';
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Surface(
-        elevation: SurfaceElevation.e1,
-        child: HMBColumn(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Billing contact',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+    return Surface(
+      elevation: SurfaceElevation.e1,
+      child: HMBColumn(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Billing contact',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          Text(
+            contact == null || contactName!.isEmpty
+                ? 'No billing contact selected'
+                : contactName,
+          ),
+          if (contact != null && resolved.hasEmail)
+            Text(contact.bestEmail)
+          else
             Text(
-              contact == null || contactName!.isEmpty
-                  ? 'No billing contact selected'
-                  : contactName,
+              details.invoice.isExternallyDeletedOrVoided
+                  ? 'No email address recorded.'
+                  : 'Add a billing email before sending this invoice.',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
-            if (contact != null && resolved.hasEmail)
-              Text(contact.bestEmail)
-            else
-              const Text(
-                'No email address. Add an email or select another contact '
-                'before sending or uploading this invoice.',
-                style: TextStyle(color: Colors.red),
-              ),
-            if (resolved.source == InvoiceBillingContactSource.jobFallback)
-              const Text('Currently inherited from the job.'),
-            if (hasMismatch)
-              Text(
-                'Job billing contact: ${jobContact.fullname.trim()} '
-                '($jobContactEmail)',
-              ),
-            if (canChangeInvoice)
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  HMBButton(
-                    label: 'Change Contact',
-                    hint: 'Select the billing contact for this invoice',
-                    onPressed: () => _changeBillingContact(details),
+          if (resolved.source == InvoiceBillingContactSource.jobFallback)
+            const Text('Currently inherited from the job.'),
+          if (hasMismatch)
+            Text(
+              'Job billing contact: ${jobContact.fullname.trim()} '
+              '($jobContactEmail)',
+            ),
+          if (canChangeInvoice)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                HMBButtonSecondary(
+                  label: 'Change Contact',
+                  hint: 'Select the billing contact for this invoice',
+                  onPressed: () => _changeBillingContact(details),
+                ),
+                if (contact != null)
+                  HMBButtonSecondary(
+                    label: 'Edit Contact',
+                    hint: 'Edit ${contact.fullname.trim()}',
+                    onPressed: () => _editBillingContact(details, contact),
                   ),
-                  if (contact != null)
-                    HMBButton(
-                      label: 'Edit Contact',
-                      hint: 'Edit ${contact.fullname.trim()}',
-                      onPressed: () => _editBillingContact(details, contact),
-                    ),
-                  if (jobContact != null &&
-                      (hasMismatch ||
-                          resolved.source ==
-                              InvoiceBillingContactSource.jobFallback))
-                    HMBButton(
-                      label: 'Use Job Contact',
-                      hint:
-                          'Use ${jobContact.fullname.trim()} for this invoice',
-                      onPressed: () =>
-                          _saveBillingContact(details.invoice, jobContact),
-                    ),
-                ],
-              ),
-          ],
-        ),
+                if (jobContact != null &&
+                    (hasMismatch ||
+                        resolved.source ==
+                            InvoiceBillingContactSource.jobFallback))
+                  HMBButtonSecondary(
+                    label: 'Use Job Contact',
+                    hint: 'Use ${jobContact.fullname.trim()} for this invoice',
+                    onPressed: () =>
+                        _saveBillingContact(details.invoice, jobContact),
+                  ),
+              ],
+            ),
+        ],
       ),
     );
   }
@@ -433,69 +575,58 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
     }
     return switch (invoice.paymentSource) {
       InvoicePaymentSource.manual => 'Managed locally',
-      InvoicePaymentSource.xero => 'Managed by Xero',
+      InvoicePaymentSource.xero => 'Managed by accounting',
       InvoicePaymentSource.unknown => 'Needs review',
     };
   }
 
   Widget _buildLedgerSummary(InvoiceDetails details) {
     final ledger = details.ledger;
-    return Padding(
-      padding: const EdgeInsets.only(top: 12, bottom: 12),
-      child: Surface(
-        elevation: SurfaceElevation.e1,
-        child: HMBColumn(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    return Surface(
+      elevation: SurfaceElevation.e1,
+      child: HMBColumn(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Invoice summary',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
+            children: [
+              Text('Invoice total: ${ledger.total}'),
+              if (InvoiceEditorActions(details).financiallyActive)
+                Text('Paid: ${ledger.paid}'),
+              if (ledger.credited.isNonZero)
+                Text('Credited: ${ledger.credited}'),
+              if (ledger.adjusted.isNonZero)
+                Text('Adjusted: ${ledger.adjusted}'),
+              if (InvoiceEditorActions(details).financiallyActive)
+                Text('Balance: ${ledger.balance}'),
+              Text('Status: ${_ledgerStatusLabel(ledger.status)}'),
+            ],
+          ),
+          if (details.ledgerHistory.isNotEmpty) ...[
+            const SizedBox(height: 8),
             const Text(
-              'Payment summary',
+              'History',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            Wrap(
-              spacing: 16,
-              runSpacing: 8,
-              children: [
-                Text('Invoice total: ${ledger.total}'),
-                Text('Paid: ${ledger.paid}'),
-                Text('Credited: ${ledger.credited}'),
-                Text('Adjusted: ${ledger.adjusted}'),
-                Text('Balance: ${ledger.balance}'),
-                Text('Status: ${_ledgerStatusLabel(ledger.status)}'),
-              ],
-            ),
-            if (_canApplyPayment(details))
-              HMBButton(
-                label: 'Allocate Payment',
-                hint: 'Allocate an existing customer payment to this invoice',
-                onPressed: () => _applyPayment(details),
-              ),
-            if (details.ledgerHistory.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              const Text(
-                'History',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              for (final entry in details.ledgerHistory)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(_ledgerHistoryIcon(entry.type), size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _ledgerHistoryLabel(entry),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
+            for (final entry in details.ledgerHistory)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(_ledgerHistoryIcon(entry.type), size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(_ledgerHistoryLabel(entry))),
+                  ],
                 ),
-            ],
+              ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -527,34 +658,21 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
     return '${formatDate(entry.date)} ${entry.title}: ${entry.amount}$detail';
   }
 
-  bool _canRecordPayment(InvoiceDetails details) =>
-      details.invoice.isManagedLocally &&
-      !details.invoice.isExternallyDeletedOrVoided &&
-      details.ledger.balance.isPositive;
-
   bool _canApplyPayment(InvoiceDetails details) =>
-      !details.invoice.isExternallyDeletedOrVoided &&
-      details.ledger.balance.isPositive;
+      InvoiceEditorActions(details).canAllocate;
 
   bool _canRecordAdjustment(InvoiceDetails details) =>
-      details.invoice.isManagedLocally &&
-      !details.invoice.isExternallyDeletedOrVoided;
+      InvoiceEditorActions(details).canAdjust;
 
   bool _canWriteOffSmallBalance(InvoiceDetails details) =>
       _canWriteOffBalance(details) &&
       details.ledger.balance <= MoneyEx.fromInt(100);
 
   bool _canWriteOffBalance(InvoiceDetails details) =>
-      details.invoice.isManagedLocally &&
-      !details.invoice.isExternallyDeletedOrVoided &&
-      details.ledger.balance.isPositive;
+      InvoiceEditorActions(details).canWriteOff;
 
   bool _canVoidInvoice(InvoiceDetails details) =>
-      details.invoice.canVoid &&
-      details.ledger.isOutstanding &&
-      details.ledger.paid.isZero &&
-      details.ledger.credited.isZero &&
-      details.ledger.adjusted.isZero;
+      InvoiceEditorActions(details).canVoid;
 
   Future<void> _convertToManualTracking() async {
     await DaoInvoice().convertToManualTracking(invoiceId);
@@ -566,40 +684,13 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
     setState(() {});
   }
 
-  Future<void> _recordPayment(InvoiceDetails details) async {
-    final request = await showRecordInvoicePaymentDialog(
-      context: context,
-      balance: details.ledger.balance,
-    );
-    if (request == null) {
-      return;
-    }
-    try {
-      await DebtorLedgerService().recordPayment(
-        invoiceId: details.invoice.id,
-        amount: request.amount,
-        paymentMethod: request.paymentMethod,
-        reference: request.reference,
-        notes: request.notes,
-      );
-      await _reloadInvoice();
-      if (!mounted) {
-        return;
-      }
-      HMBToast.info('Payment recorded');
-      setState(() {});
-    } catch (e) {
-      HMBToast.error(
-        'Failed to record payment: $e',
-        acknowledgmentRequired: true,
-      );
-    }
-  }
-
   Future<void> _applyPayment(InvoiceDetails details) async {
     final customerId = details.billingCustomer?.id;
     if (customerId == null) {
-      HMBToast.error('The invoice job does not have a customer.');
+      HMBToast.error(
+        'Set the job’s billing customer before recording '
+        'or allocating a payment.',
+      );
       return;
     }
     final ledgerService = DebtorLedgerService();
@@ -726,35 +817,102 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
     }
   }
 
-  Future<void> _uploadInvoiceToXero() async {
-    if (!(await ExternalAccounting().isEnabled())) {
-      HMBToast.info(
-        'You must first enable the Xero Integration via System | Intgration',
-      );
+  bool get _canContinueAccounting =>
+      mounted && (ModalRoute.of(context)?.isCurrent ?? false);
+
+  Future<void> _sendToAccounting() async {
+    if (_sendingToAccounting) {
       return;
     }
+    setState(() {
+      _sendingToAccounting = true;
+      _accountingError = null;
+    });
+    try {
+      final state = await BlockingUI().runAndWait(
+        () => (widget.loadAccounting ?? InvoiceAccountingState.load)(invoiceId),
+        label: 'Checking accounting connection',
+      );
+      if (!mounted) {
+        return;
+      }
+      if (!_canContinueAccounting) {
+        return;
+      }
+      setState(() => _accounting = state);
+      if (!state.canSend) {
+        return;
+      }
+      final details = await _invoiceDetails;
+      if (!mounted ||
+          !_canContinueAccounting ||
+          details.invoice.isUploaded() ||
+          details.invoice.isExternallyDeletedOrVoided ||
+          (state.destination == InvoiceAccountingDestination.synced &&
+              details.invoice.isManagedLocally)) {
+        return;
+      }
+      if (state.destination == InvoiceAccountingDestination.snapshot) {
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(
+            builder: (_) => QuickBooksExportScreen(invoice: details.invoice),
+          ),
+        );
+      } else {
+        await _uploadInvoiceToAccounting();
+      }
+      if (mounted) {
+        await _reloadInvoiceAndRefresh();
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _accountingError =
+              'Could not complete the accounting action. '
+              'Review the connection and invoice status before retrying.',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _sendingToAccounting = false);
+      }
+    }
+  }
+
+  Future<void> _uploadInvoiceToAccounting() async {
     try {
       final details = await _invoiceDetails;
+      if (!_canContinueAccounting) {
+        return;
+      }
       final invoice = details.invoice;
       if (invoice.isUploaded()) {
-        HMBToast.error('This invoice has already been uploaded to Xero.');
+        HMBToast.error('This invoice has already been sent to accounting.');
         return;
       }
       try {
-        await _prepareBillingContactForDelivery(invoice);
+        await (widget.prepareAccountingContact ??
+            _prepareBillingContactForDelivery)(invoice);
       } on InvoiceException catch (error) {
         await _showBillingContactProblem(details, error.message);
         return;
       }
 
-      final adaptor = AccountingAdaptor.get();
-
-      await adaptor.login();
-      await adaptor.uploadInvoice(invoice);
-      if (!mounted) {
+      if (!_canContinueAccounting) {
         return;
       }
-      HMBToast.info('Invoice uploaded to Xero successfully');
+      await BlockingUI().runAndWait(() async {
+        await (widget.accountingLogin ?? AccountingAdaptor.get().login)();
+        if (!_canContinueAccounting) {
+          return;
+        }
+        await (widget.accountingUpload ??
+            AccountingAdaptor.get().uploadInvoice)(invoice);
+      }, label: 'Sending invoice to accounting');
+      if (!_canContinueAccounting) {
+        return;
+      }
+      HMBToast.info('Invoice sent to accounting successfully');
       await _reloadInvoice();
       if (!mounted) {
         return;
@@ -768,6 +926,9 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
           hint: Hint.withMap({'hint': 'UploadInvoiceToXero'}),
         ),
       );
+      if (!_canContinueAccounting) {
+        return;
+      }
       HMBToast.error(
         'Failed to upload invoice: $e',
         acknowledgmentRequired: true,
@@ -775,22 +936,27 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
     }
   }
 
-  Future<Contact> _prepareBillingContactForDelivery(Invoice invoice) async {
+  Future<void> _prepareBillingContactForDelivery(Invoice invoice) async {
     final resolved = await resolveInvoiceBillingContact(invoice);
+    if (!_canContinueAccounting) {
+      return;
+    }
     final contact = await requireInvoiceBillingContact(invoice);
+    if (!_canContinueAccounting) {
+      return;
+    }
     if (resolved.source == InvoiceBillingContactSource.jobFallback &&
         invoice.canChangeBillingContact) {
       await DaoInvoice().updateBillingContact(invoice.id, contact.id);
       invoice.billingContactId = contact.id;
     }
-    return contact;
   }
 
   Future<void> _showBillingContactProblem(
     InvoiceDetails details,
     String message,
   ) async {
-    if (!mounted) {
+    if (!_canContinueAccounting) {
       return;
     }
     final contact = details.billingContact.contact;
@@ -820,7 +986,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
         ],
       ),
     );
-    if (!mounted) {
+    if (!_canContinueAccounting) {
       return;
     }
     switch (action) {
@@ -835,11 +1001,9 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   }
 
   Future<void> _editInvoiceLine(BuildContext context, InvoiceLine line) async {
-    final invoice = (await _invoiceDetails).invoice;
-    if (invoice.isUploaded() ||
-        invoice.sent ||
-        invoice.isExternallyDeletedOrVoided) {
-      HMBToast.error('Sent, uploaded or voided invoices cannot be edited.');
+    final details = await _invoiceDetails;
+    if (!InvoiceEditorActions(details).canEdit) {
+      HMBToast.error('Only drafts without ledger activity can be edited.');
       return;
     }
     if (!context.mounted) {
@@ -863,11 +1027,9 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   }
 
   Future<void> _deleteInvoiceLine(InvoiceLine line) async {
-    final invoice = (await _invoiceDetails).invoice;
-    if (invoice.isUploaded() ||
-        invoice.sent ||
-        invoice.isExternallyDeletedOrVoided) {
-      HMBToast.error('Sent, uploaded or voided invoices cannot be edited.');
+    final details = await _invoiceDetails;
+    if (!InvoiceEditorActions(details).canEdit) {
+      HMBToast.error('Only drafts without ledger activity can be edited.');
       return;
     }
     if (!mounted) {
@@ -919,65 +1081,27 @@ Total: ${line.lineTotal}'''),
 
   Future<void> _promptAddDiscount() async {
     final details = await _invoiceDetails;
-    if (details.invoice.isUploaded() ||
-        details.invoice.sent ||
-        details.invoice.isExternallyDeletedOrVoided) {
-      HMBToast.error('Sent, uploaded or voided invoices cannot be changed.');
+    if (!InvoiceEditorActions(details).canEdit) {
+      HMBToast.error('Only drafts without ledger activity can be changed.');
       return;
     }
 
-    final descriptionController = TextEditingController(text: 'Discount');
-    final amountController = TextEditingController();
     if (!mounted) {
       return;
     }
-
-    final confirmed = await showDialog<bool>(
+    final request = await showDialog<InvoiceDiscountRequest>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Discount'),
-        content: HMBFormSection(
-          children: [
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(labelText: 'Description'),
-            ),
-            TextField(
-              controller: amountController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(labelText: 'Amount'),
-            ),
-          ],
-        ),
-        actions: [
-          HMBCancelButton(onPressed: () => Navigator.of(context).pop(false)),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Add'),
-          ),
-        ],
-      ),
+      builder: (_) => const InvoiceDiscountDialog(),
     );
-
-    if (confirmed != true) {
-      return;
-    }
-
-    final amount = MoneyEx.tryParse(amountController.text);
-    if (!amount.isPositive) {
-      HMBToast.error('Discount amount must be greater than zero.');
+    if (request == null || !mounted) {
       return;
     }
 
     try {
       await DaoInvoice().addDiscountLine(
         invoice: details.invoice,
-        amount: amount,
-        description: descriptionController.text.trim().isEmpty
-            ? 'Discount'
-            : descriptionController.text.trim(),
+        amount: request.amount,
+        description: request.description,
       );
       await _reloadInvoice();
       if (!mounted) {

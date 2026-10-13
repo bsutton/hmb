@@ -51,6 +51,14 @@ class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
   }
 
   @override
+  void dispose() {
+    _descriptionController.dispose();
+    _quantityController.dispose();
+    _unitPriceController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) => AlertDialog(
     title: const Text('Edit Invoice Line'),
     content: SingleChildScrollView(
@@ -71,6 +79,7 @@ class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
             keyboardType: TextInputType.number,
           ),
           DropdownButton<LineChargeableStatus>(
+            isExpanded: true,
             value: _status,
             onChanged: (newValue) {
               setState(() {
