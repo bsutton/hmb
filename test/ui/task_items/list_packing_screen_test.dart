@@ -105,7 +105,7 @@ void main() {
         expect(find.text('Add Packing Item'), findsNothing);
         await tester.runAsync(() async {
           final task = await DaoTask().defaultTaskForMaterials(job.id);
-          final item = (await DaoTaskItem().getByTask(task.id)).single;
+          final item = (await DaoTaskItem().getByTask(task!.id)).single;
           expect(
             item.estimatedPrice!.quantity,
             Fixed.fromNum(changeDefaults ? 3 : 1),
