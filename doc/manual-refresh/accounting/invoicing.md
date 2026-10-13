@@ -18,11 +18,16 @@ unquoted work can remain eligible for direct invoicing.
 The invoice stores its billing contact. Draft invoices allow **Change Contact**
 and, when relevant, **Use Job Contact**. Sent/uploaded invoices show that contact
 read-only. A missing email may allow a draft but prevents email delivery or
-external upload until corrected. Keep a primary contact on the job as well:
-View/Send checks for one in this version.
+external upload until corrected. The invoice billing contact can belong to
+another customer; a separate job primary contact is not required for preview.
+The initial email greeting follows the selected recipients. Changing recipients
+updates an untouched generated greeting while preserving edited messages and
+subjects.
 
-Use **View/Send...** to generate and review the PDF, then choose delivery. When
-external accounting is enabled, the app requires upload before email delivery.
+Use **Preview / send** (or **View / resend** for a sent invoice) to generate and
+review the PDF, then choose delivery. When external accounting is enabled, the
+app requires upload before email delivery. With accounting disabled, direct
+email is available. Uploaded invoices retain external payment synchronization.
 A generated PDF is not proof of successful email delivery or payment.
 
 For locally tracked invoices, the details screen offers payment and adjustment
