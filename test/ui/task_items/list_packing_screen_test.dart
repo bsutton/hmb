@@ -16,9 +16,11 @@ import 'package:hmb/ui/widgets/icons/hmb_add_button.dart';
 
 import '../../database/management/db_utility_test_helper.dart';
 import '../ui_test_helpers.dart';
+import '../../util/settings_test_helper.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(prepareSettingsTest);
 
   Future<void> waitForText(
     WidgetTester tester,
@@ -38,6 +40,7 @@ void main() {
   }
 
   setUp(() async {
+    await resetSettingsForTest();
     await setupTestDb();
   });
 
