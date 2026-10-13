@@ -1011,7 +1011,7 @@ class _MailingEditScreenState extends State<MailingEditScreen> {
     await _refreshValidationAttentionState();
     _replaceRecipient(validated);
     if (issues.isEmpty) {
-      HMBToast.info('Address validated and recipient selected.');
+      HMBToast.info(recipientAddressUpdateMessage(validated));
       return;
     }
     await _showAddressValidationIssues(
@@ -2260,3 +2260,10 @@ MailingRecipient recipientAfterAddressValidation(
   selected: issues.isEmpty && !recipient.excluded,
   clearRoute: true,
 );
+
+String recipientAddressUpdateMessage(MailingRecipient recipient) {
+  if (recipient.excluded) {
+    return 'Address updated; recipient remains excluded.';
+  }
+  return 'Address validated and recipient selected.';
+}

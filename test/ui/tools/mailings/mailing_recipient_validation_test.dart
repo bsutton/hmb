@@ -21,6 +21,18 @@ void main() {
 
     expect(updated.selected, isFalse);
   });
+
+  test('an excluded recipient is not reported as validated or selected', () {
+    final recipient = _recipient().copyWith(excluded: true, selected: true);
+
+    final updated = recipientAfterAddressValidation(recipient, const []);
+
+    expect(updated.selected, isFalse);
+    expect(
+      recipientAddressUpdateMessage(updated),
+      'Address updated; recipient remains excluded.',
+    );
+  });
 }
 
 MailingRecipient _recipient() => MailingRecipient.forInsert(
