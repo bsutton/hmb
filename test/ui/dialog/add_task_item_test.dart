@@ -4,6 +4,8 @@ library;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/ui/dialog/add_task_item.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:hmb/ui/task_items/material_price_editor.dart';
+import 'package:money2/money2.dart';
 
 import '../../database/management/db_utility_test_helper.dart';
 
@@ -43,13 +45,14 @@ void main() {
     expect(find.text('Please enter a Description'), findsOneWidget);
   });
 
-  testWidgets('shopping item cost defaults to zero', (tester) async {
+  for (final addType in AddType.values) {
+  testWidgets('$addType quantity and cost default and remain editable', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
           builder: (context) => Scaffold(
             body: ElevatedButton(
-              onPressed: () => showAddItemDialog(context, AddType.shopping),
+              onPressed: () => showAddItemDialog(context, addType),
               child: const Text('Open'),
             ),
           ),
@@ -74,5 +77,11 @@ void main() {
     await tester.pump();
 
     expect(find.text('Enter a valid cost'), findsNothing);
+    await tester.enterText(find.widgetWithText(TextFormField, 'Quantity'), '3');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Cost per item'), '4.50');
+    final editor = tester.widget<MaterialPriceEditor>(find.byType(MaterialPriceEditor));
+    expect(editor.controller.value!.quantity, Fixed.fromNum(3));
+    expect(editor.controller.value!.unitCost, Money.fromInt(450, isoCode: 'AUD'));
   });
+  }
 }

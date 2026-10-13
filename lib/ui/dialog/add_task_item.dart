@@ -38,12 +38,10 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
   final descriptionController = TextEditingController();
   final purposeController = TextEditingController();
   final priceController = MaterialPriceEditingController(
-    price: addType == AddType.shopping
-        ? MaterialPrice.items(
-            quantity: Fixed.one,
-            unitCost: Money.fromInt(0, isoCode: 'AUD'),
-          )
-        : null,
+    price: MaterialPrice.items(
+      quantity: Fixed.one,
+      unitCost: Money.fromInt(0, isoCode: 'AUD'),
+    ),
   );
   final formKey = GlobalKey<FormState>();
   var selectionRevision = 0;
