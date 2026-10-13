@@ -53,6 +53,7 @@ class DashletCard<T> extends StatefulWidget {
   final IconData icon;
   final Future<DashletValue<T>> Function() value;
   final DashletWidgetBuilder<T>? valueBuilder;
+  final Color? Function(BuildContext, DashletValue<T>)? iconColorBuilder;
   final String? route;
   final DashletWidgetBuilder<T>? builder;
   final OnTap? onTap;
@@ -68,6 +69,7 @@ class DashletCard<T> extends StatefulWidget {
     required this.value,
     required this.builder,
     this.valueBuilder,
+    this.iconColorBuilder,
     this.onBeforeOpen,
     this.compact = false,
     super.key,
@@ -83,6 +85,7 @@ class DashletCard<T> extends StatefulWidget {
     required OnTap this.onTap,
     required this.value,
     this.valueBuilder,
+    this.iconColorBuilder,
     this.onBeforeOpen,
     this.compact = false,
     super.key,
@@ -98,6 +101,7 @@ class DashletCard<T> extends StatefulWidget {
     required this.value,
     required String this.route,
     this.valueBuilder,
+    this.iconColorBuilder,
     this.onBeforeOpen,
     this.compact = false,
     super.key,
@@ -140,38 +144,65 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
                     fit: BoxFit.scaleDown,
                     child: SizedBox(
                       width: constraints.maxWidth - (padding * 2),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            widget.icon,
-                            size: iconSize,
-                            color: theme.colorScheme.primary,
+                      child: JuneBuilder(
+                        DashboardReloaded.new,
+                        builder: (_) => FutureBuilderEx<DashletValue<T>>(
+                          future: widget.value(),
+                          waitingBuilder: (context) => Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                widget.icon,
+                                size: iconSize,
+                                color: theme.colorScheme.primary,
+                              ),
+                              SizedBox(height: spacing1),
+                              Text(widget.label, style: labelStyle),
+                            ],
                           ),
-                          SizedBox(height: spacing1),
-                          Text(
-                            widget.label,
-                            textAlign: TextAlign.center,
-                            style: labelStyle,
-                            maxLines: widget.compact ? 1 : 2,
-                            overflow: TextOverflow.ellipsis,
+                          errorBuilder: (context, error) => Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                widget.icon,
+                                size: iconSize,
+                                color: theme.colorScheme.primary,
+                              ),
+                              Text(widget.label, style: labelStyle),
+                              const Text('Unable to load'),
+                            ],
                           ),
-                          SizedBox(height: spacing2),
-                          JuneBuilder(
-                            DashboardReloaded.new,
-                            builder: (_) => FutureBuilderEx<DashletValue<T>>(
-                              future: widget.value(),
-                              builder: (ctx, dv) => widget.valueBuilder != null
-                                  ? widget.valueBuilder!(ctx, dv!)
-                                  : _buildDashletValue(
-                                      dv,
-                                      valueStyle,
-                                      spacing2,
-                                      theme,
-                                    ),
-                            ),
+                          builder: (ctx, dv) => Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                widget.icon,
+                                size: iconSize,
+                                color:
+                                    widget.iconColorBuilder?.call(ctx, dv!) ??
+                                    theme.colorScheme.primary,
+                              ),
+                              SizedBox(height: spacing1),
+                              Text(
+                                widget.label,
+                                textAlign: TextAlign.center,
+                                style: labelStyle,
+                                maxLines: widget.compact ? 1 : 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: spacing2),
+                              if (widget.valueBuilder != null)
+                                widget.valueBuilder!(ctx, dv!)
+                              else
+                                _buildDashletValue(
+                                  dv,
+                                  valueStyle,
+                                  spacing2,
+                                  theme,
+                                ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),

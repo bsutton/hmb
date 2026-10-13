@@ -28,6 +28,11 @@ class BookingRequestsDashlet extends StatelessWidget {
     label: 'New Requests',
     hint: 'Website booking requests awaiting review',
     icon: Icons.notification_important,
+    iconColorBuilder: (context, value) => (value.value ?? 0) > 0
+        ? Theme.of(context).brightness == Brightness.dark
+              ? Colors.amber.shade300
+              : Colors.amber.shade900
+        : null,
     value: () async {
       final count = await DaoBookingRequest().countPending();
       return DashletValue<int>(

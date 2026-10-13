@@ -9,7 +9,9 @@ inherit the job's billing type or override it, allowing mixed billing within a j
 
 The dashboard gives access to Jobs, Today, shopping, packing, Accounting,
 Customers, Suppliers, Tools, Backup and Settings. Use the Home button to return.
-Booking Requests appears only when its integration is configured.
+Booking Requests appears only when its integration is configured. Its bell is
+amber while requests await review and returns to the normal theme color once
+all requests are handled. The count and review message also show this state.
 
 Core records are stored locally. Delivery, backups, photo sync and external
 integrations need connectivity. Keep a recent off-device database backup and
