@@ -34,7 +34,6 @@ import 'site_source.dart';
 import 'text_holder.dart';
 
 class PlaceHolderManager {
-  static PlaceHolderManager? placeHolderManager;
   late final CustomerSource customerSource;
   late final JobSource jobSource;
   late final ContactSource contactSource;
@@ -46,13 +45,7 @@ class PlaceHolderManager {
     'delay_period': DelayPeriod.tagName,
   };
 
-  factory PlaceHolderManager() {
-    placeHolderManager ??= PlaceHolderManager._internal();
-
-    return placeHolderManager!;
-  }
-
-  PlaceHolderManager._internal() {
+  PlaceHolderManager() {
     customerSource = CustomerSource();
     jobSource = JobSource();
     siteSource = SiteSource();

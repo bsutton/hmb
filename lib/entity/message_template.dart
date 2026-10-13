@@ -95,7 +95,7 @@ class MessageTemplate extends Entity<MessageTemplate> {
   Map<String, dynamic> toMap() => {
     'id': id,
     'title': title,
-    'message': messageWithSiteAddress,
+    'message': normalizeMessage(message),
     'message_type': messageType.name, // Store the enum as a string
     'owner': owner.index,
     'enabled': enabled ? 1 : 0,

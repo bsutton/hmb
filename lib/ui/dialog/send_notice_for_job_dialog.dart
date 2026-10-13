@@ -47,6 +47,22 @@ String noticeSmsGreetingForContact(Contact? contact) {
 
 String _noticeContactName(Contact? contact) => contact?.fullname.trim() ?? '';
 
+/// Personalize only when exactly one contact matches the selected recipient.
+Contact? noticeTemplateContact(List<Contact> contacts, List<String> mobiles) {
+  if (mobiles.length != 1) {
+    return null;
+  }
+  String digits(String number) => number.replaceAll(RegExp('[^0-9+]'), '');
+  final selected = digits(mobiles.single);
+  final matches = contacts
+      .where(
+        (contact) =>
+            selected.isNotEmpty && digits(contact.mobileNumber) == selected,
+      )
+      .toList();
+  return matches.length == 1 ? matches.single : null;
+}
+
 /// Builds the default SMS for both new and edited schedule events.
 String noticeSmsBodyForActivity({
   required JobActivity activity,
@@ -320,11 +336,18 @@ Add additional recipients who should receive a copy of the email.'''),
   );
 
   Future<void> _applySmsTemplate() async {
+    final contacts = await DaoContact().getByJob(widget.job.id);
+    final recipient = noticeTemplateContact(contacts, _toMobiles);
+    if (!mounted) {
+      return;
+    }
     final selected = await showMessageTemplateDialog(
       context,
       sourceContext: SourceContext(
         job: widget.job,
         jobActivity: widget.jobActivity,
+        contact: recipient,
+        inferContact: false,
       ),
       messageType: MessageType.sms,
     );
@@ -337,6 +360,11 @@ Add additional recipients who should receive a copy of the email.'''),
   Future<void> _sendSms(BuildContext context) async {
     if (_toMobiles.isEmpty) {
       HMBToast.info('Please select at least one mobile number');
+      return;
+    }
+
+    if (_smsBodyCtl.text.contains('{{') || _smsBodyCtl.text.contains('}}')) {
+      HMBToast.info('Complete or remove template placeholders before sending');
       return;
     }
 

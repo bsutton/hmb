@@ -14,6 +14,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 
+import '../../../util/dart/date_time_ex.dart';
 import '../../../util/dart/local_date.dart';
 import '../../widgets/hmb_date_time_picker.dart';
 import '../source_context.dart';
@@ -30,7 +31,7 @@ class DateSource extends Source<LocalDate> {
   Widget widget() => HMBDateTimeField(
     mode: HMBDateTimeFieldMode.dateOnly,
     label: label.toProperCase(),
-    initialDateTime: DateTime.now(),
+    initialDateTime: date?.toDateTime() ?? DateTime.now(),
     onChanged: (datetime) {
       date = LocalDate.fromDateTime(datetime);
       super.onChanged(value, ResetFields());
@@ -42,8 +43,14 @@ class DateSource extends Source<LocalDate> {
 
   @override
   void dependencyChanged(Source<dynamic> source, SourceContext sourceContext) {
-    // no op
+    date = switch (label) {
+      'Original Date' => sourceContext.originalDate,
+      'Due Date' => sourceContext.invoice?.dueDate,
+      'Service Date' => sourceContext.jobActivity?.start.toLocalDate(),
+      _ => date,
+    };
   }
+
   @override
   void revise(SourceContext sourceContext) {
     // no op

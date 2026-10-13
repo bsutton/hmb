@@ -164,10 +164,7 @@ void main() {
       await context.resolveEntities();
       expect(context.site, isNull);
       final source = SiteSource()..dependencyChanged(NoopSource(), context);
-      expect(
-        await SiteHolder(siteSource: source).value(),
-        'Site address unavailable',
-      );
+      expect(await SiteHolder(siteSource: source).value(), '');
     }
   });
 
@@ -197,10 +194,7 @@ void main() {
   test('blank and partial site addresses have sensible text', () async {
     final blank = await makeSite('   ');
     final source = SiteSource()..site = blank;
-    expect(
-      await SiteHolder(siteSource: source).value(),
-      'Site address unavailable',
-    );
+    expect(await SiteHolder(siteSource: source).value(), '');
     source.site = blank.copyWith(suburb: 'Richmond', postcode: '3121');
     expect(await SiteHolder(siteSource: source).value(), 'Richmond, 3121');
   });

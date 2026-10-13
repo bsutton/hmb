@@ -31,7 +31,7 @@ class ServiceDate extends PlaceHolder<LocalDate> {
 
   @override
   Future<String> value() async =>
-      formatLocalDate(dateSource.date ?? LocalDate.today());
+      dateSource.date == null ? '' : formatLocalDate(dateSource.date!);
 }
 
 class DueDate extends PlaceHolder<LocalDate> {
@@ -46,5 +46,5 @@ class DueDate extends PlaceHolder<LocalDate> {
 
   @override
   Future<String> value() async =>
-      formatLocalDate(dateSource.date ?? LocalDate.today());
+      dateSource.date == null ? '' : formatLocalDate(dateSource.date!);
 }

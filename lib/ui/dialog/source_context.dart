@@ -31,6 +31,7 @@ class SourceContext {
   String? delayPeriod;
   LocalDate? originalDate;
   JobActivity? jobActivity;
+  final bool inferContact;
 
   SourceContext({
     this.customer,
@@ -42,63 +43,49 @@ class SourceContext {
     this.delayPeriod,
     this.originalDate,
     this.jobActivity,
+    this.inferContact = true,
   });
 
-  // static SourceContext create({
-  //   Customer? customer,
-  //   Job? job,
-  //   Contact? contact,
-  //   Supplier? supplier,
-  //   Site? site,
-  //   Invoice? invoice,
-  //   String? delayPeriod,
-  //   LocalDate? originalDate,
-  //   JobActivity? jobActivity,
-  // }) async {
-  //   final sourceContext = SourceContext._(customer, job, contact, supplier,
-  //       site, invoice, delayPeriod, originalDate, jobActivity);
+  /// Drafts must not write their selections back to the caller.
+  SourceContext copy() => SourceContext(
+    customer: customer,
+    job: job,
+    contact: contact,
+    supplier: supplier,
+    site: site,
+    invoice: invoice,
+    delayPeriod: delayPeriod,
+    originalDate: originalDate,
+    jobActivity: jobActivity,
+    inferContact: inferContact,
+  );
 
-  //   await sourceContext.resolveEntities();
+  String get recipientName => (contact?.firstName.trim().isNotEmpty ?? false)
+      ? contact!.firstName.trim()
+      : (contact?.fullname.trim().isNotEmpty ?? false)
+      ? contact!.fullname.trim()
+      : supplier?.name ?? customer?.name ?? '';
 
-  //   return sourceContext;
-  // }
-
-  /// Fetches related entities based on the provided entities.
-  /// The fetching is done in a hierarchical order based on the importance
-  /// of each entity type.
+  /// Resolve only relationships that identify one context unambiguously.
   Future<void> resolveEntities() async {
     job ??= await DaoJob().getById(jobActivity?.jobId ?? invoice?.jobId);
-    await resolveSite();
-    var currentHash = -1;
-    var newHash = -1;
-
-    /// keep looping unti a pass results in no updates.
-    do {
-      currentHash = newHash;
-
-      /// Try by contact.
-      if (contact != null) {
-        customer ??= await DaoCustomer().getByContact(contact!.id);
-      }
-
-      /// Try by site.
-      if (site != null) {
-        customer ??= await DaoCustomer().getBySite(site!.id);
-      }
-
-      /// Try by job.
-      if (job != null) {
-        customer ??= await DaoCustomer().getByJob(job!.id);
+    if (job != null) {
+      customer = await DaoCustomer().getById(job!.customerId);
+      if (inferContact) {
         contact ??= await DaoContact().getPrimaryForJob(job!.id);
-        jobActivity ??= await DaoJobActivity().getMostRecentByJob(job!.id);
       }
-
-      /// Try by customer.
-      if (customer != null) {
-        contact ??= await DaoContact().getPrimaryForCustomer(customer!.id);
-        await resolveSite();
+      jobActivity ??= await DaoJobActivity().getMostRecentByJob(job!.id);
+    } else if (supplier == null && customer == null) {
+      // A site can have several customers; it does not identify a recipient.
+      if (contact != null) {
+        final customers = await DaoCustomer().getByContactIds([contact!.id]);
+        customer = customers.length == 1 ? customers.single : null;
       }
-    } while (currentHash != (newHash = _buildHash()));
+    }
+    if (customer != null && supplier == null && inferContact) {
+      contact ??= await DaoContact().getPrimaryForCustomer(customer!.id);
+    }
+    await resolveSite();
   }
 
   /// A job's site is authoritative. Customer-only messages may infer a site
@@ -113,16 +100,4 @@ class SourceContext {
       site = sites.length == 1 ? sites.single : null;
     }
   }
-
-  int _buildHash() => Object.hashAll([
-    customer,
-    job,
-    contact,
-    supplier,
-    site,
-    invoice,
-    delayPeriod,
-    originalDate,
-    jobActivity,
-  ]);
 }

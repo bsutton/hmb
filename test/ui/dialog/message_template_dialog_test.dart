@@ -43,6 +43,7 @@ void main() {
     expect(find.text('Select'), findsNothing);
     ready.complete();
     await pumpUntilFound(tester, find.text('Choose a template'));
+    await tester.pumpAndSettle();
     expect(find.byType(HMBDroplist<MessageTemplate>), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
@@ -52,6 +53,14 @@ void main() {
     tester,
   ) async {
     await tester.runAsync(() async {
+      await testDb!.delete('message_template');
+      await DaoMessageTemplate().insert(
+        MessageTemplate.forInsert(
+          title: 'Blank',
+          message: '',
+          messageType: MessageType.sms,
+        ),
+      );
       await DaoMessageTemplate().insert(
         MessageTemplate.forInsert(
           title: 'Feedback test template',
@@ -94,6 +103,7 @@ void main() {
       ),
     );
     await pumpUntilFound(tester, find.text('Choose a template'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byType(HMBDroplist<MessageTemplate>));
     await pumpUntilFound(tester, find.text('Feedback test template'));
@@ -105,10 +115,7 @@ void main() {
     var editor = tester.widget<TextFormField>(
       find.widgetWithText(TextFormField, 'Edit Message'),
     );
-    expect(
-      editor.controller?.text,
-      'Please leave feedback\n\nSite: {{site.address}}',
-    );
+    expect(editor.controller?.text, 'Please leave feedback');
 
     await tester.tap(find.text('Feedback test template'));
     await pumpUntilFound(tester, find.text('Appointment test template'));
@@ -118,10 +125,7 @@ void main() {
     editor = tester.widget<TextFormField>(
       find.widgetWithText(TextFormField, 'Edit Message'),
     );
-    expect(
-      editor.controller?.text,
-      'Your appointment is tomorrow\n\nSite: {{site.address}}',
-    );
+    expect(editor.controller?.text, 'Your appointment is tomorrow');
 
     // Selection returns immediately; recency is recorded in the background.
     await pumpUntilCondition(
@@ -137,6 +141,9 @@ void main() {
 class _DelayedSourceContext extends SourceContext {
   final Future<void> ready;
   _DelayedSourceContext(this.ready);
+
+  @override
+  SourceContext copy() => _DelayedSourceContext(ready);
 
   @override
   Future<void> resolveEntities() async {
