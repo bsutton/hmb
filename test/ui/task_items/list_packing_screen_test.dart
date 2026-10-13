@@ -6,17 +6,17 @@ import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/entity/helpers/charge_mode.dart';
 import 'package:hmb/ui/task_items/list_packing_screen.dart';
+import 'package:hmb/ui/task_items/material_price_editor.dart';
+import 'package:hmb/ui/widgets/icons/hmb_add_button.dart';
+import 'package:hmb/ui/widgets/select/select.g.dart';
 import 'package:hmb/util/dart/measurement_type.dart';
 import 'package:hmb/util/dart/units.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
-import 'package:hmb/ui/task_items/material_price_editor.dart';
-import 'package:hmb/ui/widgets/select/select.g.dart';
-import 'package:hmb/ui/widgets/icons/hmb_add_button.dart';
 
 import '../../database/management/db_utility_test_helper.dart';
-import '../ui_test_helpers.dart';
 import '../../util/settings_test_helper.dart';
+import '../ui_test_helpers.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
