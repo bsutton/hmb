@@ -3,8 +3,8 @@ library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/ui/dialog/add_task_item.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:hmb/ui/task_items/material_price_editor.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 
 import '../../database/management/db_utility_test_helper.dart';
