@@ -1,4 +1,5 @@
 #!/usr/bin/env dcli
+
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
@@ -28,6 +29,7 @@ import 'package:pub_release/pub_release.dart' hide Settings;
 import 'package:pubspec_manager/pubspec_manager.dart' as pm;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'lib/android_validation.dart';
 import 'lib/version_properties.dart';
 
 void main(List<String> args) async {
@@ -59,6 +61,15 @@ void main(List<String> args) async {
       help: '''
 Create a signed release appbundle suitable to upload to Google Play store.''',
     )
+    ..addOption(
+      'previous-artifact',
+      help: 'Previous APK (or AAB for --release) for upgrade validation.',
+    )
+    ..addFlag(
+      'clean',
+      defaultsTo: true,
+      help: 'Clean project outputs before compiling; always validate.',
+    )
     ..addFlag('help', abbr: 'h', help: 'Shows the help message');
 
   final results = parser.parse(args);
@@ -85,10 +96,32 @@ Create a signed release appbundle suitable to upload to Google Play store.''',
     build = assets = true;
   }
 
+  final previous =
+      results['previous-artifact'] as String? ??
+      Platform.environment['HMB_PREVIOUS_ARTIFACT'];
+  AndroidValidation? validation;
+  if (build || install) {
+    if (previous == null || previous.isEmpty) {
+      throw StateError(
+        'Supply --previous-artifact or HMB_PREVIOUS_ARTIFACT. '
+        'Final Android validation cannot be skipped.',
+      );
+    }
+    if (build &&
+        (results['clean'] as bool) &&
+        path.isWithin(path.absolute('build'), path.absolute(previous))) {
+      throw StateError(
+        'Keep the previous artifact outside build/ '
+        'so cleaning cannot delete it.',
+      );
+    }
+    validation = AndroidValidation(previousArtifact: previous)
+      ..preflight(release ? 'candidate.aab' : 'candidate.apk');
+  }
+
   if (assets) {
     await updateAssetList();
   }
-  var needPubGet = true;
 
   if (build) {
     final pathToPubSpec = DartProject.self.pathToPubSpec;
@@ -98,23 +131,27 @@ Create a signed release appbundle suitable to upload to Google Play store.''',
 
     updateAndroidVersion(newVersion);
 
-    if (needPubGet) {
-      _runPubGet();
-      needPubGet = false;
+    if (results['clean'] as bool) {
+      _checkedFlutter(['clean']);
     }
+    _runPubGet();
 
     /// remove the pdfx wasm modules as the add 4mb and
     /// they are only useful on web.
     /// https://github.com/espresso3389/pdfrx/tree/master/packages/pdfrx#note-for-building-release-builds
     // 'flutter run pdfrx:remove_wasm_modules'.run;
     if (release) {
-      buildAppBundle(newVersion);
+      await buildAppBundle(newVersion, validation!);
     } else {
       buildApk();
+      await validation!.validate(_apkPath);
     }
   }
 
   if (install) {
+    if (!build) {
+      await validation!.validate(_apkPath);
+    }
     installApk(device: device);
   }
 }
@@ -128,8 +165,7 @@ Tools to help build the app
 }
 
 void _runPubGet() {
-  // DartSdk().runPubGet(DartProject.self.pathToProjectRoot);
-  'flutter pub get'.start(workingDirectory: DartProject.self.pathToProjectRoot);
+  _checkedFlutter(['pub', 'get', '--enforce-lockfile']);
 }
 
 void installApk({String? device}) {
@@ -211,12 +247,44 @@ String _selectAndroidInstallTarget(String? requestedSerial) {
   );
 }
 
-void buildApk() {
-  'flutter build apk --no-tree-shake-icons'.run;
+const _apkPath = 'build/app/outputs/flutter-apk/app-release.apk';
+
+void _checkedFlutter(List<String> arguments) {
+  final result = Process.runSync('flutter', arguments);
+  stdout.write(result.stdout);
+  stderr.write(result.stderr);
+  if (result.exitCode != 0) {
+    throw ProcessException(
+      'flutter',
+      arguments,
+      'Flutter command failed',
+      result.exitCode,
+    );
+  }
 }
 
-void buildAppBundle(Version newVersion) {
-  'flutter build appbundle --release '.start();
+void buildApk() {
+  _checkedFlutter([
+    'build',
+    'apk',
+    '--release',
+    '--no-pub',
+    '--no-tree-shake-icons',
+  ]);
+}
+
+Future<void> buildAppBundle(
+  Version newVersion,
+  AndroidValidation validation,
+) async {
+  _checkedFlutter([
+    'build',
+    'appbundle',
+    '--release',
+    '--no-pub',
+    '--no-tree-shake-icons',
+  ]);
+  await validation.validate('build/app/outputs/bundle/release/app-release.aab');
 
   final targetPath = join(
     DartProject.self.pathToProjectRoot,

@@ -34,6 +34,10 @@ Before whole-repository analysis, resolve the room-editor example dependencies:
 `flutter pub get --enforce-lockfile --directory packages/room_editor/example`.
 Run root tests and the example tests described in AGENTS.md.
 
+The final Android build workflow requires a previous APK/AAB and validates the
+actual artifact plus fresh-install and upgrade startup in a disposable emulator.
+See [Android validation setup](tool/android/README.md).
+
 The `doc/` folder includes design specifications as well as implementation notes;
 forward-looking specifications are not user-facing feature promises.
 

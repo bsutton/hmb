@@ -7,7 +7,7 @@ The Flutter app code lives in `lib/`, split into feature modules, database manag
 Migrations are done via raw sql scripts for sqllite on android 11+ and are stored in `assets/sql/upgrade/scripts`. The tool/build.dart --assets command adds a new script to the `assets/sql/upgrade_list.json`
 
 ## Build, Test, and Development Commands
-Run `flutter pub get` after cloning or when dependencies change. Use `flutter run` to launch the app on a connected device or emulator. `dart run tool/build.dart --assets --build --install` refreshes the asset manifest, builds an APK, and sideloads it—omit flags to limit steps. For release artifacts, use `dart run tool/build.dart --release`; it bumps versions and strips unused WASM modules before building an app bundle.
+Run `flutter pub get` after cloning or when dependencies change. Use `flutter run` to launch the app on a connected device or emulator. `dart run tool/build.dart --assets --build --install --previous-artifact /path/last-good.apk` refreshes assets, cleans project outputs, builds and validates a release APK, then sideloads it. Omit flags to limit steps. For app bundles, use `dart run tool/build.dart --release --previous-artifact /path/last-good.aab`. Both paths require component checks plus fresh-start and synthetic-data upgrade tests in a disposable Android emulator before installation or release-directory output. Keep the previous artifact outside `build/`. See [Android validation setup](tool/android/README.md) for SDK prerequisites and exact coverage. Missing prerequisites are failures, never skips.
 
 Before whole-repository analysis, resolve the nested room-editor example:
 `flutter pub get --enforce-lockfile --directory packages/room_editor/example`.
