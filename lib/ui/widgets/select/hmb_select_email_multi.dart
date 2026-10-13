@@ -9,6 +9,8 @@ import 'hmb_droplist_multi.dart';
 
 class HMBSelectEmailMulti extends StatefulWidget {
   final Job job;
+  final List<Contact> additionalContacts;
+  final void Function(List<ContactAndEmail>)? onContactsChanged;
   final void Function(List<String>) onChanged;
 
   /// One or more email addresses that should be pre-selected.
@@ -19,6 +21,8 @@ class HMBSelectEmailMulti extends StatefulWidget {
     required this.job,
     required this.onChanged,
     this.initialEmails = const [],
+    this.additionalContacts = const [],
+    this.onContactsChanged,
     super.key,
   });
 
@@ -35,7 +39,11 @@ class _HMBSelectEmailMultiState extends DeferredState<HMBSelectEmailMulti> {
       return;
     }
 
-    final all = await ContactAndEmail.fromJob(widget.job, null);
+    final all = await ContactAndEmail.fromJob(
+      widget.job,
+      null,
+      additionalContacts: widget.additionalContacts,
+    );
 
     // Normalise for case/whitespace to be forgiving.
     String norm(String s) => s.trim().toLowerCase();
@@ -60,13 +68,20 @@ class _HMBSelectEmailMultiState extends DeferredState<HMBSelectEmailMulti> {
           initialItems: () async => preSelected,
 
           // All available items, filtered by the user's query.
-          items: (filter) => ContactAndEmail.fromJob(widget.job, filter),
+          items: (filter) => ContactAndEmail.fromJob(
+            widget.job,
+            filter,
+            additionalContacts: widget.additionalContacts,
+          ),
           format: (contactEmail) =>
               '${contactEmail.contact.fullname}\n${contactEmail.email}',
           onChanged: (selectedContacts) {
-            widget.onChanged(
-              selectedContacts.map((contact) => contact.email).toList(),
-            );
+            final selected = List<ContactAndEmail>.of(selectedContacts);
+            preSelected
+              ..clear()
+              ..addAll(selected);
+            widget.onContactsChanged?.call(selected);
+            widget.onChanged(selected.map((contact) => contact.email).toList());
           },
           title: 'To',
           backgroundColor: SurfaceElevation.e4.color,
@@ -99,7 +114,11 @@ class ContactAndEmail {
   /// Returns all [ContactAndEmail] selectable for the given [job].
   /// If [filter] is provided, performs a case-insensitive contains match
   /// against contact fullname and email.
-  static Future<List<ContactAndEmail>> fromJob(Job job, String? filter) async {
+  static Future<List<ContactAndEmail>> fromJob(
+    Job job,
+    String? filter, {
+    List<Contact> additionalContacts = const [],
+  }) async {
     final list = <ContactAndEmail>[];
     final seenEmails = <String>{};
 
@@ -113,7 +132,9 @@ class ContactAndEmail {
       }
     }
 
-    final contactsById = <int, Contact>{};
+    final contactsById = <int, Contact>{
+      for (final contact in additionalContacts) contact.id: contact,
+    };
     for (final contact in await DaoContact().getByCustomer(job.customerId)) {
       contactsById[contact.id] = contact;
     }

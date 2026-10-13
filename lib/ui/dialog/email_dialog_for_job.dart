@@ -17,6 +17,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 
 import '../../dao/dao_system.dart';
+import '../../entity/contact.dart';
 import '../../entity/job.dart';
 import '../../entity/system.dart';
 import '../widgets/hmb_button.dart';
@@ -27,6 +28,8 @@ import 'email_self_warning.dart';
 
 class EmailDialogForJob extends StatefulWidget {
   final Job job;
+  final List<Contact> additionalContacts;
+  final String Function(List<Contact>)? bodyForContacts;
   final String subject;
   final String body;
   final String preferredRecipient;
@@ -38,6 +41,8 @@ class EmailDialogForJob extends StatefulWidget {
     required this.subject,
     required this.body,
     required this.attachmentPaths,
+    this.additionalContacts = const [],
+    this.bodyForContacts,
     super.key,
   });
 
@@ -51,6 +56,8 @@ class _EmailDialogState extends DeferredState<EmailDialogForJob> {
   late TextEditingController _subjectController;
   late TextEditingController _bodyController;
   List<String> _selectedRecipients = [];
+  late String _signature;
+  late String _generatedBody;
 
   @override
   Future<void> asyncInitState() async {
@@ -64,10 +71,8 @@ class _EmailDialogState extends DeferredState<EmailDialogForJob> {
         )
         ..write(system.businessNumber);
     }
-    _bodyController = TextEditingController(
-      text:
-          '''
-${widget.body}
+    _signature =
+        '''
 
 Regards,
 ${system.businessName}
@@ -76,8 +81,9 @@ Email: ${system.emailAddress}
 Phone: ${system.bestPhone}
 Web: ${system.webUrl}
 $businessDetails
-''',
-    );
+''';
+    _generatedBody = '${widget.body}\n$_signature';
+    _bodyController = TextEditingController(text: _generatedBody);
     _selectedRecipients = [
       widget.preferredRecipient.trim(),
     ].where((email) => email.isNotEmpty).toList();
@@ -100,6 +106,17 @@ $businessDetails
             HMBSelectEmailMulti(
               initialEmails: _selectedRecipients,
               job: widget.job,
+              additionalContacts: widget.additionalContacts,
+              onContactsChanged: (selected) {
+                final generate = widget.bodyForContacts;
+                if (generate == null ||
+                    _bodyController.text != _generatedBody) {
+                  return;
+                }
+                final contacts = selected.map((item) => item.contact).toList();
+                _generatedBody = '${generate(contacts)}\n$_signature';
+                _bodyController.text = _generatedBody;
+              },
               onChanged: (selectedRecipients) {
                 setState(() {
                   _selectedRecipients = selectedRecipients;

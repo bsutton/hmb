@@ -3,7 +3,13 @@ import '../../dao/dao_quickbooks.dart';
 import '../../dao/dao_system.dart';
 
 /// Select a destination without silently choosing between two connections.
-enum InvoiceAccountingDestination { none, synced, snapshot, conflict }
+enum InvoiceAccountingDestination {
+  none,
+  disconnected,
+  synced,
+  snapshot,
+  conflict,
+}
 
 class InvoiceAccountingState {
   final InvoiceAccountingDestination destination;
@@ -19,6 +25,7 @@ class InvoiceAccountingState {
   factory InvoiceAccountingState.resolve({
     required bool syncEnabled,
     required bool snapshotConnected,
+    bool snapshotConfigured = false,
     bool hasSnapshotAttempt = false,
     bool snapshotComplete = false,
   }) => InvoiceAccountingState(
@@ -28,6 +35,8 @@ class InvoiceAccountingState {
         ? InvoiceAccountingDestination.synced
         : snapshotConnected
         ? InvoiceAccountingDestination.snapshot
+        : snapshotConfigured
+        ? InvoiceAccountingDestination.disconnected
         : InvoiceAccountingDestination.none,
     hasSnapshotAttempt: hasSnapshotAttempt,
     snapshotComplete: snapshotComplete,
@@ -36,9 +45,11 @@ class InvoiceAccountingState {
   static Future<InvoiceAccountingState> load(int invoiceId) async {
     final syncEnabled = await ExternalAccounting().isEnabled();
     final credentials = await DaoSystem().getQuickBooksCredentials();
+    final settings = await DaoQuickBooks().settings();
     final exported = await DaoQuickBooks().exportFor(invoiceId);
     return InvoiceAccountingState.resolve(
       syncEnabled: syncEnabled,
+      snapshotConfigured: settings.clientId.trim().isNotEmpty,
       snapshotConnected:
           credentials.tokenJson != null && credentials.realmId != null,
       hasSnapshotAttempt: exported != null,
@@ -46,7 +57,7 @@ class InvoiceAccountingState {
     );
   }
 
-  bool get canSend =>
+  bool get canUpload =>
       destination == InvoiceAccountingDestination.synced ||
       destination == InvoiceAccountingDestination.snapshot;
 
@@ -55,13 +66,22 @@ class InvoiceAccountingState {
       hasSnapshotAttempt
           ? 'An earlier accounting export exists. Reconnect the original '
                 'accounting integration in settings to review it.'
-          : 'Connect accounting in System > Integration to send this invoice.',
+          : 'Connect accounting in System > Integration to upload a copy. '
+                'You can send this invoice without accounting.',
+    InvoiceAccountingDestination.disconnected =>
+      hasSnapshotAttempt
+          ? 'An earlier accounting export exists. Reconnect the original '
+                'integration to review its status before retrying upload.'
+          : 'Accounting is configured but not connected. Reconnect in '
+                'System > Integration to upload.',
     InvoiceAccountingDestination.conflict =>
       'More than one accounting destination is configured or this invoice '
           'has an earlier export. Review integration settings and the '
-          'existing export before sending.',
+          'existing export before uploading.',
     InvoiceAccountingDestination.synced =>
-      'Send this invoice to your connected accounting software.',
+      'Upload to the configured accounting provider. '
+          'Upload is required before email while this integration is '
+          'enabled. The connection is checked during upload.',
     InvoiceAccountingDestination.snapshot =>
       snapshotComplete
           ? 'An invoice snapshot was exported. Payments and later changes '

@@ -12,6 +12,7 @@ import 'package:hmb/ui/invoicing/invoice_accounting_state.dart';
 import 'package:hmb/ui/invoicing/invoice_details.dart';
 import 'package:hmb/ui/invoicing/invoice_discount_dialog.dart';
 import 'package:hmb/ui/invoicing/invoice_editor_actions.dart';
+import 'package:hmb/ui/invoicing/invoice_send_button.dart';
 import 'package:hmb/ui/invoicing/quickbooks_export_screen.dart';
 import 'package:hmb/ui/widgets/hmb_button.dart';
 import 'package:hmb/util/dart/exceptions.dart';
@@ -21,6 +22,129 @@ import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 
 void main() {
+  for (final accountingEnabled in [false, true]) {
+    test(
+      'upload-first email policy with accounting enabled=$accountingEnabled',
+      () async {
+        var prepared = false;
+        var accountingLookups = 0;
+        final result = await checkInvoiceEmailAvailability(
+          invoice: _details().invoice,
+          prepareBillingContact: () async {
+            prepared = true;
+          },
+          isAccountingEnabled: () async {
+            accountingLookups++;
+            return accountingEnabled;
+          },
+        );
+        expect(prepared, isTrue);
+        expect(result.blocked, accountingEnabled);
+        expect(accountingLookups, 1);
+      },
+    );
+  }
+
+  test(
+    'unknown accounting settings block sending with retry guidance',
+    () async {
+      final result = await checkInvoiceEmailAvailability(
+        invoice: _details().invoice,
+        prepareBillingContact: () async {},
+        isAccountingEnabled: () async => throw StateError('disconnected'),
+      );
+      expect(result.blocked, isTrue);
+      expect(result.reason, contains('Retry before sending'));
+    },
+  );
+
+  test('email still validates contacts and voided invoice state', () async {
+    final invoice = _details().invoice;
+    var result = await checkInvoiceEmailAvailability(
+      invoice: invoice,
+      prepareBillingContact: () async =>
+          throw InvoiceException('Email required'),
+    );
+    expect(result.blocked, isTrue);
+    expect(result.reason, 'Email required');
+    invoice.externalSyncStatus = InvoiceExternalSyncStatus.voided;
+    result = await checkInvoiceEmailAvailability(
+      invoice: invoice,
+      prepareBillingContact: () async =>
+          fail('Must not prepare a void invoice'),
+    );
+    expect(result.blocked, isTrue);
+  });
+
+  test(
+    'external tracking preserves upload-first rule only when enabled',
+    () async {
+      final invoice = _details().invoice
+        ..paymentSource = InvoicePaymentSource.xero;
+      for (final enabled in [false, true]) {
+        final result = await checkInvoiceEmailAvailability(
+          invoice: invoice,
+          prepareBillingContact: () async {},
+          isAccountingEnabled: () async => enabled,
+        );
+        expect(result.blocked, enabled);
+      }
+      invoice.externalInvoiceId = 'sample-upload';
+      final uploaded = await checkInvoiceEmailAvailability(
+        invoice: invoice,
+        prepareBillingContact: () async {},
+        isAccountingEnabled: () async => throw StateError('must not check'),
+      );
+      expect(uploaded.blocked, isFalse);
+    },
+  );
+
+  test('configured disconnected snapshot does not promise sending', () {
+    final state = InvoiceAccountingState.resolve(
+      syncEnabled: false,
+      snapshotConnected: false,
+      snapshotConfigured: true,
+    );
+    expect(state.destination, InvoiceAccountingDestination.disconnected);
+    expect(state.canUpload, isFalse);
+    expect(state.explanation, isNot(contains('sending remains available')));
+    final configured = InvoiceAccountingState.resolve(
+      syncEnabled: true,
+      snapshotConnected: false,
+    );
+    expect(configured.explanation, contains('Upload is required before email'));
+  });
+
+  testWidgets(
+    'no provider separates sending from disabled upload and local payments',
+    (tester) async {
+      await _pump(tester, loadDetails: (_) async => _details(sent: true));
+      expect(find.text('Delivery'), findsOneWidget);
+      expect(find.text('Accounting upload'), findsOneWidget);
+      expect(find.text('Payment tracking: Manual in HMB'), findsOneWidget);
+      expect(find.text('Record or allocate payment'), findsOneWidget);
+      expect(
+        tester
+            .widget<HMBButton>(find.widgetWithText(HMBButton, 'View / resend'))
+            .onPressed,
+        isNotNull,
+      );
+      expect(
+        tester
+            .widget<HMBButtonSecondary>(
+              find.widgetWithText(HMBButtonSecondary, 'Upload'),
+            )
+            .onPressed,
+        isNull,
+      );
+      expect(
+        find.textContaining('You can send this invoice without accounting.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('to send this invoice'), findsNothing);
+    },
+  );
+
   test(
     'accounting routing handles absent, single and conflicting providers',
     () {
@@ -28,7 +152,7 @@ void main() {
         InvoiceAccountingState.resolve(
           syncEnabled: false,
           snapshotConnected: false,
-        ).canSend,
+        ).canUpload,
         isFalse,
       );
       expect(
@@ -49,7 +173,7 @@ void main() {
         InvoiceAccountingState.resolve(
           syncEnabled: true,
           snapshotConnected: true,
-        ).canSend,
+        ).canUpload,
         isFalse,
       );
       expect(
@@ -57,7 +181,7 @@ void main() {
           syncEnabled: true,
           snapshotConnected: false,
           hasSnapshotAttempt: true,
-        ).canSend,
+        ).canUpload,
         isFalse,
       );
     },
@@ -82,7 +206,7 @@ void main() {
       snapshotConnected: false,
       hasSnapshotAttempt: true,
     );
-    expect(disconnected.canSend, isFalse);
+    expect(disconnected.canUpload, isFalse);
     expect(disconnected.explanation, contains('original'));
   });
 
@@ -276,7 +400,9 @@ void main() {
     );
     expect(
       find.text(
-        'Upload is unavailable for invoices with manual payment tracking.',
+        'This invoice uses manual payment tracking. Accounting integration '
+        'requires upload before email; review its tracking mode '
+        'before proceeding.',
       ),
       findsOneWidget,
     );
@@ -411,7 +537,9 @@ void main() {
     expect(checks, 2);
     expect(
       find.text(
-        'Upload is unavailable for invoices with manual payment tracking.',
+        'This invoice uses manual payment tracking. Accounting integration '
+        'requires upload before email; review its tracking mode '
+        'before proceeding.',
       ),
       findsOneWidget,
     );

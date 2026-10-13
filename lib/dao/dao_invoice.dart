@@ -432,6 +432,11 @@ ORDER BY modified_date DESC
 
     await update(invoice);
 
+    // Only an uploaded invoice has a remote record to update. Local email
+    // delivery must not require accounting authentication.
+    if (!invoice.isUploaded()) {
+      return;
+    }
     final accounting = AccountingAdaptor.get();
     await accounting.login();
 

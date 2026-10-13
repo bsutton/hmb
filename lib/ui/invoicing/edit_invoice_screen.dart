@@ -218,52 +218,57 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                 _buildLedgerSummary(details),
                 if (!readOnlyInvoice) ...[
                   _section('Delivery', [
-                    if (_accountingError != null) Text(_accountingError!),
-                    if (_accountingUnavailable)
-                      HMBButtonSecondary(
-                        label: 'Retry accounting settings',
-                        hint: 'Reload the accounting connection',
-                        onPressed: _reloadInvoiceAndRefresh,
-                      ),
-                    Wrap(
-                      spacing: HMBSpacing.kRelated,
-                      runSpacing: HMBSpacing.kCompact,
-                      children: [
-                        BuildSendButton(
-                          context: context,
-                          mounted: mounted,
-                          invoice: invoice,
-                          onReturned: _reloadInvoiceAndRefresh,
-                        ),
-                        if (!invoice.isUploaded())
-                          HMBButtonSecondary(
-                            label: _accounting.hasSnapshotAttempt
-                                ? 'Review accounting export'
-                                : 'Upload',
-                            hint: _accounting.explanation,
-                            onPressed:
-                                !_accountingUnavailable &&
-                                    _accounting.canSend &&
-                                    !(_accounting.destination ==
-                                            InvoiceAccountingDestination
-                                                .synced &&
-                                        invoice.isManagedLocally) &&
-                                    !_sendingToAccounting
-                                ? _sendToAccounting
-                                : null,
-                          ),
-                      ],
+                    BuildSendButton(
+                      context: context,
+                      mounted: mounted,
+                      invoice: invoice,
+                      onReturned: _reloadInvoiceAndRefresh,
                     ),
-                    if (!invoice.isUploaded() && !_accountingUnavailable)
-                      Text(
-                        _accounting.destination ==
-                                    InvoiceAccountingDestination.synced &&
-                                invoice.isManagedLocally
-                            ? 'Upload is unavailable for invoices with manual '
-                                  'payment tracking.'
-                            : _accounting.explanation,
-                      ),
                   ]),
+                  if (!invoice.isUploaded())
+                    _section('Accounting upload', [
+                      if (_accountingError != null) Text(_accountingError!),
+                      if (_accountingUnavailable)
+                        HMBButtonSecondary(
+                          label: 'Retry accounting settings',
+                          hint: 'Reload the accounting connection',
+                          onPressed: _reloadInvoiceAndRefresh,
+                        ),
+                      Wrap(
+                        spacing: HMBSpacing.kRelated,
+                        runSpacing: HMBSpacing.kCompact,
+                        children: [
+                          if (!invoice.isUploaded())
+                            HMBButtonSecondary(
+                              label: _accounting.hasSnapshotAttempt
+                                  ? 'Review accounting export'
+                                  : 'Upload',
+                              hint: _accounting.explanation,
+                              onPressed:
+                                  !_accountingUnavailable &&
+                                      _accounting.canUpload &&
+                                      !(_accounting.destination ==
+                                              InvoiceAccountingDestination
+                                                  .synced &&
+                                          invoice.isManagedLocally) &&
+                                      !_sendingToAccounting
+                                  ? _sendToAccounting
+                                  : null,
+                            ),
+                        ],
+                      ),
+                      if (!invoice.isUploaded() && !_accountingUnavailable)
+                        Text(
+                          _accounting.destination ==
+                                      InvoiceAccountingDestination.synced &&
+                                  invoice.isManagedLocally
+                              ? 'This invoice uses manual payment tracking. '
+                                    'Accounting integration requires upload '
+                                    'before email; review its tracking mode '
+                                    'before proceeding.'
+                              : _accounting.explanation,
+                        ),
+                    ]),
                   if (actions.hasPaymentActions)
                     _section('Manage payments', [
                       if (invoice.paymentSource == InvoicePaymentSource.unknown)
@@ -288,7 +293,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                               ),
                             if (invoice.canConvertToManualTracking)
                               HMBButtonSecondary(
-                                label: 'Convert to Manual Tracking',
+                                label: 'Track payments in HMB',
                                 hint:
                                     'Switch this invoice to manual payment '
                                     'tracking',
@@ -571,11 +576,14 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
 
   String _paymentManagementLabel(Invoice invoice) {
     if (invoice.isManagedLocally) {
-      return 'Managed locally';
+      return 'Manual in HMB';
     }
     return switch (invoice.paymentSource) {
-      InvoicePaymentSource.manual => 'Managed locally',
-      InvoicePaymentSource.xero => 'Managed by accounting',
+      InvoicePaymentSource.manual => 'Manual in HMB',
+      InvoicePaymentSource.xero =>
+        invoice.isUploaded()
+            ? 'Synced with accounting'
+            : 'Accounting upload pending',
       InvoicePaymentSource.unknown => 'Needs review',
     };
   }
@@ -840,7 +848,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
         return;
       }
       setState(() => _accounting = state);
-      if (!state.canSend) {
+      if (!state.canUpload) {
         return;
       }
       final details = await _invoiceDetails;

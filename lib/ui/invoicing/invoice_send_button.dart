@@ -64,11 +64,6 @@ class BuildSendButton extends StatelessWidget {
           ? null
           : await DaoSite().getById(job!.siteId);
       final primaryContact = await DaoContact().getPrimaryForJob(job!.id);
-      if (primaryContact == null) {
-        HMBToast.error('You must first set a Contact on the Job');
-        return;
-      }
-
       final greetingContact = await invoiceGreetingContact(
         invoice: invoice,
         job: job,
@@ -106,8 +101,9 @@ class BuildSendButton extends StatelessWidget {
         final system = await DaoSystem().get();
 
         final recipients = await DaoInvoice().getEmailsByInvoice(invoice);
-        final preferredRecipient = Strings.isNotBlank(greetingContact.bestEmail)
-            ? greetingContact.bestEmail
+        final preferredRecipient =
+            Strings.isNotBlank(greetingContact?.bestEmail)
+            ? greetingContact!.bestEmail
             : recipients.isEmpty
             ? ''
             : recipients.first;
@@ -120,14 +116,11 @@ class BuildSendButton extends StatelessWidget {
                 preferredRecipient: preferredRecipient,
                 emailSubject:
                     '''${system.businessName ?? 'Your'} Invoice #${invoice.bestNumber}''',
-                emailBody:
-                    '''
-${greetingContact.firstName.trim()},
-Please find the attached invoice for your job.
-${site != null && site.address.isNotEmpty ? '\nSite Address: ${site.address}' : ''}
-
-Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
-''',
+                emailBody: invoiceEmailBody(
+                  invoice: invoice,
+                  recipients: [?greetingContact],
+                  siteAddress: site?.address,
+                ),
 
                 sendEmailDialog:
                     ({
@@ -137,28 +130,24 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
                       attachmentPaths = const [],
                     }) => EmailDialogForJob(
                       job: job,
+                      additionalContacts: [?greetingContact],
+                      bodyForContacts: (contacts) => invoiceEmailBody(
+                        invoice: invoice,
+                        recipients: contacts,
+                        siteAddress: site?.address,
+                      ),
                       preferredRecipient: preferredRecipient,
                       subject: subject,
                       body: body,
                       attachmentPaths: attachmentPaths,
                     ),
                 onSent: () => DaoInvoice().markSent(invoice),
-                canEmail: () async {
-                  try {
+                canEmail: () => checkInvoiceEmailAvailability(
+                  invoice: invoice,
+                  prepareBillingContact: () async {
                     await _prepareBillingContactForDelivery(invoice, job);
-                  } on InvoiceException catch (error) {
-                    return EmailBlocked(blocked: true, reason: error.message);
-                  }
-                  if ((await ExternalAccounting().isEnabled()) &&
-                      !invoice.isUploaded()) {
-                    return EmailBlocked(
-                      blocked: true,
-                      reason: 'the invoice has not been uploaded.',
-                    );
-                  } else {
-                    return EmailBlocked(blocked: false, reason: '');
-                  }
-                },
+                  },
+                ),
               ),
             ),
           );
@@ -243,10 +232,10 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
   );
 }
 
-Future<Contact> invoiceGreetingContact({
+Future<Contact?> invoiceGreetingContact({
   required Invoice invoice,
   required Job job,
-  required Contact primaryContact,
+  required Contact? primaryContact,
 }) async =>
     (await resolveInvoiceBillingContact(invoice, job: job)).contact ??
     primaryContact;
@@ -263,4 +252,70 @@ Future<Contact> _prepareBillingContactForDelivery(
     invoice.billingContactId = contact.id;
   }
   return contact;
+}
+
+/// Enabled accounting requires upload before email.
+/// Disabled accounting permits direct email.
+Future<EmailBlocked> checkInvoiceEmailAvailability({
+  required Invoice invoice,
+  required Future<void> Function() prepareBillingContact,
+  Future<bool> Function()? isAccountingEnabled,
+}) async {
+  if (invoice.isExternallyDeletedOrVoided) {
+    return EmailBlocked(
+      blocked: true,
+      reason: 'this invoice is voided or deleted.',
+    );
+  }
+  try {
+    await prepareBillingContact();
+  } on InvoiceException catch (error) {
+    return EmailBlocked(blocked: true, reason: error.message);
+  }
+  if (!invoice.isUploaded()) {
+    bool enabled;
+    try {
+      enabled = await (isAccountingEnabled ?? ExternalAccounting().isEnabled)();
+    } catch (_) {
+      return EmailBlocked(
+        blocked: true,
+        reason:
+            'accounting settings could not be checked. Retry before sending.',
+      );
+    }
+    if (enabled) {
+      return EmailBlocked(
+        blocked: true,
+        reason:
+            'accounting integration is enabled. Upload this invoice before '
+            'emailing it.',
+      );
+    }
+  }
+  return EmailBlocked(blocked: false, reason: '');
+}
+
+/// Generate only the initial/default invoice message. The composer preserves
+/// user edits when recipients change.
+String invoiceEmailBody({
+  required Invoice invoice,
+  required List<Contact> recipients,
+  String? siteAddress,
+}) {
+  final names = recipients
+      .map(
+        (contact) => contact.firstName.trim().isNotEmpty
+            ? contact.firstName.trim()
+            : contact.fullname.trim(),
+      )
+      .where((name) => name.isNotEmpty)
+      .toSet();
+  final greeting = names.isEmpty ? 'Hello' : names.join(', ');
+  final site = siteAddress != null && siteAddress.isNotEmpty
+      ? '\nSite Address: $siteAddress'
+      : '';
+  return '$greeting,\n'
+      'Please find the attached invoice for your job.\n'
+      '$site\n'
+      '\nDue Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}\n';
 }
