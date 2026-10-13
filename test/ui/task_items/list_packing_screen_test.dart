@@ -113,6 +113,7 @@ void main() {
           );
           await tester.pump();
         }
+        await tester.pumpAndSettle();
         expect(find.text('Add Packing Item'), findsNothing);
         await tester.runAsync(() async {
           final task = await DaoTask().defaultTaskForMaterials(job.id);
