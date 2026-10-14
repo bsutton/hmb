@@ -45,7 +45,9 @@ void main() {
         'unrecorded DDL: ${previous.$3}', () async {
       final directory = Directory.systemTemp.createTempSync('hmb-combined-');
       final path = '${directory.path}/fixture.db';
-      File('test/fixture/db/handyman_test.db').copySync(path);
+      // The general DAO fixture is refreshed to the latest schema by the
+      // build tool. Upgrade regression tests need a frozen prior schema.
+      File('test/fixture/db/handyman_v211.db').copySync(path);
       final db = await CliDatabaseFactory().openDatabase(
         path,
         options: OpenDatabaseOptions(
@@ -53,6 +55,8 @@ void main() {
         ),
       );
       try {
+        expect(await db.getVersion(), 211);
+        expect(await getUpgradeResumeVersion(db, 211), 211);
         Future<void> upgrade(int target, ProjectScriptSource source) =>
             upgradeDb(
               db: db,
