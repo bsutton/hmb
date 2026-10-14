@@ -193,6 +193,10 @@ void main() {
       allocatedDate: DateTime(2026, 5, 2),
     );
 
+    final history = await service.invoiceHistory(invoice.id);
+    expect(history.single.paymentDate, DateTime(2026, 5));
+    expect(history.single.date, DateTime(2026, 5, 2));
+
     expect(await service.invoicePaidAmount(invoice.id), MoneyEx.dollars(100));
     expect(await service.invoiceBalance(invoice.id), MoneyEx.zero);
     expect(

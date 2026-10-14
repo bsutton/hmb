@@ -34,11 +34,13 @@ import '../../entity/invoice_line.dart';
 import '../../util/dart/exceptions.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/money_ex.dart';
+import '../../util/flutter/hmb_theme.dart';
 import '../crud/contact/edit_contact_screen.dart';
 import '../dialog/hmb_comfirm_delete_dialog.dart';
 import '../quoting/select_billing_contact_dialog.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
+import '../widgets/hmb_chip.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/icons/hmb_delete_icon.dart';
 import '../widgets/icons/hmb_edit_icon.dart';
@@ -172,259 +174,200 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
     final actions = InvoiceEditorActions(details);
     final canChangeInvoice = actions.canEdit;
 
-    return Center(
+    return Align(
+      alignment: Alignment.topCenter,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 960),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Surface(
-            elevation: SurfaceElevation.e6,
-            child: HMBFormSection(
-              spacing: HMBSpacing.kSectionGap,
-              children: [
-                HMBColumn(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Created ${formatDate(invoice.createdDate)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+          padding: const EdgeInsets.all(HMBSpacing.kPageInset),
+          child: HMBFormSection(
+            spacing: HMBSpacing.kSectionGap,
+            children: [
+              HMBColumn(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    job.summary,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  Text('Customer: ${customer?.name ?? "N/A"}'),
+                  Text(
+                    'Job #${job.id} · '
+                    'Created ${formatDate(invoice.createdDate)}',
+                  ),
+                ],
+              ),
+              _buildLedgerSummary(details),
+              _buildBillingContact(details, canChangeInvoice),
+              if (Strings.isNotBlank(invoice.voidDescription))
+                Text('Void description: ${invoice.voidDescription}'),
+              if (!readOnlyInvoice) ...[
+                if (!invoice.isUploaded() &&
+                    (_accountingUnavailable ||
+                        _accounting.destination !=
+                            InvoiceAccountingDestination.none ||
+                        _accounting.hasSnapshotAttempt ||
+                        invoice.paymentSource != InvoicePaymentSource.manual))
+                  _section('Accounting upload', [
+                    if (_accountingError != null) Text(_accountingError!),
+                    if (_accountingUnavailable)
+                      HMBButtonSecondary(
+                        label: 'Retry accounting settings',
+                        hint: 'Reload the accounting connection',
+                        onPressed: _reloadInvoiceAndRefresh,
                       ),
+                    Wrap(
+                      spacing: HMBSpacing.kRelated,
+                      runSpacing: HMBSpacing.kCompact,
+                      children: [
+                        if (!invoice.isUploaded())
+                          HMBButtonSecondary(
+                            label: _accounting.hasSnapshotAttempt
+                                ? 'Review accounting export'
+                                : 'Upload',
+                            hint: _accounting.explanation,
+                            onPressed:
+                                !_accountingUnavailable &&
+                                    _accounting.canUpload &&
+                                    !(_accounting.destination ==
+                                            InvoiceAccountingDestination
+                                                .synced &&
+                                        invoice.isManagedLocally) &&
+                                    !_sendingToAccounting
+                                ? _sendToAccounting
+                                : null,
+                          ),
+                      ],
                     ),
-                    Text('Customer: ${customer?.name ?? "N/A"}'),
-                    Text('Job: ${job.summary} #${job.id}'),
-                  ],
-                ),
-                _buildBillingContact(details, canChangeInvoice),
-                if (Strings.isNotBlank(invoice.voidDescription))
-                  Text('Void description: ${invoice.voidDescription}'),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 8,
-                  children: [
-                    Text(
-                      'Payment tracking: '
-                      '${_paymentManagementLabel(invoice)}',
-                    ),
-                    if (invoice.externalSyncStatus !=
-                        InvoiceExternalSyncStatus.none)
+                    if (!invoice.isUploaded() && !_accountingUnavailable)
                       Text(
-                        'Accounting: '
-                        '${_syncStatusLabel(invoice.externalSyncStatus)}',
+                        _accounting.destination ==
+                                    InvoiceAccountingDestination.synced &&
+                                invoice.isManagedLocally
+                            ? 'This invoice uses manual payment tracking. '
+                                  'Accounting integration requires upload '
+                                  'before email; review its tracking mode '
+                                  'before proceeding.'
+                            : _accounting.explanation,
                       ),
-                  ],
-                ),
-                _buildLedgerSummary(details),
-                if (!readOnlyInvoice) ...[
-                  _section('Delivery', [
-                    BuildSendButton(
-                      context: context,
-                      mounted: mounted,
-                      invoice: invoice,
-                      onReturned: _reloadInvoiceAndRefresh,
-                    ),
                   ]),
-                  if (!invoice.isUploaded())
-                    _section('Accounting upload', [
-                      if (_accountingError != null) Text(_accountingError!),
-                      if (_accountingUnavailable)
-                        HMBButtonSecondary(
-                          label: 'Retry accounting settings',
-                          hint: 'Reload the accounting connection',
-                          onPressed: _reloadInvoiceAndRefresh,
-                        ),
+                if (actions.hasPaymentActions)
+                  _section('Manage payments', [
+                    if (invoice.paymentSource == InvoicePaymentSource.unknown)
+                      const Text(
+                        'Payment tracking needs review. Convert to '
+                        'manual tracking only if this invoice is '
+                        'no longer '
+                        'managed by your accounting software.',
+                      ),
+                    if (actions.canAllocate || actions.canConvertTracking)
                       Wrap(
                         spacing: HMBSpacing.kRelated,
                         runSpacing: HMBSpacing.kCompact,
                         children: [
-                          if (!invoice.isUploaded())
+                          if (_canApplyPayment(details))
                             HMBButtonSecondary(
-                              label: _accounting.hasSnapshotAttempt
-                                  ? 'Review accounting export'
-                                  : 'Upload',
-                              hint: _accounting.explanation,
-                              onPressed:
-                                  !_accountingUnavailable &&
-                                      _accounting.canUpload &&
-                                      !(_accounting.destination ==
-                                              InvoiceAccountingDestination
-                                                  .synced &&
-                                          invoice.isManagedLocally) &&
-                                      !_sendingToAccounting
-                                  ? _sendToAccounting
-                                  : null,
+                              label: 'Record or allocate payment',
+                              hint:
+                                  'Record a new payment or allocate '
+                                  'an existing payment',
+                              onPressed: () => _applyPayment(details),
+                            ),
+                          if (invoice.canConvertToManualTracking)
+                            HMBButtonSecondary(
+                              label: 'Track payments in HMB',
+                              hint:
+                                  'Switch this invoice to manual payment '
+                                  'tracking',
+                              onPressed: () async {
+                                await _convertToManualTracking();
+                              },
                             ),
                         ],
                       ),
-                      if (!invoice.isUploaded() && !_accountingUnavailable)
-                        Text(
-                          _accounting.destination ==
-                                      InvoiceAccountingDestination.synced &&
-                                  invoice.isManagedLocally
-                              ? 'This invoice uses manual payment tracking. '
-                                    'Accounting integration requires upload '
-                                    'before email; review its tracking mode '
-                                    'before proceeding.'
-                              : _accounting.explanation,
-                        ),
-                    ]),
-                  if (actions.hasPaymentActions)
-                    _section('Manage payments', [
-                      if (invoice.paymentSource == InvoicePaymentSource.unknown)
-                        const Text(
-                          'Payment tracking needs review. Convert to '
-                          'manual tracking only if this invoice is '
-                          'no longer '
-                          'managed by your accounting software.',
-                        ),
-                      if (actions.canAllocate || actions.canConvertTracking)
-                        Wrap(
-                          spacing: HMBSpacing.kRelated,
-                          runSpacing: HMBSpacing.kCompact,
+                    if (actions.hasMoreActions)
+                      Material(
+                        type: MaterialType.transparency,
+                        child: ExpansionTile(
+                          title: const Text('More invoice actions'),
+                          tilePadding: EdgeInsets.zero,
                           children: [
-                            if (_canApplyPayment(details))
-                              HMBButtonSecondary(
-                                label: 'Record or allocate payment',
-                                hint:
-                                    'Record a new payment or allocate '
-                                    'an existing payment',
-                                onPressed: () => _applyPayment(details),
-                              ),
-                            if (invoice.canConvertToManualTracking)
-                              HMBButtonSecondary(
-                                label: 'Track payments in HMB',
-                                hint:
-                                    'Switch this invoice to manual payment '
-                                    'tracking',
-                                onPressed: () async {
-                                  await _convertToManualTracking();
-                                },
-                              ),
-                          ],
-                        ),
-                      if (actions.hasMoreActions)
-                        Material(
-                          type: MaterialType.transparency,
-                          child: ExpansionTile(
-                            title: const Text('More invoice actions'),
-                            tilePadding: EdgeInsets.zero,
-                            children: [
-                              Wrap(
-                                spacing: HMBSpacing.kRelated,
-                                runSpacing: HMBSpacing.kCompact,
-                                children: [
-                                  if (_canRecordAdjustment(details))
-                                    HMBButtonSecondary(
-                                      label: 'Add Adjustment',
-                                      hint:
-                                          'Record an adjustment '
-                                          'against this invoice',
-                                      onPressed: () async {
-                                        await _recordAdjustment(details);
-                                      },
-                                    ),
-                                  if (_canWriteOffSmallBalance(details))
-                                    HMBButtonSecondary(
-                                      label: 'Write Off Small Balance',
-                                      hint:
-                                          'Write off a small '
-                                          'unpaid invoice balance',
-                                      onPressed: () async {
-                                        await _writeOffBalance(
-                                          details,
-                                          smallBalance: true,
-                                        );
-                                      },
-                                    ),
-                                  if (_canWriteOffBalance(details) &&
-                                      !_canWriteOffSmallBalance(details))
-                                    HMBButtonSecondary(
-                                      label: 'Write Off',
-                                      hint:
-                                          'Write off this unpaid '
-                                          'invoice balance',
-                                      onPressed: () async {
-                                        await _writeOffBalance(details);
-                                      },
-                                    ),
-                                  if (_canVoidInvoice(details))
-                                    HMBButtonSecondary(
-                                      label: 'Void Invoice',
-                                      hint: 'Void this sent invoice',
-                                      onPressed: () async {
-                                        if (await promptAndVoidInvoice(
-                                          context: context,
-                                          invoice: invoice,
-                                        )) {
-                                          await _reloadInvoice();
-                                          if (!mounted) {
-                                            return;
-                                          }
-                                          setState(() {});
+                            Wrap(
+                              spacing: HMBSpacing.kRelated,
+                              runSpacing: HMBSpacing.kCompact,
+                              children: [
+                                if (_canRecordAdjustment(details))
+                                  HMBButtonSecondary(
+                                    label: 'Add Adjustment',
+                                    hint:
+                                        'Record an adjustment '
+                                        'against this invoice',
+                                    onPressed: () async {
+                                      await _recordAdjustment(details);
+                                    },
+                                  ),
+                                if (_canWriteOffSmallBalance(details))
+                                  HMBButtonSecondary(
+                                    label: 'Write Off Small Balance',
+                                    hint:
+                                        'Write off a small '
+                                        'unpaid invoice balance',
+                                    onPressed: () async {
+                                      await _writeOffBalance(
+                                        details,
+                                        smallBalance: true,
+                                      );
+                                    },
+                                  ),
+                                if (_canWriteOffBalance(details) &&
+                                    !_canWriteOffSmallBalance(details))
+                                  HMBButtonSecondary(
+                                    label: 'Write Off',
+                                    hint:
+                                        'Write off this unpaid '
+                                        'invoice balance',
+                                    onPressed: () async {
+                                      await _writeOffBalance(details);
+                                    },
+                                  ),
+                                if (_canVoidInvoice(details))
+                                  HMBButtonSecondary(
+                                    label: 'Void Invoice',
+                                    hint: 'Void this sent invoice',
+                                    onPressed: () async {
+                                      if (await promptAndVoidInvoice(
+                                        context: context,
+                                        invoice: invoice,
+                                      )) {
+                                        await _reloadInvoice();
+                                        if (!mounted) {
+                                          return;
                                         }
-                                      },
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                    ]),
-                ],
-                _section('Invoice items', [
-                  if (canChangeInvoice)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: HMBButtonSecondary(
-                        label: 'Add Discount',
-                        hint: 'Add a discount line to this invoice',
-                        onPressed: _promptAddDiscount,
-                      ),
-                    ),
-                  // Show all line groups and lines inline
-                  for (final group in lineGroups) ...[
-                    Text(
-                      group.group.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    for (final line in group.lines) ...[
-                      Surface(
-                        child: HMBFormSection(
-                          children: [
-                            Text(
-                              line.description,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            Text(
-                              'Quantity: ${line.quantity} · '
-                              'Unit price: ${line.unitPrice}',
-                            ),
-                            Text('Total: ${line.lineTotal}'),
-                            Text('Status: ${line.status.description}'),
-                            if (canChangeInvoice)
-                              Wrap(
-                                spacing: HMBSpacing.kRelated,
-                                children: [
-                                  HMBEditIcon(
-                                    onPressed: () =>
-                                        _editInvoiceLine(context, line),
-                                    hint: 'Edit Invoice Line',
+                                        setState(() {});
+                                      }
+                                    },
                                   ),
-                                  HMBDeleteIcon(
-                                    onPressed: () => _deleteInvoiceLine(line),
-                                    hint: 'Delete Invoice Line',
-                                  ),
-                                ],
-                              ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
-                    ],
-                  ],
-                ]),
+                  ]),
               ],
-            ),
+              _section('Invoice items', [
+                if (canChangeInvoice)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: HMBButtonSecondary(
+                      label: 'Add Discount',
+                      hint: 'Add a discount line to this invoice',
+                      onPressed: _promptAddDiscount,
+                    ),
+                  ),
+                for (final group in lineGroups)
+                  _buildLineGroup(group, canChangeInvoice),
+              ]),
+            ],
           ),
         ),
       ),
@@ -438,12 +381,83 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
     ],
   );
 
-  String _syncStatusLabel(InvoiceExternalSyncStatus status) => switch (status) {
-    InvoiceExternalSyncStatus.none => 'Not synced',
-    InvoiceExternalSyncStatus.linked => 'Linked to accounting',
-    InvoiceExternalSyncStatus.deleted => 'Deleted in accounting',
-    InvoiceExternalSyncStatus.voided => 'Voided in accounting',
-  };
+  Widget _buildLineGroup(InvoiceLineGroupDetails group, bool canChangeInvoice) {
+    final total = group.lines
+        .where((line) => line.status == LineChargeableStatus.normal)
+        .fold(MoneyEx.zero, (total, line) => total + line.lineTotal);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(HMBTheme.cornerRadius),
+      child: Surface(
+        elevation: SurfaceElevation.e1,
+        padding: EdgeInsets.zero,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Surface(
+              rounded: false,
+              padding: const EdgeInsets.all(HMBSpacing.kPageInset),
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                spacing: HMBSpacing.kRelated,
+                runSpacing: HMBSpacing.kCompact,
+                children: [
+                  Text(
+                    group.group.name,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text('$total'),
+                ],
+              ),
+            ),
+            for (var index = 0; index < group.lines.length; index++) ...[
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(HMBSpacing.kPageInset),
+                child: _buildInvoiceLine(group.lines[index], canChangeInvoice),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInvoiceLine(InvoiceLine line, bool canChangeInvoice) =>
+      HMBFormSection(
+        spacing: HMBSpacing.kCompact,
+        children: [
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: HMBSpacing.kRelated,
+            runSpacing: HMBSpacing.kCompact,
+            children: [
+              Text(
+                line.description,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              Text('${line.lineTotal}'),
+            ],
+          ),
+          Text('Quantity: ${line.quantity} · Unit price: ${line.unitPrice}'),
+          if (line.status != LineChargeableStatus.normal)
+            Text('Status: ${line.status.description}'),
+          if (canChangeInvoice)
+            Wrap(
+              spacing: HMBSpacing.kRelated,
+              children: [
+                HMBEditIcon(
+                  onPressed: () => _editInvoiceLine(context, line),
+                  hint: 'Edit Invoice Line',
+                ),
+                HMBDeleteIcon(
+                  onPressed: () => _deleteInvoiceLine(line),
+                  hint: 'Delete Invoice Line',
+                ),
+              ],
+            ),
+        ],
+      );
 
   Widget _buildBillingContact(InvoiceDetails details, bool canChangeInvoice) {
     final resolved = details.billingContact;
@@ -459,12 +473,15 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
 
     return Surface(
       elevation: SurfaceElevation.e1,
-      child: HMBColumn(
+      padding: const EdgeInsets.all(HMBSpacing.kPageInset),
+      child: HMBFormSection(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Billing contact',
-            style: TextStyle(fontWeight: FontWeight.bold),
+          Text(
+            details.invoice.isExternallyDeletedOrVoided
+                ? 'Billing contact'
+                : 'Billing & delivery',
+            style: Theme.of(context).textTheme.titleMedium,
           ),
           Text(
             contact == null || contactName!.isEmpty
@@ -515,6 +532,15 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                   ),
               ],
             ),
+          if (!details.invoice.isExternallyDeletedOrVoided)
+            _section('Delivery', [
+              BuildSendButton(
+                context: context,
+                mounted: mounted,
+                invoice: details.invoice,
+                onReturned: _reloadInvoiceAndRefresh,
+              ),
+            ]),
         ],
       ),
     );
@@ -575,64 +601,124 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   }
 
   String _paymentManagementLabel(Invoice invoice) {
+    if (invoice.externalSyncStatus == InvoiceExternalSyncStatus.deleted) {
+      return 'Deleted in accounting';
+    }
+    if (invoice.externalSyncStatus == InvoiceExternalSyncStatus.voided) {
+      return 'Voided in accounting';
+    }
     if (invoice.isManagedLocally) {
-      return 'Manual in HMB';
+      return 'Payments tracked in HMB';
     }
     return switch (invoice.paymentSource) {
-      InvoicePaymentSource.manual => 'Manual in HMB',
+      InvoicePaymentSource.manual => 'Payment tracking needs review',
       InvoicePaymentSource.xero =>
         invoice.isUploaded()
             ? 'Synced with accounting'
             : 'Accounting upload pending',
-      InvoicePaymentSource.unknown => 'Needs review',
+      InvoicePaymentSource.unknown => 'Payment tracking needs review',
     };
+  }
+
+  String _paymentManagementHint(Invoice invoice) {
+    if (invoice.isExternallyDeletedOrVoided) {
+      return 'This invoice is read-only.';
+    }
+    if (invoice.isManagedLocally) {
+      return 'Record payments here as they’re received.';
+    }
+    if (invoice.paymentSource != InvoicePaymentSource.xero) {
+      return 'Review how payments are tracked for this invoice.';
+    }
+    if (_accountingUnavailable) {
+      return 'Could not check the accounting connection.';
+    }
+    if (_accounting.destination != InvoiceAccountingDestination.synced) {
+      return 'Review integration settings to resume payment updates.';
+    }
+    return invoice.isUploaded()
+        ? 'Payments update automatically.'
+        : 'Upload this invoice to start automatic payment updates.';
   }
 
   Widget _buildLedgerSummary(InvoiceDetails details) {
     final ledger = details.ledger;
+    final financiallyActive = InvoiceEditorActions(details).financiallyActive;
+    final theme = Theme.of(context);
     return Surface(
       elevation: SurfaceElevation.e1,
-      child: HMBColumn(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.all(HMBSpacing.kPageInset),
+      child: HMBFormSection(
         children: [
-          const Text(
-            'Invoice summary',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
           Wrap(
-            spacing: 16,
-            runSpacing: 8,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: HMBSpacing.kRelated,
+            runSpacing: HMBSpacing.kCompact,
             children: [
-              Text('Invoice total: ${ledger.total}'),
-              if (InvoiceEditorActions(details).financiallyActive)
+              Text('Invoice status', style: theme.textTheme.titleMedium),
+              HMBChip(
+                label: _ledgerStatusLabel(ledger.status),
+                tone: HMBChipTone.accent,
+              ),
+            ],
+          ),
+          HMBColumn(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                financiallyActive ? 'Balance due' : 'Invoice total',
+                style: theme.textTheme.bodyMedium,
+              ),
+              Text(
+                '${financiallyActive ? ledger.balance : ledger.total}',
+                style: theme.textTheme.headlineMedium,
+              ),
+            ],
+          ),
+          if (financiallyActive)
+            Wrap(
+              spacing: HMBSpacing.kFieldGap,
+              runSpacing: HMBSpacing.kCompact,
+              children: [
+                Text('Total: ${ledger.total}'),
                 Text('Paid: ${ledger.paid}'),
-              if (ledger.credited.isNonZero)
-                Text('Credited: ${ledger.credited}'),
-              if (ledger.adjusted.isNonZero)
-                Text('Adjusted: ${ledger.adjusted}'),
-              if (InvoiceEditorActions(details).financiallyActive)
-                Text('Balance: ${ledger.balance}'),
-              Text('Status: ${_ledgerStatusLabel(ledger.status)}'),
+                if (ledger.credited.isNonZero)
+                  Text('Credited: ${ledger.credited}'),
+                if (ledger.adjusted.isNonZero)
+                  Text('Adjusted: ${ledger.adjusted}'),
+              ],
+            ),
+          const Divider(height: 1),
+          HMBColumn(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _paymentManagementLabel(details.invoice),
+                style: theme.textTheme.titleSmall,
+              ),
+              Text(_paymentManagementHint(details.invoice)),
             ],
           ),
           if (details.ledgerHistory.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            const Text(
-              'History',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            for (final entry in details.ledgerHistory)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(_ledgerHistoryIcon(entry.type), size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(_ledgerHistoryLabel(entry))),
-                  ],
-                ),
+            const Divider(height: 1),
+            Material(
+              type: MaterialType.transparency,
+              child: ExpansionTile(
+                title: const Text('Payment history'),
+                initiallyExpanded: true,
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: EdgeInsets.zero,
+                children: [
+                  HMBFormSection(
+                    children: [
+                      for (final entry in details.ledgerHistory)
+                        _buildLedgerHistoryEntry(entry),
+                    ],
+                  ),
+                ],
               ),
+            ),
           ],
         ],
       ),
@@ -657,14 +743,38 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
         InvoiceLedgerHistoryEntryType.adjustment => Icons.rule,
       };
 
-  String _ledgerHistoryLabel(InvoiceLedgerHistoryEntry entry) {
-    final detail = Strings.isBlank(entry.detail) ? '' : ' - ${entry.detail}';
-    if (entry.type == InvoiceLedgerHistoryEntryType.payment) {
-      return '${entry.title}: ${entry.amount}$detail - Allocated: '
-          '${formatDate(entry.date, format: 'j M Y')}';
-    }
-    return '${formatDate(entry.date)} ${entry.title}: ${entry.amount}$detail';
-  }
+  Widget _buildLedgerHistoryEntry(InvoiceLedgerHistoryEntry entry) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Icon(_ledgerHistoryIcon(entry.type), size: 18),
+      const SizedBox(width: HMBSpacing.kCompact),
+      Expanded(
+        child: HMBFormSection(
+          spacing: HMBSpacing.kCompact,
+          children: [
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              spacing: HMBSpacing.kRelated,
+              runSpacing: HMBSpacing.kCompact,
+              children: [
+                Text(
+                  entry.type == InvoiceLedgerHistoryEntryType.payment
+                      ? 'Received'
+                      : entry.title,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                Text('${entry.amount}'),
+              ],
+            ),
+            Text(formatDate(entry.paymentDate ?? entry.date, format: 'j M Y')),
+            if (entry.type != InvoiceLedgerHistoryEntryType.payment &&
+                Strings.isNotBlank(entry.detail))
+              Text(entry.detail!),
+          ],
+        ),
+      ),
+    ],
+  );
 
   bool _canApplyPayment(InvoiceDetails details) =>
       InvoiceEditorActions(details).canAllocate;

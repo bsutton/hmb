@@ -76,12 +76,16 @@ class InvoiceLedgerHistoryEntry {
   final String title;
   final String? detail;
 
+  /// Receipt date for payment history; [date] remains the allocation date.
+  final DateTime? paymentDate;
+
   const InvoiceLedgerHistoryEntry({
     required this.type,
     required this.date,
     required this.amount,
     required this.title,
     this.detail,
+    this.paymentDate,
   });
 }
 
@@ -445,6 +449,7 @@ class DebtorLedgerService {
           amount: allocation.amount,
           title: 'Payment received',
           detail: _paymentDetail(payment),
+          paymentDate: payment?.paymentDate,
         ),
       );
     }

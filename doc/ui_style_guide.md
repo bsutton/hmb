@@ -52,6 +52,38 @@ HMBFormList(
 
 ## Shared visual elements
 
+### Section surfaces and status summaries
+
+Use one page inset around a form. Place section surfaces directly within that
+inset, with aligned outside edges and `kSectionGap` between sections. Avoid a
+padded surface around the whole page when its sections already have surfaces;
+that doubles the inset and makes the content feel unnecessarily narrow. Each
+section surface owns its `kPageInset` interior padding.
+
+For grouped line items, use one surface per group with a distinct heading band
+and dividers between rows. Keep group headings attached to their rows, and use
+`kFieldGap` between groups. Do not give every row another inset surface. Retain
+editing controls and meaningful line states within the rows.
+
+Combine related status information into one section: a heading and `HMBChip`
+for the business status, a prominent relevant amount, supporting totals, and
+one plain-language tracking or integration state. Omit labels that merely
+repeat an implication of another state, such as linked alongside synced.
+An optional integration being unconfigured is not itself an error. Describe
+the available workflow, such as “Payments tracked in HMB”. Preserve actionable
+warnings when an existing integration or tracking mode needs attention.
+
+History rows should show the event, amount, and relevant date. For invoice
+payments, use “Received” and the receipt date where available. Keep internal
+IDs, placeholder UUIDs, and provider plumbing out of these summaries. Retain
+human-readable reasons for credits and adjustments. Allow rows, status chips,
+and amounts to wrap at narrow widths and large text sizes.
+
+The invoice editor in `lib/ui/invoicing/edit_invoice_screen.dart` demonstrates
+this layout.
+
+### Shared controls
+
 | Need | Shared implementation |
 | --- | --- |
 | Theme, colours, borders and typography | `HMBTheme.dark`, `HMBColors` |

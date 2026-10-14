@@ -15,6 +15,8 @@ import 'package:hmb/ui/invoicing/invoice_editor_actions.dart';
 import 'package:hmb/ui/invoicing/invoice_send_button.dart';
 import 'package:hmb/ui/invoicing/quickbooks_export_screen.dart';
 import 'package:hmb/ui/widgets/hmb_button.dart';
+import 'package:hmb/ui/widgets/hmb_chip.dart';
+import 'package:hmb/ui/widgets/layout/surface.dart';
 import 'package:hmb/util/dart/exceptions.dart';
 import 'package:hmb/util/dart/local_date.dart';
 import 'package:hmb/util/dart/money_ex.dart';
@@ -22,6 +24,129 @@ import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 
 void main() {
+  for (final entry in {
+    DebtorInvoiceStatus.draft: 'Draft',
+    DebtorInvoiceStatus.sent: 'Outstanding',
+    DebtorInvoiceStatus.partPaid: 'Part paid',
+    DebtorInvoiceStatus.paid: 'Paid',
+    DebtorInvoiceStatus.credited: 'Credited',
+    DebtorInvoiceStatus.overpaid: 'Overpaid',
+    DebtorInvoiceStatus.voided: 'Voided',
+    DebtorInvoiceStatus.writtenOff: 'Written off',
+  }.entries) {
+    testWidgets('invoice status badge shows ${entry.value}', (tester) async {
+      await _pump(
+        tester,
+        loadDetails: (_) async => _details(status: entry.key),
+      );
+      expect(tester.widget<HMBChip>(find.byType(HMBChip)).label, entry.value);
+    });
+  }
+
+  testWidgets('tracking states replace redundant accounting labels', (
+    tester,
+  ) async {
+    final details = _details();
+    for (final state in [
+      (
+        InvoicePaymentSource.xero,
+        InvoiceExternalSyncStatus.none,
+        'Accounting upload pending',
+      ),
+      (
+        InvoicePaymentSource.unknown,
+        InvoiceExternalSyncStatus.none,
+        'Payment tracking needs review',
+      ),
+      (
+        InvoicePaymentSource.xero,
+        InvoiceExternalSyncStatus.deleted,
+        'Deleted in accounting',
+      ),
+      (
+        InvoicePaymentSource.xero,
+        InvoiceExternalSyncStatus.voided,
+        'Voided in accounting',
+      ),
+    ]) {
+      details.invoice.paymentSource = state.$1;
+      details.invoice.externalSyncStatus = state.$2;
+      await tester.pumpWidget(const SizedBox.shrink());
+      await _pump(tester, loadDetails: (_) async => details);
+      expect(find.text(state.$3), findsOneWidget);
+      expect(find.textContaining('Linked to accounting'), findsNothing);
+      expect(find.textContaining('Payment tracking:'), findsNothing);
+    }
+  });
+
+  testWidgets('history shows receipt date and hides payment plumbing', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      loadDetails: (_) async => _details(
+        sent: true,
+        history: [
+          InvoiceLedgerHistoryEntry(
+            type: InvoiceLedgerHistoryEntryType.payment,
+            date: DateTime(2026, 10, 14),
+            paymentDate: DateTime(2026, 10, 12),
+            amount: MoneyEx.dollars(50),
+            title: 'Payment received',
+            detail: 'Xero · 00000000-0000-0000-0000-000000000000',
+          ),
+          InvoiceLedgerHistoryEntry(
+            type: InvoiceLedgerHistoryEntryType.credit,
+            date: DateTime(2026, 10, 13),
+            amount: MoneyEx.dollars(10),
+            title: 'Credit applied',
+            detail: 'Goodwill credit',
+          ),
+        ],
+      ),
+    );
+    expect(find.text('Received'), findsOneWidget);
+    expect(find.text('12 Oct 2026'), findsOneWidget);
+    expect(find.text('14 Oct 2026'), findsNothing);
+    expect(find.textContaining('00000000'), findsNothing);
+    expect(find.textContaining('Xero'), findsNothing);
+    expect(find.text('Payment received'), findsNothing);
+    expect(find.text('Goodwill credit'), findsOneWidget);
+    await tester.ensureVisible(find.text('Payment history'));
+    await tester.tap(find.text('Payment history'));
+    await tester.pumpAndSettle();
+    expect(find.text('Received'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('section surfaces share one page inset and group line rows', (
+    tester,
+  ) async {
+    await _pump(tester, loadDetails: (_) async => _details(includeLines: true));
+    final summarySurface = find.ancestor(
+      of: find.text('Invoice status'),
+      matching: find.byType(Surface),
+    );
+    final billingSurface = find.ancestor(
+      of: find.text('Billing & delivery'),
+      matching: find.byType(Surface),
+    );
+    expect(summarySurface, findsOneWidget);
+    expect(billingSurface, findsOneWidget);
+    expect(tester.getTopLeft(summarySurface).dx, 16);
+    expect(tester.getTopLeft(billingSurface).dx, 16);
+    final lineSurface = find.ancestor(
+      of: find.text('Replace damaged bathroom fittings and seal edges'),
+      matching: find.byType(Surface),
+    );
+    expect(lineSurface, findsOneWidget);
+    expect(tester.getTopLeft(lineSurface).dx, 16);
+    expect(
+      find.descendant(of: lineSurface, matching: find.text('Repairs')),
+      findsOneWidget,
+    );
+  });
+
   for (final accountingEnabled in [false, true]) {
     test(
       'upload-first email policy with accounting enabled=$accountingEnabled',
@@ -116,12 +241,16 @@ void main() {
   });
 
   testWidgets(
-    'no provider separates sending from disabled upload and local payments',
+    'no provider shows local tracking without an accounting setup warning',
     (tester) async {
       await _pump(tester, loadDetails: (_) async => _details(sent: true));
       expect(find.text('Delivery'), findsOneWidget);
-      expect(find.text('Accounting upload'), findsOneWidget);
-      expect(find.text('Payment tracking: Manual in HMB'), findsOneWidget);
+      expect(find.text('Accounting upload'), findsNothing);
+      expect(find.text('Payments tracked in HMB'), findsOneWidget);
+      expect(
+        find.text('Record payments here as they’re received.'),
+        findsOneWidget,
+      );
       expect(find.text('Record or allocate payment'), findsOneWidget);
       expect(
         tester
@@ -129,17 +258,10 @@ void main() {
             .onPressed,
         isNotNull,
       );
-      expect(
-        tester
-            .widget<HMBButtonSecondary>(
-              find.widgetWithText(HMBButtonSecondary, 'Upload'),
-            )
-            .onPressed,
-        isNull,
-      );
+      expect(find.text('Upload'), findsNothing);
       expect(
         find.textContaining('You can send this invoice without accounting.'),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.textContaining('to send this invoice'), findsNothing);
     },
@@ -349,15 +471,11 @@ void main() {
       );
       expect(find.text('QuickBooks export'), findsNothing);
       expect(find.text('Upload to Xero'), findsNothing);
-      expect(find.text('Upload'), findsOneWidget);
-      final accounting = tester.widget<HMBButtonSecondary>(
-        find.widgetWithText(HMBButtonSecondary, 'Upload'),
-      );
-      expect(accounting.onPressed, isNull);
+      expect(find.text('Upload'), findsNothing);
       await tester.ensureVisible(find.text('Invoice items'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(find.textContaining('Connect accounting'), findsOneWidget);
+      expect(find.textContaining('Connect accounting'), findsNothing);
     });
   }
 
@@ -367,10 +485,12 @@ void main() {
     final details = _details();
     details.invoice.externalInvoiceId = 'fixture-external-id';
     details.invoice.externalSyncStatus = InvoiceExternalSyncStatus.linked;
+    details.invoice.paymentSource = InvoicePaymentSource.xero;
     await _pump(tester, loadDetails: (_) async => details);
     expect(find.text('Upload'), findsNothing);
     expect(find.text('Add Discount'), findsNothing);
-    expect(find.textContaining('Linked to accounting'), findsOneWidget);
+    expect(find.text('Synced with accounting'), findsOneWidget);
+    expect(find.textContaining('Linked to accounting'), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
     details.invoice.externalSyncStatus = InvoiceExternalSyncStatus.voided;
     await _pump(tester, loadDetails: (_) async => details);
@@ -591,7 +711,8 @@ void main() {
       find.textContaining('Could not complete the accounting action'),
       findsNothing,
     );
-    expect(find.textContaining('Connect accounting'), findsOneWidget);
+    expect(find.textContaining('Connect accounting'), findsNothing);
+    expect(find.text('Payments tracked in HMB'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
