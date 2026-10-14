@@ -1,0 +1,6 @@
+# Map the existing HMB space to doc/manual-refresh in GitBook Git Sync.
+# Paths are relative to that mapped directory, not the app repository.
+root: ./
+structure:
+  readme: home.md
+  summary: SUMMARY.md
