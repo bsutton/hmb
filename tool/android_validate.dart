@@ -1,10 +1,11 @@
-#!/usr/bin/env dcli
+#! /usr/bin/env dcli
 
 import 'dart:io';
 
 import 'package:dcli/dcli.dart';
 
 import 'lib/android_validation.dart';
+import 'lib/build_artifact_cache.dart';
 
 /// Validate an artifact without a version bump or phone installation.
 Future<void> main(List<String> args) async {
@@ -19,5 +20,11 @@ Future<void> main(List<String> args) async {
   if (!exists(args[0]) || !exists(args[1])) {
     throw StateError('Candidate and previous artifact must exist');
   }
-  await AndroidValidation(previousArtifact: args[1]).validate(args[0]);
+  final validated = await AndroidValidation(
+    previousArtifact: args[1],
+  ).validate(args[0]);
+  await BuildArtifactCache().recordValidated(
+    candidate: validated,
+    previousPath: args[1],
+  );
 }

@@ -1,4 +1,4 @@
-#!/usr/bin/env dcli
+#! /usr/bin/env dcli
 
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
@@ -16,7 +16,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:args/args.dart';
 import 'package:dcli/dcli.dart';
 import 'package:hmb/database/factory/cli_database_factory.dart';
 import 'package:hmb/database/management/backup_providers/dev/dev_backup_provider.dart';
@@ -30,94 +29,61 @@ import 'package:pubspec_manager/pubspec_manager.dart' as pm;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'lib/android_validation.dart';
+import 'lib/build_artifact_cache.dart';
+import 'lib/build_options.dart';
 import 'lib/version_properties.dart';
 
-void main(List<String> args) async {
-  final parser = ArgParser()
-    ..addFlag(
-      'assets',
-      abbr: 'a',
-      help:
-          '''Update the list of assets - important to run for db upgrade scripts''',
-    )
-    ..addFlag(
-      'build',
-      abbr: 'b',
-      help: 'build the apk suitable for installing the app via USB',
-    )
-    ..addFlag(
-      'install',
-      abbr: 'i',
-      help: 'install the apk to a device connected via USB',
-    )
-    ..addOption(
-      'device',
-      abbr: 'd',
-      help: 'Android device serial to install the apk onto',
-    )
-    ..addFlag(
-      'release',
-      abbr: 'r',
-      help: '''
-Create a signed release appbundle suitable to upload to Google Play store.''',
-    )
-    ..addOption(
-      'previous-artifact',
-      help: 'Previous APK (or AAB for --release) for upgrade validation.',
-    )
-    ..addFlag(
-      'clean',
-      defaultsTo: true,
-      help: 'Clean project outputs before compiling; always validate.',
-    )
-    ..addFlag('help', abbr: 'h', help: 'Shows the help message');
+Future<void> main(List<String> args) async {
+  try {
+    await _runBuild(args);
+  } on FormatException catch (error) {
+    stderr.writeln(error.message);
+    showUsage();
+    exitCode = 64;
+    // The validation API reports expected preflight failures as StateError.
+    // ignore: avoid_catching_errors
+  } on StateError catch (error) {
+    stderr.writeln(error.message);
+    exitCode = 1;
+  }
+}
 
-  final results = parser.parse(args);
-
+Future<void> _runBuild(List<String> args) async {
+  final options = BuildOptions(args);
   Settings().setVerbose(enabled: false);
-
-  final help = results['help'] as bool;
-  if (help) {
-    showUsage(parser);
-    exit(0);
+  if (options.help) {
+    showUsage();
+    return;
   }
-  var build = results['build'] as bool;
-  var install = results['install'] as bool;
-  var assets = results['assets'] as bool;
-  final release = results['release'] as bool;
-  final device = results['device'] as String?;
-
-  if (!build && !install && !assets && !release) {
-    /// no switches passed so do it all.
-    assets = build = install = true;
-  }
-  if (release) {
-    install = false;
-    build = assets = true;
-  }
-
-  final previous =
-      results['previous-artifact'] as String? ??
-      Platform.environment['HMB_PREVIOUS_ARTIFACT'];
+  options.validate();
+  final build = options.build;
+  final install = options.install;
+  final assets = options.assets;
+  final release = options.release;
+  final previousOverride =
+      options.previousArtifact ?? Platform.environment['HMB_PREVIOUS_ARTIFACT'];
+  final cache = BuildArtifactCache();
   AndroidValidation? validation;
   ValidatedArtifact? validatedApk;
-  if (build || install) {
-    if (previous == null || previous.isEmpty) {
-      throw StateError(
-        'Supply --previous-artifact or HMB_PREVIOUS_ARTIFACT. '
-        'Final Android validation cannot be skipped.',
-      );
+  if (install &&
+      !build &&
+      (previousOverride == null || previousOverride.trim().isEmpty)) {
+    validatedApk = await cache.validatedCandidate(_apkPath);
+    if (validatedApk != null) {
+      print('Reusing successful Android validation for the unchanged APK.');
     }
-    if (build &&
-        path.isWithin(
-          path.absolute('build'),
-          File(previous).resolveSymbolicLinksSync(),
-        )) {
-      throw StateError(
-        'Keep the previous artifact outside build/ '
-        'so cleaning/building cannot delete or overwrite it.',
-      );
+  }
+  if (build || (install && validatedApk == null)) {
+    if (build) {
+      await cache.preserveExistingOutput(_apkPath);
+      await cache.preserveExistingOutput(_aabPath);
     }
+    final previous = await cache.resolvePrevious(
+      candidatePath: release ? _aabPath : _apkPath,
+      building: build,
+      explicitPath: previousOverride,
+    );
+    print('Using preserved upgrade baseline: $previous');
     validation = AndroidValidation(previousArtifact: previous)
       ..preflight(release ? 'candidate.aab' : 'candidate.apk');
   }
@@ -137,7 +103,7 @@ Create a signed release appbundle suitable to upload to Google Play store.''',
 
     updateAndroidVersion(newVersion);
 
-    if (results['clean'] as bool) {
+    if (options.clean) {
       _checkedFlutter(['clean']);
     }
     _runPubGet();
@@ -147,28 +113,38 @@ Create a signed release appbundle suitable to upload to Google Play store.''',
     /// https://github.com/espresso3389/pdfrx/tree/master/packages/pdfrx#note-for-building-release-builds
     // 'flutter run pdfrx:remove_wasm_modules'.run;
     if (release) {
-      await buildAppBundle(newVersion, validation!);
+      await buildAppBundle(newVersion, validation!, cache);
     } else {
       buildApk();
       validatedApk = await validation!.validate(_apkPath);
+      await cache.recordValidated(
+        candidate: validatedApk,
+        previousPath: validation.previousArtifact,
+      );
     }
   }
 
   if (install) {
-    if (!build) {
+    if (validatedApk == null) {
       validatedApk = await validation!.validate(_apkPath);
+      await cache.recordValidated(
+        candidate: validatedApk,
+        previousPath: validation.previousArtifact,
+      );
     }
-    await validatedApk!.assertUnchanged();
-    installApk(device: device);
+    await validatedApk.assertUnchanged();
+    installApk(device: options.device);
   }
 }
 
-void showUsage(ArgParser parser) {
+void showUsage() {
   print('''
 Tools to help build the app
-  If no switches are passed then --assets, --build and --install are assumed
+  Assets, build and install are enabled by default.
+  Disable steps with --no-assets, --no-build or --no-install.
+  Upgrade baselines are preserved automatically before cleaning.
   ''');
-  print(parser.usage);
+  print(BuildOptions.parser.usage);
 }
 
 void _runPubGet() {
@@ -255,6 +231,7 @@ String _selectAndroidInstallTarget(String? requestedSerial) {
 }
 
 const _apkPath = 'build/app/outputs/flutter-apk/app-release.apk';
+const _aabPath = 'build/app/outputs/bundle/release/app-release.aab';
 
 void _checkedFlutter(List<String> arguments) {
   final result = Process.runSync('flutter', arguments);
@@ -283,6 +260,7 @@ void buildApk() {
 Future<void> buildAppBundle(
   Version newVersion,
   AndroidValidation validation,
+  BuildArtifactCache cache,
 ) async {
   _checkedFlutter([
     'build',
@@ -291,8 +269,10 @@ Future<void> buildAppBundle(
     '--no-pub',
     '--no-tree-shake-icons',
   ]);
-  final validated = await validation.validate(
-    'build/app/outputs/bundle/release/app-release.aab',
+  final validated = await validation.validate(_aabPath);
+  await cache.recordValidated(
+    candidate: validated,
+    previousPath: validation.previousArtifact,
   );
 
   final targetPath = join(

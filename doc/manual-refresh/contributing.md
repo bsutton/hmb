@@ -12,8 +12,8 @@ PDF checkout. Never commit credentials or signing keys to resolve setup issues.
 
 Database scripts live in `assets/sql/upgrade_scripts/`; the manifest is
 `assets/sql/upgrade_list.json`. Register new migration assets using
-`dart run tool/build.dart --assets`. Coordinate migration numbering and preserve
-already released migrations.
+`tool/build.dart --no-build --no-install`. Coordinate migration numbering and
+preserve already released migrations.
 
 Run root tests and, for whole-repository analysis, first resolve dependencies in
 `packages/room_editor/example` and run its tests too. Platform-specific setup and

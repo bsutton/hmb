@@ -1,25 +1,58 @@
 # Final Android build validation
 
-`dart run tool/build.dart --build --previous-artifact /path/to/last-good.apk`
-now performs a project clean (default), pinned dependency resolution, release APK
-build, component packaging checks, and disposable emulator tests. Only then may
-`--install` replace an app on the selected user device. `--install` alone validates
-the existing APK first. `--assets` alone remains an asset/database operation.
+Run `tool/build.dart` to refresh assets, clean project outputs, resolve pinned
+dependencies, build and validate a release APK, and install it on the selected
+Android device. `-a -b -i` remains accepted but is no longer necessary. Each step
+is enabled by default and can be disabled independently:
 
-`--release --previous-artifact /path/to/last-good.aab` builds an AAB, checks a
+```sh
+tool/build.dart                               # assets, build, validate, install
+tool/build.dart --no-install                  # assets, build and validate
+tool/build.dart --no-assets                   # build, validate and install
+tool/build.dart --no-assets --no-build        # install existing APK
+tool/build.dart --no-build --no-install       # refresh assets/database only
+```
+
+Validation includes component packaging checks and disposable emulator tests.
+Installation happens only after these checks pass. Install-only runs reuse a
+saved successful validation when the APK's SHA-256 digest is unchanged; they
+do not start the emulator or require its tools again. A changed or unrecorded
+APK, or a supplied baseline override, goes through validation before installation.
+The APK's digest is checked
+again immediately before installation. Disabling all three steps does nothing.
+`--no-clean` retains incremental compilation; new builds still run all
+validation gates.
+
+`tool/build.dart --release` builds an AAB, checks a
 bundletool universal APK, checks the union of manifest components and DEX classes
 in the emulator-selected split APKs, and installs that split set for runtime tests.
 The AAB is copied into `release/` only after validation. No publishing is performed.
 Bundle-derived test APKs use a disposable signing key for both versions; the
 original AAB and production signing configuration are not modified. Google Play
 signing/delivery and other ABI/device combinations still require release testing.
+Release mode disables device installation; it honours `--no-assets` and rejects
+`--no-build` because it needs to build the release bundle.
 
-The previous artifact must have a lower versionCode. Keep it outside `build/`,
-even with `--no-clean`, so compilation cannot overwrite it. APK upgrades require matching signing certificates (Android
-rejects mismatches). Preserve a previously validated artifact for the next run;
-the suite never silently promotes a failing candidate. `HMB_PREVIOUS_ARTIFACT`
-can supply the default. There is no validation-skip flag. `--no-clean` retains
-incremental compilation for development, but still requires all final gates.
+## Automatic upgrade baselines
+
+The build tool preserves existing APK and AAB outputs in the ignored
+`.android-artifacts/` directory before cleaning. On the first run, the existing
+output of the matching type is the upgrade baseline; it must pass the
+previous-version startup check. After successful validation, the tested candidate
+becomes the baseline for the next build. APK and AAB baselines are independent.
+Failed builds and failed validation never advance the last-validated baseline.
+The original predecessor is retained alongside the validated artifact.
+
+Artifacts are stored by SHA-256 digest and checked before reuse. This directory
+survives `flutter clean`; retain it between builds. No manual copying is needed.
+The previous artifact must still have a lower versionCode, and APK upgrades
+require matching signing certificates.
+
+On a fresh checkout with no previous output or saved baseline, supply
+`--previous-artifact /path/to/last-good.apk` (or `.aab`) once.
+`HMB_PREVIOUS_ARTIFACT` also supplies an override; an explicit command-line path
+takes precedence. Supplied files are preserved automatically, including files
+inside `build/`. There is no validation-skip flag.
 
 ## Prerequisites (Linux x86_64)
 
@@ -65,6 +98,9 @@ To validate already-built artifacts without a version bump or phone install:
 ```sh
 dart run tool/android_validate.dart /path/candidate.apk /path/previous.apk
 ```
+
+A successful standalone validation also records the artifact for later
+install-only reuse by `tool/build.dart`.
 
 Component-only diagnostic (not a substitute for the full gate):
 
