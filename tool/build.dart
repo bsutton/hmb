@@ -233,6 +233,9 @@ String _selectAndroidInstallTarget(String? requestedSerial) {
 const _apkPath = 'build/app/outputs/flutter-apk/app-release.apk';
 const _aabPath = 'build/app/outputs/bundle/release/app-release.aab';
 
+// Ship only 64-bit Android targets, including x64 for emulator validation.
+const _androidTargetPlatforms = '--target-platform=android-arm64,android-x64';
+
 void _checkedFlutter(List<String> arguments) {
   final result = Process.runSync('flutter', arguments);
   stdout.write(result.stdout);
@@ -252,6 +255,7 @@ void buildApk() {
     'build',
     'apk',
     '--release',
+    _androidTargetPlatforms,
     '--no-pub',
     '--no-tree-shake-icons',
   ]);
@@ -266,6 +270,7 @@ Future<void> buildAppBundle(
     'build',
     'appbundle',
     '--release',
+    _androidTargetPlatforms,
     '--no-pub',
     '--no-tree-shake-icons',
   ]);
