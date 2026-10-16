@@ -2,6 +2,20 @@
 cmake_minimum_required(VERSION 3.10)
 project(runner LANGUAGES CXX)
 
+# added by SBS to supress sentry warnings as it uses the more modern C11 compiler.
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
+
+# Configure the bundle before plugins add their own installation rules. Also
+# recover build trees that cached CMake's system-wide default on an earlier run.
+set(BUILD_BUNDLE_DIR "${PROJECT_BINARY_DIR}/bundle")
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR
+   CMAKE_INSTALL_PREFIX STREQUAL "/usr/local")
+  set(CMAKE_INSTALL_PREFIX "${BUILD_BUNDLE_DIR}" CACHE PATH
+    "Flutter application bundle directory" FORCE)
+endif()
+
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "handyman")
@@ -95,11 +109,6 @@ include(flutter/generated_plugins.cmake)
 # === Installation ===
 # By default, "installing" just makes a relocatable bundle in the build
 # directory.
-set(BUILD_BUNDLE_DIR "${PROJECT_BINARY_DIR}/bundle")
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX "${BUILD_BUNDLE_DIR}" CACHE PATH "..." FORCE)
-endif()
-
 # Start with a clean build bundle directory every time.
 install(CODE "
   file(REMOVE_RECURSE \"${BUILD_BUNDLE_DIR}/\")
