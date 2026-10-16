@@ -175,6 +175,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
                     selectedJob: _selectedJob,
                     onSelected: (job) => setState(() {
                       _selectedJob.jobId = job?.id;
+                      _saveError = null;
                     }),
                   ),
                   // Display event date
@@ -387,14 +388,14 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     if (!mounted || _saving || _saveReturned) {
       return;
     }
-    if (!(_form.currentState?.validate() ?? false)) {
-      return;
-    }
     // The selector can still be initializing, or its selection can have
     // disappeared. Never rely on the form alone for this required relation.
     final jobId = _selectedJob.jobId;
     if (jobId == null) {
       setState(() => _saveError = 'Please select a job before saving.');
+      return;
+    }
+    if (!(_form.currentState?.validate() ?? false)) {
       return;
     }
     setState(() {

@@ -36,7 +36,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.byType(JobActivityDialog), findsOneWidget);
-    expect(find.text('Please select an item'), findsOneWidget);
+    expect(find.text('Please select a job before saving.'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
