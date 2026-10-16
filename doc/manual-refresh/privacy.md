@@ -56,4 +56,5 @@ The maintainer needs to confirm diagnostics masking, retained fields, retention,
 operator access and any consent controls, plus the applicable external-service
 policies and device/OS backup behavior. No live accounts, messages, accounting
 uploads or telemetry traffic were exercised for this review. See the technical
-[evidence register](PRIVACY_EVIDENCE.md) for source locations and open questions.
+[evidence register](https://github.com/bsutton/hmb/blob/main/doc/manual-refresh/PRIVACY_EVIDENCE.md)
+for source locations and open questions.
