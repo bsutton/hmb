@@ -29,8 +29,10 @@ import '../../util/dart/date_time_ex.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
 import '../../util/dart/local_time.dart';
+import '../../util/dart/log.dart';
 import '../../util/flutter/hmb_theme.dart';
 import '../dialog/send_notice_for_job_dialog.dart';
+import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_date_time_picker.dart';
 import '../widgets/hmb_toast.dart';
@@ -121,6 +123,9 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
   final _selectedJob = SelectedJob();
   final _form = GlobalKey<FormState>();
   DateTime? _noticeSentDate;
+  var _saving = false;
+  var _saveReturned = false;
+  String? _saveError;
 
   @override
   Future<void> asyncInitState() async {
@@ -156,40 +161,45 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
 
     return DeferredBuilder(
       this,
-      builder: (context) => Form(
-        key: _form,
-        child: HMBScrollForKeyboard(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: HMBFormSection(
-              children: [
-                HMBSelectJob(
-                  selectedJob: _selectedJob,
-                  onSelected: (job) => setState(() {
-                    _selectedJob.jobId = job?.id;
-                  }),
-                ),
-                // Display event date
-                _buildEventDate(context),
-                ..._buildStartEndDates(isSmallScreen),
-                // Display the duration
-                _buildDuration(duration),
-                // Status dropdown
-                _buildStatus(),
-                // Notes field
-                _buildNotes(),
-                if (_noticeSentDate != null)
-                  Text('Notice sent on: ${formatDateTime(_noticeSentDate!)}'),
-                // Contact option
-                if (widget.isEditing)
-                  HMBButtonSecondary(
-                    onPressed: _showContactOptions,
-                    label: 'Send Notice',
-                    hint:
-                        '''Send a text message to the user confirming the schedule.''',
+      builder: (context) => AbsorbPointer(
+        absorbing: _saving,
+        child: Form(
+          key: _form,
+          child: HMBScrollForKeyboard(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: HMBFormSection(
+                children: [
+                  HMBSelectJob(
+                    required: true,
+                    selectedJob: _selectedJob,
+                    onSelected: (job) => setState(() {
+                      _selectedJob.jobId = job?.id;
+                    }),
                   ),
-                _buildButtons(context),
-              ],
+                  // Display event date
+                  _buildEventDate(context),
+                  ..._buildStartEndDates(isSmallScreen),
+                  // Display the duration
+                  _buildDuration(duration),
+                  // Status dropdown
+                  _buildStatus(),
+                  // Notes field
+                  _buildNotes(),
+                  if (_noticeSentDate != null)
+                    Text('Notice sent on: ${formatDateTime(_noticeSentDate!)}'),
+                  // Contact option
+                  if (widget.isEditing)
+                    HMBButtonSecondary(
+                      onPressed: _showContactOptions,
+                      label: 'Send Notice',
+                      hint:
+                          '''Send a text message to the user confirming the schedule.''',
+                    ),
+                  if (_saveError != null) Text(_saveError!),
+                  _buildButtons(context),
+                ],
+              ),
             ),
           ),
         ),
@@ -268,6 +278,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
           const HMBSpacer(width: true),
           HMBButtonPrimary(
             label: widget.isEditing ? 'Update Event' : 'Add Event',
+            enabled: !_saving,
             hint: 'Save the event',
             onPressed: _handleSave,
           ),
@@ -373,10 +384,53 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
 
   /// Save Event
   Future<void> _handleSave() async {
-    if (!(_form.currentState?.validate() ?? true)) {
+    if (!mounted || _saving || _saveReturned) {
       return;
     }
+    if (!(_form.currentState?.validate() ?? false)) {
+      return;
+    }
+    // The selector can still be initializing, or its selection can have
+    // disappeared. Never rely on the form alone for this required relation.
+    final jobId = _selectedJob.jobId;
+    if (jobId == null) {
+      setState(() => _saveError = 'Please select a job before saving.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _saveError = null;
+    });
+    try {
+      await _prepareSave(jobId);
+    } on JobActivityJobNotFound {
+      if (mounted) {
+        setState(
+          () => _saveError =
+              'This job is no longer available. Please select another job.',
+        );
+      }
+    } catch (error, stackTrace) {
+      Log.e(
+        'Unable to prepare schedule event',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (mounted) {
+        setState(
+          () => _saveError =
+              'Unable to check this event. Your changes have not been saved. '
+              'Please try again.',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
+  }
 
+  Future<void> _prepareSave(int jobId) async {
     if (_startTime.isAfterOrEqual(_endTime)) {
       HMBToast.error('The end time must be after the start time.');
       return;
@@ -401,18 +455,20 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     final eventDuration = _endTime.difference(_startTime);
     if (eventDuration >= _longEventWarningThreshold) {
       final shouldContinue = await _confirmLongEvent(eventDuration);
-      if (!shouldContinue) {
+      if (!mounted || !shouldContinue) {
         return;
       }
     }
 
     // Check for overlapping events
-    final overlappingEvent = await _checkForOverlappingEvents();
+    final overlappingEvent = await BlockingUI().runAndWait(
+      _checkForOverlappingEvents,
+      label: 'Checking schedule',
+    );
+    if (!mounted) {
+      return;
+    }
     if (overlappingEvent != null) {
-      if (!mounted) {
-        return; // Check if the widget is still in the tree
-      }
-
       final shouldOverride = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -432,7 +488,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
         ),
       );
 
-      if (!(shouldOverride ?? false)) {
+      if (!mounted || !(shouldOverride ?? false)) {
         return; // User chose not to override
       }
     }
@@ -442,7 +498,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     late JobActivity jobEvent;
     if (widget.isEditing) {
       jobEvent = widget.event!.event!.jobActivity.copyWith(
-        jobId: _selectedJob.jobId,
+        jobId: jobId,
         start: _startTime.atDate(_eventDate),
         end: _endTime.atDate(_eventDate),
         status: _status,
@@ -452,7 +508,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     } else {
       /// new job event.
       jobEvent = JobActivity.forInsert(
-        jobId: _selectedJob.jobId!,
+        jobId: jobId,
         start: _startTime.atDate(_eventDate),
         end: _endTime.atDate(_eventDate),
         status: _status,
@@ -460,9 +516,13 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
         noticeSentDate: _noticeSentDate,
       );
     }
-    final jobEventEx = await JobActivityEx.fromActivity(jobEvent);
+    final jobEventEx = await BlockingUI().runAndWait(
+      () => JobActivityEx.fromActivity(jobEvent),
+      label: 'Checking job',
+    );
 
     if (mounted) {
+      _saveReturned = true;
       if (widget.isEditing) {
         Navigator.of(
           context,

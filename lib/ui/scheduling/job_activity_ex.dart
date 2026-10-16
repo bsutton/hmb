@@ -27,8 +27,10 @@ class JobActivityEx {
 
   static Future<JobActivityEx> fromActivity(JobActivity jobActivity) async {
     final job = await DaoJob().getById(jobActivity.jobId);
-
-    return JobActivityEx._(job: job!, jobActivity: jobActivity);
+    if (job == null) {
+      throw const JobActivityJobNotFound();
+    }
+    return JobActivityEx._(job: job, jobActivity: jobActivity);
   }
 
   /// Convert to [CalendarEventData] for the calendar_view package
@@ -44,4 +46,9 @@ class JobActivityEx {
 
   int get durationInMinutes =>
       jobActivity.end.difference(jobActivity.start).inMinutes;
+}
+
+/// A schedule requires a job, but its optional customer/contact/site do not.
+class JobActivityJobNotFound implements Exception {
+  const JobActivityJobNotFound();
 }
