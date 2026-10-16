@@ -38,12 +38,15 @@ Future<File> generateInvoicePdf(
   final pdf = pw.Document();
   final system = await DaoSystem().get();
   final taxDisplayText = await buildPdfTaxDisplayText();
-  final lines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
+  final lines = (await DaoInvoiceLine().getByInvoiceId(invoice.id))
+      .where((line) => line.status != LineChargeableStatus.noChargeHidden)
+      .toList();
 
   // Calculate the total amount from lines, excluding noChargeHidden lines
-  final totalAmount = lines
-      .where((line) => line.status != LineChargeableStatus.noChargeHidden)
-      .fold(MoneyEx.zero, (sum, line) => sum + line.lineTotal);
+  final totalAmount = lines.fold(
+    MoneyEx.zero,
+    (sum, line) => sum + line.lineTotal,
+  );
 
   final phone = await formatPhone(system.bestPhone);
 
@@ -441,8 +444,21 @@ Future<List<GroupedLine>> groupByInvoiceLineGroup(
   List<InvoiceLine> lines,
 ) async {
   final grouped = <int?, List<InvoiceLine>>{};
+  final groups = <int, InvoiceLineGroup?>{};
   for (final line in lines) {
-    final groupKey = line.invoiceLineGroupId;
+    if (line.status == LineChargeableStatus.noChargeHidden) {
+      continue;
+    }
+    final groupId = line.invoiceLineGroupId;
+    if (!groups.containsKey(groupId)) {
+      groups[groupId] = await DaoInvoiceLineGroup().getById(groupId);
+    }
+    final group = groups[groupId];
+    // Group headers are descriptive metadata. Missing or mismatched headers
+    // must not discard saved charges (including credits) from the invoice.
+    final groupKey = group != null && group.invoiceId == line.invoiceId
+        ? groupId
+        : null;
     grouped.putIfAbsent(groupKey, () => []).add(line);
   }
 
@@ -454,7 +470,7 @@ Future<List<GroupedLine>> groupByInvoiceLineGroup(
     );
     final groupLine = GroupedLine(
       key: entry.key,
-      title: (await DaoInvoiceLineGroup().getById(entry.key))!.name,
+      title: groups[entry.key]?.name ?? 'Ungrouped',
       items: entry.value,
       total: total,
     );
