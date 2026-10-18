@@ -311,70 +311,67 @@ class _JobCreatorState extends DeferredState<JobCreator> {
     if (source == null) {
       return;
     }
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text(source.subject.isEmpty ? 'Source email' : source.subject),
-          content: SizedBox(
-            width: 720,
-            child: SingleChildScrollView(child: SelectableText(source.aiText)),
-          ),
-          actions: [
-            HMBButton(
-              label: 'Copy subject',
-              hint: 'Copy the email subject',
-              onPressed: () {
-                unawaited(
-                  Clipboard.setData(ClipboardData(text: source.subject)),
-                );
-                HMBToast.info('Email subject copied');
-              },
-            ),
-            HMBButton(
-              label: 'Copy body',
-              hint: 'Copy the email body',
-              onPressed: () {
-                unawaited(Clipboard.setData(ClipboardData(text: source.body)));
-                HMBToast.info('Email body copied');
-              },
-            ),
-            HMBButton(
-              label: 'Use subject',
-              hint: 'Use the email subject as the job summary',
-              onPressed: () {
-                setState(() => _jobSummary.text = source.subject);
-                HMBToast.info('Job summary updated');
-              },
-            ),
-            HMBButton(
-              label: 'Replace description',
-              hint: 'Replace the job description with the email body',
-              onPressed: () {
-                setState(() => _jobDescription.text = source.body);
-                HMBToast.info('Job description updated');
-              },
-            ),
-            HMBButton(
-              label: 'Append description',
-              hint: 'Append the email body to the job description',
-              onPressed: () {
-                final current = _jobDescription.text.trim();
-                setState(() {
-                  _jobDescription.text = current.isEmpty
-                      ? source.body
-                      : '$current\n\n${source.body}';
-                });
-                HMBToast.info('Email body appended');
-              },
-            ),
-            HMBButton(
-              label: 'Close',
-              hint: 'Return to job creation',
-              onPressed: () => Navigator.of(dialogContext).pop(),
-            ),
-          ],
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(source.subject.isEmpty ? 'Source email' : source.subject),
+        content: SizedBox(
+          width: 720,
+          child: SingleChildScrollView(child: SelectableText(source.aiText)),
         ),
+        actions: [
+          HMBButton(
+            label: 'Copy subject',
+            hint: 'Copy the email subject',
+            onPressed: () {
+              unawaited(Clipboard.setData(ClipboardData(text: source.subject)));
+              HMBToast.info('Email subject copied');
+            },
+          ),
+          HMBButton(
+            label: 'Copy body',
+            hint: 'Copy the email body',
+            onPressed: () {
+              unawaited(Clipboard.setData(ClipboardData(text: source.body)));
+              HMBToast.info('Email body copied');
+            },
+          ),
+          HMBButton(
+            label: 'Use subject',
+            hint: 'Use the email subject as the job summary',
+            onPressed: () {
+              setState(() => _jobSummary.text = source.subject);
+              HMBToast.info('Job summary updated');
+            },
+          ),
+          HMBButton(
+            label: 'Replace description',
+            hint: 'Replace the job description with the email body',
+            onPressed: () {
+              setState(() => _jobDescription.text = source.body);
+              HMBToast.info('Job description updated');
+            },
+          ),
+          HMBButton(
+            label: 'Append description',
+            hint: 'Append the email body to the job description',
+            onPressed: () {
+              final current = _jobDescription.text.trim();
+              setState(() {
+                _jobDescription.text = current.isEmpty
+                    ? source.body
+                    : '$current\n\n${source.body}';
+              });
+              HMBToast.info('Email body appended');
+            },
+          ),
+          HMBButton(
+            label: 'Close',
+            hint: 'Return to job creation',
+            onPressed: () => Navigator.of(dialogContext).pop(),
+          ),
+        ],
       ),
     );
   }
