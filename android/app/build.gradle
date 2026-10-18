@@ -1,14 +1,9 @@
 
 plugins {
     id "com.android.application"
-    id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied 
-    // after the Android and Kotlin Gradle plugins.
+    // The Flutter Gradle Plugin must be applied after the Android Gradle plugin.
     id "dev.flutter.flutter-gradle-plugin"
 }
-
-// ext.kotlin_version = "1.8.0"
-
 
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file("local.properties")
@@ -49,7 +44,7 @@ dependencies {
 
 android {
     namespace = "dev.onepub.handyman"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -64,10 +59,6 @@ android {
         }
     }
 
-
-     kotlinOptions {
-        jvmTarget = "17"
-    }
 
     defaultConfig {
         applicationId "dev.onepub.handyman"
@@ -111,6 +102,12 @@ android {
         }
     }
 
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
 }
 
 flutter {
