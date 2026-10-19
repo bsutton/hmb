@@ -19,7 +19,6 @@ import 'dart:isolate';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:googleapis/drive/v3.dart' as gdrive;
 import 'package:path/path.dart' as p;
-import 'package:sentry/sentry.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../../dao/dao_photo.dart';
@@ -32,6 +31,7 @@ import '../../progress_update.dart';
 import '../google_drive_api.dart';
 import '../google_drive_auth.dart';
 import 'photo_sync_params.dart';
+import 'photo_sync_recovery.dart';
 import 'upload_photos_in_backup.dart';
 
 /// Used by the photo upload isolate to indicate
@@ -85,348 +85,190 @@ StreamSubscription<bool> listenForPhotoSyncSignIn({
 
 class PhotoSyncService {
   static final _instance = PhotoSyncService._();
-  static const _maxAutoRetries = 3;
-  static const _retryDelay = Duration(seconds: 3);
-
   Isolate? _isolate;
-  ReceivePort? _receivePort;
-  ReceivePort? _errorPort;
-  ReceivePort? _exitPort;
-  Timer? _retryTimer;
-  var _autoRetryAttempts = 0;
-  var _syncHadError = false;
-  var _cancelRequested = false;
   var _waitingForSignIn = false;
   var _wakeLockHeld = false;
-  var _retryOnFailure = true;
-  var _starting = false;
-  String? _lastErrorSummary;
 
-  final StreamController<ProgressUpdate> _controller =
-      StreamController.broadcast();
-  final StreamController<String> _errorController =
-      StreamController.broadcast();
+  final _controller = StreamController<ProgressUpdate>.broadcast();
+  final _errorController = StreamController<String>.broadcast();
+  late final PhotoSyncRecovery _recovery;
 
   factory PhotoSyncService() => _instance;
   PhotoSyncService._() {
+    _recovery = PhotoSyncRecovery(
+      run: _run,
+      stop: () => _isolate?.kill(priority: Isolate.immediate),
+      isRecoverable: (error) => isRecoverablePhotoSyncError('$error'),
+      onChanged: () => _controller.add(
+        ProgressUpdate(
+          _recovery.isRunning
+              ? 'Starting photo sync...'
+              : _waitingForSignIn
+              ? 'Photo sync waiting for Google sign-in.'
+              : _recovery.lastError != null
+              ? isRecoverablePhotoSyncError('${_recovery.lastError}')
+                    ? 'Photo sync interrupted. Retrying while the app is open: '
+                          '${_recovery.lastError}'
+                    : 'Photo sync failed: ${_recovery.lastError}'
+              : '',
+          0,
+          0,
+        ),
+      ),
+      onError: (error) {
+        if (!isRecoverablePhotoSyncError('$error')) {
+          _errorController.add('$error');
+        }
+      },
+    );
     listenForPhotoSyncSignIn(
       authStateChanges: GoogleDriveAuth.authStateChanges,
       isWaitingForSignIn: () => _waitingForSignIn,
       isRunning: () => isRunning,
       clearWaitingForSignIn: () => _waitingForSignIn = false,
-      start: start,
+      start: () => _recovery.start(automatic: true),
     );
   }
 
   Stream<ProgressUpdate> get progressStream => _controller.stream;
   Stream<String> get errorStream => _errorController.stream;
-
-  bool get isRunning => _isolate != null;
+  bool get isRunning => _recovery.isRunning;
+  bool get isCancelled => _recovery.isCancelled;
+  bool get isPending => _recovery.isWaiting || _waitingForSignIn;
   bool get isWaitingForSignIn => _waitingForSignIn;
-  String? get lastErrorSummary => _lastErrorSummary;
+  String? get lastErrorSummary => _recovery.lastError?.toString();
 
-  /// Kick off the sync and listen for both progress and payload messages.
   Future<void> start({bool retryOnFailure = true}) async {
-    if (_starting || isRunning) {
-      return;
-    }
-    if (!GoogleDriveAuth.isAuthSupported()) {
-      _stopAutomaticRetry();
-      await _releaseWakeLock();
-      return;
-    }
-    _starting = true;
-    _retryOnFailure = retryOnFailure;
-    try {
-      if (!await DatabaseHelper().waitUntilOpen()) {
-        throw StateError("The database isn't open for photo sync");
-      }
-      final photos = await DaoPhoto().getUnsyncedPhotos();
-      final deletes = (await DaoPhotoDeleteQueue().getPendingDeleteIds())
-          .map(
-            (photoDeleteQueue) => PhotoDeletePayload(
-              photoDeleteQueueId: photoDeleteQueue.id,
-              photoId: photoDeleteQueue.photoId,
-            ),
-          )
-          .toList();
-      if (photos.isEmpty && deletes.isEmpty) {
-        _waitingForSignIn = false;
-        _autoRetryAttempts = 0;
-        _lastErrorSummary = null;
-        await _releaseWakeLock();
-        return;
-      }
-
-      final headers = await (await GoogleDriveAuth.instance())
-          .authHeadersOrNull(allowAutomaticSignIn: false);
-      if (headers == null) {
-        _waitingForSignIn = true;
-        await _releaseWakeLock();
-        _controller.add(
-          ProgressUpdate('Photo sync waiting for Google sign-in.', 0, 0),
-        );
-        return;
-      }
-      _waitingForSignIn = false;
-      await _enableWakeLock();
-      await _startSync(
-        photos: photos,
-        deletes: deletes,
-        authHeaders: headers,
-        retryOnFailure: retryOnFailure,
-      );
-    } catch (error, stackTrace) {
-      if (error is PhotoSyncException) {
-        rethrow;
-      }
-      _cleanup();
-      _handleStartupFailure(error, stackTrace, retryOnFailure: retryOnFailure);
-    } finally {
-      _starting = false;
-      if (!isRunning && !(_retryTimer?.isActive ?? false)) {
-        await _releaseWakeLock();
-      }
+    await _recovery.start();
+    if (!retryOnFailure && _recovery.lastError != null) {
+      // Callers performing a larger backup must still see the failure.
+      // They explicitly opt out of background retries.
+      final error = _recovery.lastError!;
+      _recovery.cancel();
+      throw PhotoSyncException('$error');
     }
   }
 
-  Future<void> _startSync({
-    required List<PhotoPayload> photos,
-    required List<PhotoDeletePayload> deletes,
-    required Map<String, String> authHeaders,
-    required bool retryOnFailure,
-  }) async {
-    if (isRunning) {
+  Future<void> _run(bool Function() interrupted) async {
+    if (!GoogleDriveAuth.isAuthSupported()) {
       return;
     }
-    _retryTimer?.cancel();
-    _cancelRequested = false;
-    _syncHadError = false;
-    _retryOnFailure = retryOnFailure;
-    _lastErrorSummary = null;
+    if (!await DatabaseHelper().waitUntilOpen()) {
+      throw StateError("The database isn't open for photo sync");
+    }
+    // SQLite's last_backup_date and photo_delete_queue are the durable queue.
+    // Never clear pending rows on interruption or cancellation.
+    final photos = await DaoPhoto().getUnsyncedPhotos();
+    final deletes = (await DaoPhotoDeleteQueue().getPendingDeleteIds())
+        .map(
+          (row) => PhotoDeletePayload(
+            photoDeleteQueueId: row.id,
+            photoId: row.photoId,
+          ),
+        )
+        .toList();
+    if (interrupted()) {
+      return;
+    }
+    if (photos.isEmpty && deletes.isEmpty) {
+      _waitingForSignIn = false;
+      return;
+    }
+    final headers = await (await GoogleDriveAuth.instance())
+        .authHeadersOrNull(allowAutomaticSignIn: false)
+        .timeout(const Duration(seconds: 45));
+    if (interrupted()) {
+      return;
+    }
+    _waitingForSignIn = headers == null;
+    if (headers == null) {
+      _controller.add(
+        ProgressUpdate('Photo sync waiting for Google sign-in.', 0, 0),
+      );
+      return;
+    }
 
-    _receivePort = ReceivePort();
-    _errorPort = ReceivePort();
-    _exitPort = ReceivePort();
-
-    // 1️⃣ Listen for ProgressUpdate or PhotoPayload
-    _receivePort!.listen((message) async {
-      if (message is ProgressUpdate) {
-        _controller.add(message);
-      } else if (message is PhotoUploaded) {
-        // mark that one photo has now been backed up
-        await DaoPhoto().updatePhotoSyncStatus(
-          message.id,
-          cloudFileId: message.cloudFileId,
-          cloudMd5: message.cloudMd5,
-          cloudModifiedDate: message.cloudModifiedDate,
-        );
-      } else if (message is PhotoDeleted) {
-        await DaoPhotoDeleteQueue().delete(message.id);
+    final port = ReceivePort();
+    final exited = Completer<void>();
+    var acknowledgements = Future<void>.value();
+    Object? failure;
+    // One port preserves worker message/error/exit order. Acknowledgements are
+    // serialized and drained before another worker reads the durable queue.
+    port.listen((dynamic message) {
+      if (message == null) {
+        exited.complete();
+      } else if (message is List) {
+        failure = PhotoSyncException('${message.first}');
+      } else if (message is ProgressUpdate) {
+        if (!interrupted()) {
+          _controller.add(message);
+        }
+      } else {
+        acknowledgements = acknowledgements
+            .then((_) async {
+              if (message is PhotoUploaded) {
+                await DaoPhoto().updatePhotoSyncStatus(
+                  message.id,
+                  cloudFileId: message.cloudFileId,
+                  cloudMd5: message.cloudMd5,
+                  cloudModifiedDate: message.cloudModifiedDate,
+                );
+              } else if (message is PhotoDeleted) {
+                await DaoPhotoDeleteQueue().delete(message.id);
+              }
+            })
+            .catchError((Object error) {
+              failure = error;
+            });
       }
     });
-
-    _errorPort!.listen(_onSyncError);
-
-    final params = PhotoSyncParams(
-      sendPort: _receivePort!.sendPort,
-      authHeaders: authHeaders,
-      photos: photos,
-      deletes: deletes,
-    );
-
-    _isolate = await Isolate.spawn<PhotoSyncParams>(
-      _photoSyncEntry,
-      params,
-      onError: _errorPort!.sendPort,
-      onExit: _exitPort!.sendPort,
-      debugName: 'Photo Sync',
-    );
-
-    await _exitPort!.first;
-    // Error and exit notifications arrive on separate ports. Yield once so a
-    // terminal isolate error cannot be misclassified as a successful exit.
-    await Future<void>.delayed(Duration.zero);
-    final wasCancelled = _cancelRequested;
-    _cleanup();
-    if (wasCancelled) {
-      _cancelRequested = false;
-      _autoRetryAttempts = 0;
-      _lastErrorSummary = null;
-      return;
-    }
-    if (_syncHadError) {
-      final message = _lastErrorSummary ?? '';
-      if (shouldRetryPhotoSyncError(message, retryOnFailure: retryOnFailure)) {
-        _scheduleRetry();
-      } else {
-        if (!retryOnFailure) {
-          throw PhotoSyncException(
-            _lastErrorSummary ?? 'Photo sync failed without an error message.',
-          );
-        }
+    try {
+      await _enableWakeLock();
+      if (interrupted()) {
+        return;
       }
-    } else {
-      _autoRetryAttempts = 0;
-      _lastErrorSummary = null;
+      final isolate = await Isolate.spawn<PhotoSyncParams>(
+        _photoSyncEntry,
+        PhotoSyncParams(
+          sendPort: port.sendPort,
+          authHeaders: headers,
+          photos: photos,
+          deletes: deletes,
+        ),
+        onError: port.sendPort,
+        onExit: port.sendPort,
+        paused: true,
+        debugName: 'Photo Sync',
+      );
+      _isolate = isolate;
+      if (interrupted()) {
+        isolate.kill(priority: Isolate.immediate);
+      } else {
+        isolate.resume(isolate.pauseCapability!);
+      }
+      await exited.future;
+      await acknowledgements;
+      if (failure != null && !interrupted()) {
+        throw PhotoSyncException('$failure');
+      }
+    } finally {
+      port.close();
+      _isolate = null;
+      await _releaseWakeLock();
     }
   }
 
   void cancelSync() {
-    _stopAutomaticRetry();
-    unawaited(_releaseWakeLock());
-    if (!isRunning) {
-      _controller.add(ProgressUpdate('Photo sync cancelled.', 0, 0));
-      return;
-    }
-    _cancelRequested = true;
-    _isolate?.kill(priority: Isolate.immediate);
+    _waitingForSignIn = false;
+    _recovery.cancel();
     _controller.add(ProgressUpdate('Photo sync cancelled.', 0, 0));
   }
 
-  void _cleanup() {
-    final wasRunning = _isolate != null;
-    _receivePort?.close();
-    _errorPort?.close();
-    _exitPort?.close();
-    _isolate = null;
-    _receivePort = null;
-    _errorPort = null;
-    _exitPort = null;
-    if (wasRunning) {
-      // Progress is emitted before the worker exits, while [isRunning] is
-      // still true. Publish the post-cleanup idle state so mounted screens do
-      // not retain a completed message or a full progress bar.
-      _controller.add(ProgressUpdate('', 0, 0));
-    }
-  }
+  void pause() => _recovery.pause();
 
-  void _onSyncError(dynamic error) {
-    _syncHadError = true;
-    _lastErrorSummary = _formatSyncError(error);
-    if (_shouldDeferRecoverableError(_lastErrorSummary!)) {
-      _controller.add(
-        ProgressUpdate(
-          'Photo sync was interrupted. It will retry shortly.',
-          0,
-          0,
-        ),
-      );
-      return;
-    }
-    final exception = PhotoSyncException(_lastErrorSummary!);
-    final stackTrace = _stackTraceFromIsolateError(error);
-    unawaited(Sentry.captureException(exception, stackTrace: stackTrace));
-    unawaited(
-      Sentry.captureMessage(
-        'Photo sync isolate failed: $_lastErrorSummary',
-        level: SentryLevel.error,
-      ),
-    );
-    _errorController.add(_lastErrorSummary!);
-    _controller.add(ProgressUpdate('Photo sync failed.', 0, 0));
-  }
-
-  void _handleStartupFailure(
-    Object error,
-    StackTrace stackTrace, {
-    required bool retryOnFailure,
-  }) {
-    _syncHadError = true;
-    _lastErrorSummary = _formatSyncError(error);
-    final recoverable = _shouldDeferRecoverableError(_lastErrorSummary!);
-    if (recoverable) {
-      _controller.add(
-        ProgressUpdate(
-          'Photo sync was interrupted. It will retry shortly.',
-          0,
-          0,
-        ),
-      );
-    } else {
-      unawaited(Sentry.captureException(error, stackTrace: stackTrace));
-      _errorController.add(_lastErrorSummary!);
-      _controller.add(ProgressUpdate('Photo sync failed.', 0, 0));
-    }
-    if (retryOnFailure && recoverable) {
-      _scheduleRetry();
-      return;
-    }
-    if (!retryOnFailure) {
-      throw PhotoSyncException(_lastErrorSummary!);
-    }
-  }
-
-  void _stopAutomaticRetry() {
-    _retryTimer?.cancel();
-    _retryTimer = null;
-    _autoRetryAttempts = 0;
-    _lastErrorSummary = null;
-    _waitingForSignIn = false;
-  }
-
-  void _scheduleRetry() {
-    if (_autoRetryAttempts >= _maxAutoRetries) {
-      final message = _lastErrorSummary == null
-          ? 'Photo sync failed after $_maxAutoRetries retries.'
-          : 'Photo sync failed after $_maxAutoRetries retries: '
-                '$_lastErrorSummary';
-      _controller.add(ProgressUpdate(message, 0, 0));
-      _errorController.add(message);
-      unawaited(Sentry.captureMessage(message, level: SentryLevel.error));
-      return;
-    }
-
-    _autoRetryAttempts++;
-    _controller.add(
-      ProgressUpdate(
-        'Retrying photo sync ($_autoRetryAttempts/$_maxAutoRetries)...',
-        0,
-        0,
-      ),
-    );
-    _retryTimer?.cancel();
-    _retryTimer = Timer(_retryDelay, () {
-      unawaited(start());
-    });
-  }
-
-  bool _shouldDeferRecoverableError(String message) =>
-      _retryOnFailure && isRecoverablePhotoSyncError(message);
-
-  String _formatSyncError(dynamic error) {
-    if (error is Exception) {
-      return error.toString();
-    }
-    if (error is Error) {
-      return error.toString();
-    }
-    if (error is List && error.length >= 2) {
-      final message = '${error[0]}'.trim();
-      final stack = '${error[1]}'.trim();
-      if (stack.isEmpty) {
-        return message;
-      }
-      final firstStackLine = stack.split('\n').first.trim();
-      return '$message [$firstStackLine]';
-    }
-    return '$error';
-  }
-
-  StackTrace? _stackTraceFromIsolateError(dynamic error) {
-    if (error is List && error.length >= 2) {
-      final stack = '${error[1]}'.trim();
-      if (stack.isNotEmpty) {
-        return StackTrace.fromString(stack);
-      }
-    }
-    return null;
-  }
+  Future<void> resumeIfNeeded() => _recovery.resume();
 
   Future<void> _enableWakeLock() async {
-    if (_wakeLockHeld) {
-      return;
-    }
     try {
       await WakelockPlus.enable();
       _wakeLockHeld = true;
@@ -453,34 +295,6 @@ class PhotoSyncService {
       );
     } finally {
       _wakeLockHeld = false;
-    }
-  }
-
-  Future<void> resumeIfNeeded() async {
-    if (isRunning || !GoogleDriveAuth.isAuthSupported()) {
-      return;
-    }
-    final photos = await DaoPhoto().getUnsyncedPhotos();
-    final deletes = await DaoPhotoDeleteQueue().getPendingDeleteIds();
-    if (photos.isEmpty && deletes.isEmpty) {
-      return;
-    }
-    _controller.add(ProgressUpdate('Resuming photo sync...', 0, 0));
-    try {
-      await start();
-    } catch (_) {
-      if (_lastErrorSummary != null) {
-        _errorController.add(_lastErrorSummary!);
-      }
-      _controller.add(
-        ProgressUpdate(
-          _lastErrorSummary == null
-              ? 'Photo sync could not resume yet. It will retry shortly.'
-              : 'Photo sync could not resume: $_lastErrorSummary',
-          0,
-          0,
-        ),
-      );
     }
   }
 
