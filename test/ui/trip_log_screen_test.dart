@@ -95,6 +95,8 @@ void main() {
       // actual navigation rather than looking for the retired inline form.
       await tester.tap(find.byTooltip('Trip logging settings'));
       await pumpUntilFound(tester, find.text('Enable trip logging'));
+      // The form can mount before the route's slide transition finishes.
+      await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Record trips when you use HMB'));
       await tester.pumpAndSettle();
       final rate = find.byWidgetPredicate(
