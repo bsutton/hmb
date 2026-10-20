@@ -14,6 +14,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../dao/dao.dart';
+import '../../../dao/dao_customer.dart';
 import '../../../entity/entity.dart';
 import '../../widgets/form_validation.dart';
 import '../../widgets/hmb_toast.dart';
@@ -178,7 +179,8 @@ class EntityEditScreenState<E extends Entity<E>>
       } catch (error) {
         // Check if the error indicates a duplicate name (unique
         //constraint violation)
-        if (error.toString().contains('UNIQUE constraint failed')) {
+        if (widget.dao is! DaoCustomer &&
+            error.toString().contains('UNIQUE constraint failed')) {
           HMBToast.error(
             '''A ${widget.entityName.toLowerCase()} with that name already exists.''',
           );

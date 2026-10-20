@@ -212,6 +212,9 @@ class _CustomerCreatorState extends State<CustomerCreator> {
     }
 
     try {
+      if (await DaoCustomer().hasDuplicateName(_customerName.text)) {
+        throw DuplicateCustomerNameException(_customerName.text);
+      }
       final name = _customerName.text.trim();
       final duplicates = await DaoCustomer().getByFilter(name);
       final hasDuplicate = duplicates.any(
@@ -281,15 +284,7 @@ class _CustomerCreatorState extends State<CustomerCreator> {
         Navigator.of(context).pop(customer2);
       }
     } catch (error) {
-      // Check if the error indicates a duplicate name (unique constraint
-      // violation)
-      if (error.toString().contains('UNIQUE constraint failed')) {
-        HMBToast.error(
-          'A Customer with the name ${_customerName.text} already exists.',
-        );
-      } else {
-        HMBToast.error(error.toString());
-      }
+      HMBToast.error(error.toString());
     }
   }
 }
