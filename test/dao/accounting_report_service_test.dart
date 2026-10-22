@@ -371,6 +371,153 @@ void main() {
     ]);
   });
 
+  for (final (name, payments, expectedBalance) in [
+    ('partial payment', [40], MoneyEx.dollars(60)),
+    ('exact payment', [100], MoneyEx.zero),
+    ('overpayment', [125], -MoneyEx.dollars(25)),
+    ('multiple payments', [40, 70], -MoneyEx.dollars(10)),
+  ]) {
+    test('customer statement preserves $name balance', () async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.zero,
+        summary: '$name statement job',
+      );
+      final invoice = await _insertInvoice(
+        job,
+        MoneyEx.dollars(100),
+        createdDate: DateTime(2026, 4, 3),
+      );
+      for (var index = 0; index < payments.length; index++) {
+        await DebtorLedgerService().recordPayment(
+          invoiceId: invoice.id,
+          amount: MoneyEx.dollars(payments[index]),
+          paymentDate: DateTime(2026, 4, 4 + index),
+        );
+      }
+
+      final report = await AccountingReportService().debtorStatement(
+        customerId: job.customerId,
+        startInclusive: DateTime(2026, 4),
+        endExclusive: DateTime(2026, 5),
+      );
+
+      expect(report.entries.first.amount, MoneyEx.dollars(100));
+      expect(
+        report.entries.skip(1).map((entry) => entry.amount),
+        payments.map((amount) => -MoneyEx.dollars(amount)),
+      );
+      expect(report.closingBalance, expectedBalance);
+      final csv = AccountingReportCsvExporter().debtorStatement(report);
+      expect(csv, contains(expectedBalance.toString()));
+      if (expectedBalance.isNegative) {
+        expect(csv, contains('Closing credit balance'));
+      }
+    });
+  }
+
+  test('customer statement includes unallocated overpayment once', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.timeAndMaterial,
+      hourlyRate: MoneyEx.zero,
+      summary: 'Unallocated overpayment statement job',
+    );
+    final invoice = await _insertInvoice(
+      job,
+      MoneyEx.dollars(100),
+      createdDate: DateTime(2026, 4, 3),
+    );
+    final ledger = DebtorLedgerService();
+    final payment = await ledger.recordUnallocatedPayment(
+      customerId: job.customerId!,
+      amount: MoneyEx.dollars(125),
+      paymentDate: DateTime(2026, 4, 4),
+    );
+    await ledger.applyPaymentToInvoice(
+      paymentId: payment.id,
+      invoiceId: invoice.id,
+      amount: MoneyEx.dollars(100),
+      allocatedDate: DateTime(2026, 4, 12),
+    );
+
+    final service = AccountingReportService();
+    final report = await service.debtorStatement(
+      customerId: job.customerId,
+      startInclusive: DateTime(2026, 4),
+      endExclusive: DateTime(2026, 5),
+    );
+    expect(report.entries.map((entry) => entry.amount), [
+      MoneyEx.dollars(100),
+      -MoneyEx.dollars(125),
+    ]);
+    expect(report.closingBalance, -MoneyEx.dollars(25));
+
+    final jobReport = await service.debtorStatement(
+      customerId: job.customerId,
+      jobId: job.id,
+      startInclusive: DateTime(2026, 4),
+      endExclusive: DateTime(2026, 5),
+    );
+    expect(jobReport.closingBalance, MoneyEx.zero);
+  });
+
+  test('customer statement includes payment without an invoice', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.timeAndMaterial,
+      hourlyRate: MoneyEx.zero,
+      summary: 'Unallocated payment statement job',
+    );
+    await DebtorLedgerService().recordUnallocatedPayment(
+      customerId: job.customerId!,
+      amount: MoneyEx.dollars(25),
+      paymentDate: DateTime(2026, 4, 4),
+    );
+
+    final report = await AccountingReportService().debtorStatement(
+      customerId: job.customerId,
+      startInclusive: DateTime(2026, 4),
+      endExclusive: DateTime(2026, 5),
+    );
+    expect(report.entries.map((entry) => entry.type), [
+      DebtorStatementEntryType.payment,
+    ]);
+    expect(report.closingBalance, -MoneyEx.dollars(25));
+  });
+
+  test('earlier customer payment remains a signed opening credit', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.timeAndMaterial,
+      hourlyRate: MoneyEx.zero,
+      summary: 'Opening credit statement job',
+    );
+    final invoice = await _insertInvoice(
+      job,
+      MoneyEx.dollars(100),
+      createdDate: DateTime(2026, 3, 3),
+    );
+    final ledger = DebtorLedgerService();
+    final payment = await ledger.recordUnallocatedPayment(
+      customerId: job.customerId!,
+      amount: MoneyEx.dollars(125),
+      paymentDate: DateTime(2026, 3, 4),
+    );
+    await ledger.applyPaymentToInvoice(
+      paymentId: payment.id,
+      invoiceId: invoice.id,
+      amount: MoneyEx.dollars(100),
+      allocatedDate: DateTime(2026, 4, 12),
+    );
+
+    final report = await AccountingReportService().debtorStatement(
+      customerId: job.customerId,
+      startInclusive: DateTime(2026, 4),
+      endExclusive: DateTime(2026, 5),
+    );
+    expect(report.openingBalance, -MoneyEx.dollars(25));
+    expect(report.entries, isEmpty);
+    expect(report.closingBalance, -MoneyEx.dollars(25));
+  });
+
   test('cash received reports allocated payment rows', () async {
     final job = await createJobWithCustomer(
       billingType: BillingType.timeAndMaterial,
@@ -626,10 +773,7 @@ void main() {
 
       final report = await AccountingReportService().materialsBilling();
 
-      expect(
-        report.rows.map((row) => row.taskItem.id),
-        [validItem.id],
-      );
+      expect(report.rows.map((row) => row.taskItem.id), [validItem.id]);
     },
   );
 

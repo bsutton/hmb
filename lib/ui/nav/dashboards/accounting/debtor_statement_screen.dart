@@ -30,6 +30,7 @@ import '../../../widgets/widgets.g.dart' hide StatefulBuilder;
 import 'accounting_period_selector.dart';
 import 'debtor_statement_pdf.dart';
 import 'report_csv_export.dart' as report_export;
+import 'statement_balance_label.dart';
 
 class DebtorStatementScreen extends StatefulWidget {
   const DebtorStatementScreen({super.key});
@@ -355,7 +356,10 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
               runSpacing: 8,
               children: [
                 Text('Opening: ${report.openingBalance}'),
-                Text('Closing: ${report.closingBalance}'),
+                Text(
+                  '${statementBalanceLabel(report.closingBalance)}: '
+                  '${report.closingBalance}',
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -417,7 +421,7 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
 Please find attached your customer statement CSV.
 
 Period: ${formatDate(report.startInclusive)} to ${formatDate(_lastDay(report))}
-Closing balance: ${report.closingBalance}
+${statementBalanceLabel(report.closingBalance)}: ${report.closingBalance}
 ''',
     );
   }
@@ -462,7 +466,7 @@ Closing balance: ${report.closingBalance}
 Please find attached your customer statement.
 
 Period: ${formatDate(report.startInclusive)} to ${formatDate(_lastDay(report))}
-Closing balance: ${report.closingBalance}
+${statementBalanceLabel(report.closingBalance)}: ${report.closingBalance}
 ''',
           sendEmailDialog:
               ({

@@ -23,6 +23,7 @@ import '../../../../entity/entity.g.dart';
 import '../../../../util/dart/format.dart';
 import '../../../invoicing/pdf/generate_invoice_pdf.dart';
 import '../../../pdf/pdf_file_output.dart';
+import 'statement_balance_label.dart';
 
 Future<File> buildDebtorStatementPdfFile({
   required String fileName,
@@ -59,13 +60,15 @@ Future<File> buildDebtorStatementPdfFile({
           pw.SizedBox(height: 12),
           pw.Padding(
             padding: const pw.EdgeInsets.symmetric(horizontal: 22),
-            child: _balanceDue(report.closingBalance),
+            child: _closingBalance(report.closingBalance),
           ),
-          pw.SizedBox(height: 16),
-          pw.Padding(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 22),
-            child: _howToPay(system),
-          ),
+          if (report.closingBalance.isPositive) ...[
+            pw.SizedBox(height: 16),
+            pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 22),
+              child: _howToPay(system),
+            ),
+          ],
         ],
       ),
     );
@@ -284,11 +287,11 @@ String _formatRowDate(_StatementPdfRow row) {
   return formatDate(date);
 }
 
-pw.Widget _balanceDue(Money balance) => pw.Row(
+pw.Widget _closingBalance(Money balance) => pw.Row(
   mainAxisAlignment: pw.MainAxisAlignment.end,
   children: [
     pw.Text(
-      'BALANCE DUE',
+      statementBalanceLabel(balance).toUpperCase(),
       style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
     ),
     pw.SizedBox(width: 12),

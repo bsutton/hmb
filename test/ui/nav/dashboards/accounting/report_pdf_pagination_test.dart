@@ -15,6 +15,7 @@
 library;
 
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -22,6 +23,7 @@ import 'package:hmb/dao/accounting_report_service.dart';
 import 'package:hmb/ui/nav/dashboards/accounting/debtor_statement_pdf.dart'
     as statement_pdf;
 import 'package:hmb/ui/nav/dashboards/accounting/report_csv_export.dart';
+import 'package:hmb/ui/nav/dashboards/accounting/statement_balance_label.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 
 import '../../../../database/management/db_utility_test_helper.dart';
@@ -103,6 +105,56 @@ void main() {
       expect(_pdfPageCount(await file.readAsBytes()), greaterThan(1));
     },
   );
+
+  test('overpayment statement PDF keeps its signed credit total', () async {
+    final report = DebtorStatementReport(
+      customerId: 1,
+      customerName: 'Synthetic Customer',
+      startInclusive: DateTime(2026, 8),
+      endExclusive: DateTime(2026, 9),
+      openingBalance: MoneyEx.zero,
+      entries: [
+        DebtorStatementEntry(
+          type: DebtorStatementEntryType.invoice,
+          invoiceId: 1,
+          invoiceNumber: 'SYN-1',
+          customerName: 'Synthetic Customer',
+          date: DateTime(2026, 8, 12),
+          description: 'Invoice issued',
+          amount: MoneyEx.dollars(100),
+        ),
+        DebtorStatementEntry(
+          type: DebtorStatementEntryType.payment,
+          invoiceId: 0,
+          invoiceNumber: '',
+          customerName: 'Synthetic Customer',
+          date: DateTime(2026, 8, 13),
+          description: 'Payment received',
+          amount: -MoneyEx.dollars(125),
+        ),
+      ],
+    );
+    final file = await statement_pdf.buildDebtorStatementPdfFile(
+      fileName: 'synthetic_credit_statement.pdf',
+      report: report,
+    );
+    addTearDown(() => file.parent.deleteSync(recursive: true));
+
+    expect(report.closingBalance, -MoneyEx.dollars(25));
+    expect(statementBalanceLabel(report.closingBalance), 'Credit balance');
+    expect(statementBalanceLabel(MoneyEx.dollars(60)), 'Balance due');
+    expect(statementBalanceLabel(MoneyEx.zero), 'Balance due');
+    expect(await file.length(), greaterThan(0));
+    if (Platform.isLinux && File('/usr/bin/pdftotext').existsSync()) {
+      final result = await Process.run('pdftotext', [file.path, '-']);
+      expect(result.exitCode, 0);
+      final text = result.stdout as String;
+      expect(text, contains('CREDIT BALANCE'));
+      expect(text, contains(report.closingBalance.toString()));
+      expect(text, isNot(contains('BALANCE DUE')));
+      expect(text, isNot(contains('How to pay')));
+    }
+  });
 }
 
 int _pdfPageCount(Uint8List bytes) {
