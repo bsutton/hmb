@@ -443,6 +443,18 @@ class _StatementInvoice {
   const _StatementInvoice({required this.invoice, required this.customerName});
 }
 
+class _StatementPayment {
+  final DateTime paymentDate;
+  final Money amount;
+  final String customerName;
+
+  const _StatementPayment({
+    required this.paymentDate,
+    required this.amount,
+    required this.customerName,
+  });
+}
+
 class AccountingReportService {
   Future<ProfitAndLossReport> profitAndLoss(AccountingPeriod period) async {
     final invoiceIncome = await _invoiceIncome(period: period);
@@ -620,6 +632,10 @@ ORDER BY due_date ASC, invoice_id ASC
       }
 
       for (final history in historyEntries) {
+        if (jobId == null &&
+            history.type == InvoiceLedgerHistoryEntryType.payment) {
+          continue;
+        }
         final amount = -history.amount;
         if (history.date.isBefore(startInclusive)) {
           openingBalance += amount;
@@ -639,18 +655,46 @@ ORDER BY due_date ASC, invoice_id ASC
       }
     }
 
+    // Customer statements follow the receipt, including any amount that has
+    // not been allocated to an invoice. Job statements still use allocations
+    // because a receipt can be split between jobs.
+    if (jobId == null) {
+      for (final payment in await _statementPayments(customerId)) {
+        final amount = -payment.amount;
+        if (payment.paymentDate.isBefore(startInclusive)) {
+          openingBalance += amount;
+        } else if (payment.paymentDate.isBefore(endExclusive)) {
+          entries.add(
+            DebtorStatementEntry(
+              type: DebtorStatementEntryType.payment,
+              invoiceId: 0,
+              invoiceNumber: '',
+              customerName: payment.customerName,
+              date: payment.paymentDate,
+              description: 'Payment received',
+              amount: amount,
+            ),
+          );
+        }
+      }
+    }
+
     entries.sort((lhs, rhs) {
       final date = lhs.date.compareTo(rhs.date);
       if (date != 0) {
         return date;
       }
+      final type = _statementEntrySortOrder(
+        lhs.type,
+      ).compareTo(_statementEntrySortOrder(rhs.type));
+      if (type != 0) {
+        return type;
+      }
       final invoice = lhs.invoiceId.compareTo(rhs.invoiceId);
       if (invoice != 0) {
         return invoice;
       }
-      return _statementEntrySortOrder(
-        lhs.type,
-      ).compareTo(_statementEntrySortOrder(rhs.type));
+      return 0;
     });
 
     return DebtorStatementReport(
@@ -1080,6 +1124,28 @@ ORDER BY adjustment_date ASC, id ASC
     return histories;
   }
 
+  Future<List<_StatementPayment>> _statementPayments(int? customerId) async {
+    final rows = await DaoInvoice().withoutTransaction().rawQuery(
+      '''
+SELECT p.payment_date, p.amount,
+  IFNULL(c.name, 'Unknown customer') AS customer_name
+FROM debtor_payment p
+LEFT JOIN customer c ON c.id = p.customer_id
+WHERE (? IS NULL OR p.customer_id = ?)
+ORDER BY p.payment_date ASC, p.id ASC
+''',
+      [customerId, customerId],
+    );
+    return [
+      for (final row in rows)
+        _StatementPayment(
+          paymentDate: DateTime.parse(row['payment_date']! as String),
+          amount: MoneyEx.fromInt(row['amount']! as int),
+          customerName: row['customer_name']! as String,
+        ),
+    ];
+  }
+
   Future<String> _statementName({int? customerId, int? jobId}) async {
     if (jobId != null) {
       return (await DaoJob().getById(jobId))?.summary ?? 'Job #$jobId';
@@ -1415,7 +1481,14 @@ class AccountingReportCsvExporter {
           balance,
         ]);
       }
-      rows.add(['', '', '', 'Closing balance', '', balance]);
+      rows.add([
+        '',
+        '',
+        '',
+        if (balance.isNegative) 'Closing credit balance' else 'Closing balance',
+        '',
+        balance,
+      ]);
     } else {
       rows.add(['', '', 'Opening balance', '', balance]);
       for (final entry in report.entries) {
@@ -1428,7 +1501,13 @@ class AccountingReportCsvExporter {
           balance,
         ]);
       }
-      rows.add(['', '', 'Closing balance', '', balance]);
+      rows.add([
+        '',
+        '',
+        if (balance.isNegative) 'Closing credit balance' else 'Closing balance',
+        '',
+        balance,
+      ]);
     }
     return rows;
   }
