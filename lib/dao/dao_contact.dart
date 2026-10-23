@@ -291,8 +291,16 @@ from contact co
 join job jo
   on co.id = jo.referrer_contact_id
 where jo.id = ?
+
+union
+
+select co.*
+from contact co
+join job_party jp
+  on co.id = jp.contact_id
+where jp.job_id = ?
 ''',
-        [jobId, jobId, jobId],
+        [jobId, jobId, jobId, jobId],
       ),
     );
   }

@@ -65,12 +65,17 @@ class _HMBSelectMobileMultiState extends DeferredState<HMBSelectMobileMulti> {
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
+    waitingBuilder: (_) => const SizedBox.shrink(),
+    errorBuilder: (_, _) => const Text('Could not load mobile recipients.'),
     builder: (_) =>
         HMBDroplistMultiSelect<ContactAndMobile>(
           initialItems: () async => preSelected,
           items: (filter) => ContactAndMobile.fromJob(widget.job, filter),
           format: (cm) => '${cm.contact.fullname}\n${cm.mobile}',
           onChanged: (selected) {
+            preSelected
+              ..clear()
+              ..addAll(selected);
             widget.onChanged(selected.map((e) => e.mobile).toList());
           },
           title: 'To (Mobile)',
@@ -98,25 +103,16 @@ class ContactAndMobile {
   @override
   int get hashCode => Object.hash(contact.id, mobile);
 
-  /// Collect all mobiles associated with a job (job contacts, plus any
-  /// customer-related contacts your DAO returns).
+  /// Collect distinct mobile numbers for all contacts assigned to the job.
   static Future<List<ContactAndMobile>> fromJob(Job job, String? filter) async {
     final out = <ContactAndMobile>[];
+    final seenMobiles = <String>{};
     final contacts = await DaoContact().getByJob(job.id);
 
     for (final c in contacts) {
-      // Prefer mobileNumber; you can also include office/landline if desired.
-      if (Strings.isNotBlank(c.mobileNumber)) {
-        out.add(ContactAndMobile._(c, c.mobileNumber));
-      }
-      // If you keep alternate mobiles, include them here.
-      if (Strings.isNotBlank(c.officeNumber)) {
-        // Optional: uncomment to include office as selectable SMS target.
-        // out.add(ContactAndMobile._(c, c.officeNumber!));
-      }
-      if (Strings.isNotBlank(c.landLine)) {
-        // Optional: same as above for landline.
-        // out.add(ContactAndMobile._(c, c.landLine!));
+      final mobile = c.mobileNumber.replaceAll(' ', '').trim();
+      if (mobile.isNotEmpty && seenMobiles.add(mobile)) {
+        out.add(ContactAndMobile._(c, mobile));
       }
     }
 

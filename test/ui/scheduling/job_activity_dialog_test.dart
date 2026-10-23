@@ -7,6 +7,7 @@ import 'package:hmb/dao/dao_job_activity.dart';
 import 'package:hmb/entity/job.dart';
 import 'package:hmb/entity/job_activity.dart';
 import 'package:hmb/entity/job_status.dart';
+import 'package:hmb/ui/dialog/send_notice_for_job_dialog.dart';
 import 'package:hmb/ui/scheduling/job_activity_dialog.dart';
 import 'package:hmb/ui/scheduling/job_activity_ex.dart';
 import 'package:hmb/ui/widgets/hmb_button.dart';
@@ -18,6 +19,33 @@ import '../ui_test_helpers.dart';
 void main() {
   setUp(setupTestDb);
   tearDown(tearDownTestDb);
+
+  testWidgets(
+    'notice opens multi-recipient composer without a primary contact',
+    (tester) async {
+      final job = await runAsyncAndPump(tester, _insertJob);
+      final activity = JobActivity.forInsert(
+        jobId: job.id,
+        start: DateTime(2099, 1, 1, 9),
+        end: DateTime(2099, 1, 1, 13),
+      );
+      await runAsyncAndPump(tester, () => DaoJobActivity().insert(activity));
+      final ex = await runAsyncAndPump(
+        tester,
+        () => JobActivityEx.fromActivity(activity),
+      );
+      await _open(tester, JobActivityDialog.edit(event: ex.eventData), (_) {});
+      await tester.ensureVisible(find.text('Send Notice'));
+      await tester.tap(find.text('Send Notice'));
+      await pumpUntilFound(tester, find.byType(SendNoticeForJobDialog));
+      await pumpDeferredStates(tester);
+      expect(find.text('Select Contact Method'), findsNothing);
+      expect(find.text('Select To (Mobile)'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('adding without a job validates instead of crashing', (
     tester,
