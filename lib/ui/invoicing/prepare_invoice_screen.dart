@@ -5,6 +5,7 @@ import '../../dao/billing_service.dart';
 import '../../entity/entity.g.dart';
 import '../../util/dart/local_date.dart';
 import '../../util/dart/money_ex.dart';
+import '../crud/milestone/edit_milestone_payment.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/widgets.g.dart';
@@ -59,7 +60,9 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
     } else {
       _selected.addAll(
         _preview.candidates
-            .where((candidate) => !candidate.isFuture)
+            .where(
+              (candidate) => !candidate.isFuture && candidate.kind != 'quote',
+            )
             .map((candidate) => candidate.key),
       );
     }
@@ -101,20 +104,10 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
                     for (final c in _preview.candidates.where(
                       (c) => _section(c) == section,
                     ))
-                      HMBSwitch(
-                        key: ValueKey(c.key),
-                        leadingSpace: false,
-                        labelText:
-                            '${c.description} — ${c.amount}'
-                            '${c.isFuture ? ' (future milestone)' : ''}',
-                        initialValue: _selected.contains(c.key),
-                        onChanged: (value) => setState(() {
-                          value
-                              ? _selected.add(c.key)
-                              : _selected.remove(c.key);
-                          _pending = null;
-                        }),
-                      ),
+                      if (c.kind == 'quote')
+                        _fixedPaymentChoice(c)
+                      else
+                        _chargeSwitch(c),
                   ],
                 ),
             if (_preview.candidates.isEmpty)
@@ -191,6 +184,83 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
       },
     ),
   );
+
+  Widget _chargeSwitch(BillingCandidate charge) => HMBSwitch(
+    key: ValueKey(charge.key),
+    leadingSpace: false,
+    labelText:
+        '${charge.description} — ${charge.amount}'
+        '${charge.isFuture ? ' (future milestone)' : ''}',
+    initialValue: _selected.contains(charge.key),
+    onChanged: (value) => setState(() {
+      value ? _selected.add(charge.key) : _selected.remove(charge.key);
+      _pending = null;
+    }),
+  );
+
+  Widget _fixedPaymentChoice(BillingCandidate charge) => HMBFormSection(
+    children: [
+      Text('${charge.description} — ${charge.amount}'),
+      const Text('How will this fixed price be billed?'),
+      if (_selected.contains(charge.key))
+        _chargeSwitch(charge)
+      else
+        HMBButtonSecondary(
+          label: 'Bill in full',
+          hint: 'Include the full agreed price in this invoice',
+          onPressed: () => setState(() {
+            _selected.add(charge.key);
+            _pending = null;
+          }),
+        ),
+      HMBButtonSecondary(
+        label: 'Split into milestones',
+        hint: 'Schedule progress payments for this agreed price',
+        onPressed: () => _editSchedule(charge.quoteId!),
+      ),
+    ],
+  );
+
+  Future<void> _editSchedule(int quoteId) async {
+    final selectedMilestone = await Navigator.of(context).push<int>(
+      MaterialPageRoute(
+        builder: (_) =>
+            EditMilestonesScreen(quoteId: quoteId, returnToPreparation: true),
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+    try {
+      final refreshed = await BlockingUI().runAndWait(
+        () => _service.preview(widget.jobId),
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _preview = refreshed;
+        final available = refreshed.candidates.map((c) => c.key).toSet();
+        _selected.removeWhere((key) => !available.contains(key));
+        for (final charge in refreshed.candidates) {
+          if (charge.kind == 'milestone' &&
+              charge.quoteId == quoteId &&
+              charge.sourceId == selectedMilestone) {
+            _selected.add(charge.key);
+          }
+        }
+        _contact = refreshed.contacts
+            .where((contact) => contact.id == _contact?.id)
+            .firstOrNull;
+        _pending = null;
+        _error = null;
+      });
+    } on Exception catch (error) {
+      if (mounted) {
+        setState(() => _error = 'Unable to refresh charges: $error');
+      }
+    }
+  }
 
   String _section(BillingCandidate c) => switch (c.kind) {
     'milestone' || 'quote' || 'task_scope' => 'Fixed payments',

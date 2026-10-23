@@ -28,6 +28,7 @@ import '../../../util/dart/money_ex.dart';
 import '../../invoicing/create_invoice_ui.dart';
 import '../../invoicing/prepare_invoice_screen.dart';
 import '../../widgets/blocking_ui.dart';
+import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/icons/hmb_add_button.dart';
 import '../../widgets/layout/layout.g.dart';
@@ -36,8 +37,13 @@ import 'milestone_tile.dart';
 
 class EditMilestonesScreen extends StatefulWidget {
   final int quoteId;
+  final bool returnToPreparation;
 
-  const EditMilestonesScreen({required this.quoteId, super.key});
+  const EditMilestonesScreen({
+    required this.quoteId,
+    this.returnToPreparation = false,
+    super.key,
+  });
 
   @override
   _EditMilestonesScreenState createState() => _EditMilestonesScreenState();
@@ -53,7 +59,7 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
 
   @override
   Future<void> asyncInitState() async {
-    await _loadData();
+    await BlockingUI().runAndWait(_loadData);
   }
 
   Future<void> _saveSchedule() async {
@@ -253,10 +259,18 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
+    waitingBuilder: (_) => const SizedBox.shrink(),
+    errorBuilder: (_, error) => Text('Unable to load milestones: $error'),
     builder: (context) => Scaffold(
       appBar: AppBar(
         title: const Text('Milestone payments'),
         actions: [
+          if (widget.returnToPreparation)
+            HMBButtonSecondary(
+              label: 'Done',
+              hint: 'Return to invoice preparation',
+              onPressed: () => Navigator.of(context).pop(),
+            ),
           HMBButtonAdd(
             enabled: true,
             hint: 'Add Milestone',
@@ -327,6 +341,10 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
     BuildContext context,
     Milestone milestone,
   ) async {
+    if (widget.returnToPreparation) {
+      Navigator.of(context).pop(milestone.id);
+      return;
+    }
     final job = await BlockingUI().runAndWait(
       () => DaoJob().getJobForQuote(milestone.quoteId),
     );
