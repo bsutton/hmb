@@ -29,6 +29,7 @@ dependencies:
   camera_windows: ^0.3.0
   completer_ex: ^4.0.3
   country_code2: ^2.0.0
+  crypto: ^3.0.7
   date_time_format: ^2.0.1
   datetime_picker_formfield_new: ^2.0.1
   dcli: ^10.3.0
@@ -132,7 +133,6 @@ dependencies:
 
 dev_dependencies:
   args: ^2.5.0
-  crypto: ^3.0.7
   flutter_launcher_icons: ^0.14.0
   flutter_test:
     sdk: flutter

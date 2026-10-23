@@ -19,9 +19,11 @@ import 'package:hmb/util/dart/money_ex.dart';
 import 'package:test/test.dart';
 
 import '../../database/management/db_utility_test_helper.dart';
+import '../../util/settings_test_helper.dart';
 import 'utility.dart';
 
 void main() {
+  setUpAll(prepareSettingsTest);
   setUp(() async {
     await setupTestDb();
   });

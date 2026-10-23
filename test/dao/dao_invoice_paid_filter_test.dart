@@ -1,4 +1,5 @@
 import 'package:hmb/dao/dao.g.dart';
+import 'package:hmb/dao/invoice_lifecycle_service.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/exceptions.dart';
 import 'package:hmb/util/dart/local_date.dart';
@@ -356,12 +357,14 @@ void main() {
         summary: 'Kitchen refit',
       );
 
-      final contact = (await DaoContact().getById(job.contactId))!
-          .copyWith(firstName: 'Zelda', surname: 'Zimmer');
+      final contact = (await DaoContact().getById(
+        job.contactId,
+      ))!.copyWith(firstName: 'Zelda', surname: 'Zimmer');
       await DaoContact().update(contact);
 
-      final customer = (await DaoCustomer().getById(job.customerId))!
-          .copyWith(name: 'Acme Plumbing');
+      final customer = (await DaoCustomer().getById(
+        job.customerId,
+      ))!.copyWith(name: 'Acme Plumbing');
       await DaoCustomer().update(customer);
 
       final invoice = Invoice.forInsert(
@@ -523,7 +526,7 @@ void main() {
     );
   });
 
-  test('voidInvoice detaches milestone so it can be invoiced again', () async {
+  test('void retains milestone until explicit local release', () async {
     final job = await createJobWithCustomer(
       billingType: BillingType.fixedPrice,
       hourlyRate: MoneyEx.zero,
@@ -564,6 +567,8 @@ void main() {
     );
 
     final updatedMilestone = await DaoMilestone().getById(milestone.id);
-    expect(updatedMilestone!.invoiceId, isNull);
+    expect(updatedMilestone!.invoiceId, invoice.id);
+    await InvoiceLifecycleService().releaseVoidedInvoice(invoice.id);
+    expect((await DaoMilestone().getById(milestone.id))!.invoiceId, isNull);
   });
 }

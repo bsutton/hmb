@@ -14,6 +14,7 @@
 */
 
 import 'package:money2/money2.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../api/external_accounting.dart';
 import '../entity/credit_note.dart';
@@ -24,8 +25,6 @@ import '../entity/job.dart';
 import '../entity/job_status.dart';
 import '../entity/task_item.dart';
 import '../entity/task_item_type.dart';
-import '../entity/tax_code.dart';
-import '../entity/tax_scheme.dart';
 import '../util/dart/app_settings.dart';
 import '../util/dart/local_date.dart';
 import '../util/dart/money_ex.dart';
@@ -33,7 +32,6 @@ import 'dao_customer.dart';
 import 'dao_invoice.dart';
 import 'dao_job.dart';
 import 'dao_system.dart';
-import 'dao_tax_code.dart';
 import 'dao_tax_scheme.dart';
 import 'debtor_ledger_service.dart';
 
@@ -291,6 +289,7 @@ class TaxSummaryReport {
   final Money creditTax;
   final Money supplierTaxPaid;
   final bool taxCollectedIsEstimated;
+  final int unknownTaxDocuments;
 
   const TaxSummaryReport({
     required this.period,
@@ -299,6 +298,7 @@ class TaxSummaryReport {
     required this.creditTax,
     required this.supplierTaxPaid,
     required this.taxCollectedIsEstimated,
+    this.unknownTaxDocuments = 0,
   });
 
   Money get netTaxCollected => taxCollected - creditTax;
@@ -439,8 +439,15 @@ class MaterialBillingReport {
 class _StatementInvoice {
   final Invoice invoice;
   final String customerName;
+  final DateTime issuedDate;
+  final DateTime? voidedDate;
 
-  const _StatementInvoice({required this.invoice, required this.customerName});
+  const _StatementInvoice({
+    required this.invoice,
+    required this.customerName,
+    required this.issuedDate,
+    this.voidedDate,
+  });
 }
 
 class _StatementPayment {
@@ -456,6 +463,35 @@ class _StatementPayment {
 }
 
 class AccountingReportService {
+  final DatabaseExecutor? snapshot;
+  final String? taxLabel;
+  final bool? externalAccountingEnabled;
+
+  AccountingReportService({
+    this.snapshot,
+    this.taxLabel,
+    this.externalAccountingEnabled,
+  });
+
+  DatabaseExecutor get _db => snapshot ?? DaoInvoice().withoutTransaction();
+
+  static Future<String> resolveTaxLabel() async {
+    final label = (await AppSettings.getTaxLabel()).trim();
+    if (label.isNotEmpty) {
+      return label;
+    }
+    final scheme = await DaoTaxScheme().getByCode(
+      await AppSettings.getTaxSchemeCode(),
+    );
+    if (scheme != null) {
+      return scheme.taxLabel;
+    }
+    final country = (await DaoSystem().get()).countryCode;
+    return country == null
+        ? 'Tax'
+        : (await DaoTaxScheme().getByCountryCode(country))?.taxLabel ?? 'Tax';
+  }
+
   Future<ProfitAndLossReport> profitAndLoss(AccountingPeriod period) async {
     final invoiceIncome = await _invoiceIncome(period: period);
     final creditNotes = await _creditNotes(period: period);
@@ -499,7 +535,11 @@ class AccountingReportService {
 
   Future<AgedReceivablesReport> agedReceivables({LocalDate? asOfDate}) async {
     final asOf = asOfDate ?? LocalDate.today();
-    final db = DaoInvoice().withoutTransaction();
+    final cutoff = asOf
+        .add(const Duration(days: 1))
+        .toDateTime()
+        .toIso8601String();
+    final db = _db;
     final data = await db.rawQuery(
       '''
 WITH invoice_balances AS (
@@ -516,24 +556,29 @@ WITH invoice_balances AS (
     ) AS balance
   FROM invoice i
   LEFT JOIN job j ON j.id = i.job_id
-  LEFT JOIN customer c ON c.id = j.customer_id
+  LEFT JOIN customer c ON c.id = COALESCE(i.billing_customer_id, j.bill_to_customer_id, j.customer_id)
   LEFT JOIN (
-    SELECT invoice_id, SUM(amount) AS paid
-    FROM debtor_payment_allocation
-    GROUP BY invoice_id
+    SELECT a.invoice_id, SUM(a.amount) AS paid
+    FROM debtor_payment_allocation a JOIN debtor_payment p ON p.id = a.payment_id
+    WHERE a.allocated_date < ? AND p.payment_date < ?
+    GROUP BY a.invoice_id
   ) pa ON pa.invoice_id = i.id
   LEFT JOIN (
     SELECT invoice_id, SUM(amount) AS credited
     FROM credit_allocation
+    WHERE allocated_date < ?
     GROUP BY invoice_id
   ) ca ON ca.invoice_id = i.id
   LEFT JOIN (
     SELECT invoice_id, SUM(amount) AS adjusted
     FROM debtor_adjustment
+    WHERE adjustment_date < ?
     GROUP BY invoice_id
   ) da ON da.invoice_id = i.id
-  WHERE IFNULL(i.paid, 0) = 0
-    AND IFNULL(i.external_sync_status, 0) NOT IN (?, ?)
+  WHERE i.accounting_state != 'draft'
+    AND COALESCE(i.issued_date, i.created_date) < ?
+    AND (IFNULL(i.paid, 0) = 0 OR i.paid_date IS NULL OR i.paid_date >= ?)
+    AND (IFNULL(i.external_sync_status, 0) NOT IN (?, ?) OR i.voided_date >= ?)
 )
 SELECT *
 FROM invoice_balances
@@ -541,8 +586,15 @@ WHERE balance > 0
 ORDER BY due_date ASC, invoice_id ASC
 ''',
       [
+        cutoff,
+        cutoff,
+        cutoff,
+        cutoff,
+        cutoff,
+        cutoff,
         InvoiceExternalSyncStatus.deleted.ordinal,
         InvoiceExternalSyncStatus.voided.ordinal,
+        cutoff,
       ],
     );
 
@@ -588,36 +640,57 @@ ORDER BY due_date ASC, invoice_id ASC
     final histories = await _statementHistoryForInvoices(
       invoices.map((invoice) => invoice.invoice.id).toList(),
     );
-    final externalAccountingEnabled = await ExternalAccounting().isEnabled();
+    final externalEnabled =
+        externalAccountingEnabled ?? await ExternalAccounting().isEnabled();
     var openingBalance = MoneyEx.zero;
     final entries = <DebtorStatementEntry>[];
 
     for (final statementInvoice in invoices) {
       final invoice = statementInvoice.invoice;
-      if (invoice.isExternallyDeletedOrVoided) {
+      if (invoice.isExternallyDeletedOrVoided &&
+          statementInvoice.voidedDate == null) {
         continue;
       }
       final invoiceNumber = invoice.displayNumber(
-        externalAccountingEnabled: externalAccountingEnabled,
+        externalAccountingEnabled: externalEnabled,
       );
       final customerName = statementInvoice.customerName;
 
-      if (invoice.createdDate.isBefore(startInclusive)) {
+      final issuedDate = statementInvoice.issuedDate;
+      if (issuedDate.isBefore(startInclusive)) {
         openingBalance += invoice.totalAmount;
-      } else if (invoice.createdDate.isBefore(endExclusive)) {
+      } else if (issuedDate.isBefore(endExclusive)) {
         entries.add(
           DebtorStatementEntry(
             type: DebtorStatementEntryType.invoice,
             invoiceId: invoice.id,
             invoiceNumber: invoiceNumber,
             customerName: customerName,
-            date: invoice.createdDate,
+            date: issuedDate,
             description: 'Invoice issued',
             amount: invoice.totalAmount,
           ),
         );
       }
 
+      final voidedDate = statementInvoice.voidedDate;
+      if (voidedDate != null) {
+        if (voidedDate.isBefore(startInclusive)) {
+          openingBalance -= invoice.totalAmount;
+        } else if (voidedDate.isBefore(endExclusive)) {
+          entries.add(
+            DebtorStatementEntry(
+              type: DebtorStatementEntryType.adjustment,
+              invoiceId: invoice.id,
+              invoiceNumber: invoiceNumber,
+              customerName: customerName,
+              date: voidedDate,
+              description: 'Invoice voided',
+              amount: -invoice.totalAmount,
+            ),
+          );
+        }
+      }
       final historyEntries = histories[invoice.id] ?? const [];
       if (invoice.paid && historyEntries.isEmpty) {
         _addPaidInvoiceEntry(
@@ -739,7 +812,7 @@ ORDER BY due_date ASC, invoice_id ASC
   }
 
   Future<CashReceivedReport> cashReceived(AccountingPeriod period) async {
-    final db = DaoInvoice().withoutTransaction();
+    final db = _db;
     final rows = await db.rawQuery('''
 SELECT
   p.id AS payment_id,
@@ -751,10 +824,14 @@ SELECT
   c.name AS customer_name,
   pc.name AS payment_customer_name
 FROM debtor_payment p
-LEFT JOIN debtor_payment_allocation pa ON pa.payment_id = p.id
-LEFT JOIN invoice i ON i.id = pa.invoice_id
-LEFT JOIN job j ON j.id = i.job_id
-LEFT JOIN customer c ON c.id = j.customer_id
+JOIN (
+  SELECT payment_id, invoice_id, amount FROM debtor_payment_allocation
+  UNION ALL
+  SELECT p.id, NULL, p.amount - IFNULL(SUM(a.amount), 0)
+  FROM debtor_payment p LEFT JOIN debtor_payment_allocation a ON a.payment_id = p.id
+  GROUP BY p.id HAVING p.amount - IFNULL(SUM(a.amount), 0) != 0
+) pa ON pa.payment_id = p.id
+LEFT JOIN customer c ON c.id = p.customer_id
 LEFT JOIN customer pc ON pc.id = p.customer_id
 WHERE p.payment_date >= ? AND p.payment_date < ?
 ORDER BY p.payment_date, p.id, pa.invoice_id
@@ -781,32 +858,53 @@ ORDER BY p.payment_date, p.id, pa.invoice_id
   }
 
   Future<TaxSummaryReport> taxSummary(AccountingPeriod period) async {
-    final explicitInvoiceTax = await _invoiceTax(period: period);
-    final explicitCreditTax = await _creditNoteTax(period: period);
-    final hasExplicitTax =
-        explicitInvoiceTax.isNonZero || explicitCreditTax.isNonZero;
-    final invoiceTax = hasExplicitTax
-        ? explicitInvoiceTax
-        : await _derivedTaxFrom(source: _invoiceIncome(period: period));
-    final creditTax = hasExplicitTax
-        ? explicitCreditTax
-        : await _derivedTaxFrom(source: _creditNotes(period: period));
-    final supplierTaxPaid = await _receiptTax(period: period);
-    final taxConfig = await _taxConfig();
-
+    final invoiceTax = await _invoiceTax(period: period);
+    final creditTax = await _creditNoteTax(period: period);
+    final unknown = await _db.rawQuery(
+      '''
+SELECT COUNT(*) AS count FROM (
+  SELECT i.id FROM invoice i
+  WHERE i.accounting_state != 'draft'
+    AND (IFNULL(i.external_sync_status, 0) NOT IN (2, 3)
+      OR i.voided_date IS NOT NULL)
+    AND ((COALESCE(i.issued_date, i.created_date) >= ?
+      AND COALESCE(i.issued_date, i.created_date) < ?)
+      OR (i.voided_date >= ? AND i.voided_date < ?))
+    AND (NOT EXISTS (SELECT 1 FROM invoice_line l WHERE l.invoice_id = i.id)
+      OR EXISTS (SELECT 1 FROM invoice_line l WHERE l.invoice_id = i.id
+        AND l.tax_code_id IS NULL AND NULLIF(l.tax_type, '') IS NULL
+        AND IFNULL(l.tax_amount, 0) = 0 AND l.line_total != 0))
+  UNION ALL
+  SELECT c.id FROM credit_note c
+  WHERE c.status IN (?, ?, ?) AND c.credit_date >= ? AND c.credit_date < ?
+    AND (NOT EXISTS (SELECT 1 FROM credit_note_line l WHERE l.credit_note_id = c.id)
+      OR EXISTS (SELECT 1 FROM credit_note_line l WHERE l.credit_note_id = c.id
+        AND l.tax_code_id IS NULL AND NULLIF(l.tax_type, '') IS NULL
+        AND IFNULL(l.tax_amount, 0) = 0 AND l.line_total != 0))
+)
+''',
+      [
+        ..._periodArgs(period),
+        ..._periodArgs(period),
+        CreditNoteStatus.approved.ordinal,
+        CreditNoteStatus.partiallyAllocated.ordinal,
+        CreditNoteStatus.allocated.ordinal,
+        ..._periodArgs(period),
+      ],
+    );
     return TaxSummaryReport(
       period: period,
-      taxLabel: taxConfig.label,
+      taxLabel: taxLabel ?? await resolveTaxLabel(),
       taxCollected: invoiceTax,
       creditTax: creditTax,
-      supplierTaxPaid: supplierTaxPaid,
-      taxCollectedIsEstimated:
-          !hasExplicitTax && taxConfig.mode == TaxDisplayMode.inclusive,
+      supplierTaxPaid: await _receiptTax(period: period),
+      taxCollectedIsEstimated: false,
+      unknownTaxDocuments: unknown.single['count']! as int,
     );
   }
 
   Future<SupplierSpendReport> supplierSpend(AccountingPeriod period) async {
-    final db = DaoInvoice().withoutTransaction();
+    final db = _db;
     final rows = await db.rawQuery('''
 SELECT
   s.id AS supplier_id,
@@ -838,8 +936,8 @@ ORDER BY including_tax DESC, s.name
     );
   }
 
-  Future<UnlinkedCostReport> unlinkedCosts() async {
-    final db = DaoInvoice().withoutTransaction();
+  Future<UnlinkedCostReport> unlinkedCosts({AccountingPeriod? period}) async {
+    final db = _db;
     final rows = await db.rawQuery('''
 SELECT
   r.id AS receipt_id,
@@ -860,8 +958,9 @@ AND EXISTS (
   FROM receipt_job_allocation rja
   WHERE rja.receipt_id = r.id
 )
+${_periodClause(period, 'r.receipt_date')}
 ORDER BY r.receipt_date DESC, r.id DESC
-''');
+''', _periodArgs(period));
 
     return UnlinkedCostReport(
       rows: [
@@ -878,7 +977,7 @@ ORDER BY r.receipt_date DESC, r.id DESC
   }
 
   Future<MaterialBillingReport> materialsBilling({int? jobId}) async {
-    final db = DaoInvoice().withoutTransaction();
+    final db = _db;
     final rows = await db.rawQuery(
       '''
 SELECT
@@ -972,42 +1071,56 @@ ORDER BY
     }
   }
 
-  Future<Money> _invoiceIncome({AccountingPeriod? period, int? jobId}) => _sum(
+  Future<Money> _invoiceIncome({AccountingPeriod? period, int? jobId}) =>
+      _invoiceMovement(
+        'i.total_amount - IFNULL((SELECT SUM(tax_amount) FROM invoice_line '
+        'WHERE invoice_id = i.id), 0)',
+        period: period,
+        jobId: jobId,
+      );
+
+  Future<Money> _invoiceMovement(
+    String amount, {
+    AccountingPeriod? period,
+    int? jobId,
+  }) => _sum(
     '''
-SELECT IFNULL(SUM(total_amount), 0) AS total
-FROM invoice
-WHERE IFNULL(external_sync_status, ?) NOT IN (?, ?)
-${_periodClause(period, 'created_date')}
+SELECT IFNULL(SUM(amount), 0) AS total FROM (
+ SELECT $amount AS amount, COALESCE(i.issued_date, i.created_date) AS activity_date,
+ i.job_id FROM invoice i WHERE i.accounting_state != 'draft'
+ AND (IFNULL(i.external_sync_status, 0) NOT IN (2, 3) OR i.voided_date IS NOT NULL)
+ UNION ALL
+ SELECT -($amount), i.voided_date AS activity_date, i.job_id
+ FROM invoice i WHERE i.accounting_state != 'draft' AND i.voided_date IS NOT NULL
+) WHERE 1 = 1
+${_periodClause(period, 'activity_date')}
 ${_jobClause(jobId, 'job_id')}
 ''',
-    [
-      InvoiceExternalSyncStatus.none.ordinal,
-      InvoiceExternalSyncStatus.deleted.ordinal,
-      InvoiceExternalSyncStatus.voided.ordinal,
-      ..._periodArgs(period),
-      ..._jobArgs(jobId),
-    ],
+    [..._periodArgs(period), ..._jobArgs(jobId)],
   );
 
   Future<List<_StatementInvoice>> _statementInvoicesForCustomer(
     int? customerId, {
     int? jobId,
   }) async {
-    final where = <String>['1 = 1'];
+    final where = <String>["i.accounting_state != 'draft'"];
     final args = <Object?>[];
     if (jobId != null) {
       where.add('i.job_id = ?');
       args.add(jobId);
     } else if (customerId != null) {
-      where.add('j.customer_id = ?');
+      where.add(
+        'COALESCE(i.billing_customer_id, j.bill_to_customer_id, '
+        'j.customer_id) = ?',
+      );
       args.add(customerId);
     }
-    final db = DaoInvoice().withoutTransaction();
+    final db = _db;
     final rows = await db.rawQuery('''
 SELECT i.*, IFNULL(c.name, 'Unknown customer') AS statement_customer_name
 FROM invoice i
 LEFT JOIN job j ON j.id = i.job_id
-LEFT JOIN customer c ON c.id = j.customer_id
+LEFT JOIN customer c ON c.id = COALESCE(i.billing_customer_id, j.bill_to_customer_id, j.customer_id)
 WHERE ${where.join(' AND ')}
 ORDER BY i.created_date ASC, i.id ASC
 ''', args);
@@ -1017,6 +1130,10 @@ ORDER BY i.created_date ASC, i.id ASC
         _StatementInvoice(
           invoice: Invoice.fromMap(row),
           customerName: row['statement_customer_name']! as String,
+          issuedDate: DateTime.parse(
+            (row['issued_date'] ?? row['created_date'])! as String,
+          ),
+          voidedDate: DateTime.tryParse(row['voided_date'] as String? ?? ''),
         ),
     ];
   }
@@ -1034,7 +1151,7 @@ ORDER BY i.created_date ASC, i.id ASC
     if (invoiceIds.isEmpty) {
       return const {};
     }
-    final db = DaoInvoice().withoutTransaction();
+    final db = _db;
     final placeholders = List.filled(invoiceIds.length, '?').join(', ');
     final histories = <int, List<InvoiceLedgerHistoryEntry>>{};
     void add(int invoiceId, InvoiceLedgerHistoryEntry entry) {
@@ -1125,7 +1242,7 @@ ORDER BY adjustment_date ASC, id ASC
   }
 
   Future<List<_StatementPayment>> _statementPayments(int? customerId) async {
-    final rows = await DaoInvoice().withoutTransaction().rawQuery(
+    final rows = await _db.rawQuery(
       '''
 SELECT p.payment_date, p.amount,
   IFNULL(c.name, 'Unknown customer') AS customer_name
@@ -1189,7 +1306,8 @@ ORDER BY p.payment_date ASC, p.id ASC
 
   Future<Money> _creditNotes({AccountingPeriod? period, int? jobId}) => _sum(
     '''
-SELECT IFNULL(SUM(total_amount), 0) AS total
+SELECT IFNULL(SUM(total_amount - IFNULL((SELECT SUM(tax_amount)
+  FROM credit_note_line WHERE credit_note_id = credit_note.id), 0)), 0) AS total
 FROM credit_note
 WHERE status IN (?, ?, ?)
 ${_periodClause(period, 'credit_date')}
@@ -1242,20 +1360,10 @@ WHERE 1 = 1
 ${_periodClause(period, 'receipt_date')}
 ''', _periodArgs(period));
 
-  Future<Money> _invoiceTax({AccountingPeriod? period}) => _sum(
-    '''
-SELECT IFNULL(SUM(il.tax_amount), 0) AS total
-FROM invoice_line il
-JOIN invoice i ON i.id = il.invoice_id
-WHERE IFNULL(i.external_sync_status, ?) NOT IN (?, ?)
-${_periodClause(period, 'i.created_date')}
-''',
-    [
-      InvoiceExternalSyncStatus.none.ordinal,
-      InvoiceExternalSyncStatus.deleted.ordinal,
-      InvoiceExternalSyncStatus.voided.ordinal,
-      ..._periodArgs(period),
-    ],
+  Future<Money> _invoiceTax({AccountingPeriod? period}) => _invoiceMovement(
+    'IFNULL((SELECT SUM(tax_amount) FROM invoice_line '
+    'WHERE invoice_id = i.id), 0)',
+    period: period,
   );
 
   Future<Money> _creditNoteTax({AccountingPeriod? period}) => _sum(
@@ -1330,61 +1438,10 @@ AND NOT EXISTS (
   }
 
   Future<Money> _sum(String sql, List<Object?> args) async {
-    final db = DaoInvoice().withoutTransaction();
+    final db = _db;
     final rows = await db.rawQuery(sql, args);
     return MoneyEx.fromInt(rows.first['total'] as int? ?? 0);
   }
-
-  Future<Money> _derivedTaxFrom({required Future<Money> source}) async {
-    final amount = await source;
-    final config = await _taxConfig();
-    if (config.mode != TaxDisplayMode.inclusive || config.ratePercent <= 0) {
-      return MoneyEx.zero;
-    }
-    final tax = amount.minorUnits.toInt() * config.ratePercent;
-    return MoneyEx.fromInt((tax / (100 + config.ratePercent)).round());
-  }
-
-  Future<_TaxConfig> _taxConfig() async {
-    final scheme = await _selectedTaxScheme();
-    final defaultSalesCode = scheme == null
-        ? null
-        : await DaoTaxCode().getDefaultSalesCode(scheme.id);
-    final configuredLabel = (await AppSettings.getTaxLabel()).trim();
-    final configuredRate = double.tryParse(
-      (await AppSettings.getTaxRatePercentText()).trim(),
-    );
-    return _TaxConfig(
-      label: configuredLabel.isEmpty
-          ? scheme?.taxLabel ?? 'Tax'
-          : configuredLabel,
-      ratePercent: configuredRate ?? _ratePercent(defaultSalesCode) ?? 0,
-      mode: await AppSettings.getTaxDisplayMode(),
-    );
-  }
-
-  Future<TaxScheme?> _selectedTaxScheme() async {
-    final schemeCode = await AppSettings.getTaxSchemeCode();
-    if (schemeCode.isNotEmpty) {
-      final scheme = await DaoTaxScheme().getByCode(schemeCode);
-      if (scheme != null) {
-        return scheme;
-      }
-    }
-
-    final countryCode = (await DaoSystem().get()).countryCode?.trim();
-    if (countryCode != null && countryCode.isNotEmpty) {
-      final scheme = await DaoTaxScheme().getByCountryCode(countryCode);
-      if (scheme != null) {
-        return scheme;
-      }
-    }
-
-    return await DaoTaxScheme().getByCode('custom');
-  }
-
-  double? _ratePercent(TaxCode? code) =>
-      code == null ? null : code.rateBasisPoints / 100;
 
   String _periodClause(AccountingPeriod? period, String column) =>
       period == null ? '' : 'AND $column >= ? AND $column < ?';
@@ -1400,18 +1457,6 @@ AND NOT EXISTS (
       jobId == null ? '' : 'AND $column = ?';
 
   List<Object?> _jobArgs(int? jobId) => jobId == null ? const [] : [jobId];
-}
-
-class _TaxConfig {
-  final String label;
-  final double ratePercent;
-  final TaxDisplayMode mode;
-
-  const _TaxConfig({
-    required this.label,
-    required this.ratePercent,
-    required this.mode,
-  });
 }
 
 class AccountingReportCsvExporter {

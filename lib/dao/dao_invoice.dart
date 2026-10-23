@@ -25,7 +25,7 @@ import 'dao.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
 import 'dao_job.dart';
-import 'dao_milestone.dart';
+import 'invoice_lifecycle_service.dart';
 import 'job_billing_contact.dart';
 
 class DaoInvoice extends Dao<Invoice> {
@@ -51,6 +51,15 @@ class DaoInvoice extends Dao<Invoice> {
 
   @override
   Invoice fromMap(Map<String, dynamic> map) => Invoice.fromMap(map);
+
+  @override
+  Future<int> update(Invoice entity, [Transaction? transaction]) async {
+    if (transaction == null) {
+      return await db.transaction((txn) => update(entity, txn));
+    }
+    await InvoiceLifecycleService().validateInvoiceEdit(transaction, entity);
+    return await super.update(entity, transaction);
+  }
 
   @override
   Future<List<Invoice>> getAll({String? orderByClause}) async {
@@ -357,71 +366,58 @@ ORDER BY modified_date DESC
     required int invoiceId,
     required String description,
   }) async {
-    final invoice = await getById(invoiceId);
-    if (invoice == null) {
-      return;
-    }
-    if (invoice.paid) {
-      throw InvoiceException('An invoice with a payment may not be voided.');
-    }
-    if (invoice.isExternallyDeletedOrVoided) {
-      throw InvoiceException('This invoice has already been voided.');
-    }
-    if (Strings.isBlank(description)) {
-      throw InvoiceException('A void description is required.');
-    }
-
-    await update(
-      invoice.copyWith(
-        externalSyncStatus: InvoiceExternalSyncStatus.voided,
-        voidDescription: description.trim(),
-      ),
-    );
-    await DaoMilestone().detachFromInvoice(invoice.id);
+    await InvoiceLifecycleService().voidInvoice(invoiceId, description);
+    Dao.notifier(this, invoiceId);
   }
 
   @override
   Future<int> delete(int id, [Transaction? transaction]) async {
-    final exports = await withinTransaction(transaction).query(
-      'quickbooks_invoice_export',
-      where: 'invoice_id = ?',
-      whereArgs: [id],
+    final count = await InvoiceLifecycleService().deleteDraft(
+      id,
+      transaction: transaction,
     );
-    if (exports.isNotEmpty) {
-      throw StateError(
-        'Reconcile this invoice in QuickBooks before deleting it.',
-      );
-    }
-    await DaoInvoiceLine().deleteByInvoiceId(id);
-    await DaoInvoiceLineGroup().deleteByInvoiceId(id);
-    await DaoMilestone().detachFromInvoice(id);
-
-    return super.delete(id);
+    Dao.notifier(this, id);
+    return count;
   }
 
   Future<void> deleteByJob(int jobId, {Transaction? transaction}) async {
-    await withinTransaction(
-      transaction,
-    ).delete(tableName, where: 'job_id = ?', whereArgs: [jobId]);
+    if (transaction == null) {
+      return await db.transaction(
+        (txn) => deleteByJob(jobId, transaction: txn),
+      );
+    }
+    for (final invoice in await transaction.query(
+      'invoice',
+      where: 'job_id = ?',
+      whereArgs: [jobId],
+    )) {
+      await delete(invoice['id']! as int, transaction);
+    }
   }
 
-  Future<void> recalculateTotal(int invoiceId) async {
-    final lines = await DaoInvoiceLine().getByInvoiceId(invoiceId);
+  Future<void> recalculateTotal(
+    int invoiceId, [
+    Transaction? transaction,
+  ]) async {
+    if (transaction == null) {
+      return await db.transaction((txn) => recalculateTotal(invoiceId, txn));
+    }
+    final lines = await DaoInvoiceLine().getByInvoiceId(invoiceId, transaction);
     var total = MoneyEx.zero;
     for (final line in lines) {
       final Money lineTotal;
       switch (line.status) {
         case LineChargeableStatus.normal:
-          lineTotal = line.unitPrice.multiplyByFixed(line.quantity);
+          lineTotal = line.lineTotal;
         case LineChargeableStatus.noCharge:
         case LineChargeableStatus.noChargeHidden:
           lineTotal = MoneyEx.zero;
       }
       total += lineTotal;
     }
-    final invoice = await DaoInvoice().getById(invoiceId);
+    final invoice = await DaoInvoice().getById(invoiceId, transaction);
     final updatedInvoice = invoice!.copyWith(totalAmount: total);
-    await DaoInvoice().update(updatedInvoice);
+    await DaoInvoice().update(updatedInvoice, transaction);
   }
 
   Future<List<String>> getEmailsByInvoice(Invoice invoice) =>
@@ -448,13 +444,26 @@ ORDER BY modified_date DESC
     required Invoice invoice,
     required Money amount,
     String description = 'Discount',
+    Transaction? transaction,
   }) async {
+    if (transaction == null) {
+      return await db.transaction(
+        (txn) => addDiscountLine(
+          invoice: invoice,
+          amount: amount,
+          description: description,
+          transaction: txn,
+        ),
+      );
+    }
+    await InvoiceLifecycleService().requireDraft(transaction, invoice.id);
     if (!amount.isPositive) {
       throw HMBException('Discount amount must be greater than zero.');
     }
 
     final existingGroups = await DaoInvoiceLineGroup().getByInvoiceId(
       invoice.id,
+      transaction,
     );
     InvoiceLineGroup? discountGroup;
     for (final group in existingGroups) {
@@ -467,8 +476,8 @@ ORDER BY modified_date DESC
       invoiceId: invoice.id,
       name: discountGroupName,
     );
-    if (discountGroup.id == 0) {
-      await DaoInvoiceLineGroup().insert(discountGroup);
+    if (discountGroup.id <= 0) {
+      await DaoInvoiceLineGroup().insert(discountGroup, transaction);
     }
 
     final line = InvoiceLine.forInsert(
@@ -479,8 +488,8 @@ ORDER BY modified_date DESC
       unitPrice: -amount,
       lineTotal: -amount,
     );
-    await DaoInvoiceLine().insert(line);
-    await recalculateTotal(invoice.id);
+    await DaoInvoiceLine().insert(line, transaction);
+    await recalculateTotal(invoice.id, transaction);
     return line;
   }
 }

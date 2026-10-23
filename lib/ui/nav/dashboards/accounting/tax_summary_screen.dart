@@ -130,11 +130,12 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
                       report.netTaxPosition.toString(),
                       bold: true,
                     ),
-                    if (report.taxCollectedIsEstimated) ...[
+                    if (report.unknownTaxDocuments > 0) ...[
                       const SizedBox(height: 12),
                       Text(
-                        'Invoice ${report.taxLabel} is derived from inclusive '
-                        'invoice totals and the configured tax rate.',
+                        '${report.unknownTaxDocuments} documents have unknown '
+                        'historical tax. Totals include recorded tax only; '
+                        'review these documents before filing.',
                       ),
                     ],
                   ],

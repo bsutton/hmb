@@ -13,22 +13,33 @@
 
 import 'dart:async';
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:june/june.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../../dao/dao_task.dart';
+import '../../../dao/task_fixed_agreement.dart';
 import '../../../entity/entity.g.dart';
+import '../../../util/dart/exceptions.dart';
+import '../../../util/dart/money_ex.dart';
 import '../../../util/flutter/platform_ex.dart';
+import '../../invoicing/create_invoice_ui.dart';
+import '../../widgets/blocking_ui.dart';
+import '../../widgets/fields/hmb_money_editing_controller.dart';
+import '../../widgets/fields/hmb_money_field.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_crud_checklist_item.dart';
+import '../../widgets/hmb_switch.dart';
 import '../../widgets/icons/help_button.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../base_nested/edit_nested_screen.dart';
+import '../base_nested/list_nested_screen.dart';
 import '../category/select_category.dart';
 import 'photo_crud.dart';
 
@@ -54,7 +65,7 @@ class TaskEditScreen extends StatefulWidget {
   }
 }
 
-class _TaskEditScreenState extends State<TaskEditScreen>
+class _TaskEditScreenState extends DeferredState<TaskEditScreen>
     implements NestedEntityState<Task> {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
@@ -71,11 +82,13 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   @override
   Task? currentEntity;
   BillingType? selectedBillingType;
+  final _fixedPrice = HMBMoneyEditingController();
+  final _agreementNote = TextEditingController();
+  var _agreed = false;
+  var _hadAgreement = false;
 
   @override
-  void initState() {
-    super.initState();
-
+  Future<void> asyncInitState() async {
     currentEntity ??= widget.task;
     selectedBillingType = widget.billingType;
     _category.categoryId = currentEntity?.categoryId;
@@ -110,8 +123,16 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       });
     }
 
-    // ignore: discarded_futures
-    _loadInitialTaskStatus();
+    await _loadInitialTaskStatus();
+    if (currentEntity != null) {
+      final agreement = await TaskFixedAgreement().get(currentEntity!.id);
+      if (agreement != null) {
+        _fixedPrice.money = MoneyEx.fromInt(agreement['amount']! as int);
+        _agreementNote.text = agreement['agreement_note']! as String;
+        _agreed = true;
+        _hadAgreement = true;
+      }
+    }
   }
 
   Future<void> _loadInitialTaskStatus() async {
@@ -128,6 +149,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   @override
   void dispose() {
+    _fixedPrice.dispose();
+    _agreementNote.dispose();
     _nameController.dispose();
     _descriptionController.dispose();
     _assumptionController.dispose();
@@ -142,85 +165,141 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   }
 
   @override
-  Widget build(BuildContext context) => NestedEntityEditScreen<Task, Job>(
-    entityName: 'Task',
-    dao: DaoTask(),
-    onInsert: (task, transaction) async {
-      await _insertTask(task!, transaction);
-    },
-    entityState: this,
-    editor: (task) => HMBFormSection(
-      children: [
-        HMBTextField(
-          controller: _nameController,
-          focusNode: _summaryFocusNode,
-          labelText: 'Summary',
-          required: true,
-        ),
-        _chooseTaskStatus(task),
-        _chooseBillingType(),
-        ExpansionTile(
-          title: const Text('Effort comparison'),
-          subtitle: const Text('Optional details for future estimating'),
-          children: [
-            SelectCategory(selectedCategory: _category),
-            HMBTextField(
-              controller: _quantityController,
-              labelText: 'Work quantity (e.g. 25)',
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
+    waitingBuilder: (_) => const SizedBox.shrink(),
+    errorBuilder: (_, error) => Text('Unable to load task: $error'),
+    builder: (_) => NestedEntityEditScreen<Task, Job>(
+      entityName: 'Task',
+      dao: DaoTask(),
+      onInsert: (task, transaction) async {
+        await _insertTask(task!, transaction);
+      },
+      entityState: this,
+      editor: (task) => HMBFormSection(
+        children: [
+          HMBTextField(
+            controller: _nameController,
+            focusNode: _summaryFocusNode,
+            labelText: 'Summary',
+            required: true,
+          ),
+          _chooseTaskStatus(task),
+          _chooseBillingType(),
+          if ((selectedBillingType ?? widget.job.billingType) ==
+              BillingType.fixedPrice)
+            HMBFormSection(
+              children: [
+                HMBMoneyField(
+                  controller: _fixedPrice,
+                  labelText: 'Agreed fixed price (optional)',
+                  fieldName: 'fixed price',
+                  nonZero: false,
+                  onChanged: (_) => setState(() => _agreed = false),
+                ),
+                if (_fixedPrice.text.isNotEmpty || _hadAgreement) ...[
+                  HMBSwitch(
+                    labelText: 'Customer agreed to this price',
+                    initialValue: _agreed,
+                    leadingSpace: false,
+                    onChanged: (value) => setState(() => _agreed = value),
+                  ),
+                  HMBTextField(
+                    controller: _agreementNote,
+                    labelText: 'Agreement note (optional)',
+                  ),
+                  Builder(
+                    builder: (saveContext) => HMBButton(
+                      label: 'Save and prepare invoice',
+                      hint: 'Save the agreed task and review its invoice',
+                      enabled: _agreed,
+                      onPressed: () async {
+                        final task = await BlockingUI().runAndWait(
+                          () => ParentSaveScope.maybeOf(
+                            saveContext,
+                          )!.ensureSaved(),
+                        );
+                        if (task != null && saveContext.mounted) {
+                          await createInvoiceFor(
+                            widget.job,
+                            saveContext,
+                            taskId: task.id,
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ],
+                const Text(
+                  'Record an on-site agreement here, or leave the price blank '
+                  'and prepare a formal quote. '
+                  'Enter the final customer price, including any tax.',
+                ),
+              ],
+            ),
+          ExpansionTile(
+            title: const Text('Effort comparison'),
+            subtitle: const Text('Optional details for future estimating'),
+            children: [
+              SelectCategory(selectedCategory: _category),
+              HMBTextField(
+                controller: _quantityController,
+                labelText: 'Work quantity (e.g. 25)',
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return null;
+                  }
+                  final quantity = double.tryParse(value);
+                  return quantity == null || !quantity.isFinite || quantity <= 0
+                      ? 'Enter a positive quantity'
+                      : null;
+                },
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return null;
-                }
-                final quantity = double.tryParse(value);
-                return quantity == null || !quantity.isFinite || quantity <= 0
-                    ? 'Enter a positive quantity'
-                    : null;
-              },
-            ),
-            HMBTextField(
-              controller: _unitController,
-              labelText: 'Unit (e.g. m², metres, items)',
-              validator: (value) =>
-                  _quantityController.text.trim().isNotEmpty &&
-                      (value == null || value.trim().isEmpty)
-                  ? 'Enter the unit used for this quantity'
-                  : null,
-            ),
-            HMBTextArea(
-              controller: _effortNotesController,
-              labelText: 'Comparison notes (size, condition, access)',
-            ),
-            const Text(
-              'Internal comparison only. These values do not change billing '
-              'or appear on quotes.',
-            ),
-          ],
-        ),
-        HMBTextArea(
-          controller: _descriptionController,
-          focusNode: _descriptionFocusNode,
-          labelText: 'Description',
-        ),
-        HMBTextArea(
-          controller: _assumptionController,
-          focusNode: _assumptionFocusNode,
-          labelText: 'Assumptions',
-        ).help(
-          'Assumptions',
-          '''Detail the assumptions your pricing is based on. Assumptions are shown on the Quote. ''',
-        ),
-        // _chooseBillingType(),
-        _buildItemList(task),
-        PhotoCrud<Task>(
-          parentName: 'Task',
-          allowPendingPhotos: true,
-          parentType: ParentType.task,
-          controller: _photoController,
-        ),
-      ],
+              HMBTextField(
+                controller: _unitController,
+                labelText: 'Unit (e.g. m², metres, items)',
+                validator: (value) =>
+                    _quantityController.text.trim().isNotEmpty &&
+                        (value == null || value.trim().isEmpty)
+                    ? 'Enter the unit used for this quantity'
+                    : null,
+              ),
+              HMBTextArea(
+                controller: _effortNotesController,
+                labelText: 'Comparison notes (size, condition, access)',
+              ),
+              const Text(
+                'Internal comparison only. These values do not change billing '
+                'or appear on quotes.',
+              ),
+            ],
+          ),
+          HMBTextArea(
+            controller: _descriptionController,
+            focusNode: _descriptionFocusNode,
+            labelText: 'Description',
+          ),
+          HMBTextArea(
+            controller: _assumptionController,
+            focusNode: _assumptionFocusNode,
+            labelText: 'Assumptions',
+          ).help(
+            'Assumptions',
+            '''Detail the assumptions your pricing is based on. Assumptions are shown on the Quote. ''',
+          ),
+          // _chooseBillingType(),
+          _buildItemList(task),
+          PhotoCrud<Task>(
+            parentName: 'Task',
+            allowPendingPhotos: true,
+            parentType: ParentType.task,
+            controller: _photoController,
+          ),
+        ],
+      ),
     ),
   );
 
@@ -273,7 +352,7 @@ Fixed Price
 Bills the customer a pre-agreed amount.
 
 You can create Milestone Invoices as the Job progresses.
-Navigate to Billing | Milestones.
+Use an agreed task price or a formal quote, then Create invoice.
 ''');
 
   Widget _chooseTaskStatus(Task? task) => HMBDroplist<TaskStatus>(
@@ -297,7 +376,7 @@ Navigate to Billing | Milestones.
   Future<Task> forUpdate(Task task) async => task.copyWith(
     jobId: widget.job.id,
     name: _nameController.text,
-    billingType: selectedBillingType,
+    billingType: selectedBillingType ?? widget.job.billingType,
     description: _descriptionController.text,
     assumption: _assumptionController.text,
     status: June.getState(SelectedTaskStatus.new).taskStatus,
@@ -313,7 +392,7 @@ Navigate to Billing | Milestones.
   Future<Task> forInsert() async => Task.forInsert(
     jobId: widget.job.id,
     name: _nameController.text,
-    billingType: selectedBillingType,
+    billingType: selectedBillingType ?? widget.job.billingType,
     description: _descriptionController.text,
     assumption: _assumptionController.text,
     status: June.getState(SelectedTaskStatus.new).taskStatus!,
@@ -330,6 +409,22 @@ Navigate to Billing | Milestones.
 
   @override
   Future<void> postSave(Transaction transaction, Operation operation) async {
+    if ((selectedBillingType ?? widget.job.billingType) ==
+            BillingType.fixedPrice &&
+        (_fixedPrice.text.isNotEmpty || _hadAgreement)) {
+      final amount = _fixedPrice.money;
+      if (!_agreed || amount == null || !amount.isPositive) {
+        throw InvoiceException(
+          'Enter the fixed price and confirm the customer agreed.',
+        );
+      }
+      await TaskFixedAgreement().save(
+        transaction,
+        currentEntity!,
+        amount,
+        _agreementNote.text,
+      );
+    }
     final pending = (await _photoController.photos)
         .where((meta) => meta.photo.id == -1)
         .toList();

@@ -1,164 +1,62 @@
-/*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
-
- Note: This software is licensed under the GNU General Public License,
-         with the following exceptions:
-   • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products 
-      for third parties is strictly prohibited.
-
- See the full license on GitHub:
- https://github.com/bsutton/hmb/blob/main/LICENSE
-*/
-
+import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/money_ex.dart';
-import 'package:money2/money2.dart';
-import 'package:test/test.dart';
 
 import '../../database/management/db_utility_test_helper.dart';
-import 'utility.dart';
+import '../../ui/ui_test_helpers.dart';
+import '../../util/settings_test_helper.dart';
 
 void main() {
-  setUp(() async {
-    await setupTestDb();
-  });
+  setUpAll(prepareSettingsTest);
+  setUp(setupTestDb);
+  tearDown(tearDownTestDb);
 
-  tearDown(() async {
-    await tearDownTestDb();
-  });
-
-  group('Booking Fee - Time and Materials', () {
+  for (final (jobFee, systemFee, expected) in [
+    (0, 100, 0),
+    (null, 100, 100),
+    (50, 100, 50),
+    (null, 0, 0),
+  ]) {
     test(
-      r'Time and Materials - Job with zero Booking Fee, $100 System Fee',
+      'fee uses job override $jobFee and system fallback $systemFee',
       () async {
-        final now = DateTime.now();
-        final job = await createJob(
-          now,
-          BillingType.timeAndMaterial,
-          hourlyRate: MoneyEx.fromInt(5000),
-          bookingFee: MoneyEx.zero,
+        final system = await DaoSystem().getForUpdate();
+        system.defaultBookingFee = MoneyEx.dollars(systemFee);
+        await DaoSystem().updateConfiguration(system);
+        final job = await createJobWithCustomer(
+          billingType: BillingType.timeAndMaterial,
+          hourlyRate: MoneyEx.zero,
+          bookingFee: jobFee == null ? null : MoneyEx.dollars(jobFee),
         );
-
-        await _setSystemBookingFee(MoneyEx.dollars(100));
-
-        // Create invoice for the job
-        final invoice = await createInvoiceForSelectedTasks(
+        final contact = (await DaoContact().getById(job.billingContactId))!;
+        final creation = createInvoiceForSelectedTasks(
           job,
-          await createContact('Brett', 'Sutton'),
+          contact,
           [],
           groupByTask: true,
           billBookingFee: true,
         );
-
-        // Verify that the invoice includes the system Booking Fee.
-        final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
-        expect(invoiceLines.length, equals(0));
-
-        // Check invoice totals
-        expect(invoice.totalAmount, MoneyEx.dollars(0));
+        if (expected == 0) {
+          await expectLater(creation, throwsException);
+          expect(await DaoInvoice().getByJobId(job.id), isEmpty);
+        } else {
+          final invoice = await creation;
+          expect(invoice.totalAmount, MoneyEx.dollars(expected));
+          final lines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
+          expect(lines.single.fromBookingFee, isTrue);
+          await expectLater(
+            createInvoiceForSelectedTasks(
+              job,
+              contact,
+              [],
+              groupByTask: true,
+              billBookingFee: true,
+            ),
+            throwsException,
+          );
+        }
       },
     );
-
-    test(
-      r'Time and Materials - Job with null Booking Fee, $100 System Fee',
-      () async {
-        final now = DateTime.now();
-        final job = await createJob(
-          now,
-          BillingType.timeAndMaterial,
-          hourlyRate: MoneyEx.fromInt(5000),
-        );
-
-        await _setSystemBookingFee(MoneyEx.dollars(100));
-
-        // Create invoice for the job
-        final invoice = await createInvoiceForSelectedTasks(
-          job,
-          await createContact('Brett', 'Sutton'),
-          [],
-          groupByTask: true,
-          billBookingFee: true,
-        );
-
-        // Verify that the invoice includes the system Booking Fee.
-        final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
-        expect(invoiceLines.length, equals(1));
-        expect(invoiceLines.first.lineTotal, equals(MoneyEx.dollars(100)));
-
-        // Check invoice totals
-        expect(invoice.totalAmount, MoneyEx.dollars(100));
-      },
-    );
-
-    test(
-      r'Time and Materials - Job with $50 Booking Fee, $100 System Fee',
-      () async {
-        final now = DateTime.now();
-        final job = await createJob(
-          now,
-          BillingType.timeAndMaterial,
-          hourlyRate: MoneyEx.fromInt(5000),
-          bookingFee: MoneyEx.dollars(50),
-        );
-
-        await _setSystemBookingFee(MoneyEx.dollars(100));
-
-        // Create invoice for the job
-        final invoice = await createInvoiceForSelectedTasks(
-          job,
-          await createContact('Brett', 'Sutton'),
-          [],
-          groupByTask: true,
-          billBookingFee: true,
-        );
-
-        // Verify that the invoice includes the job-specific
-        //  Booking Fee (ignores system fee).
-        final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
-        expect(invoiceLines.length, equals(1));
-        expect(invoiceLines.first.lineTotal, equals(MoneyEx.dollars(50)));
-
-        // Check invoice totals
-        expect(invoice.totalAmount, MoneyEx.dollars(50));
-      },
-    );
-
-    test(
-      'Time and Materials - Job with null Booking Fee, null System Fee',
-      () async {
-        final now = DateTime.now();
-        final job = await createJob(
-          now,
-          BillingType.timeAndMaterial,
-          hourlyRate: MoneyEx.fromInt(5000),
-        );
-
-        await _setSystemBookingFee(MoneyEx.zero);
-
-        // Create invoice for the job
-        final invoice = await createInvoiceForSelectedTasks(
-          job,
-          await createContact('Brett', 'Sutton'),
-          [],
-          groupByTask: true,
-          billBookingFee: true,
-        );
-
-        // Verify that the invoice does not contain a Booking Fee.
-        final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
-        expect(invoiceLines.length, equals(0));
-
-        // Check invoice totals
-        expect(invoice.totalAmount, MoneyEx.fromInt(0));
-      },
-    );
-  });
-}
-
-Future<void> _setSystemBookingFee(Money amount) async {
-  final system = await DaoSystem().getForUpdate();
-  system.defaultBookingFee = amount;
-  await DaoSystem().updateConfiguration(system);
+  }
 }

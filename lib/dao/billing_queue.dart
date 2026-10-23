@@ -29,16 +29,19 @@ class BillingQueue {
       final revision = row['revision']! as int;
       try {
         final reason = await _check(id);
+        final future = reason == JobBillingReasonCode.futureFixedPayment;
+        final today = DateTime.now();
+        final nextDay = DateTime(today.year, today.month, today.day + 1);
         // No write lock during the check. New events make this result stale.
         await db.update(
           'job_billing_state',
           {
             'billing_required': reason == null ? 0 : 1,
             'reason': reason?.name,
-            'checked_revision': revision,
+            'checked_revision': future ? revision - 1 : revision,
             'checked_at': DateTime.now().millisecondsSinceEpoch,
             'attempts': 0,
-            'retry_after': 0,
+            'retry_after': future ? nextDay.millisecondsSinceEpoch : 0,
             'failed': 0,
           },
           where: 'job_id = ? AND revision = ?',

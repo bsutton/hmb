@@ -12,6 +12,7 @@
 */
 
 import 'package:hmb/dao/dao.g.dart';
+import 'package:hmb/dao/task_fixed_agreement.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/format.dart';
 import 'package:hmb/util/dart/local_date.dart';
@@ -20,9 +21,11 @@ import 'package:money2/money2.dart';
 import 'package:test/test.dart';
 
 import '../../database/management/db_utility_test_helper.dart';
+import '../../util/settings_test_helper.dart';
 import 'utility.dart';
 
 void main() {
+  setUpAll(prepareSettingsTest);
   setUp(() async {
     await setupTestDb();
   });
@@ -57,6 +60,7 @@ mixed invoice with group-by-date keeps fixed summaries first and date-grouped T&
         await insertLabourEstimates(fixedTask, MoneyEx.dollars(100), Fixed.one);
         await createTimeEntry(tmTask, now, const Duration(hours: 2));
 
+        await _agreeFixedTasks(job);
         final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
@@ -114,6 +118,7 @@ mixed job selecting only fixed tasks invoices only fixed work and leaves T&M unb
           margin: Percentage.zero,
         );
 
+        await _agreeFixedTasks(job);
         final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
@@ -128,7 +133,7 @@ mixed job selecting only fixed tasks invoices only fixed work and leaves T&M unb
         final updatedFixed = await DaoTaskItem().getById(fixedItem.id);
         final updatedTmMaterial = await DaoTaskItem().getById(tmMaterial.id);
         final updatedTmEntry = await DaoTimeEntry().getById(tmTimeEntry.id);
-        expect(updatedFixed?.billed, isTrue);
+        expect(updatedFixed?.billed, isFalse);
         expect(updatedTmMaterial?.billed, isFalse);
         expect(updatedTmEntry?.billed, isFalse);
       },
@@ -173,6 +178,7 @@ mixed job selecting only T&M tasks does not invoice fixed task items''',
           margin: Percentage.zero,
         );
 
+        await _agreeFixedTasks(job);
         final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
@@ -221,6 +227,7 @@ mixed invoice on T&M job can bill booking fee once and still include mixed task 
         await insertLabourEstimates(fixedTask, MoneyEx.dollars(100), Fixed.one);
         await createTimeEntry(tmTask, now, const Duration(hours: 1));
 
+        await _agreeFixedTasks(job);
         final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
@@ -293,6 +300,7 @@ mixed invoice places fixed-price task summaries first and T&M materials at the b
           margin: Percentage.zero,
         );
 
+        await _agreeFixedTasks(job);
         final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
@@ -313,14 +321,17 @@ mixed invoice places fixed-price task summaries first and T&M materials at the b
           invoiceGroupLines[0].id,
         );
         expect(fixedGroupLines.length, equals(1));
-        expect(fixedGroupLines.first.description, equals('Task: Fixed Task'));
+        expect(
+          fixedGroupLines.first.description,
+          equals('Agreed work: Fixed Task'),
+        );
 
         final updatedFixedLabour = await DaoTaskItem().getById(fixedLabour.id);
         final updatedFixedMaterial = await DaoTaskItem().getById(
           fixedMaterial.id,
         );
-        expect(updatedFixedLabour?.billed, isTrue);
-        expect(updatedFixedMaterial?.billed, isTrue);
+        expect(updatedFixedLabour?.billed, isFalse);
+        expect(updatedFixedMaterial?.billed, isFalse);
         expect(
           updatedFixedLabour?.invoiceLineId,
           equals(updatedFixedMaterial?.invoiceLineId),
@@ -361,6 +372,7 @@ time and materials job with a fixed price task bills fixed price labour and igno
           const Duration(hours: 2),
         );
 
+        await _agreeFixedTasks(job);
         final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
@@ -371,7 +383,7 @@ time and materials job with a fixed price task bills fixed price labour and igno
 
         final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
         expect(invoiceLines.length, equals(1));
-        expect(invoice.totalAmount, MoneyEx.fromInt(20020));
+        expect(invoice.totalAmount, MoneyEx.dollars(245));
 
         final billedTimeEntry = await DaoTimeEntry().getById(timeEntry.id);
         expect(billedTimeEntry?.billed, isFalse);
@@ -417,6 +429,7 @@ fixed price job with a time and materials task uses time entries and actual mate
           completed: false,
         );
 
+        await _agreeFixedTasks(job);
         final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
@@ -456,6 +469,7 @@ fixed price job coerces group-by-date to group-by-task so labour task items are 
 
         // Even if caller passes groupByTask=false, fixed-price tasks
         // are emitted as a single task summary line.
+        await _agreeFixedTasks(job);
         final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
@@ -466,7 +480,7 @@ fixed price job coerces group-by-date to group-by-task so labour task items are 
 
         final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
         expect(invoiceLines.length, equals(1));
-        expect(invoiceLines.first.description, contains('Task:'));
+        expect(invoiceLines.first.description, contains('Agreed work:'));
         expect(invoiceLines.first.lineTotal, isNot(MoneyEx.zero));
         expect(invoice.totalAmount, invoiceLines.first.lineTotal);
       },
@@ -502,6 +516,7 @@ time and materials tools owned items bill only when a charge is specified''',
           margin: Percentage.zero,
         );
 
+        await _agreeFixedTasks(job);
         final invoice = await createInvoiceForSelectedTasks(
           job,
           await createContact('Brett', 'Sutton'),
@@ -524,4 +539,19 @@ time and materials tools owned items bill only when a charge is specified''',
       },
     );
   });
+}
+
+Future<void> _agreeFixedTasks(Job job) async {
+  for (final task in await DaoTask().getTasksByJob(job.id)) {
+    if (task.billingType == BillingType.fixedPrice) {
+      await testDb!.transaction(
+        (txn) => TaskFixedAgreement().save(
+          txn,
+          task,
+          MoneyEx.dollars(245),
+          'Customer agreed on site',
+        ),
+      );
+    }
+  }
 }

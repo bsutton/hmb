@@ -7,8 +7,10 @@ import 'package:money2/money2.dart';
 import 'package:test/test.dart';
 
 import '../database/management/db_utility_test_helper.dart';
+import '../util/settings_test_helper.dart';
 
 void main() {
+  setUpAll(prepareSettingsTest);
   setUp(setupTestDb);
   tearDown(tearDownTestDb);
 

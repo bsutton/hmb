@@ -191,7 +191,10 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
             '''A ${widget.entityName.toLowerCase()} with that name already exists.''',
           );
         } else {
-          rethrow;
+          HMBToast.error(
+            'Unable to save ${widget.entityName.toLowerCase()}: $error',
+            acknowledgmentRequired: true,
+          );
         }
       }
     }

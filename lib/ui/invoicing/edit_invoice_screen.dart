@@ -22,10 +22,9 @@ import '../../api/accounting/accounting_adaptor.dart';
 import '../../dao/dao_invoice.dart';
 import '../../dao/dao_invoice_line.dart';
 import '../../dao/dao_invoice_line_group.dart';
-import '../../dao/dao_task_item.dart';
-import '../../dao/dao_time_entry.dart';
 import '../../dao/debtor_ledger_service.dart';
 import '../../dao/invoice_billing_contact.dart';
+import '../../dao/invoice_lifecycle_service.dart';
 import '../../dao/join_adaptors/join_adaptor_customer_contact.dart';
 import '../../entity/contact.dart';
 import '../../entity/customer.dart';
@@ -201,6 +200,12 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
               _buildBillingContact(details, canChangeInvoice),
               if (Strings.isNotBlank(invoice.voidDescription))
                 Text('Void description: ${invoice.voidDescription}'),
+              if (readOnlyInvoice && !invoice.isUploaded())
+                HMBButton(
+                  label: 'Release work for rebilling',
+                  hint: 'Make the voided invoice sources selectable again',
+                  onPressed: () => _releaseForRebilling(invoice),
+                ),
               if (!readOnlyInvoice) ...[
                 if (!invoice.isUploaded() &&
                     (_accountingUnavailable ||
@@ -544,6 +549,42 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _releaseForRebilling(Invoice invoice) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Release work for rebilling?'),
+        content: const Text(
+          'The voided invoice remains in the history. '
+          'Its work will become available for a replacement invoice.',
+        ),
+        actions: [
+          HMBCancelButton(
+            hint: 'Keep work reserved',
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          HMBButton(
+            label: 'Release work',
+            hint: 'Allow a replacement invoice',
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) {
+      return;
+    }
+    try {
+      await BlockingUI().runAndWait(
+        () => InvoiceLifecycleService().releaseVoidedInvoice(invoice.id),
+      );
+      await _reloadInvoiceAndRefresh();
+      HMBToast.info('Work is available in Prepare invoice.');
+    } catch (error) {
+      HMBToast.error('Unable to release work: $error');
+    }
   }
 
   Future<void> _changeBillingContact(InvoiceDetails details) async {
@@ -1128,9 +1169,14 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       return;
     }
 
+    final reserved = await InvoiceLifecycleService().hasReservedLine(line.id);
+    if (!context.mounted) {
+      return;
+    }
     final editedLine = await showDialog<InvoiceLine>(
       context: context,
-      builder: (context) => EditInvoiceLineDialog(line: line),
+      builder: (context) =>
+          EditInvoiceLineDialog(line: line, presentationOnly: reserved),
     );
 
     if (editedLine != null) {
@@ -1170,9 +1216,6 @@ Total: ${line.lineTotal}'''),
 
   Future<void> _doDeleteInvoiceLine(InvoiceLine line) async {
     try {
-      await DaoTaskItem().markNotBilled(line.id);
-      await DaoTimeEntry().markAsNotbilled(line.id);
-
       await DaoInvoiceLine().delete(line.id);
 
       final remainingLines = await DaoInvoiceLine().getByInvoiceLineGroupId(

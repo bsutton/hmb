@@ -1,121 +1,46 @@
-// ignore_for_file: async_return_with_no_await
-
-import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../crud/milestone/edit_milestone_payment.dart';
-import '../test_keys.dart';
 import '../widgets/widgets.g.dart';
-import 'dialog_select_tasks.dart';
+import 'edit_invoice_screen.dart';
+import 'invoice_details.dart';
+import 'prepare_invoice_screen.dart';
 
-enum _FixedPriceInvoicePath { milestones, timeAndMaterials }
-
-Future<void> createInvoiceFor(Job job, BuildContext context) async {
-  if (job.billingType == BillingType.fixedPrice) {
-    final path = await _selectFixedPriceInvoicePath(job, context);
-    if (!context.mounted || path == null) {
-      return;
-    }
-    if (path == _FixedPriceInvoicePath.milestones) {
-      await openMilestonesForFixedPriceJob(job: job, context: context);
-      return;
-    }
-  }
-
-  final options = await selectTasksToInvoice(
-    context: context,
-    job: job,
-    title: 'Tasks to Invoice',
-    billingTypeFilter: job.billingType == BillingType.fixedPrice
-        ? BillingType.timeAndMaterial
-        : null,
-  );
-  if (options != null) {
-    try {
-      if (options.selectedTaskIds.isNotEmpty || options.billBookingFee) {
-        await createInvoiceForSelectedTasks(
-          job,
-          options.contact,
-          options.selectedTaskIds,
-          groupByTask: options.groupByTask,
-          billBookingFee: options.billBookingFee,
-        );
-        HMBToast.info('Invoice created for "${job.summary}".');
-        if (context.mounted) {
-          context.go('/home/accounting/invoices');
-          return;
-        }
-      } else {
-        HMBToast.info('Select at least one Task or the Booking Fee.');
-      }
-    } catch (e) {
-      HMBToast.error(
-        'Failed to create invoice: $e',
-        acknowledgmentRequired: true,
-      );
-    }
-  }
-}
-
-Future<_FixedPriceInvoicePath?> _selectFixedPriceInvoicePath(
+Future<Invoice?> createInvoiceFor(
   Job job,
-  BuildContext context,
-) async {
-  if (!await _hasAccruedTimeAndMaterialsTasks(job)) {
-    return _FixedPriceInvoicePath.milestones;
-  }
-
-  if (!context.mounted) {
-    return null;
-  }
-
-  return showDialog<_FixedPriceInvoicePath>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text('Invoice "${job.summary}"'),
-      content: const Text(
-        'This fixed price job also has time and materials work ready to '
-        'invoice.',
+  BuildContext context, {
+  int? milestoneId,
+  int? taskId,
+}) async {
+  final invoice = await Navigator.of(context).push<Invoice>(
+    MaterialPageRoute(
+      builder: (_) => PrepareInvoiceScreen(
+        jobId: job.id,
+        milestoneId: milestoneId,
+        taskId: taskId,
       ),
-      actions: [
-        HMBButton(
-          key: TestKeys.fixedPriceInvoiceMilestonesButton,
-          onPressed: () =>
-              Navigator.pop(dialogContext, _FixedPriceInvoicePath.milestones),
-          label: 'Milestones',
-          hint: 'Create an invoice from job milestones',
-        ),
-        HMBButton(
-          key: TestKeys.fixedPriceInvoiceTimeAndMaterialsButton,
-          onPressed: () => Navigator.pop(
-            dialogContext,
-            _FixedPriceInvoicePath.timeAndMaterials,
-          ),
-          label: 'Time & Materials',
-          hint: 'Create an invoice from accrued time and materials',
-        ),
-      ],
     ),
   );
+  if (invoice != null && context.mounted) {
+    await openPreparedInvoice(context, invoice);
+  }
+  return invoice;
 }
 
-Future<bool> _hasAccruedTimeAndMaterialsTasks(Job job) async {
-  final values = await DaoTask().getAccruedValueForJob(
-    job: job,
-    includedBilled: false,
+Future<void> openPreparedInvoice(BuildContext context, Invoice invoice) async {
+  final details = await BlockingUI().runAndWait(
+    () => InvoiceDetails.load(invoice.id),
   );
-  for (final value in values) {
-    if (value.task.effectiveBillingType(job.billingType) ==
-        BillingType.timeAndMaterial) {
-      final earned = await value.earned;
-      if (!earned.isZero) {
-        return true;
-      }
-    }
+  if (!context.mounted) {
+    return;
   }
-  return false;
+  await Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      builder: (_) => InvoiceEditScreen(invoiceDetails: details),
+    ),
+  );
 }
 
 Future<bool> openMilestonesForFixedPriceJob({
@@ -128,7 +53,7 @@ Future<bool> openMilestonesForFixedPriceJob({
   }
   if (quotes.isEmpty) {
     HMBToast.error(
-      'This fixed price job has no quote. Create a quote before invoicing.',
+      'Create a quote to split its agreed price into milestone payments.',
       acknowledgmentRequired: true,
     );
     return false;

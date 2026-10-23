@@ -20,14 +20,14 @@ import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 
 import '../../../dao/dao.g.dart';
+import '../../../entity/invoice.dart';
 import '../../../entity/milestone.dart';
 import '../../../entity/quote.dart';
-import '../../../fsm/lifecycle_event_dispatcher.dart';
-import '../../../fsm/lifecycle_models.dart';
-import '../../../fsm/quote_events.dart';
 import '../../../util/dart/list_ex.dart';
 import '../../../util/dart/money_ex.dart';
-import '../../quoting/select_billing_contact_dialog.dart';
+import '../../invoicing/create_invoice_ui.dart';
+import '../../invoicing/prepare_invoice_screen.dart';
+import '../../widgets/blocking_ui.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/icons/hmb_add_button.dart';
 import '../../widgets/layout/layout.g.dart';
@@ -54,6 +54,17 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
   @override
   Future<void> asyncInitState() async {
     await _loadData();
+  }
+
+  Future<void> _saveSchedule() async {
+    try {
+      await BlockingUI().runAndWait(
+        () => daoMilestonePayment.saveSchedule(quote.id, milestones),
+      );
+    } on Exception catch (error) {
+      HMBToast.error('Unable to save milestones: $error');
+      await _loadData();
+    }
   }
 
   Future<void> _loadData() async {
@@ -98,7 +109,6 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
       paymentAmount: MoneyEx.zero,
       milestoneDescription: '',
     );
-    await DaoMilestone().insert(newMilestone);
     milestones.add(newMilestone);
     await _redistributeAmounts();
 
@@ -110,6 +120,7 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
     final uninvoicedMilestones = milestones.where((m) => m.invoiceId == null);
 
     if (uninvoicedMilestones.isEmpty) {
+      await _saveSchedule();
       return;
     }
 
@@ -140,6 +151,7 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
         : unallocated;
 
     if (uneditedMilestones.isEmpty) {
+      await _saveSchedule();
       _calculateTotals();
       setState(() {});
       return;
@@ -158,7 +170,6 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
         ..paymentPercentage = amountPerMilestone.percentageOf(
           quote.totalAmount,
         );
-      await daoMilestonePayment.update(milestone);
     }
 
     _recalcAllocated();
@@ -176,9 +187,8 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
         ..paymentPercentage = lastMilestone.paymentAmount.percentageOf(
           quote.totalAmount,
         );
-
-      await daoMilestonePayment.update(lastMilestone);
     }
+    await _saveSchedule();
     _calculateTotals();
     setState(() {});
   }
@@ -203,8 +213,8 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
     // Update milestone numbers
     for (var i = 0; i < milestones.length; i++) {
       milestones[i].milestoneNumber = i + 1;
-      await daoMilestonePayment.update(milestones[i]);
     }
+    await _saveSchedule();
 
     setState(() {});
   }
@@ -212,12 +222,8 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
   /// Called by a tile when the user clicks 'save' on that tile.
   /// We now apply changes and run redistribution if needed.
   Future<void> _onMilestoneSave(Milestone milestone) async {
-    // The user has saved changes to a milestone.
-    // Update this milestone in DB
-    await DaoMilestone().update(milestone);
-
-    // Reload data so we have fresh state
-    await _loadData();
+    final index = milestones.indexWhere((m) => m.id == milestone.id);
+    milestones[index] = milestone;
 
     // Redistribute or recalc totals as needed
     await _redistributeAmounts();
@@ -230,9 +236,6 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
       return;
     }
     milestones.remove(milestone);
-    if (milestone.id != 0) {
-      await daoMilestonePayment.delete(milestone.id);
-    }
     await _redistributeAmounts();
     setState(() {});
   }
@@ -324,48 +327,26 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
     BuildContext context,
     Milestone milestone,
   ) async {
-    if (!quote.state.isPostApproval) {
-      HMBToast.info(
-        'You can draft milestones before approval, but invoices can only be '
-        'created after the quote is approved.',
-      );
+    final job = await BlockingUI().runAndWait(
+      () => DaoJob().getJobForQuote(milestone.quoteId),
+    );
+    if (!context.mounted) {
       return;
     }
-    final customer = await DaoCustomer().getByQuote(milestone.quoteId);
-
-    final quoteForMilestone = await DaoQuote().getById(milestone.quoteId);
-    final job = await DaoJob().getById(quoteForMilestone!.jobId);
-    final initialContact = await DaoContact().getBillingContactByJob(job!);
-
-    if (context.mounted) {
-      final billingContact = await SelectBillingContactDialog.show(
-        context,
-        customer!,
-        initialContact,
-        (_) {},
-      );
-
-      // The user cancelled out of the dialog
-      if (billingContact == null) {
-        return;
-      }
-
-      // Create invoice and update milestone
-      final invoice = await createInvoiceFromMilestone(
-        milestone,
-        billingContact,
-      );
-      milestone.invoiceId = invoice.id;
-      await DaoMilestone().update(milestone);
-
-      await LifecycleEventDispatcher().dispatchQuote(
-        quoteForMilestone.id,
-        QuoteInvoiced.new,
-        context: LifecycleContext(source: 'milestone.invoice'),
-      );
-
-      // Refresh data
-      await _loadData();
+    final invoice = await Navigator.of(context).push<Invoice>(
+      MaterialPageRoute(
+        builder: (_) =>
+            PrepareInvoiceScreen(jobId: job.id, milestoneId: milestone.id),
+      ),
+    );
+    if (invoice != null && context.mounted) {
+      await openPreparedInvoice(context, invoice);
+    }
+    if (!mounted) {
+      return;
+    }
+    await BlockingUI().runAndWait(_loadData);
+    if (mounted) {
       setState(() {});
     }
   }

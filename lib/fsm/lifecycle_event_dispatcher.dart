@@ -302,8 +302,9 @@ class LifecycleEventDispatcher {
     int quoteId,
     QuoteEvent Function(Quote) buildEvent, {
     required LifecycleContext context,
+    Transaction? transaction,
   }) async {
-    final result = await _db.transaction((transaction) async {
+    Future<LifecycleResult<Quote>> apply(Transaction transaction) async {
       final quote = await DaoQuote().getById(quoteId, transaction);
       if (quote == null) {
         throw LifecycleException('Quote $quoteId no longer exists.');
@@ -379,8 +380,14 @@ class LifecycleEventDispatcher {
         to: target.name,
         changed: from != target,
       );
-    });
-    _notifyQuoteCommand(result.entity);
+    }
+
+    final result = transaction == null
+        ? await _db.transaction(apply)
+        : await apply(transaction);
+    if (transaction == null) {
+      _notifyQuoteCommand(result.entity);
+    }
     return result;
   }
 

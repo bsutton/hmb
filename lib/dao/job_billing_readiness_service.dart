@@ -2,10 +2,7 @@ import 'package:money2/money2.dart';
 
 import '../entity/entity.g.dart';
 import '../util/dart/money_ex.dart';
-import 'dao_job.dart';
-import 'dao_milestone.dart';
-import 'dao_quote.dart';
-import 'dao_task.dart';
+import 'billing_service.dart';
 
 enum JobBillingReasonCode {
   unbilledTimeAndMaterials,
@@ -13,6 +10,8 @@ enum JobBillingReasonCode {
   uninvoicedMilestone,
   unallocatedQuoteAmount,
   missingApprovedQuote,
+  agreedFixedWork,
+  futureFixedPayment,
 }
 
 class JobBillingReason {
@@ -45,125 +44,48 @@ class JobBillingReadiness {
 /// Calculates billing attention independently from job lifecycle state.
 class JobBillingReadinessService {
   Future<JobBillingReadiness> evaluate(Job job) async {
-    if (job.billingType == BillingType.nonBillable || job.isStock) {
+    if (job.isStock || job.status == JobStatus.rejected) {
       return JobBillingReadiness(job: job, reasons: const []);
     }
-
+    final preview = await BillingService().preview(
+      job.id,
+      forEligibility: true,
+    );
     final reasons = <JobBillingReason>[];
-    final tasks = await DaoTask().getTasksByJob(job.id);
-    var timeAndMaterials = MoneyEx.zero;
-    var timeAndMaterialsCount = 0;
-    var hasFixedPriceWork = job.billingType == BillingType.fixedPrice;
-
-    for (final task in tasks) {
-      final type = task.effectiveBillingType(job.billingType);
-      if (type == BillingType.fixedPrice) {
-        hasFixedPriceWork = true;
-        continue;
-      }
-      if (type != BillingType.timeAndMaterial) {
-        continue;
-      }
-      final accrued = await DaoTask().getAccruedValueForTask(
-        job: job,
-        task: task,
-        includeBilled: false,
-      );
-      final earned = await accrued.earned;
-      if (earned.isPositive) {
-        timeAndMaterials += earned;
-        timeAndMaterialsCount++;
-      }
-    }
-    if (timeAndMaterials.isPositive) {
+    for (final candidate in preview.candidates) {
       reasons.add(
         JobBillingReason(
-          code: JobBillingReasonCode.unbilledTimeAndMaterials,
-          label: 'Unbilled time/materials',
-          amount: timeAndMaterials,
-          count: timeAndMaterialsCount,
-          invoiceable: true,
-        ),
-      );
-    }
-
-    if (await DaoJob().hasBillableBookingFee(job)) {
-      reasons.add(
-        JobBillingReason(
-          code: JobBillingReasonCode.unbilledBookingFee,
-          label: 'Unbilled booking fee',
-          amount: await DaoJob().getBookingFee(job),
+          code: candidate.isFuture
+              ? JobBillingReasonCode.futureFixedPayment
+              : switch (candidate.kind) {
+                  'booking_fee' => JobBillingReasonCode.unbilledBookingFee,
+                  'milestone' => JobBillingReasonCode.uninvoicedMilestone,
+                  'quote' ||
+                  'task_scope' => JobBillingReasonCode.agreedFixedWork,
+                  _ => JobBillingReasonCode.unbilledTimeAndMaterials,
+                },
+          label: candidate.isFuture
+              ? '${candidate.description} (future)'
+              : candidate.description,
+          amount: candidate.amount,
           count: 1,
-          invoiceable: true,
+          invoiceable: !candidate.isFuture,
         ),
       );
     }
-
-    if (hasFixedPriceWork) {
-      await _addFixedPriceReasons(job, reasons);
+    for (final reason in preview.blocked) {
+      reasons.add(
+        JobBillingReason(
+          code: reason.contains('allocate the remaining amount')
+              ? JobBillingReasonCode.unallocatedQuoteAmount
+              : JobBillingReasonCode.missingApprovedQuote,
+          label: reason,
+          amount: MoneyEx.zero,
+          count: 1,
+          invoiceable: false,
+        ),
+      );
     }
     return JobBillingReadiness(job: job, reasons: reasons);
-  }
-
-  Future<void> _addFixedPriceReasons(
-    Job job,
-    List<JobBillingReason> reasons,
-  ) async {
-    final quotes = (await DaoQuote().getByJobId(
-      job.id,
-    )).where((quote) => quote.state.isPostApproval).toList();
-    if (quotes.isEmpty) {
-      if (job.status == JobStatus.completed) {
-        reasons.add(
-          JobBillingReason(
-            code: JobBillingReasonCode.missingApprovedQuote,
-            label: 'Billing setup required',
-            amount: MoneyEx.zero,
-            count: 1,
-            invoiceable: false,
-          ),
-        );
-      }
-      return;
-    }
-
-    for (final quote in quotes) {
-      final milestones = await DaoMilestone().getByQuoteId(quote.id);
-      final uninvoiced = milestones
-          .where((milestone) => milestone.invoiceId == null)
-          .toList();
-      if (uninvoiced.isNotEmpty) {
-        final amount = uninvoiced.fold<Money>(
-          MoneyEx.zero,
-          (total, milestone) => total + milestone.paymentAmount,
-        );
-        reasons.add(
-          JobBillingReason(
-            code: JobBillingReasonCode.uninvoicedMilestone,
-            label: '${uninvoiced.length} uninvoiced milestone(s)',
-            amount: amount,
-            count: uninvoiced.length,
-            invoiceable: true,
-          ),
-        );
-      }
-
-      final allocated = milestones.fold<Money>(
-        MoneyEx.zero,
-        (total, milestone) => total + milestone.paymentAmount,
-      );
-      final unallocated = quote.totalAmount - allocated;
-      if (unallocated.isPositive) {
-        reasons.add(
-          JobBillingReason(
-            code: JobBillingReasonCode.unallocatedQuoteAmount,
-            label: 'Quote amount not allocated to milestones',
-            amount: unallocated,
-            count: 1,
-            invoiceable: false,
-          ),
-        );
-      }
-    }
   }
 }

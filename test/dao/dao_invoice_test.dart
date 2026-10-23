@@ -20,9 +20,11 @@ import 'package:money2/money2.dart';
 import 'package:test/test.dart';
 
 import '../database/management/db_utility_test_helper.dart';
+import '../util/settings_test_helper.dart';
 import 'invoice/utility.dart';
 
 void main() {
+  setUpAll(prepareSettingsTest);
   setUp(() async {
     await setupTestDb();
   });
@@ -140,7 +142,8 @@ should create an invoice for time and materials job with correct rates and mark 
 
     // Verify invoice lines (labour TaskItems are ignored for T&M tasks)
     final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
-    expect(invoiceLines.length, equals(2));
+    // Sources retain their own rounding; date grouping only changes layout.
+    expect(invoiceLines.length, equals(3));
 
     final invoiceGroupLines = await DaoInvoiceLineGroup().getByInvoiceId(
       invoice.id,
