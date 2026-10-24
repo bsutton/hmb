@@ -24,6 +24,34 @@ import 'models/xero_invoice.dart';
 import 'xero_auth.dart';
 
 class XeroApi {
+  Future<http.Response> getInvoiceBatch(List<String> ids) => _getCreditResource(
+    'Invoices',
+    {'IDs': ids.join(','), 'page': '1', 'pageSize': '100'},
+  );
+
+  Future<http.Response> getOverpayments(int page) =>
+      _getCreditResource('Overpayments', {
+        'where': 'Type=="RECEIVE-OVERPAYMENT"',
+        'page': '$page',
+        'pageSize': '100',
+      });
+
+  Future<http.Response> _getCreditResource(
+    String resource,
+    Map<String, String> query,
+  ) async {
+    await _checkIntegration();
+    final tenant = await getTenantId();
+    return http.get(
+      Uri.parse('$_baseUrl$resource').replace(queryParameters: query),
+      headers: {
+        'Authorization': 'Bearer ${xeroAuth.accessToken}',
+        'Accept': 'application/json',
+        'Xero-tenant-id': tenant,
+      },
+    );
+  }
+
   static const _baseUrl = 'https://api.xero.com/api.xro/2.0/';
   static final _instance = XeroApi._internal();
 

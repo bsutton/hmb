@@ -750,6 +750,51 @@ ORDER BY due_date ASC, invoice_id ASC
           );
         }
       }
+      final creditRows = await _db.rawQuery(
+        '''
+SELECT c.customer_id, c.credit_date AS event_date, -c.amount AS amount,
+ 'Xero overpayment received' AS description, customer.name AS customer_name
+FROM xero_customer_credit c JOIN customer ON customer.id = c.customer_id
+WHERE (? IS NULL OR c.customer_id = ?)
+UNION ALL
+SELECT c.customer_id, e.event_date, e.amount,
+ CASE WHEN e.kind = 'refund' THEN 'Xero overpayment refunded'
+ ELSE 'Xero credit applied to an invoice outside this statement' END,
+ customer.name
+FROM xero_customer_credit_event e
+JOIN xero_customer_credit c
+ ON c.tenant_id = e.tenant_id AND c.external_id = e.credit_id
+JOIN customer ON customer.id = c.customer_id
+WHERE (? IS NULL OR c.customer_id = ?) AND (e.kind = 'refund' OR NOT EXISTS (
+ SELECT 1 FROM invoice i JOIN job j ON j.id = i.job_id
+ WHERE i.external_invoice_id = e.invoice_external_id
+ AND COALESCE(i.billing_customer_id,j.bill_to_customer_id,j.customer_id) = c.customer_id
+ AND i.accounting_state != 'draft'
+))
+''',
+        [customerId, customerId, customerId, customerId],
+      );
+      for (final row in creditRows) {
+        final date = DateTime.parse(row['event_date']! as String);
+        final amount = MoneyEx.fromInt(row['amount']! as int);
+        if (date.isBefore(startInclusive)) {
+          openingBalance += amount;
+        } else if (date.isBefore(endExclusive)) {
+          entries.add(
+            DebtorStatementEntry(
+              type: amount.isNegative
+                  ? DebtorStatementEntryType.payment
+                  : DebtorStatementEntryType.adjustment,
+              invoiceId: 0,
+              invoiceNumber: '',
+              customerName: row['customer_name']! as String,
+              date: date,
+              description: row['description']! as String,
+              amount: amount,
+            ),
+          );
+        }
+      }
     }
 
     entries.sort((lhs, rhs) {
@@ -1180,6 +1225,24 @@ ORDER BY pa.allocated_date ASC, pa.id ASC
           amount: MoneyEx.fromInt(row['amount']! as int),
           title: 'Payment received',
           detail: _paymentDetail(row),
+        ),
+      );
+    }
+
+    final overpaymentAllocations = await db.rawQuery('''
+SELECT i.id AS invoice_id, e.event_date, e.amount
+FROM xero_customer_credit_event e
+JOIN invoice i ON i.external_invoice_id = e.invoice_external_id
+WHERE e.kind = 'allocation' AND i.id IN ($placeholders)
+''', invoiceIds);
+    for (final row in overpaymentAllocations) {
+      add(
+        row['invoice_id']! as int,
+        InvoiceLedgerHistoryEntry(
+          type: InvoiceLedgerHistoryEntryType.payment,
+          date: DateTime.parse(row['event_date']! as String),
+          amount: MoneyEx.fromInt(row['amount']! as int),
+          title: 'Xero overpayment allocated',
         ),
       );
     }

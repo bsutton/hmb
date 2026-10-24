@@ -17,6 +17,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 
+import '../../../../api/xero/xero_invoice_payment_sync_service.dart';
 import '../../../../dao/dao.g.dart';
 import '../../../../util/dart/format.dart';
 import '../../../dialog/email_dialog.dart';
@@ -48,6 +49,26 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
   late DateTime _periodAnchor;
   late Future<DebtorStatementReport> _report;
   var _isLoadingReport = true;
+
+  Future<void> _refreshPayments() async {
+    var failed = false;
+    await BlockingUI().runAndWait(() async {
+      await XeroInvoicePaymentSyncService().sync(
+        force: true,
+        onError: (_, _) => failed = true,
+      );
+    });
+    if (!mounted) {
+      return;
+    }
+    setState(_reload);
+    if (failed) {
+      HMBToast.error(
+        'Some Xero payments or credits could not be refreshed. '
+        'This balance may be incomplete.',
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -82,7 +103,16 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Customer Statement')),
+    appBar: AppBar(
+      title: const Text('Customer Statement'),
+      actions: [
+        IconButton(
+          tooltip: 'Refresh payments and customer credits',
+          icon: const Icon(Icons.refresh),
+          onPressed: _refreshPayments,
+        ),
+      ],
+    ),
     body: SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: HMBColumn(

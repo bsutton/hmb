@@ -8,6 +8,7 @@ import '../../util/dart/exceptions.dart';
 import '../../util/dart/log.dart';
 import '../../util/dart/money_ex.dart';
 import '../external_accounting.dart';
+import 'xero_customer_credit_sync.dart';
 import 'xero_invoice_payment_client.dart';
 
 typedef XeroInvoicePaymentSyncErrorHandler =
@@ -46,6 +47,9 @@ class XeroInvoicePaymentSyncService {
         createCreditNote: createCreditNote ?? _xeroClient.createCreditNote,
         allocateCreditNote:
             allocateCreditNote ?? _xeroClient.allocateCreditNote,
+        getInvoiceBatch: _xeroClient.getInvoiceBatch,
+        getOverpayments: _xeroClient.getOverpayments,
+        getTenantId: _xeroClient.getTenantId,
       );
     }
   }
@@ -95,8 +99,14 @@ class XeroInvoicePaymentSyncService {
           unsyncedPayments.isEmpty &&
           unsyncedCredits.isEmpty &&
           pendingEvents.isEmpty) {
-        Log.i('Skipping Xero payment sync because nothing needs syncing.');
-        return 0;
+        final linked = await _daoInvoiceForSync().db.rawQuery(
+          'SELECT id FROM invoice WHERE external_invoice_id IS NOT NULL '
+          "AND external_invoice_id != '' LIMIT 1",
+        );
+        if (linked.isEmpty) {
+          return 0;
+        }
+        Log.i('Checking Xero customer credits independently of paid invoices.');
       }
 
       final loggedIn = await _xeroClient.login(allowInteractive: false);
@@ -107,6 +117,15 @@ class XeroInvoicePaymentSyncService {
         return 0;
       }
       var updated = 0;
+      try {
+        updated += await XeroCustomerCreditSync(
+          DatabaseHelper.instance.database,
+          _xeroClient,
+        ).sync();
+      } catch (error, stackTrace) {
+        onError?.call(error, stackTrace);
+        Log.w('Customer credit sync failed; previous credit data retained.');
+      }
       updated += await _pushPendingDeletes();
       final pendingIds = pending.map((invoice) => invoice.id).toSet();
       final invoicesById = <int, Invoice>{
