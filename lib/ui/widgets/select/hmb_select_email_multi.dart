@@ -63,6 +63,8 @@ class _HMBSelectEmailMultiState extends DeferredState<HMBSelectEmailMulti> {
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
+    waitingBuilder: (_) => const SizedBox.shrink(),
+    errorBuilder: (_, _) => const Text('Could not load email recipients.'),
     builder: (context) =>
         HMBDroplistMultiSelect<ContactAndEmail>(
           initialItems: () async => preSelected,

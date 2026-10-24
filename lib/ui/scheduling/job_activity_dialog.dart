@@ -18,19 +18,15 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:strings/strings.dart';
 
-import '../../dao/dao_contact.dart';
 import '../../dao/dao_job.dart';
 import '../../dao/dao_job_activity.dart';
-import '../../entity/contact.dart';
 import '../../entity/flutter_extensions/job_activity_status_ex.dart';
-import '../../entity/job.dart';
 import '../../entity/job_activity.dart';
 import '../../util/dart/date_time_ex.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
 import '../../util/dart/local_time.dart';
 import '../../util/dart/log.dart';
-import '../../util/flutter/hmb_theme.dart';
 import '../dialog/send_notice_for_job_dialog.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
@@ -194,8 +190,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
                     HMBButtonSecondary(
                       onPressed: _showContactOptions,
                       label: 'Send Notice',
-                      hint:
-                          '''Send a text message to the user confirming the schedule.''',
+                      hint: 'Choose recipients for an SMS or email notice.',
                     ),
                   if (_saveError != null) Text(_saveError!),
                   _buildButtons(context),
@@ -584,7 +579,12 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
   }
 
   Future<void> _showContactOptions() async {
-    final job = await DaoJob().getById(_selectedJob.jobId);
+    final job = await BlockingUI().runAndWait(
+      () => DaoJob().getById(_selectedJob.jobId),
+    );
+    if (!mounted) {
+      return;
+    }
     if (job == null) {
       HMBToast.error('Please select a valid job first');
       return;
@@ -596,124 +596,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
       return;
     }
 
-    // Fetch customer contacts
-    final contacts = await _getCustomerContacts();
-
-    if (!mounted) {
-      return;
-    }
-
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Contact Method'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: contacts.length,
-            itemBuilder: (context, index) {
-              final contact = contacts[index];
-              return ListTile(
-                leading: Icon(
-                  contact.method == ContactMethod.email
-                      ? Icons.email
-                      : Icons.message,
-                  color: contact.isPrimary ? HMBColors.primary : null,
-                ),
-                title: Text(
-                  contact.detail,
-                  style: TextStyle(
-                    fontWeight: contact.isPrimary
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                ),
-                subtitle: Text(
-                  '${contact.contact.firstName} ${contact.contact.surname}',
-                ),
-                onTap: () async {
-                  Navigator.of(context).pop();
-                  await _sendNotice(contact, job, jobActivity);
-                },
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<List<ContactOption>> _getCustomerContacts() async {
-    final job = await DaoJob().getById(_selectedJob.jobId);
-    final contactId = job!.contactId;
-    if (contactId != null) {
-      final contactOptions = <ContactOption>[];
-
-      final contact = await DaoContact().getById(contactId);
-
-      // Add job contacts (SMS)
-      if (contact != null) {
-        // contactOptions.add(ContactOption(
-        //   contact: contact,
-        //   detail: _selectedJob!.primaryContact,
-        //   method: ContactMethod.sms,
-        //   isPrimary: true,
-        // ));
-
-        // if (_selectedJob!.secondaryContact.isNotEmpty) {
-        //   contactOptions.add(ContactOption(
-        //     contact: customer,
-        //     detail: _selectedJob!.secondaryContact,
-        //     method: ContactMethod.sms,
-        //   ));
-        // }
-
-        // Add customer contacts (Email, SMS)
-        if (contact.emailAddress.isNotEmpty) {
-          contactOptions.add(
-            ContactOption(
-              contact: contact,
-              detail: contact.emailAddress,
-              method: ContactMethod.email,
-            ),
-          );
-        }
-        if (contact.mobileNumber.isNotEmpty) {
-          contactOptions.add(
-            ContactOption(
-              contact: contact,
-              detail: contact.mobileNumber,
-              method: ContactMethod.sms,
-            ),
-          );
-        }
-      }
-
-      return contactOptions;
-    }
-    return [];
-  }
-
-  Future<void> _sendNotice(
-    ContactOption contact,
-    Job job,
-    JobActivity jobActivity,
-  ) async {
-    final sent = await SendNoticeForJobDialog.show(
-      context,
-      job,
-      jobActivity,
-      preferredEmailRecipient: contact.method == ContactMethod.email
-          ? contact.detail
-          : null,
-      preferredMobileRecipient: contact.method == ContactMethod.sms
-          ? contact.detail
-          : null,
-      initialChannel: contact.method == ContactMethod.email
-          ? NoticeChannel.email
-          : NoticeChannel.sms,
-    );
+    final sent = await SendNoticeForJobDialog.show(context, job, jobActivity);
     if (!sent || !mounted) {
       return;
     }
@@ -777,19 +660,3 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     }
   }
 }
-
-class ContactOption {
-  final Contact contact;
-  final String detail;
-  final ContactMethod method;
-  final bool isPrimary;
-
-  ContactOption({
-    required this.contact,
-    required this.detail,
-    required this.method,
-    this.isPrimary = false,
-  });
-}
-
-enum ContactMethod { email, sms }
