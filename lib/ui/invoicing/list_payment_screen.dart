@@ -17,6 +17,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 
+import '../../dao/customer_credit_receipts.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../../util/dart/format.dart';
@@ -64,7 +65,10 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
   var _includeFullyAllocated = true;
   var _search = '';
   _PaymentSortOrder _sortOrder = _PaymentSortOrder.newest;
-  late Future<List<_PaymentRow>> _rows;
+  late Future<
+    ({List<_PaymentRow> payments, List<CustomerCreditReceipt> credits})
+  >
+  _rows;
 
   @override
   void initState() {
@@ -76,7 +80,8 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
     _rows = _loadRows();
   }
 
-  Future<List<_PaymentRow>> _loadRows() async {
+  Future<({List<_PaymentRow> payments, List<CustomerCreditReceipt> credits})>
+  _loadRows() async {
     final where = <String>['p.payment_date >= ?', 'p.payment_date < ?'];
     final args = <Object?>[
       _period.startInclusive.toIso8601String(),
@@ -136,7 +141,7 @@ WHERE ${where.join('\nAND ')}
 ORDER BY $orderBy
 ''', args);
 
-    return [
+    final payments = [
       for (final row in rows)
         _PaymentRow(
           payment: DebtorPayment.fromMap(row),
@@ -145,6 +150,24 @@ ORDER BY $orderBy
           allocated: MoneyEx.fromInt(row['allocated'] as int? ?? 0),
         ),
     ];
+    final credits = await loadCustomerCreditReceipts(
+      startInclusive: _period.startInclusive,
+      endExclusive: _period.endExclusive,
+      customerId: customerId,
+      includeFullyAllocated: _includeFullyAllocated,
+      search: search,
+    );
+    credits.sort(
+      (a, b) => switch (_sortOrder) {
+        _PaymentSortOrder.newest => b.date.compareTo(a.date),
+        _PaymentSortOrder.oldest => a.date.compareTo(b.date),
+        _PaymentSortOrder.customer => a.customerName.toLowerCase().compareTo(
+          b.customerName.toLowerCase(),
+        ),
+        _PaymentSortOrder.amount => b.amount.compareTo(a.amount),
+      },
+    );
+    return (payments: payments, credits: credits);
   }
 
   @override
@@ -155,6 +178,11 @@ ORDER BY $orderBy
       child: HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          HMBSelectCustomer(
+            selectedCustomer: _selectedCustomer,
+            showAdd: false,
+            onSelected: (_) => setState(_reload),
+          ),
           Row(
             children: [
               Expanded(
@@ -180,15 +208,18 @@ ORDER BY $orderBy
             ],
           ),
           const SizedBox(height: 12),
-          FutureBuilderEx<List<_PaymentRow>>(
+          FutureBuilderEx<
+            ({List<_PaymentRow> payments, List<CustomerCreditReceipt> credits})
+          >(
             future: _rows,
             waitingBuilder: (_) =>
                 const Center(child: CircularProgressIndicator()),
-            builder: (context, rows) {
-              if (rows == null) {
+            builder: (context, data) {
+              if (data == null) {
                 return const SizedBox.shrink();
               }
-              if (rows.isEmpty) {
+              final rows = data.payments;
+              if (rows.isEmpty && data.credits.isEmpty) {
                 return HMBColumn(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -200,8 +231,11 @@ ORDER BY $orderBy
               return HMBColumn(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _summaryCard(rows),
+                  _summaryCard(rows, credits: data.credits),
                   for (final row in rows) _paymentCard(row),
+                  if (data.credits.isNotEmpty)
+                    const Text('Overpayments and prepayments'),
+                  for (final credit in data.credits) _creditCard(credit),
                 ],
               );
             },
@@ -211,16 +245,47 @@ ORDER BY $orderBy
     ),
   );
 
-  Widget _summaryCard(List<_PaymentRow> rows) => Surface(
+  Widget _summaryCard(
+    List<_PaymentRow> rows, {
+    List<CustomerCreditReceipt> credits = const [],
+  }) => Surface(
     elevation: SurfaceElevation.e1,
     child: HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Total received', style: Theme.of(context).textTheme.titleSmall),
         Text(
-          '${_periodLabel(_period)}: ${_total(rows)}',
+          '${_periodLabel(_period)}: '
+          '${_total(rows) + _creditTotal(credits)}',
           style: Theme.of(context).textTheme.titleMedium,
         ),
+      ],
+    ),
+  );
+
+  Widget _creditCard(CustomerCreditReceipt credit) => Surface(
+    elevation: SurfaceElevation.e1,
+    child: HMBColumn(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          credit.customerName,
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        Text('${credit.label} · ${formatDate(credit.date, format: 'j M Y')}'),
+        Wrap(
+          spacing: 16,
+          runSpacing: 8,
+          children: [
+            Text('Amount: ${credit.amount}'),
+            Text('Allocated: ${credit.allocated}'),
+            if (credit.refunded.isPositive)
+              Text('Refunded: ${credit.refunded}'),
+            Text('Available credit: ${credit.remaining}'),
+          ],
+        ),
+        if (credit.reference?.isNotEmpty ?? false) Text(credit.reference!),
+        const Text('Managed by accounting integration'),
       ],
     ),
   );
@@ -586,14 +651,6 @@ ORDER BY pa.allocated_date ASC, pa.id ASC
                   setSheetState(() {});
                 },
               ),
-              HMBSelectCustomer(
-                selectedCustomer: _selectedCustomer,
-                showAdd: false,
-                onSelected: (_) {
-                  setState(_reload);
-                  setSheetState(() {});
-                },
-              ),
               HMBDroplist<_PaymentSortOrder>(
                 title: 'Sort order',
                 selectedItem: () async => _sortOrder,
@@ -638,6 +695,9 @@ ORDER BY pa.allocated_date ASC, pa.id ASC
 
   Money _total(List<_PaymentRow> rows) =>
       rows.fold(MoneyEx.zero, (total, row) => total + row.payment.amount);
+
+  Money _creditTotal(List<CustomerCreditReceipt> credits) =>
+      credits.fold(MoneyEx.zero, (total, credit) => total + credit.amount);
 
   String _periodLabel(AccountingPeriod period) {
     final end = period.endExclusive.subtract(const Duration(days: 1));
@@ -702,7 +762,7 @@ class _PaymentRow {
     if (provider == null || provider.isEmpty) {
       return 'Manual';
     }
-    return provider.substring(0, 1).toUpperCase() + provider.substring(1);
+    return 'Accounting integration';
   }
 }
 
