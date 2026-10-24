@@ -8,15 +8,18 @@ import 'package:hmb/dao/billing_queue.dart';
 import 'package:hmb/dao/billing_worker.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/dao/remaining_billing.dart';
+import 'package:hmb/dao/task_fixed_agreement.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/local_date.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 import 'package:money2/money2.dart';
 
 import '../database/management/db_utility_test_helper.dart';
+import '../util/settings_test_helper.dart';
 import 'invoice/utility.dart' as fixture;
 
 void main() {
+  setUpAll(prepareSettingsTest);
   setUp(setupTestDb);
   tearDown(tearDownTestDb);
 
@@ -148,6 +151,8 @@ void main() {
         emailAddress: '',
       );
       await DaoContact().insert(contact);
+      job.billingContactId = contact.id;
+      await DaoJob().update(job);
       final invoice = await createInvoiceForSelectedTasks(
         job,
         contact,
@@ -227,27 +232,39 @@ void main() {
     expect((await _state(job.id))['billing_required'], 0);
   });
 
-  test(
-    'fixed-price task on a T&M job follows task charges, not timesheets',
-    () async {
-      final job = await _job();
-      final task = await _task(job, type: BillingType.fixedPrice);
-      await _entry(task);
-      expect(await RemainingBilling().check(job.id), isNull);
-      final item = await fixture.insertLabourEstimates(
+  test('fixed tasks require agreement, not delivery estimates', () async {
+    final job = await _job();
+    final task = await _task(job, type: BillingType.fixedPrice);
+    await _entry(task);
+    expect(
+      await RemainingBilling().check(job.id),
+      JobBillingReasonCode.missingApprovedQuote,
+    );
+    final item = await fixture.insertLabourEstimates(
+      task,
+      MoneyEx.fromInt(5000),
+      Fixed.one,
+    );
+    expect(
+      await RemainingBilling().check(job.id),
+      JobBillingReasonCode.missingApprovedQuote,
+    );
+    await testDb!.transaction(
+      (txn) => TaskFixedAgreement().save(
+        txn,
         task,
-        MoneyEx.fromInt(5000),
-        Fixed.one,
-      );
-      expect(
-        await RemainingBilling().check(job.id),
-        JobBillingReasonCode.unbilledTimeAndMaterials,
-      );
-      await DaoTaskItem().update(item.copyWith(billed: true));
-      await _drain();
-      expect((await _state(job.id))['billing_required'], 0);
-    },
-  );
+        MoneyEx.dollars(80),
+        'On-site agreement',
+      ),
+    );
+    expect(
+      await RemainingBilling().check(job.id),
+      JobBillingReasonCode.agreedFixedWork,
+    );
+    await DaoTaskItem().update(item.copyWith(billed: true));
+    await _drain();
+    expect((await _state(job.id))['billing_required'], 1);
+  });
 
   test(
     'completed materials and returns count, incomplete estimates do not',
@@ -354,6 +371,18 @@ Future<Map<String, Object?>> _state(int id) async => (await testDb!.query(
 )).single;
 
 Future<Job> _job({BillingType type = BillingType.timeAndMaterial}) async {
+  if (await DaoCustomer().getById(1) == null) {
+    await DaoCustomer().insert(
+      Customer.forInsert(
+        name: 'Billing customer',
+        billingContactId: null,
+        description: '',
+        disbarred: false,
+        customerType: CustomerType.residential,
+        hourlyRate: MoneyEx.dollars(100),
+      ),
+    );
+  }
   final job = Job.forInsert(
     customerId: 1,
     summary: 'Billing test',

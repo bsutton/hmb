@@ -21,8 +21,13 @@ import '../widgets/layout/hmb_form_section.dart';
 
 class EditInvoiceLineDialog extends StatefulWidget {
   final InvoiceLine line;
+  final bool presentationOnly;
 
-  const EditInvoiceLineDialog({required this.line, super.key});
+  const EditInvoiceLineDialog({
+    required this.line,
+    this.presentationOnly = false,
+    super.key,
+  });
 
   @override
   // ignore: library_private_types_in_public_api
@@ -70,22 +75,26 @@ class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
           ),
           TextField(
             controller: _quantityController,
+            enabled: !widget.presentationOnly,
             decoration: const InputDecoration(labelText: 'Quantity'),
             keyboardType: TextInputType.number,
           ),
           TextField(
             controller: _unitPriceController,
+            enabled: !widget.presentationOnly,
             decoration: const InputDecoration(labelText: 'Unit Price'),
             keyboardType: TextInputType.number,
           ),
           DropdownButton<LineChargeableStatus>(
             isExpanded: true,
             value: _status,
-            onChanged: (newValue) {
-              setState(() {
-                _status = newValue!;
-              });
-            },
+            onChanged: widget.presentationOnly
+                ? null
+                : (newValue) {
+                    setState(() {
+                      _status = newValue!;
+                    });
+                  },
             items: LineChargeableStatus.values
                 .map(
                   (status) => DropdownMenuItem<LineChargeableStatus>(
@@ -102,6 +111,12 @@ class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
       HMBCancelButton(
         hint: 'Cancel the changes',
         onPressed: () {
+          if (widget.presentationOnly) {
+            Navigator.of(context).pop(
+              widget.line.copyWith(description: _descriptionController.text),
+            );
+            return;
+          }
           Navigator.of(context).pop();
         },
       ),

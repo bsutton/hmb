@@ -3,6 +3,7 @@ import 'package:hmb/dao/dao_invoice.dart';
 import 'package:hmb/dao/dao_quickbooks.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/entity/quickbooks_settings.dart';
+import 'package:hmb/util/dart/exceptions.dart';
 import 'package:hmb/util/dart/local_date.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 
@@ -83,7 +84,10 @@ void main() {
         'TotalAmt': 110,
       });
       expect((await dao.exportFor(invoice.id))!['external_id'], '99');
-      await expectLater(DaoInvoice().delete(invoice.id), throwsStateError);
+      await expectLater(
+        DaoInvoice().delete(invoice.id),
+        throwsA(isA<InvoiceException>()),
+      );
       expect(await DaoInvoice().getById(invoice.id), isNotNull);
     },
   );

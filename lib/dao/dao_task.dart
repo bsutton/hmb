@@ -82,10 +82,64 @@ ORDER BY t.modifiedDate DESC
   }
 
   @override
-  Future<int> insert(covariant Task entity, [Transaction? transaction]) {
-    final task = super.insert(entity, transaction);
+  Future<int> insert(covariant Task entity, [Transaction? transaction]) async {
+    if (transaction == null) {
+      return await db.transaction((txn) => insert(entity, txn));
+    }
+    final job = await DaoJob().getById(entity.jobId, transaction);
+    entity.billingType ??= job?.billingType;
+    return await super.insert(entity, transaction);
+  }
 
-    return task;
+  @override
+  Future<int> update(Task entity, [Transaction? transaction]) async {
+    if (transaction == null) {
+      return await db.transaction((txn) => update(entity, txn));
+    }
+    final old = await getById(entity.id, transaction);
+    final job = await DaoJob().getById(entity.jobId, transaction);
+    if (old != null && old.jobId != entity.jobId) {
+      final scope = await transaction.rawQuery(
+        '''
+SELECT id FROM task_fixed_agreement WHERE task_id = ?
+UNION ALL SELECT g.id FROM quote_line_group g JOIN quote q ON q.id = g.quote_id
+WHERE g.task_id = ? AND q.state IN ('approved', 'invoiced')
+UNION ALL SELECT id FROM time_entry WHERE task_id = ? AND billed = 1
+UNION ALL SELECT id FROM task_item WHERE task_id = ? AND billed = 1 LIMIT 1
+''',
+        [entity.id, entity.id, entity.id, entity.id],
+      );
+      if (scope.isNotEmpty) {
+        throw InvoiceException(
+          'Agreed or invoiced work cannot move to another job.',
+        );
+      }
+    }
+    if (old != null &&
+        job != null &&
+        old.effectiveBillingType(job.billingType) !=
+            entity.effectiveBillingType(job.billingType)) {
+      final protected = await transaction.rawQuery(
+        '''
+SELECT id FROM time_entry WHERE task_id = ?
+UNION ALL SELECT id FROM task_item WHERE task_id = ? AND (completed = 1 OR billed = 1)
+UNION ALL SELECT g.id FROM quote_line_group g JOIN quote q ON q.id = g.quote_id
+ WHERE g.task_id = ? AND q.state IN ('approved', 'invoiced')
+ AND g.line_approval_status != 'rejected'
+UNION ALL SELECT id FROM task_fixed_agreement WHERE task_id = ?
+LIMIT 1
+''',
+        [entity.id, entity.id, entity.id, entity.id],
+      );
+      if (protected.isNotEmpty) {
+        throw InvoiceException(
+          'This task has worked or agreed scope. '
+          'Add a new task for the variation.',
+        );
+      }
+    }
+    entity.billingType ??= job?.billingType;
+    return await super.update(entity, transaction);
   }
 
   /// Prefer the only open task, otherwise the last open task used for a
@@ -366,6 +420,18 @@ WHERE ti.id = ?
   @override
   Future<int> delete(int id, [Transaction? transaction]) async {
     final db = withinTransaction(transaction);
+    final agreed = await db.rawQuery(
+      '''
+SELECT id FROM task_fixed_agreement WHERE task_id = ?
+UNION ALL SELECT g.id FROM quote_line_group g JOIN quote q ON q.id = g.quote_id
+WHERE g.task_id = ? AND q.state IN ('approved', 'invoiced')
+AND g.line_approval_status != 'rejected' LIMIT 1
+''',
+      [id, id],
+    );
+    if (agreed.isNotEmpty) {
+      throw InvoiceException('Agreed work must remain in the job history.');
+    }
     final rows = await db.rawQuery(
       '''
 SELECT j.is_stock AS is_stock

@@ -257,6 +257,29 @@ Future<List<String>> parseSqlFile(String content) async {
 
     // Handle semicolon outside of quotes
     if (char == ';' && !inSingleQuote && !inDoubleQuote) {
+      final statement = buffer.toString().trim();
+      if (RegExp(
+        r'^CREATE\s+(TEMP\s+|TEMPORARY\s+)?TRIGGER\b',
+        caseSensitive: false,
+      ).hasMatch(statement)) {
+        // A trigger body contains statement terminators. CASE expressions may
+        // also contain END, so balance both CASE and BEGIN outside literals.
+        final unquoted = statement.replaceAll(
+          RegExp(r''''(?:''|[^'])*'|"(?:""|[^"])*"|\[[^\]]*\]'''),
+          '',
+        );
+        var depth = 0;
+        for (final token in RegExp(
+          r'\b(BEGIN|CASE|END)\b',
+          caseSensitive: false,
+        ).allMatches(unquoted)) {
+          depth += token.group(0)!.toUpperCase() == 'END' ? -1 : 1;
+        }
+        if (depth > 0) {
+          buffer.write(char);
+          continue;
+        }
+      }
       statements.add(buffer.toString().trim());
       buffer.clear();
     } else {
@@ -268,5 +291,5 @@ Future<List<String>> parseSqlFile(String content) async {
     statements.add(buffer.toString().trim());
   }
 
-  return statements;
+  return statements.where((statement) => statement.isNotEmpty).toList();
 }

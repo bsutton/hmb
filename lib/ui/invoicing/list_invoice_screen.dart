@@ -19,7 +19,6 @@ import '../../api/external_accounting.dart';
 import '../../api/xero/xero.g.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
-import '../../util/dart/money_ex.dart';
 import '../../util/flutter/app_title.dart';
 import '../crud/base_full_screen/base_full_screen.g.dart';
 import '../widgets/layout/layout.g.dart';
@@ -27,7 +26,6 @@ import '../widgets/select/hmb_droplist.dart';
 import '../widgets/select/hmb_select_job.dart';
 import '../widgets/widgets.g.dart';
 import 'create_invoice_ui.dart';
-import 'dialog_select_tasks.dart';
 import 'edit_invoice_screen.dart';
 import 'invoice_details.dart';
 import 'list_invoice_card.dart';
@@ -145,61 +143,10 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
 
   Future<Invoice?> _createInvoice() async {
     final job = widget.jobRestriction ?? await SelectJobDialog.show(context);
-
-    if (job == null) {
+    if (job == null || !mounted) {
       return null;
     }
-
-    if (job.hourlyRate == MoneyEx.zero) {
-      HMBToast.error("Hourly rate must be set for job '${job.summary}'");
-      return null;
-    }
-
-    if ((await DaoTimeEntry().getActiveEntry()) != null) {
-      HMBToast.error('Cannot create an invoice while a Task timer is active');
-      return null;
-    }
-
-    if (!mounted) {
-      return null;
-    }
-
-    if (job.billingType == BillingType.fixedPrice) {
-      await createInvoiceFor(job, context);
-      return null;
-    }
-
-    try {
-      final invoiceOptions = await selectTasksToInvoice(
-        context: context,
-        job: job,
-        title: 'Tasks to bill',
-      );
-
-      if (invoiceOptions == null) {
-        return null;
-      }
-      if (invoiceOptions.selectedTaskIds.isNotEmpty ||
-          invoiceOptions.billBookingFee) {
-        return await createInvoiceForSelectedTasks(
-          job,
-          invoiceOptions.contact,
-          invoiceOptions.selectedTaskIds,
-          groupByTask: invoiceOptions.groupByTask,
-          billBookingFee: invoiceOptions.billBookingFee,
-        );
-      } else {
-        HMBToast.info(
-          'You must select at least one Task or the Booking Fee to invoice',
-        );
-      }
-    } catch (e) {
-      HMBToast.error(
-        'Failed to create invoice: $e',
-        acknowledgmentRequired: true,
-      );
-    }
-    return null;
+    return await createInvoiceFor(job, context);
   }
 
   Widget _buildFilterSheet(void Function() onChange) => Padding(

@@ -5,8 +5,10 @@ import 'package:test/test.dart';
 
 import '../../database/management/db_utility_test_helper.dart';
 import '../../ui/ui_test_helpers.dart';
+import '../../util/settings_test_helper.dart';
 
 void main() {
+  setUpAll(prepareSettingsTest);
   setUp(() async {
     await setupTestDb();
   });
@@ -44,16 +46,17 @@ void main() {
         ),
       );
 
-      final invoice = await createInvoiceForSelectedTasks(
-        job,
-        billingContact,
-        const [],
-        groupByTask: true,
-        billBookingFee: false,
+      await expectLater(
+        createInvoiceForSelectedTasks(
+          job,
+          billingContact,
+          const [],
+          groupByTask: true,
+          billBookingFee: false,
+        ),
+        throwsException,
       );
-
-      final lines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
-      expect(lines, isEmpty);
+      expect(await DaoInvoice().getByJobId(job.id), isEmpty);
 
       final allocations = await DaoReceipt().getJobAllocations(receiptId);
       expect(allocations.single.invoiceLineId, isNull);

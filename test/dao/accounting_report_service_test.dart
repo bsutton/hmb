@@ -182,29 +182,35 @@ void main() {
       job,
       MoneyEx.dollars(100),
       dueDate: LocalDate(2026, 5, 10),
+      createdDate: DateTime(2026),
     );
     final thirtyDays = await _insertInvoice(
       job,
       MoneyEx.dollars(200),
       dueDate: LocalDate(2026, 4, 20),
+      createdDate: DateTime(2026),
     );
     final sixtyDays = await _insertInvoice(
       job,
       MoneyEx.dollars(300),
       dueDate: LocalDate(2026, 3, 20),
+      createdDate: DateTime(2026),
     );
     final paid = await _insertInvoice(
       job,
       MoneyEx.dollars(400),
       dueDate: LocalDate(2026, 2),
+      createdDate: DateTime(2026),
     );
     await DebtorLedgerService().recordPayment(
       invoiceId: thirtyDays.id,
       amount: MoneyEx.dollars(50),
+      paymentDate: DateTime(2026, 5),
     );
     await DebtorLedgerService().recordPayment(
       invoiceId: paid.id,
       amount: MoneyEx.dollars(400),
+      paymentDate: DateTime(2026, 5),
     );
 
     final report = await AccountingReportService().agedReceivables(
@@ -547,36 +553,40 @@ void main() {
     expect(report.rows.single.reference, 'PAY-45');
   });
 
-  test('tax summary uses selected tax jurisdiction defaults', () async {
-    await AppSettings.setTaxDisplayMode(TaxDisplayMode.inclusive);
-    await AppSettings.setTaxSchemeCode('uk_vat');
-    final job = await createJobWithCustomer(
-      billingType: BillingType.timeAndMaterial,
-      hourlyRate: MoneyEx.zero,
-      summary: 'Tax summary report test job',
-    );
-    await _insertInvoice(
-      job,
-      MoneyEx.dollars(120),
-      createdDate: DateTime(2026, 4, 3),
-    );
-    await _insertReceipt(
-      job.id,
-      MoneyEx.dollars(50),
-      tax: MoneyEx.dollars(10),
-      receiptDate: DateTime(2026, 4, 4),
-    );
+  test(
+    'tax summary labels jurisdiction without estimating historical tax',
+    () async {
+      await AppSettings.setTaxDisplayMode(TaxDisplayMode.inclusive);
+      await AppSettings.setTaxSchemeCode('uk_vat');
+      final job = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.zero,
+        summary: 'Tax summary report test job',
+      );
+      await _insertInvoice(
+        job,
+        MoneyEx.dollars(120),
+        createdDate: DateTime(2026, 4, 3),
+      );
+      await _insertReceipt(
+        job.id,
+        MoneyEx.dollars(50),
+        tax: MoneyEx.dollars(10),
+        receiptDate: DateTime(2026, 4, 4),
+      );
 
-    final report = await AccountingReportService().taxSummary(
-      AccountingPeriod.month(2026, 4),
-    );
+      final report = await AccountingReportService().taxSummary(
+        AccountingPeriod.month(2026, 4),
+      );
 
-    expect(report.taxLabel, 'VAT');
-    expect(report.taxCollected, MoneyEx.dollars(20));
-    expect(report.supplierTaxPaid, MoneyEx.dollars(10));
-    expect(report.netTaxPosition, MoneyEx.dollars(10));
-    expect(report.taxCollectedIsEstimated, isTrue);
-  });
+      expect(report.taxLabel, 'VAT');
+      expect(report.taxCollected, MoneyEx.zero);
+      expect(report.supplierTaxPaid, MoneyEx.dollars(10));
+      expect(report.netTaxPosition, -MoneyEx.dollars(10));
+      expect(report.taxCollectedIsEstimated, isFalse);
+      expect(report.unknownTaxDocuments, 1);
+    },
+  );
 
   test('tax summary prefers explicit invoice line tax when present', () async {
     await AppSettings.setTaxDisplayMode(TaxDisplayMode.inclusive);

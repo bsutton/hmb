@@ -135,6 +135,14 @@ class DaoJob extends Dao<Job> {
       return db.transaction((txn) => update(entity, txn));
     }
     final existing = await getById(entity.id, transaction);
+    if (existing != null && existing.billingType != entity.billingType) {
+      await withinTransaction(transaction).update(
+        'task',
+        {'billing_type': existing.billingType.name},
+        where: 'job_id = ? AND billing_type IS NULL',
+        whereArgs: [entity.id],
+      );
+    }
     if (existing != null && existing.status != entity.status) {
       throw const LifecycleException(
         'Job status must be changed through LifecycleEventDispatcher.',
@@ -481,7 +489,7 @@ where t.id =?
       totalMaterialCost: totalMaterialCost,
       completedMaterialCost: completedMaterialCost,
       workedHours: workedHours,
-      worked: job.hourlyRate!.multiplyByFixed(workedHours),
+      worked: hourlyRate.multiplyByFixed(workedHours),
     );
   }
 

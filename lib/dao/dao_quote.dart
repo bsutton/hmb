@@ -154,8 +154,9 @@ class DaoQuote extends Dao<Quote> {
   /// Create a quote for the given job.
   Future<Quote> create(Job job, InvoiceOptions invoiceOptions) async {
     final estimates = await DaoTask().getEstimatesForJob(job);
+    final hourlyRate = await DaoJob().getHourlyRate(job.id);
 
-    if (job.hourlyRate == MoneyEx.zero) {
+    if (hourlyRate == MoneyEx.zero) {
       throw InvoiceException(
         "Hourly rate must be set for job '${job.summary}'",
       );
@@ -222,7 +223,7 @@ class DaoQuote extends Dao<Quote> {
       for (final item in items.where((i) => !i.billed)) {
         if (item.itemType == TaskItemType.labour) {
           labourTotal += applyDefaultLineMargin(
-            item.calcLabourCharges(billingType, job.hourlyRate!),
+            item.calcLabourCharges(billingType, hourlyRate),
             defaultMargin: taskMargin,
             itemMargin: item.margin,
           );

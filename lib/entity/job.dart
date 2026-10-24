@@ -205,8 +205,12 @@ class Job extends Entity<Job> {
     resumeStatus: map['resume_status_id'] == null
         ? null
         : JobStatus.fromId(map['resume_status_id'] as String),
-    hourlyRate: Money.fromInt(map['hourly_rate'] as int? ?? 0, isoCode: 'AUD'),
-    bookingFee: Money.fromInt(map['booking_fee'] as int? ?? 0, isoCode: 'AUD'),
+    hourlyRate: map['hourly_rate'] == null
+        ? null
+        : Money.fromInt(map['hourly_rate']! as int, isoCode: 'AUD'),
+    bookingFee: map['booking_fee'] == null
+        ? null
+        : Money.fromInt(map['booking_fee']! as int, isoCode: 'AUD'),
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
     lastActive: (map['last_active'] as int) == 1,

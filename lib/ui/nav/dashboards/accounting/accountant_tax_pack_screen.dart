@@ -12,18 +12,25 @@
 */
 
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:deferred_state/deferred_state.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:money2/money2.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
+import '../../../../dao/accounting_registers.dart';
 import '../../../../dao/dao.g.dart';
+import '../../../../src/version/version.g.dart';
 import '../../../../util/dart/format.dart';
 import '../../../../util/dart/local_date.dart';
 import '../../../../util/dart/money_ex.dart';
 import '../../../dialog/email_dialog.dart';
 import '../../../widgets/layout/layout.g.dart';
 import '../../../widgets/widgets.g.dart';
+import 'accounting_import_screen.dart';
 import 'accounting_period_selector.dart';
 import 'report_csv_export.dart';
 
@@ -35,28 +42,28 @@ class AccountantTaxPackScreen extends StatefulWidget {
       _AccountantTaxPackScreenState();
 }
 
-class _AccountantTaxPackScreenState extends State<AccountantTaxPackScreen> {
-  late Future<AccountingPeriod> _initialPeriod;
+class _AccountantTaxPackScreenState
+    extends DeferredState<AccountantTaxPackScreen> {
+  late AccountingPeriod _initialPeriod;
   AccountingPeriod? _period;
   var _building = false;
 
   @override
-  void initState() {
-    super.initState();
-    _initialPeriod = AccountingPeriod.forFinancialYear(DateTime.now());
+  Future<void> asyncInitState() async {
+    _initialPeriod = await BlockingUI().runAndWait(
+      () => AccountingPeriod.forFinancialYear(DateTime.now()),
+    );
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Accountant Tax Pack')),
-    body: FutureBuilderEx<AccountingPeriod>(
-      future: _initialPeriod,
-      waitingBuilder: (_) => const Center(child: CircularProgressIndicator()),
-      builder: (context, initialPeriod) {
-        if (initialPeriod == null) {
-          return const Center(child: Text('No report period available.'));
-        }
-        _period ??= initialPeriod;
+    body: DeferredBuilder(
+      this,
+      waitingBuilder: (_) => const SizedBox.shrink(),
+      errorBuilder: (_, error) => Text('Unable to load period: $error'),
+      builder: (context) {
+        _period ??= _initialPeriod;
         final period = _period!;
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -77,7 +84,8 @@ class _AccountantTaxPackScreenState extends State<AccountantTaxPackScreen> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const Text(
-                      'Creates one Excel workbook for your accountant.',
+                      'Creates a ZIP with an Excel workbook, detailed CSV '
+                      'registers and reconciliation notes.',
                     ),
                     const Text('Included sheets:'),
                     const Text('Profit and loss'),
@@ -89,14 +97,27 @@ class _AccountantTaxPackScreenState extends State<AccountantTaxPackScreen> {
                     const Text('Aged receivables as at period end'),
                     const Text('Unlinked costs'),
                     HMBButton.withIcon(
+                      label: 'Xero / QuickBooks invoice files',
+                      hint: 'Prepare mapped sales invoice import files',
+                      icon: const Icon(Icons.upload_file),
+                      onPressed: () => Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              AccountingImportScreen(period: period),
+                        ),
+                      ),
+                    ),
+                    HMBButton.withIcon(
+                      label: 'Save Tax Pack',
+                      icon: const Icon(Icons.save_alt),
+                      hint: 'Save the workbook and detailed registers',
+                      enabled: !_building,
+                      onPressed: () => _sendTaxPack(period, save: true),
+                    ),
+                    HMBButton.withIcon(
                       label: _building ? 'Preparing...' : 'Send Tax Pack',
                       hint: 'Prepare and email the accountant tax report pack',
-                      icon: _building
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.email),
+                      icon: const Icon(Icons.email),
                       enabled: !_building,
                       onPressed: () => _sendTaxPack(period),
                     ),
@@ -110,10 +131,21 @@ class _AccountantTaxPackScreenState extends State<AccountantTaxPackScreen> {
     ),
   );
 
-  Future<void> _sendTaxPack(AccountingPeriod period) async {
+  Future<void> _sendTaxPack(
+    AccountingPeriod period, {
+    bool save = false,
+  }) async {
     setState(() => _building = true);
     try {
-      final file = await _buildWorkbook(period);
+      final file = await BlockingUI().runAndWait(() => _buildWorkbook(period));
+      if (save) {
+        await FilePicker.saveFile(
+          dialogTitle: 'Save accountant tax pack',
+          fileName: file.uri.pathSegments.last,
+          bytes: Uint8List.fromList(await file.readAsBytes()),
+        );
+        return;
+      }
       if (!mounted) {
         return;
       }
@@ -141,40 +173,113 @@ class _AccountantTaxPackScreenState extends State<AccountantTaxPackScreen> {
     }
   }
 
-  Future<File> _buildWorkbook(AccountingPeriod period) async {
-    final service = AccountingReportService();
+  Future<File> _buildWorkbook(AccountingPeriod period) =>
+      AccountantTaxPackBuilder().build(period);
+
+  String _periodLabel(AccountingPeriod period) {
+    final endInclusive = period.endExclusive.subtract(const Duration(days: 1));
+    return '${formatDate(period.startInclusive, format: 'j M Y')} to '
+        '${formatDate(endInclusive, format: 'j M Y')}';
+  }
+}
+
+class AccountantTaxPackBuilder {
+  Future<File> build(AccountingPeriod period) async {
+    const limitations =
+        'Unknown tax is not estimated. '
+        'Net amounts for these documents are provisional.';
+    const exclusions =
+        'Bank reconciliation, balance sheet, payroll, depreciation '
+        'and supplier payment timing are accountant-managed.';
+    const sourceIdentity =
+        'IDs are stable within this HMB database. '
+        'Repeated exports contain the same records; do not import twice.';
+    final label = await AccountingReportService.resolveTaxLabel();
+    final system = await DaoSystem().get();
     final endInclusive = period.endExclusive.subtract(const Duration(days: 1));
 
-    final profitAndLoss = await service.profitAndLoss(period);
-    final taxSummary = await service.taxSummary(period);
-    final cashReceived = await service.cashReceived(period);
-    final receiptDetails = await _receiptDetails(period);
-    final supplierSpend = await service.supplierSpend(period);
-    final debtorStatement = await service.debtorStatement(
-      customerId: null,
-      startInclusive: period.startInclusive,
-      endExclusive: period.endExclusive,
-    );
-    final agedReceivables = await service.agedReceivables(
-      asOfDate: LocalDate.fromDateTime(endInclusive),
-    );
-    final unlinkedCosts = await service.unlinkedCosts();
+    final workbook = await DaoInvoice().db.transaction((txn) async {
+      final service = AccountingReportService(
+        snapshot: txn,
+        taxLabel: label,
+        externalAccountingEnabled: system.isExternalAccountingEnabled(),
+      );
+      final profitAndLoss = await service.profitAndLoss(period);
+      final taxSummary = await service.taxSummary(period);
+      final cashReceived = await service.cashReceived(period);
+      final receiptDetails = await _receiptDetails(period, txn);
+      final supplierSpend = await service.supplierSpend(period);
+      final debtorStatement = await service.debtorStatement(
+        customerId: null,
+        startInclusive: period.startInclusive,
+        endExclusive: period.endExclusive,
+      );
+      final agedReceivables = await service.agedReceivables(
+        asOfDate: LocalDate.fromDateTime(endInclusive),
+      );
+      final unlinkedCosts = await service.unlinkedCosts(period: period);
 
-    final workbook = _Workbook([
-      _Sheet('Profit and Loss', _profitAndLossRows(profitAndLoss)),
-      _Sheet('Tax Summary', _taxSummaryRows(taxSummary)),
-      _Sheet('Customer Payments', _cashReceivedRows(cashReceived)),
-      _Sheet('Receipts', receiptDetails),
-      _Sheet('Supplier Spend', _supplierSpendRows(supplierSpend)),
-      _Sheet('Debtor Activity', _debtorStatementRows(debtorStatement)),
-      _Sheet('Aged Receivables', _agedReceivablesRows(agedReceivables)),
-      _Sheet('Unlinked Costs', _unlinkedCostRows(unlinkedCosts)),
-    ]);
-    final dir = await Directory.systemTemp.createTemp('hmb_tax_pack_');
-    final file = File(
-      '${dir.path}/${accountingReportExportFileName(reportName: 'accountant_tax_pack', extension: 'xlsx', startInclusive: period.startInclusive, endInclusive: endInclusive)}',
+      final registers = await AccountingRegisters.load(txn, period);
+      return _Workbook([
+        _Sheet('Manifest', [
+          ['Field', 'Value'],
+          ['Business', system.businessName],
+          ['Currency', 'AUD'],
+          ['Period starts', period.startInclusive],
+          ['Period ends (exclusive)', period.endExclusive],
+          ['Generated', DateTime.now().toIso8601String()],
+          [
+            'Schema version',
+            (await txn.rawQuery(
+              'SELECT MAX(db_version) AS version FROM version',
+            )).single['version'],
+          ],
+          ['Application version', packageVersion],
+          ['Basis', 'Issued sales less recorded tax; receipts net of tax'],
+          ['Unknown tax documents', taxSummary.unknownTaxDocuments],
+          ['Limitations', limitations],
+          ['Exclusions', exclusions],
+          ['Source identity', sourceIdentity],
+          [
+            'Review scope',
+            'Billing review includes all unresolved historical exceptions.',
+          ],
+          for (final register in registers.entries)
+            ['${register.key} rows', register.value.length - 1],
+        ]),
+        for (final register in registers.entries)
+          _Sheet(register.key, register.value),
+        _Sheet('Profit and Loss', _profitAndLossRows(profitAndLoss)),
+        _Sheet('Tax Summary', _taxSummaryRows(taxSummary)),
+        _Sheet('Customer Payments', _cashReceivedRows(cashReceived)),
+        _Sheet('Receipts', receiptDetails),
+        _Sheet('Supplier Spend', _supplierSpendRows(supplierSpend)),
+        _Sheet('Debtor Activity', _debtorStatementRows(debtorStatement)),
+        _Sheet('Aged Receivables', _agedReceivablesRows(agedReceivables)),
+        _Sheet('Unlinked Costs', _unlinkedCostRows(unlinkedCosts)),
+      ]);
+    });
+    final archiveDirectory = Directory(
+      '${File(DaoInvoice().db.path).parent.path}/accountant_exports',
     );
-    await file.writeAsBytes(_buildXlsx(workbook), flush: true);
+    await archiveDirectory.create(recursive: true);
+    final dir = await archiveDirectory.createTemp('hmb_tax_pack_');
+    final file = File(
+      '${dir.path}/${accountingReportExportFileName(reportName: 'accountant_tax_pack', extension: 'zip', startInclusive: period.startInclusive, endInclusive: endInclusive)}',
+    );
+    final archive = Archive()
+      ..addFile(
+        ArchiveFile.bytes('accountant_workbook.xlsx', _buildXlsx(workbook)),
+      );
+    for (final sheet in workbook.sheets) {
+      archive.addFile(
+        ArchiveFile.string(
+          '${sheet.name}.csv',
+          accountingRegisterCsv(sheet.rows),
+        ),
+      );
+    }
+    await file.writeAsBytes(ZipEncoder().encodeBytes(archive), flush: true);
     return file;
   }
 
@@ -190,6 +295,7 @@ class _AccountantTaxPackScreenState extends State<AccountantTaxPackScreen> {
 
   List<List<Object?>> _taxSummaryRows(TaxSummaryReport report) => [
     ['Line', 'Amount'],
+    ['Documents with unknown tax', report.unknownTaxDocuments],
     ['${report.taxLabel} collected from invoices', report.taxCollected],
     ['${report.taxLabel} credited', -report.creditTax],
     ['Net ${report.taxLabel} collected', report.netTaxCollected],
@@ -215,8 +321,10 @@ class _AccountantTaxPackScreenState extends State<AccountantTaxPackScreen> {
       ],
   ];
 
-  Future<List<List<Object?>>> _receiptDetails(AccountingPeriod period) async {
-    final db = DaoReceipt().withoutTransaction();
+  Future<List<List<Object?>>> _receiptDetails(
+    AccountingPeriod period,
+    DatabaseExecutor db,
+  ) async {
     final rows = await db.rawQuery(
       '''
 SELECT
@@ -317,12 +425,6 @@ ORDER BY r.receipt_date ASC, r.id ASC
         row.amount,
       ],
   ];
-
-  String _periodLabel(AccountingPeriod period) {
-    final endInclusive = period.endExclusive.subtract(const Duration(days: 1));
-    return '${formatDate(period.startInclusive, format: 'j M Y')} to '
-        '${formatDate(endInclusive, format: 'j M Y')}';
-  }
 }
 
 class _Workbook {
@@ -408,7 +510,7 @@ String _stylesXml() => '''
   <fills count="1"><fill><patternFill patternType="none"/></fill></fills>
   <borders count="1"><border/></borders>
   <cellStyleXfs count="1"><xf/></cellStyleXfs>
-  <cellXfs count="2"><xf fontId="0"/><xf fontId="1" applyFont="1"/></cellXfs>
+  <cellXfs count="3"><xf fontId="0"/><xf fontId="1" applyFont="1"/><xf numFmtId="4" applyNumberFormat="1"/></cellXfs>
 </styleSheet>
 ''';
 
@@ -435,6 +537,9 @@ String _cell(Object? value, int row, int col, bool heading) {
   final style = heading ? ' s="1"' : '';
   if (value == null) {
     return '<c r="$ref"$style/>';
+  }
+  if (value is Money) {
+    return '<c r="$ref" s="2"><v>${(value.minorUnits.toInt() / 100).toStringAsFixed(2)}</v></c>';
   }
   if (value is num) {
     return '<c r="$ref"$style><v>$value</v></c>';

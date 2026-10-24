@@ -4,9 +4,11 @@ import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 
 import '../../database/management/db_utility_test_helper.dart';
+import '../../util/settings_test_helper.dart';
 import 'utility.dart';
 
 void main() {
+  setUpAll(prepareSettingsTest);
   setUp(setupTestDb);
   tearDown(tearDownTestDb);
 

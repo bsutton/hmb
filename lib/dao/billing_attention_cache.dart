@@ -52,12 +52,18 @@ class BillingAttentionCache extends ChangeNotifier {
     final db = DatabaseHelper.instance.database;
     final states = await db.rawQuery('''
 SELECT job.*, b.reason, b.billing_required, b.revision, b.checked_revision,
-       b.checked_at, b.failed
+       b.checked_at, b.failed, b.retry_after
 FROM job_billing_state b JOIN job ON job.id = b.job_id
 WHERE job.is_stock = 0
 ORDER BY job.modified_date DESC
 ''');
-    pending = states.any((row) => row['revision'] != row['checked_revision']);
+    pending = states.any(
+      (row) =>
+          row['revision'] != row['checked_revision'] &&
+          !(row['reason'] == JobBillingReasonCode.futureFixedPayment.name &&
+              (row['retry_after']! as int) >
+                  DateTime.now().millisecondsSinceEpoch),
+    );
     initializing = states.any((row) => row['checked_at'] == null);
     checkFailed = states.any((row) => row['failed'] == 1);
     final ready = <JobBillingReadiness>[];
@@ -77,8 +83,11 @@ ORDER BY job.modified_date DESC
         JobBillingReasonCode.unbilledTimeAndMaterials => 'Unbilled work',
         JobBillingReasonCode.unbilledBookingFee => 'Unbilled booking fee',
         JobBillingReasonCode.uninvoicedMilestone => 'Uninvoiced milestone',
+        JobBillingReasonCode.agreedFixedWork => 'Agreed fixed work',
+        JobBillingReasonCode.futureFixedPayment => 'Future fixed payment',
         JobBillingReasonCode.unallocatedQuoteAmount => 'Set up milestones',
-        JobBillingReasonCode.missingApprovedQuote => 'Set up quote billing',
+        JobBillingReasonCode.missingApprovedQuote =>
+          'Review agreed price or quote',
         _ => 'Billing check pending',
       };
       ready.add(
@@ -92,6 +101,7 @@ ORDER BY job.modified_date DESC
               count: 1,
               invoiceable:
                   code != JobBillingReasonCode.unallocatedQuoteAmount &&
+                  code != JobBillingReasonCode.futureFixedPayment &&
                   code != JobBillingReasonCode.missingApprovedQuote,
             ),
           ],

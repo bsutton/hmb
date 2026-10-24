@@ -220,7 +220,7 @@ class _EditJobCardState extends DeferredState<EditJobCard> {
 
   Widget _chooseBillingType() =>
       HMBDroplist<BillingType>(
-        title: 'Billing Type',
+        title: 'Default billing for new tasks',
         items: (filter) async => BillingType.values,
         selectedItem: () async => widget.selectedBillingType,
         onChanged: (billingType) {

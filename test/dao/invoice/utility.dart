@@ -197,5 +197,19 @@ Future<Contact> createContact(String firstname, String surname) async {
   );
 
   await DaoContact().insert(contact);
+  // Invoice selection only accepts contacts attached to the Bill to account.
+  var customer = await DaoCustomer().getById(1);
+  if (customer == null) {
+    customer = Customer.forInsert(
+      name: 'Test Bill to',
+      description: '',
+      disbarred: false,
+      customerType: CustomerType.residential,
+      hourlyRate: Money.fromInt(0, isoCode: 'AUD'),
+      billingContactId: contact.id,
+    );
+    await DaoCustomer().insert(customer);
+  }
+  await DaoContactCustomer().insertJoin(contact, customer);
   return contact;
 }
