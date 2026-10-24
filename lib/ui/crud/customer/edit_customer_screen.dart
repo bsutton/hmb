@@ -31,6 +31,7 @@ import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_crud_contact.dart';
 import '../../widgets/hmb_crud_site.dart';
 import '../../widgets/hmb_switch.dart';
+import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/hmb_spacing.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_droplist.dart';
@@ -229,6 +230,15 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
   }
 
   Future<bool> _validateDuplicateName() async {
+    if (await DaoCustomer().hasDuplicateName(
+      _nameController.text,
+      excludingId: currentEntity?.id,
+    )) {
+      HMBToast.error(
+        DuplicateCustomerNameException(_nameController.text).toString(),
+      );
+      return false;
+    }
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       return true;

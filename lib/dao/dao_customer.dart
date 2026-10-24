@@ -27,6 +27,43 @@ class DaoCustomer extends Dao<Customer> {
   DaoCustomer() : super(tableName);
   Future<void> createTable(Database db, int version) async {}
 
+  /// Uses the same comparison as the customer_name unique index. Do not
+  /// trim or fold case here: those are advisory matches in the customer UI.
+  Future<bool> hasDuplicateName(String name, {int? excludingId}) async {
+    final matches = await withoutTransaction().query(
+      tableName,
+      columns: ['id'],
+      where: excludingId == null ? 'name = ?' : 'name = ? AND id != ?',
+      whereArgs: [name, ?excludingId],
+      limit: 1,
+    );
+    return matches.isNotEmpty;
+  }
+
+  @override
+  Future<int> insert(Customer entity, [Transaction? transaction]) async {
+    try {
+      return await super.insert(entity, transaction);
+    } on DatabaseException catch (error) {
+      if (error.isUniqueConstraintError('customer.name')) {
+        throw DuplicateCustomerNameException(entity.name);
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<int> update(Customer entity, [Transaction? transaction]) async {
+    try {
+      return await super.update(entity, transaction);
+    } on DatabaseException catch (error) {
+      if (error.isUniqueConstraintError('customer.name')) {
+        throw DuplicateCustomerNameException(entity.name);
+      }
+      rethrow;
+    }
+  }
+
   @override
   Customer fromMap(Map<String, dynamic> map) => Customer.fromMap(map);
 
@@ -264,4 +301,16 @@ where lower(name) = lower(?)
 
     return fromMap(data.first);
   }
+}
+
+/// A recoverable customer validation failure, including concurrent saves.
+class DuplicateCustomerNameException implements Exception {
+  final String name;
+
+  const DuplicateCustomerNameException(this.name);
+
+  @override
+  String toString() =>
+      'A customer named "$name" already exists. '
+      'Use the existing customer or enter a different customer name.';
 }
