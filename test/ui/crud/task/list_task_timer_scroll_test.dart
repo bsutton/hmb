@@ -95,12 +95,12 @@ void main() {
       () => controller.offset == 0 && state.entityList.first.id == updated.id,
     );
     expect(state.entityList.first.status, TaskStatus.inProgress);
+    // Refreshed cards start their own database-backed estimates. Await those
+    // reads before disposing the tree instead of assuming a database latency.
+    await pumpReadOnlyFutureBuilders(tester, find.byType(TaskListScreen));
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 200)),
-    );
-    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
   });
 }
 
