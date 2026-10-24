@@ -95,8 +95,23 @@ void main() {
       // actual navigation rather than looking for the retired inline form.
       await tester.tap(find.byTooltip('Trip logging settings'));
       await pumpUntilFound(tester, find.text('Enable trip logging'));
+      // The asynchronously loaded form can appear before its route finishes
+      // sliding into the viewport. Wait before tapping its enable control.
+      await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Record trips when you use HMB'));
       await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<HMBToggle>(
+              find.byWidgetPredicate(
+                (widget) =>
+                    widget is HMBToggle &&
+                    widget.label == 'Enable trip logging',
+              ),
+            )
+            .initialValue,
+        isTrue,
+      );
       final rate = find.byWidgetPredicate(
         (widget) =>
             widget is HMBTextField &&
@@ -105,7 +120,12 @@ void main() {
       await tester.scrollUntilVisible(
         rate,
         150,
-        scrollable: find.byType(Scrollable).first,
+        scrollable: find
+            .descendant(
+              of: find.byType(TripLogSettingsScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first,
       );
       await tester.pumpAndSettle();
       // Validation must run before any location permission or network work.
@@ -125,10 +145,16 @@ void main() {
       // Cancelling the settings edit returns to the scrollable trip summary.
       await tester.tap(find.text('Cancel'));
       await pumpUntilFound(tester, find.text('Trip logging is off'));
+      await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.text('No trips in this period.'),
         150,
-        scrollable: find.byType(Scrollable).first,
+        scrollable: find
+            .descendant(
+              of: find.byType(TripLogScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first,
       );
       expect(
         find.text('No trips in this period.').hitTestable(),
