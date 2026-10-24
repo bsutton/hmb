@@ -80,7 +80,8 @@ class TaskItemContext {
 }
 
 class _PackingScreenState extends DeferredState<PackingScreen> {
-  final taskItemsContexts = <TaskItemContext>[];
+  var taskItemsContexts = <TaskItemContext>[];
+  var _loadGeneration = 0;
 
   /// Filters
   List<Job> _selectedJobs = [];
@@ -98,13 +99,15 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
   /// Fetch the list of valid Task Items
   ///
   Future<void> _loadTaskItems() async {
+    final generation = ++_loadGeneration;
+    final scheduleFilter = _selectedScheduleFilter;
     // Get packing items filtered by the selected jobs.
     final taskItems = await DaoTaskItem().getPackingItems(
       jobs: _selectedJobs,
       showPreScheduledJobs: _showPreScheduledJobs,
       showPreApprovedTask: _showPreApprovedTasks,
     );
-    taskItemsContexts.clear();
+    final loadedItems = <TaskItemContext>[];
 
     for (final taskItem in taskItems) {
       final task = await DaoTask().getById(taskItem.taskId);
@@ -114,7 +117,7 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
 
       // If a schedule filter is selected (other than "All") check the job's
       //next activity.
-      if (include && _selectedScheduleFilter != ScheduleFilter.all) {
+      if (include && scheduleFilter != ScheduleFilter.all) {
         final job = await DaoJob().getJobForTask(task!.id);
         if (job != null) {
           final nextActivity = await DaoJobActivity().getNextActivityByJob(
@@ -122,17 +125,14 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
           );
           include =
               nextActivity != null &&
-              _selectedScheduleFilter.includes(
-                nextActivity.start,
-                now: DateTime.now(),
-              );
+              scheduleFilter.includes(nextActivity.start, now: DateTime.now());
         } else {
           include = false;
         }
       }
 
       if (include) {
-        taskItemsContexts.add(
+        loadedItems.add(
           TaskItemContext(
             task: task!,
             taskItem: taskItem,
@@ -142,7 +142,11 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
         );
       }
     }
-    setState(() {});
+    if (!mounted || generation != _loadGeneration) {
+      return;
+    }
+    // Keep the displayed list intact while the next snapshot is loading.
+    setState(() => taskItemsContexts = loadedItems);
   }
 
   @override
@@ -206,32 +210,37 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
     ],
   );
 
-  Widget _buildLayout(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final isMobile = constraints.maxWidth < 900;
-      return isMobile
-          ? ListView.builder(
-              // Mobile layout
-              padding: const EdgeInsets.all(8),
-              itemCount: taskItemsContexts.length,
-              itemBuilder: (context, index) =>
-                  _buildListItem(context, taskItemsContexts[index]),
-            )
-          // Desktop layout
-          : GridView.builder(
-              padding: const EdgeInsets.all(8),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 1.5,
-                mainAxisSpacing: 16, // Added vertical spacing between items
-                crossAxisSpacing: 16,
-              ),
-              itemCount: taskItemsContexts.length,
-              itemBuilder: (context, index) =>
-                  _buildListItem(context, taskItemsContexts[index]),
-            );
-    },
-  );
+  Widget _buildLayout(BuildContext context) {
+    // A lazy builder must use the same snapshot as its item count, including
+    // when a refresh finishes before Flutter invokes that builder.
+    final items = taskItemsContexts;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 900;
+        return isMobile
+            ? ListView.builder(
+                // Mobile layout
+                padding: const EdgeInsets.all(8),
+                itemCount: items.length,
+                itemBuilder: (context, index) =>
+                    _buildListItem(context, items[index]),
+              )
+            // Desktop layout
+            : GridView.builder(
+                padding: const EdgeInsets.all(8),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 1.5,
+                  mainAxisSpacing: 16, // Added vertical spacing between items
+                  crossAxisSpacing: 16,
+                ),
+                itemCount: items.length,
+                itemBuilder: (context, index) =>
+                    _buildListItem(context, items[index]),
+              );
+      },
+    );
+  }
 
   Widget _buildFilter(BuildContext context) => HMBColumn(
     children: [
