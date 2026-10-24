@@ -43,6 +43,7 @@ import '../../database/versions/post_upgrade/post_upgrade_134.dart';
 import '../../installer/install.dart';
 import '../../util/dart/log.dart';
 import '../../util/flutter/notifications/notification_reconciler.dart';
+import '../../util/flutter/startup_diagnostics.dart';
 import '../widgets/hmb_start_time_entry.dart';
 import '../widgets/media/desktop_camera_delegate.dart';
 import 'dashboards/sync_warnings.dart';
@@ -50,6 +51,7 @@ import 'dashboards/sync_warnings.dart';
 /// this is were we do all of the heavy initialisation
 /// after the Splash screen is up and showing.
 class BootStrapper {
+  final _diagnostics = StartupDiagnostics();
   var _isInitialized = false;
   // ignore: omit_obvious_property_types
   bool isFirstRun = false;
@@ -70,8 +72,8 @@ class BootStrapper {
     unawaited(_runStartupBookingSync());
 
     // camera & deep link init
-    _runSynchronousStartupPhase('init camera', initCamera);
-    initAppLinks();
+    await _diagnostics.run('init camera', initCamera);
+    await _diagnostics.run('init app links', initAppLinks);
     await _runStartupPhase('init pdf renderer', initPdfrx);
     await _runStartupPhase('init image cache', initImageCache);
 
@@ -126,25 +128,8 @@ class BootStrapper {
     ).showWarning(title, formatAccountingSyncWarning(error));
   }
 
-  Future<T> _runStartupPhase<T>(
-    String label,
-    Future<T> Function() action,
-  ) async {
-    final stopwatch = Stopwatch()..start();
-    Log.i('Startup phase started: $label');
-    final result = await action();
-    stopwatch.stop();
-    Log.i('Startup phase completed: $label in ${stopwatch.elapsed}.');
-    return result;
-  }
-
-  void _runSynchronousStartupPhase(String label, void Function() action) {
-    final stopwatch = Stopwatch()..start();
-    Log.i('Startup phase started: $label');
-    action();
-    stopwatch.stop();
-    Log.i('Startup phase completed: $label in ${stopwatch.elapsed}.');
-  }
+  Future<T> _runStartupPhase<T>(String label, Future<T> Function() action) =>
+      _diagnostics.run(label, action);
 
   Future<bool> _checkInstall() async {
     if (kIsWeb) {
@@ -176,7 +161,10 @@ class BootStrapper {
 
     /// remove rich text fields.
 
-    await postv134Upgrade(DatabaseHelper().database);
+    await _diagnostics.run(
+      'convert legacy rich text',
+      () => postv134Upgrade(DatabaseHelper().database),
+    );
     BillingWorker.instance.start();
   }
 

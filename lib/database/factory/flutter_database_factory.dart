@@ -42,7 +42,9 @@ class FlutterDatabaseFactory implements local.HMBDatabaseFactory {
       _databaseFactory = databaseFactoryFfiWeb;
     } else {
       if (Platform.isAndroid || Platform.isIOS) {
-        _databaseFactory = sqflite.databaseFactory;
+        _databaseFactory = Platform.isAndroid
+            ? busyRetryDatabaseFactory(sqflite.databaseFactory)
+            : sqflite.databaseFactory;
       } else if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
         /// required for non-mobile platforms.
         sqfliteFfiInit();
@@ -62,5 +64,29 @@ class FlutterDatabaseFactory implements local.HMBDatabaseFactory {
   Future<Database> openDatabase(
     String path, {
     required OpenDatabaseOptions options,
-  }) => _databaseFactory.openDatabase(path, options: options);
+  }) {
+    if (!kIsWeb && Platform.isAndroid) {
+      // Android's sqflite connections share a native worker thread. Waiting
+      // inside SQLite blocks the other connection's queued COMMIT. Yield in
+      // Dart instead, allowing that COMMIT to release the lock before retry.
+      options = OpenDatabaseOptions(
+        version: options.version,
+        onConfigure: _nonBlockingConfigure(options.onConfigure),
+        onCreate: options.onCreate,
+        onUpgrade: options.onUpgrade,
+        onDowngrade: options.onDowngrade,
+        onOpen: options.onOpen,
+        readOnly: options.readOnly,
+        singleInstance: options.singleInstance,
+      );
+    }
+    return _databaseFactory.openDatabase(path, options: options);
+  }
+
+  OnDatabaseConfigureFn _nonBlockingConfigure(
+    OnDatabaseConfigureFn? configure,
+  ) => (db) async {
+    await configure?.call(db);
+    await db.rawQuery('PRAGMA busy_timeout = 0');
+  };
 }

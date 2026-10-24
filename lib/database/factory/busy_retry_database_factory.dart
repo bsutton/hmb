@@ -1,4 +1,7 @@
 import 'package:sqflite_common/sqlite_api.dart';
+// Keep the native driver's PlatformException-to-DatabaseException mapping.
+// ignore: implementation_imports
+import 'package:sqflite_common/src/factory.dart';
 // Preserve sqflite's concrete database and transaction types through its
 // driver invocation hook.
 // ignore: implementation_imports
@@ -19,7 +22,9 @@ DatabaseFactory busyRetryDatabaseFactory(
     final elapsed = Stopwatch()..start();
     while (true) {
       try {
-        return await driver.invokeMethod<Object?>(method, arguments);
+        return await (factory as SqfliteDatabaseFactory).wrapDatabaseException(
+          () => driver.invokeMethod<Object?>(method, arguments),
+        );
       } on DatabaseException catch (error) {
         // Retry autocommit reads and acquiring a transaction. Never replay a
         // transaction body, a write, or a partly executed batch.
