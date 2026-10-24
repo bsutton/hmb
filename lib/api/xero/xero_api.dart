@@ -36,6 +36,16 @@ class XeroApi {
         'pageSize': '100',
       });
 
+  Future<http.Response> getPrepayments(int page) => _getCreditResource(
+    'Prepayments',
+    {'where': 'Type=="RECEIVE-PREPAYMENT"', 'page': '$page', 'pageSize': '100'},
+  );
+
+  Future<http.Response> getCustomerCreditNotes(int page) => _getCreditResource(
+    'CreditNotes',
+    {'where': 'Type=="ACCRECCREDIT"', 'page': '$page', 'pageSize': '100'},
+  );
+
   Future<http.Response> _getCreditResource(
     String resource,
     Map<String, String> query,

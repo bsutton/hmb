@@ -49,6 +49,8 @@ class XeroInvoicePaymentSyncService {
             allocateCreditNote ?? _xeroClient.allocateCreditNote,
         getInvoiceBatch: _xeroClient.getInvoiceBatch,
         getOverpayments: _xeroClient.getOverpayments,
+        getPrepayments: _xeroClient.getPrepayments,
+        getCreditNotes: _xeroClient.getCreditNotes,
         getTenantId: _xeroClient.getTenantId,
       );
     }
@@ -554,7 +556,7 @@ class XeroInvoicePaymentSyncService {
       final created = await DebtorLedgerService().createCreditNote(
         invoiceId: invoice.id,
         amount: creditNote.amount,
-        reason: creditNote.reference ?? 'Xero credit note',
+        reason: creditNote.reference ?? 'Credit note',
         creditDate: creditNote.date,
       );
       await DaoCreditNote().update(

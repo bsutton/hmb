@@ -63,9 +63,10 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
     }
     setState(_reload);
     if (failure != null) {
+      final detail = failure.toString().replaceAll('Xero', 'Accounting');
       HMBToast.error(
-        'Some Xero payments or credits could not be refreshed. '
-        'This balance may be incomplete. $failure',
+        'Some payments or credits could not be refreshed. '
+        'This balance may be incomplete. $detail',
       );
     }
   }

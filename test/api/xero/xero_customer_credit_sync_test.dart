@@ -20,6 +20,9 @@ void main() {
   var fail = false;
   var invoiceStatus = 200;
   final requestedBatches = <List<String>>[];
+  final prepayments = <Map<String, dynamic>>[];
+  final creditNotes = <Map<String, dynamic>>[];
+  var creditNoteStatus = 200;
   setUp(() async {
     await setupTestDb();
     job = await createJobWithCustomer(
@@ -62,6 +65,9 @@ void main() {
     fail = false;
     invoiceStatus = 200;
     requestedBatches.clear();
+    prepayments.clear();
+    creditNotes.clear();
+    creditNoteStatus = 200;
     final client = XeroInvoicePaymentClient(
       login: ({allowInteractive = true}) async => true,
       getInvoice: (_) async => throw UnimplementedError(),
@@ -70,6 +76,12 @@ void main() {
       createCreditNote: (_) async => throw UnimplementedError(),
       allocateCreditNote: (_, _) async => throw UnimplementedError(),
       getTenantId: () async => 'tenant-1',
+      getPrepayments: (_) async =>
+          http.Response(jsonEncode({'Prepayments': prepayments}), 200),
+      getCreditNotes: (_) async => http.Response(
+        jsonEncode({'CreditNotes': creditNotes}),
+        creditNoteStatus,
+      ),
       getInvoiceBatch: (ids) async {
         requestedBatches.add(List.of(ids));
         // Model the gateway rejecting oversized invoice-ID URLs.
@@ -169,9 +181,7 @@ void main() {
       final report = await statement();
       expect(report.closingBalance, MoneyEx.dollars(-100));
       expect(
-        report.entries.where(
-          (e) => e.description == 'Xero overpayment received',
-        ),
+        report.entries.where((e) => e.description == 'Overpayment received'),
         hasLength(1),
       );
       expect((await statement(jobId: job.id)).closingBalance, MoneyEx.zero);
@@ -254,4 +264,169 @@ void main() {
     await sync.sync();
     expect((await statement()).closingBalance, MoneyEx.zero);
   });
+
+  for (final kind in ['prepayment', 'credit_note']) {
+    Map<String, dynamic> addCredit() {
+      credit['Status'] = 'VOIDED';
+      final row = <String, dynamic>{
+        ...credit,
+        'Status': 'AUTHORISED',
+        'Type': kind == 'prepayment' ? 'RECEIVE-PREPAYMENT' : 'ACCRECCREDIT',
+        kind == 'prepayment' ? 'PrepaymentID' : 'CreditNoteID': 'new-credit',
+      }..remove('OverpaymentID');
+      (kind == 'prepayment' ? prepayments : creditNotes).add(row);
+      return row;
+    }
+
+    test('$kind creates one customer credit across repeated syncs', () async {
+      addCredit();
+      await sync.sync();
+      await sync.sync();
+      expect((await statement()).closingBalance, MoneyEx.dollars(-100));
+      expect(
+        (await statement(start: DateTime(2026, 2))).openingBalance,
+        MoneyEx.dollars(-100),
+      );
+      expect((await statement(jobId: job.id)).closingBalance, MoneyEx.zero);
+      expect(
+        (await testDb!.query('xero_customer_credit')).single['credit_kind'],
+        kind,
+      );
+      final entries = (await statement()).entries.where(
+        (e) =>
+            e.description ==
+            (kind == 'prepayment'
+                ? 'Prepayment received'
+                : 'Credit note issued'),
+      );
+      expect(entries, hasLength(1));
+    });
+
+    test('$kind refunds and external allocations consume the credit', () async {
+      final row = addCredit();
+      row['Payments'] = [
+        {'PaymentID': 'refund', 'Date': '2026-01-15', 'Amount': 30},
+        {
+          'PaymentID': 'deleted',
+          'Date': '2026-01-15',
+          'Amount': 50,
+          'Status': 'DELETED',
+        },
+      ];
+      row['Allocations'] = [
+        {
+          'AllocationID': 'allocation',
+          'Date': '2026-01-16',
+          'Amount': 20,
+          'Invoice': {'InvoiceID': 'outside-hmb'},
+        },
+      ];
+      row['RemainingCredit'] = 50;
+      await sync.sync();
+      expect((await statement()).closingBalance, MoneyEx.dollars(-50));
+    });
+
+    test('$kind local allocation is not a second receipt', () async {
+      final row = addCredit();
+      row['Allocations'] = [
+        {
+          'AllocationID': 'allocation',
+          'Date': '2026-01-16',
+          'Amount': 100,
+          'Invoice': {'InvoiceID': 'invoice-1'},
+        },
+      ];
+      row['RemainingCredit'] = 0;
+      await sync.sync();
+      expect((await statement()).closingBalance, MoneyEx.zero);
+      expect((await statement(jobId: job.id)).closingBalance, MoneyEx.zero);
+    });
+
+    test(
+      '$kind draft or supplier credits do not enter the statement',
+      () async {
+        final row = addCredit();
+        row['Status'] = 'DRAFT';
+        await sync.sync();
+        expect((await statement()).closingBalance, MoneyEx.zero);
+        row['Status'] = 'AUTHORISED';
+        row['Type'] = kind == 'prepayment'
+            ? 'SPEND-PREPAYMENT'
+            : 'ACCPAYCREDIT';
+        await sync.sync();
+        expect((await statement()).closingBalance, MoneyEx.zero);
+      },
+    );
+  }
+
+  test(
+    'imported credit note replaces its existing local allocation once',
+    () async {
+      credit['Status'] = 'VOIDED';
+      final note = await DebtorLedgerService().createCreditNote(
+        invoiceId: invoice.id,
+        amount: MoneyEx.dollars(100),
+        creditDate: DateTime(2026, 1, 11),
+        reason: 'Synthetic credit',
+      );
+      await DaoCreditNote().markExternal(
+        creditNote: note,
+        externalCreditNoteId: 'note-1',
+      );
+      creditNotes.add({
+        ...credit,
+        'CreditNoteID': 'note-1',
+        'Type': 'ACCRECCREDIT',
+        'Status': 'PAID',
+        'RemainingCredit': 0,
+        'Allocations': [
+          {
+            'AllocationID': 'allocation',
+            'Date': '2026-01-11',
+            'Amount': 100,
+            'Invoice': {'InvoiceID': 'invoice-1'},
+          },
+        ],
+      });
+      await sync.sync();
+      expect((await statement()).closingBalance, MoneyEx.zero);
+      expect((await statement(jobId: job.id)).closingBalance, MoneyEx.zero);
+      expect(
+        (await statement()).entries.where(
+          (e) => e.type == DebtorStatementEntryType.credit,
+        ),
+        hasLength(1),
+      );
+      // Removing a remote allocation must not revive the old local credit
+      // allocation or the legacy paid-invoice fallback.
+      creditNotes.single['Status'] = 'AUTHORISED';
+      creditNotes.single['Allocations'] = <Object>[];
+      creditNotes.single['RemainingCredit'] = 100;
+      await sync.sync();
+      expect((await statement()).closingBalance, MoneyEx.zero);
+      expect(
+        (await statement(jobId: job.id)).closingBalance,
+        MoneyEx.dollars(100),
+      );
+      creditNotes.single['Status'] = 'VOIDED';
+      await sync.sync();
+      expect((await statement()).closingBalance, MoneyEx.dollars(100));
+      expect(
+        (await statement(jobId: job.id)).closingBalance,
+        MoneyEx.dollars(100),
+      );
+    },
+  );
+
+  test(
+    'last source failure preserves the complete previous snapshot',
+    () async {
+      await sync.sync();
+      credit['Total'] = 200;
+      credit['RemainingCredit'] = 200;
+      creditNoteStatus = 503;
+      await expectLater(sync.sync(), throwsException);
+      expect((await statement()).closingBalance, MoneyEx.dollars(-100));
+    },
+  );
 }

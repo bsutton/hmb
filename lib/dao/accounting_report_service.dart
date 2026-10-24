@@ -705,6 +705,9 @@ ORDER BY due_date ASC, invoice_id ASC
       }
 
       for (final history in historyEntries) {
+        if (history.amount == MoneyEx.zero) {
+          continue;
+        }
         if (jobId == null &&
             history.type == InvoiceLedgerHistoryEntryType.payment) {
           continue;
@@ -753,14 +756,20 @@ ORDER BY due_date ASC, invoice_id ASC
       final creditRows = await _db.rawQuery(
         '''
 SELECT c.customer_id, c.credit_date AS event_date, -c.amount AS amount,
- 'Xero overpayment received' AS description, customer.name AS customer_name
+ CASE c.credit_kind WHEN 'credit_note' THEN 'Credit note issued'
+ WHEN 'prepayment' THEN 'Prepayment received'
+ ELSE 'Overpayment received' END AS description,
+ customer.name AS customer_name, c.credit_kind
 FROM xero_customer_credit c JOIN customer ON customer.id = c.customer_id
-WHERE (? IS NULL OR c.customer_id = ?)
+WHERE (? IS NULL OR c.customer_id = ?) AND c.amount != 0
 UNION ALL
 SELECT c.customer_id, e.event_date, e.amount,
- CASE WHEN e.kind = 'refund' THEN 'Xero overpayment refunded'
- ELSE 'Xero credit applied to an invoice outside this statement' END,
- customer.name
+ CASE WHEN e.kind = 'refund' THEN
+ CASE c.credit_kind WHEN 'credit_note' THEN 'Credit note refunded'
+ WHEN 'prepayment' THEN 'Prepayment refunded'
+ ELSE 'Overpayment refunded' END
+ ELSE 'Credit applied to an invoice outside this statement' END,
+ customer.name, c.credit_kind
 FROM xero_customer_credit_event e
 JOIN xero_customer_credit c
  ON c.tenant_id = e.tenant_id AND c.external_id = e.credit_id
@@ -783,7 +792,9 @@ WHERE (? IS NULL OR c.customer_id = ?) AND (e.kind = 'refund' OR NOT EXISTS (
           entries.add(
             DebtorStatementEntry(
               type: amount.isNegative
-                  ? DebtorStatementEntryType.payment
+                  ? row['credit_kind'] == 'credit_note'
+                        ? DebtorStatementEntryType.credit
+                        : DebtorStatementEntryType.payment
                   : DebtorStatementEntryType.adjustment,
               invoiceId: 0,
               invoiceNumber: '',
@@ -1229,32 +1240,43 @@ ORDER BY pa.allocated_date ASC, pa.id ASC
       );
     }
 
-    final overpaymentAllocations = await db.rawQuery('''
-SELECT i.id AS invoice_id, e.event_date, e.amount
+    final creditAllocations = await db.rawQuery('''
+SELECT i.id AS invoice_id, e.event_date, e.amount,
+ CASE c.credit_kind WHEN 'credit_note' THEN 'Credit note allocated'
+ WHEN 'prepayment' THEN 'Prepayment allocated'
+ ELSE 'Overpayment allocated' END AS description
 FROM xero_customer_credit_event e
+JOIN xero_customer_credit c
+ ON c.tenant_id = e.tenant_id AND c.external_id = e.credit_id
 JOIN invoice i ON i.external_invoice_id = e.invoice_external_id
 WHERE e.kind = 'allocation' AND i.id IN ($placeholders)
 ''', invoiceIds);
-    for (final row in overpaymentAllocations) {
+    for (final row in creditAllocations) {
       add(
         row['invoice_id']! as int,
         InvoiceLedgerHistoryEntry(
           type: InvoiceLedgerHistoryEntryType.payment,
           date: DateTime.parse(row['event_date']! as String),
           amount: MoneyEx.fromInt(row['amount']! as int),
-          title: 'Xero overpayment allocated',
+          title: row['description']! as String,
         ),
       );
     }
 
+    // Imported customer credits own their allocation history. A zero marker
+    // for a mirrored local credit prevents the legacy paid-invoice fallback
+    // from inventing a receipt after an allocation is removed in accounting.
     final credits = await db.rawQuery('''
 SELECT
   ca.invoice_id,
   ca.allocated_date,
-  ca.amount,
+  CASE WHEN xc.external_id IS NOT NULL THEN 0 ELSE ca.amount END AS amount,
   cn.reason
 FROM credit_allocation ca
 LEFT JOIN credit_note cn ON cn.id = ca.credit_note_id
+LEFT JOIN xero_customer_credit xc ON xc.credit_kind = 'credit_note'
+ AND xc.external_id = cn.external_credit_note_id
+ AND xc.customer_id = cn.customer_id
 WHERE ca.invoice_id IN ($placeholders)
 ORDER BY ca.allocated_date ASC, ca.id ASC
 ''', invoiceIds);

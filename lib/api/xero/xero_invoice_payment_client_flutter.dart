@@ -12,6 +12,8 @@ XeroInvoicePaymentClient createXeroInvoicePaymentClient() {
     allocateCreditNote: xeroApi.allocateCreditNote,
     getInvoiceBatch: xeroApi.getInvoiceBatch,
     getOverpayments: xeroApi.getOverpayments,
+    getPrepayments: xeroApi.getPrepayments,
+    getCreditNotes: xeroApi.getCustomerCreditNotes,
     getTenantId: xeroApi.getTenantId,
   );
 }

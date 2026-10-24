@@ -27,6 +27,8 @@ class XeroInvoicePaymentClient {
   final XeroAllocateCreditNote allocateCreditNote;
   final XeroGetInvoiceBatch? getInvoiceBatch;
   final XeroGetOverpayments? getOverpayments;
+  final XeroGetOverpayments? getPrepayments;
+  final XeroGetOverpayments? getCreditNotes;
   final Future<String> Function()? getTenantId;
 
   XeroInvoicePaymentClient({
@@ -38,6 +40,8 @@ class XeroInvoicePaymentClient {
     required this.allocateCreditNote,
     this.getInvoiceBatch,
     this.getOverpayments,
+    this.getPrepayments,
+    this.getCreditNotes,
     this.getTenantId,
   });
 }

@@ -20,6 +20,11 @@ class XeroCustomerCreditSync {
     if (invoices == null || overpayments == null || tenantProvider == null) {
       return 0;
     }
+    final prepayments = client.getPrepayments;
+    final creditNotes = client.getCreditNotes;
+    if (prepayments == null || creditNotes == null) {
+      throw InvoiceException('Customer credit sources are not configured.');
+    }
     final tenant = await tenantProvider();
     final local = await db.rawQuery('''
 SELECT i.external_invoice_id,
@@ -59,86 +64,133 @@ WHERE i.external_invoice_id IS NOT NULL AND i.external_invoice_id != ''
     }
     final credits = <Map<String, Object?>>[];
     final events = <Map<String, Object?>>[];
-    var complete = false;
-    for (var page = 1; page <= 1000; page++) {
-      final rows = _rows(await overpayments(page), 'Overpayments');
-      for (final row in rows) {
-        if (row['Type'] != 'RECEIVE-OVERPAYMENT' || row['Status'] == 'VOIDED') {
-          continue;
-        }
-        final contact = row['Contact'] as Map<String, dynamic>?;
-        final customers = mapping[contact?['ContactID']];
-        if (customers == null || customers.isEmpty) {
-          continue;
-        }
-        if (customers.length != 1) {
-          throw InvoiceException(
-            'A Xero credit contact is shared by multiple '
-            'bill-to customers. Resolve the customer mapping before syncing.',
-          );
-        }
-        if (row['CurrencyCode'] != 'AUD') {
-          throw InvoiceException(
-            'A customer credit uses a different currency. '
-            'It cannot be included in an AUD statement.',
-          );
-        }
-        final id = row['OverpaymentID'] as String;
-        final total = _minor(row['Total']);
-        final remaining = _minor(row['RemainingCredit']);
-        var used = 0;
-        for (final allocation in _children(row, 'Allocations')) {
-          final amount = _minor(allocation['Amount']);
-          used += amount;
-          events.add({
-            'tenant_id': tenant,
-            'credit_id': id,
-            'event_id': 'allocation:${allocation['AllocationID']}',
-            'kind': 'allocation',
-            'event_date': _date(allocation['Date']),
-            'amount': amount,
-            'invoice_external_id': (allocation['Invoice'] as Map)['InvoiceID'],
-          });
-        }
-        for (final refund in _children(row, 'Payments')) {
-          if (refund['Status'] == 'DELETED') {
+    final sources = [
+      (
+        field: 'Overpayments',
+        id: 'OverpaymentID',
+        type: 'RECEIVE-OVERPAYMENT',
+        kind: 'overpayment',
+        fetch: overpayments,
+      ),
+      (
+        field: 'Prepayments',
+        id: 'PrepaymentID',
+        type: 'RECEIVE-PREPAYMENT',
+        kind: 'prepayment',
+        fetch: prepayments,
+      ),
+      (
+        field: 'CreditNotes',
+        id: 'CreditNoteID',
+        type: 'ACCRECCREDIT',
+        kind: 'credit_note',
+        fetch: creditNotes,
+      ),
+    ];
+    for (final source in sources) {
+      var complete = false;
+      for (var page = 1; page <= 1000; page++) {
+        final rows = _rows(await source.fetch(page), source.field);
+        for (final row in rows) {
+          if (row['Type'] != source.type) {
             continue;
           }
-          final amount = _minor(refund['Amount']);
-          used += amount;
-          events.add({
+          final contact = row['Contact'] as Map<String, dynamic>?;
+          final customers = mapping[contact?['ContactID']];
+          if (customers == null || customers.isEmpty) {
+            continue;
+          }
+          if (customers.length != 1) {
+            throw InvoiceException(
+              'A Xero credit contact is shared by multiple '
+              'bill-to customers. Resolve the customer mapping before syncing.',
+            );
+          }
+          if (!const ['AUTHORISED', 'PAID'].contains(row['Status'])) {
+            if (source.kind == 'credit_note' &&
+                const ['VOIDED', 'DELETED'].contains(row['Status'])) {
+              // Keep a zero-value marker so an older local copy cannot
+              // reintroduce a credit removed in Xero.
+              credits.add({
+                'tenant_id': tenant,
+                'external_id': row[source.id] as String,
+                'customer_id': customers.single,
+                'credit_date': _date(row['Date']),
+                'credit_kind': source.kind,
+                'amount': 0,
+                'remaining_credit': 0,
+                'reference': row['Reference'] as String?,
+              });
+            }
+            continue;
+          }
+          if (row['CurrencyCode'] != 'AUD') {
+            throw InvoiceException(
+              'A customer credit uses a different currency. '
+              'It cannot be included in an AUD statement.',
+            );
+          }
+          final id = row[source.id] as String;
+          final total = _minor(row['Total']);
+          final remaining = _minor(row['RemainingCredit']);
+          var used = 0;
+          for (final allocation in _children(row, 'Allocations')) {
+            final amount = _minor(allocation['Amount']);
+            used += amount;
+            events.add({
+              'tenant_id': tenant,
+              'credit_id': id,
+              'event_id': 'allocation:${allocation['AllocationID']}',
+              'kind': 'allocation',
+              'event_date': _date(allocation['Date']),
+              'amount': amount,
+              'invoice_external_id':
+                  (allocation['Invoice'] as Map)['InvoiceID'],
+            });
+          }
+          for (final refund in _children(row, 'Payments')) {
+            if (refund['Status'] == 'DELETED') {
+              continue;
+            }
+            final amount = _minor(refund['Amount']);
+            used += amount;
+            events.add({
+              'tenant_id': tenant,
+              'credit_id': id,
+              'event_id': 'refund:${refund['PaymentID']}',
+              'kind': 'refund',
+              'event_date': _date(refund['Date']),
+              'amount': amount,
+              'invoice_external_id': null,
+            });
+          }
+          if (total - used != remaining) {
+            throw InvoiceException(
+              'Xero credit history is incomplete. '
+              'The previous statement credit data has been retained.',
+            );
+          }
+          credits.add({
             'tenant_id': tenant,
-            'credit_id': id,
-            'event_id': 'refund:${refund['PaymentID']}',
-            'kind': 'refund',
-            'event_date': _date(refund['Date']),
-            'amount': amount,
-            'invoice_external_id': null,
+            'external_id': id,
+            'customer_id': customers.single,
+            'credit_date': _date(row['Date']),
+            'credit_kind': source.kind,
+            'amount': total,
+            'remaining_credit': remaining,
+            'reference': row['Reference'] as String?,
           });
         }
-        if (total - used != remaining) {
-          throw InvoiceException(
-            'Xero credit history is incomplete. '
-            'The previous statement credit data has been retained.',
-          );
+        if (rows.length < 100) {
+          complete = true;
+          break;
         }
-        credits.add({
-          'tenant_id': tenant,
-          'external_id': id,
-          'customer_id': customers.single,
-          'credit_date': _date(row['Date']),
-          'amount': total,
-          'remaining_credit': remaining,
-          'reference': row['Reference'] as String?,
-        });
       }
-      if (rows.length < 100) {
-        complete = true;
-        break;
+      if (!complete) {
+        throw InvoiceException(
+          'Xero ${source.field} pagination is incomplete.',
+        );
       }
-    }
-    if (!complete) {
-      throw InvoiceException('Xero credit pagination is incomplete.');
     }
     await db.transaction((txn) async {
       await txn.delete('xero_customer_credit_event');
