@@ -202,6 +202,9 @@ class _AccountingPeriodSelectorState extends State<AccountingPeriodSelector> {
   String _periodLabel(AccountingPeriod period) {
     final lastDay = period.endExclusive.subtract(const Duration(days: 1));
     return switch (_preset) {
+      AccountingPeriodPreset.month =>
+        '${formatDate(period.startInclusive, format: 'Y M')} - '
+            '${lastDay.day} days',
       AccountingPeriodPreset.year => '${period.startInclusive.year}',
       AccountingPeriodPreset.financialYear =>
         'FY ${lastDay.year} · ending ${formatDate(lastDay, format: 'j M')}',

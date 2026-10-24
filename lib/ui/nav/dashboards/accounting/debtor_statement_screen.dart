@@ -347,6 +347,9 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
   }
 
   String get _periodLabel => switch (_periodPreset) {
+    AccountingPeriodPreset.month =>
+      '${formatDate(_startInclusive, format: 'Y M')} - '
+          '${_lastDayFromDates().day} days',
     AccountingPeriodPreset.year => '${_startInclusive.year}',
     AccountingPeriodPreset.financialYear =>
       'FY ${_lastDayFromDates().year} · ending '
