@@ -346,17 +346,17 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
     });
   }
 
-  String get _periodLabel =>
+  String get _periodLabel => switch (_periodPreset) {
+    AccountingPeriodPreset.year => '${_startInclusive.year}',
+    AccountingPeriodPreset.financialYear =>
+      'FY ${_lastDayFromDates().year} · ending '
+          '${formatDate(_lastDayFromDates(), format: 'j M')}',
+    _ =>
       '${_formatPeriodDate(_startInclusive)} to '
-      '${_formatPeriodDate(_lastDayFromDates())}';
+          '${_formatPeriodDate(_lastDayFromDates())}',
+  };
 
-  String _formatPeriodDate(DateTime date) {
-    final now = DateTime.now();
-    final includeYear =
-        _startInclusive.year != now.year ||
-        _lastDayFromDates().year != now.year;
-    return formatDate(date, format: includeYear ? 'j M Y' : 'j M');
-  }
+  String _formatPeriodDate(DateTime date) => formatDate(date, format: 'j M Y');
 
   DateTime _lastDayFromDates() =>
       _endExclusive.subtract(const Duration(days: 1));
