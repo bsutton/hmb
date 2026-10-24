@@ -184,6 +184,5 @@ class GoogleDriveApi {
   }
 }
 
-@visibleForTesting
 String escapeDriveQueryLiteral(String value) =>
     value.replaceAll(String.fromCharCode(92), r'\\').replaceAll("'", r"\'");

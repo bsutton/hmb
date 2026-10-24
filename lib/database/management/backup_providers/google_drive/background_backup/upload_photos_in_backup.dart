@@ -1,5 +1,3 @@
-// ignore_for_file: async_return_with_no_await
-
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
@@ -20,7 +18,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:googleapis/drive/v3.dart' as gdrive show File;
+import 'package:crypto/crypto.dart';
+import 'package:googleapis/drive/v3.dart' as gdrive;
 import 'package:http/http.dart' as http;
 
 import '../../../../../util/dart/transient_network_retry.dart';
@@ -38,6 +37,8 @@ Future<void> uploadPhotosInBackup({
   required Map<String, String> authHeaders,
   required List<PhotoPayload> photoPayloads,
   required List<PhotoDeletePayload> deletePayloads,
+  Future<GoogleDriveApi> Function(Map<String, String>) createApi =
+      GoogleDriveApi.fromHeaders,
 }) async {
   final totalPhotos = photoPayloads.length;
   final totalDeletes = deletePayloads.length;
@@ -49,7 +50,7 @@ Future<void> uploadPhotosInBackup({
   }
 
   // Init Drive API
-  final driveApi = await GoogleDriveApi.fromHeaders(authHeaders);
+  final driveApi = await createApi(authHeaders);
   try {
     final photoSyncFolderId = await _withNetworkRetry(
       driveApi.getPhotoSyncFolder,
@@ -122,10 +123,35 @@ Future<void> uploadPhotosInBackup({
         );
       }
 
-      // Upload file to final destination
+      // Reconcile an upload whose response or DB acknowledgement was lost.
+      final remote = await _withNetworkRetry(
+        () => findRemotePhoto(
+          files: driveApi.files,
+          photoId: photoPayload.id,
+          parentId: parentId,
+        ),
+        timeout: _driveMetadataTimeout,
+        operation: 'checking previous upload for photo ${photoPayload.id}',
+      );
+      final digest = (await md5.bind(file.openRead()).first).toString();
+      if (remote != null && remote.md5Checksum == digest) {
+        sendPort.send(
+          PhotoUploaded(
+            photoPayload.id,
+            photoPayload.pathToCloudStorage,
+            3,
+            cloudFileId: remote.id,
+            cloudMd5: remote.md5Checksum,
+            cloudModifiedDate: remote.modifiedTime,
+          ),
+        );
+        continue;
+      }
+
+      // Replace an existing file rather than creating another photo copy.
       final metadata = jsonEncode({
         'name': '${photoPayload.id}:$fileName',
-        'parents': [parentId],
+        if (remote == null) 'parents': [parentId],
         'properties': {
           // custom metadata key “photoId” holding your photo’s ID
           'photoId': photoPayload.id.toString(),
@@ -135,9 +161,11 @@ Future<void> uploadPhotosInBackup({
       final initResp = await _withNetworkRetry(
         () => driveApi.send(
           http.Request(
-              'POST',
+              remote == null ? 'POST' : 'PATCH',
               Uri.parse(
-                'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable',
+                'https://www.googleapis.com/upload/drive/v3/files'
+                '${remote == null ? '' : '/${remote.id}'}'
+                '?uploadType=resumable&fields=id,md5Checksum,modifiedTime',
               ),
             )
             ..headers['Content-Type'] = 'application/json; charset=UTF-8'
@@ -294,26 +322,28 @@ Future<http.StreamedResponse> _uploadFileWithProgress({
   );
 
   try {
-    await _withTimeout(
-      _writeFileToRequestWithProgress(
-        file: file,
-        sink: request.sink,
-        totalBytes: totalBytes,
-        sendPort: sendPort,
-        stageNo: stageNo,
-        stageCount: stageCount,
-        photoIndex: photoIndex,
-        totalPhotos: totalPhotos,
+    final responses = await Future.wait<Object?>([
+      responseFuture,
+      _withTimeout(
+        _writeFileToRequestWithProgress(
+          file: file,
+          sink: request.sink,
+          totalBytes: totalBytes,
+          sendPort: sendPort,
+          stageNo: stageNo,
+          stageCount: stageCount,
+          photoIndex: photoIndex,
+          totalPhotos: totalPhotos,
+        ),
+        timeout: _photoUploadTimeout,
+        operation: 'sending photo $photoId data',
       ),
-      timeout: _photoUploadTimeout,
-      operation: 'sending photo $photoId data',
-    );
+    ], eagerError: true);
+    return responses.first! as http.StreamedResponse;
   } catch (_) {
     unawaited(request.sink.close());
     rethrow;
   }
-
-  return responseFuture;
 }
 
 Future<void> _writeFileToRequestWithProgress({
@@ -395,4 +425,22 @@ Future<bool> _deleteRemoteByPhotoId({
     );
   }
   return true;
+}
+
+/// Scope identity to the destination folder to keep debug/production separate.
+Future<gdrive.File?> findRemotePhoto({
+  required gdrive.FilesResource files,
+  required int photoId,
+  required String parentId,
+}) async {
+  final response = await files.list(
+    q:
+        "properties has { key='photoId' and value='$photoId' } "
+        "and '${escapeDriveQueryLiteral(parentId)}' in parents "
+        'and trashed=false',
+    $fields: 'files(id,md5Checksum,modifiedTime)',
+    pageSize: 1,
+  );
+  final matches = response.files;
+  return matches == null || matches.isEmpty ? null : matches.first;
 }

@@ -45,7 +45,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   var _photoStageDescription = '';
   var _photoStageNo = 0;
   var _photoStageCount = 0;
-  var _syncRunning = false;
+  bool get _syncRunning => PhotoSyncService().isRunning;
 
   GoogleDriveAuth? _auth;
 
@@ -65,7 +65,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
           _photoStageDescription = update.stageDescription;
           _photoStageNo = update.stageNo;
           _photoStageCount = update.stageCount;
-          _syncRunning = PhotoSyncService().isRunning;
         });
       }
     });
@@ -265,11 +264,10 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
 
   Future<void> _syncPhotos() async {
     final photoSync = PhotoSyncService();
-    if (_syncRunning || photoSync.isRunning) {
+    if (photoSync.isRunning) {
       photoSync.cancelSync();
       if (mounted) {
         setState(() {
-          _syncRunning = false;
           _photoStageDescription = '';
           _photoStageNo = 0;
           _photoStageCount = 0;
@@ -284,13 +282,18 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     try {
       if (mounted) {
         setState(() {
-          _syncRunning = true;
           _photoStageDescription = '';
           _photoStageNo = 0;
           _photoStageCount = 0;
         });
       }
-      await photoSync.start(retryOnFailure: false);
+      await photoSync.start();
+      if (photoSync.lastErrorSummary != null) {
+        throw PhotoSyncException(photoSync.lastErrorSummary!);
+      }
+      if (photoSync.isCancelled || photoSync.isPending) {
+        return;
+      }
       await BackupHistoryStore.record(
         provider: _provider.name,
         operation: BackupHistoryStore.operationPhotoSync,
@@ -309,13 +312,10 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     } finally {
       if (mounted) {
         setState(() {
-          _syncRunning = false;
           _photoStageDescription = '';
           _photoStageNo = 0;
           _photoStageCount = 0;
         });
-      } else {
-        _syncRunning = false;
       }
     }
   }
@@ -348,15 +348,12 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   );
 
   Future<void> signout() async {
-    if (_syncRunning || PhotoSyncService().isRunning) {
-      PhotoSyncService().cancelSync();
-    }
+    PhotoSyncService().cancelSync();
     final auth = _auth ??= await GoogleDriveAuth.instance();
     try {
       await auth.signOut();
       if (mounted) {
         setState(() {
-          _syncRunning = false;
           _photoStageDescription = '';
           _photoStageNo = 0;
           _photoStageCount = 0;

@@ -145,9 +145,15 @@ class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      unawaited(PhotoSyncService().resumeIfNeeded());
       unawaited(_runResumeSyncTasks());
       unawaited(TripCaptureService.instance.onResume());
     } else {
+      if (state == AppLifecycleState.paused ||
+          state == AppLifecycleState.hidden ||
+          state == AppLifecycleState.detached) {
+        PhotoSyncService().pause();
+      }
       unawaited(TripCaptureService.instance.cancelFix());
     }
   }
@@ -190,11 +196,6 @@ class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
         }
       } catch (e, st) {
         Log.e('Failed to sync Xero invoice payments: $e\n$st');
-      }
-      try {
-        await PhotoSyncService().resumeIfNeeded();
-      } catch (e, st) {
-        Log.e('Failed to resume photo sync: $e\n$st');
       }
     } finally {
       _resumeSyncInFlight = false;
