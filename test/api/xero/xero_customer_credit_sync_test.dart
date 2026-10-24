@@ -18,6 +18,8 @@ void main() {
   late Map<String, dynamic> credit;
   late XeroCustomerCreditSync sync;
   var fail = false;
+  var invoiceStatus = 200;
+  final requestedBatches = <List<String>>[];
   setUp(() async {
     await setupTestDb();
     job = await createJobWithCustomer(
@@ -58,6 +60,8 @@ void main() {
       'Payments': <Object>[],
     };
     fail = false;
+    invoiceStatus = 200;
+    requestedBatches.clear();
     final client = XeroInvoicePaymentClient(
       login: ({allowInteractive = true}) async => true,
       getInvoice: (_) async => throw UnimplementedError(),
@@ -66,17 +70,25 @@ void main() {
       createCreditNote: (_) async => throw UnimplementedError(),
       allocateCreditNote: (_, _) async => throw UnimplementedError(),
       getTenantId: () async => 'tenant-1',
-      getInvoiceBatch: (_) async => http.Response(
-        jsonEncode({
-          'Invoices': [
-            {
-              'InvoiceID': 'invoice-1',
-              'Contact': {'ContactID': 'contact-1'},
-            },
-          ],
-        }),
-        200,
-      ),
+      getInvoiceBatch: (ids) async {
+        requestedBatches.add(List.of(ids));
+        // Model the gateway rejecting oversized invoice-ID URLs.
+        if (ids.length > 20) {
+          return http.Response('', 404);
+        }
+        return http.Response(
+          jsonEncode({
+            'Invoices': [
+              for (final id in ids)
+                {
+                  'InvoiceID': id,
+                  'Contact': {'ContactID': 'contact-1'},
+                },
+            ],
+          }),
+          invoiceStatus,
+        );
+      },
       getOverpayments: (_) async => fail
           ? http.Response('', 503)
           : http.Response(
@@ -89,6 +101,58 @@ void main() {
     sync = XeroCustomerCreditSync(testDb!, client);
   });
   tearDown(tearDownTestDb);
+
+  test(
+    'large invoice history uses bounded URLs and imports the credit',
+    () async {
+      for (var i = 2; i <= 45; i++) {
+        final values = (await testDb!.query(
+          'invoice',
+          where: 'id = ?',
+          whereArgs: [invoice.id],
+        )).single;
+        await testDb!.insert('invoice', {
+          ...values,
+          'id': invoice.id + i,
+          'invoice_num': 'batch-$i',
+          'external_invoice_id': 'invoice-$i',
+        });
+      }
+      expect(await sync.sync(), 1);
+      expect(requestedBatches.map((batch) => batch.length), [20, 20, 5]);
+      expect(requestedBatches.expand((batch) => batch).toSet(), hasLength(45));
+      expect(
+        (await testDb!.query('xero_customer_credit')).single['amount'],
+        10000,
+      );
+    },
+  );
+
+  test(
+    'sync failure identifies the failing Xero resource and status',
+    () async {
+      invoiceStatus = 404;
+      await expectLater(
+        sync.sync(),
+        throwsA(
+          predicate(
+            (error) => '$error'.contains('Invoices request failed (HTTP 404)'),
+          ),
+        ),
+      );
+      invoiceStatus = 200;
+      fail = true;
+      await expectLater(
+        sync.sync(),
+        throwsA(
+          predicate(
+            (error) =>
+                '$error'.contains('Overpayments request failed (HTTP 503)'),
+          ),
+        ),
+      );
+    },
+  );
 
   Future<DebtorStatementReport> statement({int? jobId, DateTime? start}) =>
       AccountingReportService(externalAccountingEnabled: true).debtorStatement(

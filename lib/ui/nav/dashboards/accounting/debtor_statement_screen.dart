@@ -51,21 +51,21 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
   var _isLoadingReport = true;
 
   Future<void> _refreshPayments() async {
-    var failed = false;
+    Object? failure;
     await BlockingUI().runAndWait(() async {
       await XeroInvoicePaymentSyncService().sync(
         force: true,
-        onError: (_, _) => failed = true,
+        onError: (error, _) => failure ??= error,
       );
     });
     if (!mounted) {
       return;
     }
     setState(_reload);
-    if (failed) {
+    if (failure != null) {
       HMBToast.error(
         'Some Xero payments or credits could not be refreshed. '
-        'This balance may be incomplete.',
+        'This balance may be incomplete. $failure',
       );
     }
   }

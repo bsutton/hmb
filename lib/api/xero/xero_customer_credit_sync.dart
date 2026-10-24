@@ -35,8 +35,11 @@ WHERE i.external_invoice_id IS NOT NULL AND i.external_invoice_id != ''
     }
     final mapping = <String, Set<int>>{};
     final ids = customersByInvoice.keys.toList();
-    for (var offset = 0; offset < ids.length; offset += 100) {
-      final batch = ids.skip(offset).take(100).toList();
+    // Invoice IDs are encoded into the URL. A 100-GUID query is rejected by
+    // Xero's gateway even though invoice result pages can contain 100 rows.
+    const invoiceBatchSize = 20;
+    for (var offset = 0; offset < ids.length; offset += invoiceBatchSize) {
+      final batch = ids.skip(offset).take(invoiceBatchSize).toList();
       final found = <String>{};
       for (final invoice in _rows(await invoices(batch), 'Invoices')) {
         found.add(invoice['InvoiceID'] as String);
@@ -153,13 +156,13 @@ WHERE i.external_invoice_id IS NOT NULL AND i.external_invoice_id != ''
   List<Map<String, dynamic>> _rows(http.Response response, String field) {
     if (response.statusCode != 200) {
       throw InvoiceException(
-        'Xero customer credit sync failed '
+        'Xero $field request failed '
         '(HTTP ${response.statusCode}).',
       );
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     if (body[field] is! List) {
-      throw InvoiceException('Invalid Xero credit response.');
+      throw InvoiceException('Invalid Xero $field response.');
     }
     return (body[field] as List).cast<Map<String, dynamic>>();
   }
