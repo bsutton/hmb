@@ -352,7 +352,9 @@ class _DebtorStatementScreenState extends State<DebtorStatementScreen> {
           '${_lastDayFromDates().day} days',
     AccountingPeriodPreset.year => '${_startInclusive.year}',
     AccountingPeriodPreset.financialYear =>
-      'FY ${_lastDayFromDates().year} · ending '
+      'FY ${_startInclusive.year}/'
+          '${(_lastDayFromDates().year % 100).toString().padLeft(2, '0')} '
+          '· ending '
           '${formatDate(_lastDayFromDates(), format: 'j M')}',
     _ =>
       '${_formatPeriodDate(_startInclusive)} to '

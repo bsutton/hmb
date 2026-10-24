@@ -207,7 +207,9 @@ class _AccountingPeriodSelectorState extends State<AccountingPeriodSelector> {
             '${lastDay.day} days',
       AccountingPeriodPreset.year => '${period.startInclusive.year}',
       AccountingPeriodPreset.financialYear =>
-        'FY ${lastDay.year} · ending ${formatDate(lastDay, format: 'j M')}',
+        'FY ${period.startInclusive.year}/'
+            '${(lastDay.year % 100).toString().padLeft(2, '0')} '
+            '· ending ${formatDate(lastDay, format: 'j M')}',
       _ =>
         '${formatDate(period.startInclusive, format: 'j M Y')} to '
             '${formatDate(lastDay, format: 'j M Y')}',
