@@ -58,14 +58,21 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
     setState(() => _jobs = _snapshot());
   }
 
-  List<ToBeInvoicedJob> _snapshot() => [
-    for (final readiness in BillingAttentionCache.instance.entries!)
-      ToBeInvoicedJob(
-        job: readiness.job,
-        readiness: readiness,
-        hasUnsentInvoice: _unsentJobIds.contains(readiness.job.id),
-      ),
-  ];
+  List<ToBeInvoicedJob> _snapshot() =>
+      [
+        for (final readiness in BillingAttentionCache.instance.entries!)
+          ToBeInvoicedJob(
+            job: readiness.job,
+            readiness: readiness,
+            hasUnsentInvoice: _unsentJobIds.contains(readiness.job.id),
+          ),
+      ]..sort(
+        (a, b) => a.readiness.canInvoice == b.readiness.canInvoice
+            ? b.job.modifiedDate.compareTo(a.job.modifiedDate)
+            : a.readiness.canInvoice
+            ? -1
+            : 1,
+      );
 
   @override
   void dispose() {
@@ -125,7 +132,7 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
         final item = _jobs[index];
         final job = item.job;
 
-        return FutureBuilderEx(
+        final card = FutureBuilderEx(
           future: DaoCustomer().getById(job.customerId),
           waitingBuilder: (_) => const SizedBox.shrink(),
           errorBuilder: (_, error) => const Text('Could not load customer.'),
@@ -133,9 +140,11 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
             title: 'Customer: ${customer?.name ?? '—'}',
             actions: [
               HMBButton(
-                label: item.readiness.canInvoice ? 'Invoice' : 'Set up billing',
+                label: item.readiness.canInvoice
+                    ? 'Review charges'
+                    : 'Set up billing',
                 hint: item.readiness.canInvoice
-                    ? 'Create an invoice for this job'
+                    ? 'Invoice or waive selected charges for this job'
                     : 'Open the quote and milestone billing setup',
                 onPressed: () async {
                   if (item.readiness.canInvoice) {
@@ -171,6 +180,21 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
                 ),
             ],
           ),
+        );
+        final firstInSection =
+            index == 0 ||
+            _jobs[index - 1].readiness.canInvoice != item.readiness.canInvoice;
+        return HMBColumn(
+          children: [
+            if (firstInSection)
+              Text(
+                item.readiness.canInvoice
+                    ? 'Ready to invoice'
+                    : 'Not ready to invoice — review billing',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            card,
+          ],
         );
       },
     ),

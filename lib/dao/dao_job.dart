@@ -40,6 +40,7 @@ import 'dao_task_item.dart';
 import 'dao_time_entry.dart';
 import 'dao_todo.dart';
 import 'dao_work_assignment_task.dart';
+import 'job_billing_readiness_service.dart';
 
 enum JobOrder {
   active('Most Recently Accessed'),
@@ -665,10 +666,17 @@ where q.id=?
 
   Future<List<Job>> readyToBeInvoiced(String? filter) async {
     final jobs = await DaoJob().getByFilter(filter);
+    final reasons = JobBillingReasonCode.values
+        .where((reason) => reason.invoiceable)
+        .map((reason) => reason.name)
+        .toList();
     final flagged = (await db.query(
       'job_billing_state',
       columns: ['job_id'],
-      where: 'billing_required = 1',
+      where:
+          'billing_required = 1 AND reason IN '
+          '(${List.filled(reasons.length, '?').join(',')})',
+      whereArgs: reasons,
     )).map((row) => row['job_id']! as int).toSet();
     return jobs
         .where(

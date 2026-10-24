@@ -16,7 +16,10 @@ class BillingAttentionCount extends StatelessWidget {
     if (_cache.initializing) {
       return '…';
     }
-    return _cache.entries?.length.toString() ??
+    return _cache.entries
+            ?.where((entry) => entry.canInvoice)
+            .length
+            .toString() ??
         (_cache.error == null ? '…' : '—');
   }
 

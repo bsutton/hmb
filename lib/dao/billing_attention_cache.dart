@@ -99,10 +99,7 @@ ORDER BY job.modified_date DESC
               label: label,
               amount: MoneyEx.zero,
               count: 1,
-              invoiceable:
-                  code != JobBillingReasonCode.unallocatedQuoteAmount &&
-                  code != JobBillingReasonCode.futureFixedPayment &&
-                  code != JobBillingReasonCode.missingApprovedQuote,
+              invoiceable: code?.invoiceable ?? false,
             ),
           ],
         ),

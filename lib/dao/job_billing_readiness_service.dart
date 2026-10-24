@@ -11,7 +11,15 @@ enum JobBillingReasonCode {
   unallocatedQuoteAmount,
   missingApprovedQuote,
   agreedFixedWork,
-  futureFixedPayment,
+  futureFixedPayment;
+
+  bool get invoiceable => switch (this) {
+    unbilledTimeAndMaterials ||
+    unbilledBookingFee ||
+    uninvoicedMilestone ||
+    agreedFixedWork => true,
+    _ => false,
+  };
 }
 
 class JobBillingReason {
@@ -53,6 +61,9 @@ class JobBillingReadinessService {
     );
     final reasons = <JobBillingReason>[];
     for (final candidate in preview.candidates) {
+      if (candidate.amount.isZero) {
+        continue;
+      }
       reasons.add(
         JobBillingReason(
           code: candidate.isFuture

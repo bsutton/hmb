@@ -15,6 +15,7 @@ import '../util/dart/format.dart';
 import '../util/dart/local_date.dart';
 import '../util/dart/money_ex.dart';
 import 'billing_mutation.dart';
+import 'billing_waiver.dart';
 import 'dao.g.dart';
 import 'job_billing_contact.dart';
 
@@ -48,6 +49,7 @@ class BillingCandidate {
        unitPrice = unitPrice ?? amount;
 
   String get key => '$kind:$sourceId';
+  String get waiverHash => _digest(signature);
   bool get isFuture =>
       kind == 'milestone' &&
       billingDate != null &&
@@ -73,6 +75,7 @@ class BillingPreview {
   final String billingCustomerName;
   final int? billingCustomerId;
   final double taxRate;
+  final List<BillingWaiver> waivers;
   const BillingPreview({
     required this.job,
     required this.candidates,
@@ -84,6 +87,7 @@ class BillingPreview {
     required this.billingCustomerName,
     required this.billingCustomerId,
     required this.taxRate,
+    this.waivers = const [],
   });
 
   Money includedTax(Iterable<BillingCandidate> selected) => selected.fold(
@@ -205,6 +209,14 @@ class BillingService {
       contacts.map((c) => c.toMap()).toList(),
       if (customer != null) customer.toMap(),
     ];
+    final waiverRows = await db.query(
+      'billing_waiver',
+      where: 'job_id = ?',
+      whereArgs: [jobId],
+      orderBy: 'id DESC',
+    );
+    final waivers = waiverRows.map(BillingWaiver.fromMap).toList();
+    versions.add(waiverRows);
     final claims = await db.rawQuery(
       '''
 SELECT a.* FROM billing_allocation a JOIN invoice i ON i.id = a.invoice_id
@@ -217,7 +229,13 @@ WHERE i.job_id = ? AND a.released_date IS NULL
         .toSet();
     versions.add(claims);
     void add(BillingCandidate c) {
-      if (!claimed.contains(c.key)) {
+      final waived = waivers.any(
+        (waiver) =>
+            waiver.restoredDate == null &&
+            waiver.sourceKey == c.key &&
+            waiver.sourceHash == c.waiverHash,
+      );
+      if (!claimed.contains(c.key) && !waived) {
         candidates.add(c);
       }
     }
@@ -287,6 +305,45 @@ AND NOT EXISTS (SELECT 1 FROM billing_allocation a
     for (final row in approved) {
       final quote = Quote.fromMap(row);
       final groups = groupsByQuote[quote.id]!;
+      final milestones = (await db.query(
+        'milestone',
+        where: 'quote_id = ? AND voided = 0',
+        whereArgs: [quote.id],
+        orderBy: 'milestone_number',
+      )).map(Milestone.fromMap).toList();
+      versions.add(milestones.map((m) => m.toMap()).toList());
+      if (claimed.contains('quote:${quote.id}')) {
+        continue;
+      }
+      if (quote.state.name == 'invoiced') {
+        final hasOpenMilestones = milestones.any((m) => m.invoiceId == null);
+        final fullyInvoicedMilestones =
+            milestones.isNotEmpty &&
+            !hasOpenMilestones &&
+            milestones.fold(MoneyEx.zero, (sum, m) => sum + m.paymentAmount) ==
+                quote.totalAmount;
+        // Retain released allocations as evidence that modern work can be
+        // re-billed. A legacy 'invoiced' state alone may mean partial billing.
+        final allocations = await db.rawQuery(
+          '''
+SELECT a.id FROM billing_allocation a
+LEFT JOIN milestone m ON a.source_type = 'milestone' AND m.id = a.source_id
+WHERE (a.source_type = 'quote' AND a.source_id = ?) OR m.quote_id = ? LIMIT 1
+''',
+          [quote.id, quote.id],
+        );
+        if (fullyInvoicedMilestones) {
+          continue;
+        }
+        if (!milestones.any((m) => m.invoiceId != null) &&
+            allocations.isEmpty) {
+          blocked.add(
+            'Quote #${quote.bestNumber}: review historical billing '
+            'before charging again.',
+          );
+          continue;
+        }
+      }
       if (quotesWithFee.contains(quote.id) &&
           (job.bookingFeeInvoiced || feeLines.isNotEmpty)) {
         blocked.add(
@@ -326,13 +383,6 @@ AND NOT EXISTS (SELECT 1 FROM billing_allocation a
       if (!quote.totalAmount.isPositive) {
         continue;
       }
-      final milestones = (await db.query(
-        'milestone',
-        where: 'quote_id = ? AND voided = 0',
-        whereArgs: [quote.id],
-        orderBy: 'milestone_number',
-      )).map(Milestone.fromMap).toList();
-      versions.add(milestones.map((m) => m.toMap()).toList());
       if (overlaps.contains(quote.id)) {
         blocked.add(
           'Quote #${quote.bestNumber}: resolve overlapping approved tasks.',
@@ -364,30 +414,6 @@ LIMIT 1
         MoneyEx.zero,
         (sum, m) => sum + m.paymentAmount,
       );
-      if (claimed.contains('quote:${quote.id}')) {
-        continue;
-      }
-      if (quote.state.name == 'invoiced' &&
-          !claims.any(
-            (claim) =>
-                claim['source_type'] == 'quote' &&
-                claim['source_id'] == quote.id,
-          ) &&
-          !milestones.any((m) => m.invoiceId != null) &&
-          (await db.rawQuery(
-            '''
-SELECT a.id FROM billing_allocation a
-LEFT JOIN milestone m ON a.source_type = 'milestone' AND m.id = a.source_id
-WHERE (a.source_type = 'quote' AND a.source_id = ?) OR m.quote_id = ? LIMIT 1
-''',
-            [quote.id, quote.id],
-          )).isEmpty) {
-        blocked.add(
-          'Quote #${quote.bestNumber}: review historical billing '
-          'before charging again.',
-        );
-        continue;
-      }
       if (allocated > quote.totalAmount) {
         blocked.add(
           'Quote #${quote.bestNumber}: milestones exceed the agreed total.',
@@ -606,11 +632,72 @@ WHERE (a.source_type = 'quote' AND a.source_id = ?) OR m.quote_id = ? LIMIT 1
       billingCustomerName: customer?.name ?? 'Select a Bill to customer',
       billingCustomerId: customer?.id,
       taxRate: config.taxRate,
+      waivers: List.unmodifiable(waivers),
       fingerprint: _digest([
         versions,
         candidates.map((c) => c.signature).toList(),
       ]),
     );
+  }
+
+  Future<void> waiveCharges({
+    required BillingPreview preview,
+    required Iterable<String> keys,
+    required String reason,
+  }) async {
+    final selected = keys.toSet();
+    if (reason.trim().isEmpty || selected.isEmpty) {
+      throw InvoiceException('Select charges and enter a reason.');
+    }
+    final config = await _BillingConfig.load();
+    await _db.transaction((txn) async {
+      final current = await _preview(txn, preview.job.id, config);
+      if (current.fingerprint != preview.fingerprint) {
+        throw InvoiceException(
+          'The billable work changed. Refresh and review the charges again.',
+        );
+      }
+      final charges = current.candidates
+          .where((charge) => selected.contains(charge.key))
+          .toList();
+      if (charges.length != selected.length ||
+          charges.any((charge) => charge.amount.isNegative)) {
+        throw InvoiceException('Select available charges, excluding credits.');
+      }
+      final now = DateTime.now().toIso8601String();
+      for (final charge in charges) {
+        await txn.insert('billing_waiver', {
+          'job_id': preview.job.id,
+          'source_type': charge.kind,
+          'source_id': charge.sourceId,
+          'source_hash': charge.waiverHash,
+          'description': charge.description,
+          'amount': charge.amount.minorUnits.toInt(),
+          'reason': reason.trim(),
+          'waived_date': now,
+        });
+      }
+      await BillingMutation.enqueue(txn, [preview.job.id]);
+    });
+    Dao.notifier(DaoJob(), preview.job.id);
+  }
+
+  Future<void> restoreWaiver({
+    required int jobId,
+    required int waiverId,
+  }) async {
+    await _db.transaction((txn) async {
+      final changed = await txn.update(
+        'billing_waiver',
+        {'restored_date': DateTime.now().toIso8601String()},
+        where: 'id = ? AND job_id = ? AND restored_date IS NULL',
+        whereArgs: [waiverId, jobId],
+      );
+      if (changed != 0) {
+        await BillingMutation.enqueue(txn, [jobId]);
+      }
+    });
+    Dao.notifier(DaoJob(), jobId);
   }
 
   Future<Invoice> commit(InvoicePlan plan) async {

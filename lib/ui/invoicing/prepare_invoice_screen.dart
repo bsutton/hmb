@@ -2,13 +2,16 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../dao/billing_service.dart';
+import '../../dao/billing_waiver.dart';
 import '../../entity/entity.g.dart';
+import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
 import '../../util/dart/money_ex.dart';
 import '../crud/milestone/edit_milestone_payment.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/widgets.g.dart';
+import 'waive_charges_dialog.dart';
 
 class PrepareInvoiceScreen extends StatefulWidget {
   final int jobId;
@@ -113,6 +116,13 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
             if (_preview.candidates.isEmpty)
               const Text('No charges are ready to invoice.'),
             for (final reason in _preview.blocked) Text(reason),
+            if (_preview.waivers.isNotEmpty)
+              ExpansionTile(
+                title: const Text('Waived charges'),
+                children: [
+                  for (final waiver in _preview.waivers) _waiverDetails(waiver),
+                ],
+              ),
             HMBFormSection(
               children: [
                 HMBDroplist<Contact>(
@@ -179,6 +189,11 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
                   ? null
                   : _create,
             ),
+            HMBButtonSecondary(
+              label: 'Waive selected charges',
+              hint: 'Record why the selected charges will not be billed',
+              onPressed: _saving || _selected.isEmpty ? null : _waive,
+            ),
           ],
         );
       },
@@ -197,6 +212,71 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
       _pending = null;
     }),
   );
+
+  Widget _waiverDetails(BillingWaiver waiver) => HMBFormSection(
+    children: [
+      Text('${waiver.description} — ${waiver.amount}'),
+      Text(
+        'Waived ${formatDate(waiver.waivedDate, format: 'j M Y')}: '
+        '${waiver.reason}',
+      ),
+      if (waiver.restoredDate == null &&
+          _preview.candidates.any(
+            (charge) =>
+                charge.key == waiver.sourceKey &&
+                charge.waiverHash != waiver.sourceHash,
+          ))
+        const Text('This work has changed. The updated charge needs review.'),
+      if (waiver.restoredDate != null)
+        Text('Restored ${formatDate(waiver.restoredDate!, format: 'j M Y')}')
+      else
+        HMBButtonSecondary(
+          label: 'Restore charge',
+          hint: 'Offer this charge for invoicing again',
+          onPressed: _saving ? null : () => _restore(waiver),
+        ),
+    ],
+  );
+
+  Future<void> _waive() async {
+    final charges = _preview.candidates
+        .where((charge) => _selected.contains(charge.key))
+        .toList();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (_) => WaiveChargesDialog(charges: charges),
+    );
+    if (reason == null || !mounted) {
+      return;
+    }
+    await _changeWaiver(
+      () => _service.waiveCharges(
+        preview: _preview,
+        keys: charges.map((charge) => charge.key),
+        reason: reason,
+      ),
+    );
+  }
+
+  Future<void> _restore(BillingWaiver waiver) => _changeWaiver(
+    () => _service.restoreWaiver(jobId: widget.jobId, waiverId: waiver.id),
+  );
+
+  Future<void> _changeWaiver(Future<void> Function() change) async {
+    setState(() => _saving = true);
+    try {
+      await BlockingUI().runAndWait(() async {
+        await change();
+        await _load();
+      });
+    } catch (error) {
+      _error = error.toString();
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
+  }
 
   Widget _fixedPaymentChoice(BillingCandidate charge) => HMBFormSection(
     children: [

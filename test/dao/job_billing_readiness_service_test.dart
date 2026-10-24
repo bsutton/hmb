@@ -41,6 +41,7 @@ void main() {
         readiness.reasons.map((reason) => reason.code),
         contains(JobBillingReasonCode.unbilledTimeAndMaterials),
       );
+      await BillingQueue(testDb!).drain(limit: 10000);
       expect(
         (await DaoJob().readyToBeInvoiced(null)).map((item) => item.id),
         contains(job.id),
