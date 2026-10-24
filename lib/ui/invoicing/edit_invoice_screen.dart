@@ -207,157 +207,85 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                   onPressed: () => _releaseForRebilling(invoice),
                 ),
               if (!readOnlyInvoice) ...[
-                if (!invoice.isUploaded() &&
-                    (_accountingUnavailable ||
-                        _accounting.destination !=
-                            InvoiceAccountingDestination.none ||
-                        _accounting.hasSnapshotAttempt ||
-                        invoice.paymentSource != InvoicePaymentSource.manual))
-                  _section('Accounting upload', [
-                    if (_accountingError != null) Text(_accountingError!),
-                    if (_accountingUnavailable)
-                      HMBButtonSecondary(
-                        label: 'Retry accounting settings',
-                        hint: 'Reload the accounting connection',
-                        onPressed: _reloadInvoiceAndRefresh,
-                      ),
-                    Wrap(
-                      spacing: HMBSpacing.kRelated,
-                      runSpacing: HMBSpacing.kCompact,
-                      children: [
-                        if (!invoice.isUploaded())
-                          HMBButtonSecondary(
-                            label: _accounting.hasSnapshotAttempt
-                                ? 'Review accounting export'
-                                : 'Upload',
-                            hint: _accounting.explanation,
-                            onPressed:
-                                !_accountingUnavailable &&
-                                    _accounting.canUpload &&
-                                    !(_accounting.destination ==
-                                            InvoiceAccountingDestination
-                                                .synced &&
-                                        invoice.isManagedLocally) &&
-                                    !_sendingToAccounting
-                                ? _sendToAccounting
-                                : null,
-                          ),
-                      ],
-                    ),
-                    if (!invoice.isUploaded() && !_accountingUnavailable)
-                      Text(
-                        _accounting.destination ==
-                                    InvoiceAccountingDestination.synced &&
-                                invoice.isManagedLocally
-                            ? 'This invoice uses manual payment tracking. '
-                                  'Accounting integration requires upload '
-                                  'before email; review its tracking mode '
-                                  'before proceeding.'
-                            : _accounting.explanation,
-                      ),
-                  ]),
                 if (actions.hasPaymentActions)
-                  _section('Manage payments', [
-                    if (invoice.paymentSource == InvoicePaymentSource.unknown)
-                      const Text(
-                        'Payment tracking needs review. Convert to '
-                        'manual tracking only if this invoice is '
-                        'no longer '
-                        'managed by your accounting software.',
-                      ),
-                    if (actions.canAllocate || actions.canConvertTracking)
-                      Wrap(
-                        spacing: HMBSpacing.kRelated,
-                        runSpacing: HMBSpacing.kCompact,
-                        children: [
-                          if (_canApplyPayment(details))
-                            HMBButtonSecondary(
-                              label: 'Record or allocate payment',
-                              hint:
-                                  'Record a new payment or allocate '
-                                  'an existing payment',
-                              onPressed: () => _applyPayment(details),
-                            ),
-                          if (invoice.canConvertToManualTracking)
-                            HMBButtonSecondary(
-                              label: 'Track payments in HMB',
-                              hint:
-                                  'Switch this invoice to manual payment '
-                                  'tracking',
-                              onPressed: () async {
-                                await _convertToManualTracking();
-                              },
-                            ),
-                        ],
-                      ),
-                    if (actions.hasMoreActions)
-                      Material(
-                        type: MaterialType.transparency,
-                        child: ExpansionTile(
-                          title: const Text('More invoice actions'),
-                          tilePadding: EdgeInsets.zero,
-                          children: [
-                            Wrap(
-                              spacing: HMBSpacing.kRelated,
-                              runSpacing: HMBSpacing.kCompact,
-                              children: [
-                                if (_canRecordAdjustment(details))
-                                  HMBButtonSecondary(
-                                    label: 'Add Adjustment',
-                                    hint:
-                                        'Record an adjustment '
-                                        'against this invoice',
-                                    onPressed: () async {
-                                      await _recordAdjustment(details);
-                                    },
-                                  ),
-                                if (_canWriteOffSmallBalance(details))
-                                  HMBButtonSecondary(
-                                    label: 'Write Off Small Balance',
-                                    hint:
-                                        'Write off a small '
-                                        'unpaid invoice balance',
-                                    onPressed: () async {
-                                      await _writeOffBalance(
-                                        details,
-                                        smallBalance: true,
-                                      );
-                                    },
-                                  ),
-                                if (_canWriteOffBalance(details) &&
-                                    !_canWriteOffSmallBalance(details))
-                                  HMBButtonSecondary(
-                                    label: 'Write Off',
-                                    hint:
-                                        'Write off this unpaid '
-                                        'invoice balance',
-                                    onPressed: () async {
-                                      await _writeOffBalance(details);
-                                    },
-                                  ),
-                                if (_canVoidInvoice(details))
-                                  HMBButtonSecondary(
-                                    label: 'Void Invoice',
-                                    hint: 'Void this sent invoice',
-                                    onPressed: () async {
-                                      if (await promptAndVoidInvoice(
-                                        context: context,
-                                        invoice: invoice,
-                                      )) {
-                                        await _reloadInvoice();
-                                        if (!mounted) {
-                                          return;
-                                        }
-                                        setState(() {});
-                                      }
-                                    },
-                                  ),
-                              ],
-                            ),
-                          ],
+                  _section(
+                    invoice.isManagedLocally ? 'Payments' : 'Invoice actions',
+                    [
+                      if (_canApplyPayment(details))
+                        HMBButtonSecondary(
+                          label: 'Record or allocate payment',
+                          hint: 'Record or allocate a payment to this invoice',
+                          onPressed: () => _applyPayment(details),
                         ),
-                      ),
-                  ]),
+                      if (actions.hasMoreActions)
+                        Material(
+                          type: MaterialType.transparency,
+                          child: ExpansionTile(
+                            title: const Text('More invoice actions'),
+                            tilePadding: EdgeInsets.zero,
+                            children: [
+                              Wrap(
+                                spacing: HMBSpacing.kRelated,
+                                runSpacing: HMBSpacing.kCompact,
+                                children: [
+                                  if (_canRecordAdjustment(details))
+                                    HMBButtonSecondary(
+                                      label: 'Add Adjustment',
+                                      hint:
+                                          'Record an adjustment '
+                                          'against this invoice',
+                                      onPressed: () async {
+                                        await _recordAdjustment(details);
+                                      },
+                                    ),
+                                  if (_canWriteOffSmallBalance(details))
+                                    HMBButtonSecondary(
+                                      label: 'Write Off Small Balance',
+                                      hint:
+                                          'Write off a small '
+                                          'unpaid invoice balance',
+                                      onPressed: () async {
+                                        await _writeOffBalance(
+                                          details,
+                                          smallBalance: true,
+                                        );
+                                      },
+                                    ),
+                                  if (_canWriteOffBalance(details) &&
+                                      !_canWriteOffSmallBalance(details))
+                                    HMBButtonSecondary(
+                                      label: 'Write Off',
+                                      hint:
+                                          'Write off this unpaid '
+                                          'invoice balance',
+                                      onPressed: () async {
+                                        await _writeOffBalance(details);
+                                      },
+                                    ),
+                                  if (_canVoidInvoice(details))
+                                    HMBButtonSecondary(
+                                      label: 'Void Invoice',
+                                      hint: 'Void this sent invoice',
+                                      onPressed: () async {
+                                        if (await promptAndVoidInvoice(
+                                          context: context,
+                                          invoice: invoice,
+                                        )) {
+                                          await _reloadInvoice();
+                                          if (!mounted) {
+                                            return;
+                                          }
+                                          setState(() {});
+                                        }
+                                      },
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
               ],
               _section('Invoice items', [
                 if (canChangeInvoice)
@@ -538,18 +466,62 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
               ],
             ),
           if (!details.invoice.isExternallyDeletedOrVoided)
-            _section('Delivery', [
-              BuildSendButton(
-                context: context,
-                mounted: mounted,
-                invoice: details.invoice,
-                onReturned: _reloadInvoiceAndRefresh,
-              ),
-            ]),
+            HMBFormSection(
+              children: [
+                if (!details.invoice.isUploaded() &&
+                    (_accountingUnavailable ||
+                        _accounting.destination !=
+                            InvoiceAccountingDestination.none ||
+                        _accounting.hasSnapshotAttempt ||
+                        details.invoice.paymentSource !=
+                            InvoicePaymentSource.manual))
+                  _buildAccountingUpload(details.invoice),
+                BuildSendButton(
+                  context: context,
+                  mounted: mounted,
+                  invoice: details.invoice,
+                  onReturned: _reloadInvoiceAndRefresh,
+                ),
+              ],
+            ),
         ],
       ),
     );
   }
+
+  Widget _buildAccountingUpload(Invoice invoice) => HMBFormSection(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      if (_accountingError != null) Text(_accountingError!),
+      if (_accountingUnavailable)
+        HMBButtonSecondary(
+          label: 'Retry accounting settings',
+          hint: 'Reload the accounting connection',
+          onPressed: _reloadInvoiceAndRefresh,
+        ),
+      HMBButtonSecondary(
+        label: _accounting.hasSnapshotAttempt
+            ? 'Review accounting export'
+            : 'Upload',
+        hint: 'Upload this invoice to accounting',
+        onPressed:
+            !_accountingUnavailable &&
+                _accounting.canUpload &&
+                !(_accounting.destination ==
+                        InvoiceAccountingDestination.synced &&
+                    invoice.isManagedLocally) &&
+                !_sendingToAccounting
+            ? _sendToAccounting
+            : null,
+      ),
+      if (!_accountingUnavailable)
+        if (_accounting.destination == InvoiceAccountingDestination.synced &&
+            invoice.isManagedLocally)
+          const Text('This older invoice uses local payment tracking.')
+        else if (_accounting.destination != InvoiceAccountingDestination.synced)
+          Text(_accounting.explanation),
+    ],
+  );
 
   Future<void> _releaseForRebilling(Invoice invoice) async {
     final confirmed = await showDialog<bool>(
@@ -657,7 +629,12 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
         invoice.isUploaded()
             ? 'Synced with accounting'
             : 'Accounting upload pending',
-      InvoicePaymentSource.unknown => 'Payment tracking needs review',
+      InvoicePaymentSource.unknown =>
+        _accounting.destination == InvoiceAccountingDestination.synced
+            ? (invoice.isUploaded()
+                  ? 'Synced with accounting'
+                  : 'Accounting upload pending')
+            : 'Payment tracking needs review',
     };
   }
 
@@ -668,7 +645,8 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
     if (invoice.isManagedLocally) {
       return 'Record payments here as they’re received.';
     }
-    if (invoice.paymentSource != InvoicePaymentSource.xero) {
+    if (invoice.paymentSource != InvoicePaymentSource.xero &&
+        _accounting.destination != InvoiceAccountingDestination.synced) {
       return 'Review how payments are tracked for this invoice.';
     }
     if (_accountingUnavailable) {
@@ -832,16 +810,6 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
 
   bool _canVoidInvoice(InvoiceDetails details) =>
       InvoiceEditorActions(details).canVoid;
-
-  Future<void> _convertToManualTracking() async {
-    await DaoInvoice().convertToManualTracking(invoiceId);
-    await _reloadInvoice();
-    if (!mounted) {
-      return;
-    }
-    HMBToast.info('Invoice converted to manual tracking');
-    setState(() {});
-  }
 
   Future<void> _applyPayment(InvoiceDetails details) async {
     final customerId = details.billingCustomer?.id;

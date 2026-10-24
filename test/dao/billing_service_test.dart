@@ -41,6 +41,35 @@ void main() {
     return task;
   }
 
+  for (final integrated in [false, true]) {
+    test('new invoices use configured payment tracking: $integrated', () async {
+      final system = await DaoSystem().getForUpdate();
+      system
+        ..enableXeroIntegration = integrated
+        ..xeroClientId = 'fixture-client';
+      await DaoSystem().updateConfiguration(system);
+      final job = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.zero,
+        bookingFee: MoneyEx.zero,
+      );
+      await fixedTask(job);
+      final service = BillingService();
+      final preview = await service.preview(job.id);
+      final invoice = await service.commit(
+        preview.select(
+          keys: preview.candidates.map((c) => c.key),
+          contactId: job.billingContactId!,
+        ),
+      );
+      final stored = (await DaoInvoice().getById(invoice.id))!;
+      expect(
+        stored.paymentSource,
+        integrated ? InvoicePaymentSource.xero : InvoicePaymentSource.manual,
+      );
+    });
+  }
+
   for (final type in [BillingType.fixedPrice, BillingType.timeAndMaterial]) {
     test(
       'on-site fixed addition and actuals share an invoice on ${type.name}',

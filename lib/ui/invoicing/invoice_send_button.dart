@@ -254,8 +254,8 @@ Future<Contact> _prepareBillingContactForDelivery(
   return contact;
 }
 
-/// Enabled accounting requires upload before email.
-/// Disabled accounting permits direct email.
+/// Accounting-managed invoices require upload while integration is enabled.
+/// Existing locally tracked invoices retain direct email delivery.
 Future<EmailBlocked> checkInvoiceEmailAvailability({
   required Invoice invoice,
   required Future<void> Function() prepareBillingContact,
@@ -272,7 +272,7 @@ Future<EmailBlocked> checkInvoiceEmailAvailability({
   } on InvoiceException catch (error) {
     return EmailBlocked(blocked: true, reason: error.message);
   }
-  if (!invoice.isUploaded()) {
+  if (!invoice.isUploaded() && !invoice.isManagedLocally) {
     bool enabled;
     try {
       enabled = await (isAccountingEnabled ?? ExternalAccounting().isEnabled)();

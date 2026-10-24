@@ -24,6 +24,60 @@ import 'package:material_ui/material_ui.dart';
 import 'package:money2/money2.dart';
 
 void main() {
+  for (final source in [
+    InvoicePaymentSource.xero,
+    InvoicePaymentSource.unknown,
+  ]) {
+    testWidgets('upload precedes send with integrated tracking: $source', (
+      tester,
+    ) async {
+      final details = _details();
+      details.invoice.paymentSource = source;
+      await _pump(
+        tester,
+        loadDetails: (_) async => details,
+        loadAccounting: (_) async => const InvoiceAccountingState(
+          destination: InvoiceAccountingDestination.synced,
+        ),
+      );
+      final surface = find.ancestor(
+        of: find.text('Billing & delivery'),
+        matching: find.byType(Surface),
+      );
+      final upload = find.widgetWithText(HMBButtonSecondary, 'Upload');
+      final send = find.widgetWithText(HMBButton, 'Preview / send');
+      expect(find.descendant(of: surface, matching: upload), findsOneWidget);
+      expect(find.descendant(of: surface, matching: send), findsOneWidget);
+      expect(
+        tester.getTopLeft(upload).dy,
+        lessThan(tester.getTopLeft(send).dy),
+      );
+      expect(find.text('Accounting upload pending'), findsOneWidget);
+      expect(find.text('Payment tracking needs review'), findsNothing);
+      expect(find.text('Track payments in HMB'), findsNothing);
+      expect(find.text('Manage payments'), findsNothing);
+      expect(find.textContaining('The connection is checked'), findsNothing);
+    });
+  }
+
+  testWidgets('integrated invoices do not offer local payment entry', (
+    tester,
+  ) async {
+    final details = _details(sent: true);
+    details.invoice.paymentSource = InvoicePaymentSource.xero;
+    details.invoice.externalInvoiceId = 'fixture-id';
+    await _pump(
+      tester,
+      loadDetails: (_) async => details,
+      loadAccounting: (_) async => const InvoiceAccountingState(
+        destination: InvoiceAccountingDestination.synced,
+      ),
+    );
+    expect(find.text('Synced with accounting'), findsOneWidget);
+    expect(find.text('Record or allocate payment'), findsNothing);
+    expect(find.text('Track payments in HMB'), findsNothing);
+  });
+
   for (final entry in {
     DebtorInvoiceStatus.draft: 'Draft',
     DebtorInvoiceStatus.sent: 'Outstanding',
@@ -149,7 +203,7 @@ void main() {
 
   for (final accountingEnabled in [false, true]) {
     test(
-      'upload-first email policy with accounting enabled=$accountingEnabled',
+      'legacy local invoice email with accounting enabled=$accountingEnabled',
       () async {
         var prepared = false;
         var accountingLookups = 0;
@@ -164,8 +218,8 @@ void main() {
           },
         );
         expect(prepared, isTrue);
-        expect(result.blocked, accountingEnabled);
-        expect(accountingLookups, 1);
+        expect(result.blocked, isFalse);
+        expect(accountingLookups, 0);
       },
     );
   }
@@ -174,7 +228,7 @@ void main() {
     'unknown accounting settings block sending with retry guidance',
     () async {
       final result = await checkInvoiceEmailAvailability(
-        invoice: _details().invoice,
+        invoice: _details().invoice..paymentSource = InvoicePaymentSource.xero,
         prepareBillingContact: () async {},
         isAccountingEnabled: () async => throw StateError('disconnected'),
       );
@@ -244,7 +298,7 @@ void main() {
     'no provider shows local tracking without an accounting setup warning',
     (tester) async {
       await _pump(tester, loadDetails: (_) async => _details(sent: true));
-      expect(find.text('Delivery'), findsOneWidget);
+      expect(find.text('Billing & delivery'), findsOneWidget);
       expect(find.text('Accounting upload'), findsNothing);
       expect(find.text('Payments tracked in HMB'), findsOneWidget);
       expect(
@@ -391,14 +445,14 @@ void main() {
       final external = _details(sent: true);
       external.invoice.externalInvoiceId = 'fixture-id';
       external.invoice.paymentSource = InvoicePaymentSource.xero;
-      expect(actions(external), [false, true, false, false, true]);
+      expect(actions(external), [false, false, false, false, true]);
       external.invoice.externalSyncStatus = InvoiceExternalSyncStatus.voided;
       expect(actions(external), [false, false, false, false, false]);
       final unknown = _details();
       unknown.invoice.paymentSource = InvoicePaymentSource.unknown;
-      expect(InvoiceEditorActions(unknown).canConvertTracking, isTrue);
+      expect(InvoiceEditorActions(unknown).hasPaymentActions, isFalse);
       unknown.invoice.externalSyncStatus = InvoiceExternalSyncStatus.deleted;
-      expect(InvoiceEditorActions(unknown).canConvertTracking, isFalse);
+      expect(InvoiceEditorActions(unknown).hasPaymentActions, isFalse);
     },
   );
 
@@ -519,11 +573,7 @@ void main() {
       isNull,
     );
     expect(
-      find.text(
-        'This invoice uses manual payment tracking. Accounting integration '
-        'requires upload before email; review its tracking mode '
-        'before proceeding.',
-      ),
+      find.text('This older invoice uses local payment tracking.'),
       findsOneWidget,
     );
   });
@@ -589,7 +639,7 @@ void main() {
     expect(find.textContaining('Could not load this invoice'), findsOneWidget);
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
-    expect(find.text('Delivery'), findsOneWidget);
+    expect(find.text('Billing & delivery'), findsOneWidget);
     expect(attempts, 2);
     expect(tester.takeException(), isNull);
   });
@@ -656,11 +706,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(checks, 2);
     expect(
-      find.text(
-        'This invoice uses manual payment tracking. Accounting integration '
-        'requires upload before email; review its tracking mode '
-        'before proceeding.',
-      ),
+      find.text('This older invoice uses local payment tracking.'),
       findsOneWidget,
     );
     expect(
@@ -789,7 +835,7 @@ void main() {
         );
       },
     );
-    expect(find.text('Delivery'), findsOneWidget);
+    expect(find.text('Billing & delivery'), findsOneWidget);
     expect(find.text('Preview / send'), findsOneWidget);
     expect(
       find.textContaining('Could not load accounting settings'),

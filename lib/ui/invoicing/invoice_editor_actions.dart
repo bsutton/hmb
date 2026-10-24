@@ -22,7 +22,10 @@ class InvoiceEditorActions {
       !readOnly && !details.invoice.isUploaded() && !financiallyActive;
 
   bool get canAllocate =>
-      !readOnly && financiallyActive && details.ledger.isOutstanding;
+      !readOnly &&
+      financiallyActive &&
+      details.ledger.isOutstanding &&
+      details.invoice.isManagedLocally;
 
   /// Corrections must remain reachable after settlement to fix mistakes.
   bool get canAdjust =>
@@ -36,11 +39,7 @@ class InvoiceEditorActions {
       details.ledger.isOutstanding &&
       !hasLedgerActivity;
 
-  bool get canConvertTracking =>
-      !readOnly && details.invoice.canConvertToManualTracking;
-
   bool get hasMoreActions => canAdjust || canWriteOff || canVoid;
 
-  bool get hasPaymentActions =>
-      canAllocate || canConvertTracking || hasMoreActions;
+  bool get hasPaymentActions => canAllocate || hasMoreActions;
 }

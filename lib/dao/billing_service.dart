@@ -649,7 +649,7 @@ WHERE (a.source_type = 'quote' AND a.source_id = ?) OR m.quote_id = ? LIMIT 1
         billingContactId: plan.contactId,
         billingCustomerId: current.billingCustomerId,
         paymentSource: config.externalAccounting
-            ? InvoicePaymentSource.unknown
+            ? InvoicePaymentSource.xero
             : InvoicePaymentSource.manual,
       );
       final values = value.toMap()
