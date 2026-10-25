@@ -1,5 +1,7 @@
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
+import 'package:hmb/entity/helpers/charge_mode.dart';
+import 'package:hmb/fsm/job_events.dart';
 import 'package:hmb/fsm/job_status_fsm.dart';
 import 'package:hmb/fsm/lifecycle_event_dispatcher.dart';
 import 'package:hmb/fsm/lifecycle_models.dart';
@@ -7,7 +9,9 @@ import 'package:hmb/fsm/lifecycle_rules.dart';
 import 'package:hmb/fsm/quote_events.dart';
 import 'package:hmb/fsm/quote_states.dart';
 import 'package:hmb/fsm/quote_status_fsm.dart';
+import 'package:hmb/util/dart/measurement_type.dart';
 import 'package:hmb/util/dart/money_ex.dart';
+import 'package:hmb/util/dart/units.dart';
 import 'package:money2/money2.dart';
 import 'package:test/test.dart';
 
@@ -202,6 +206,182 @@ void main() {
     final audit = await DaoLifecycleTransition().getByJob(job.id);
     expect(audit.where((row) => row.aggregateType == 'quote'), hasLength(2));
     expect(audit.where((row) => row.aggregateType == 'job'), hasLength(2));
+  });
+
+  test('quote approval only approves accepted task groups', () async {
+    final job = await _insertJob(JobStatus.awaitingApproval);
+    final quote = await _insertQuote(QuoteState.sent, job: job);
+    final accepted = await _insertTask(job);
+    final alreadyAccepted = await _insertTask(job);
+    final declined = await _insertTask(job, status: TaskStatus.cancelled);
+    final omitted = await _insertTask(job);
+    final completed = await _insertTask(job, status: TaskStatus.completed);
+    final inProgress = await _insertTask(job, status: TaskStatus.inProgress);
+    final acceptedGroup = await _insertGroup(quote, accepted);
+    await _insertGroup(
+      quote,
+      alreadyAccepted,
+      status: LineApprovalStatus.approved,
+    );
+    final declinedGroup = await _insertGroup(
+      quote,
+      declined,
+      status: LineApprovalStatus.rejected,
+    );
+    await _insertGroup(quote, completed);
+    await _insertGroup(quote, inProgress);
+    await _insertGroup(quote, null); // Booking fee has no task.
+
+    await DaoQuote().approveQuote(quote.id);
+
+    expect((await DaoQuote().getById(quote.id))?.state, QuoteState.approved);
+    expect((await DaoJob().getById(job.id))?.status, JobStatus.toBeScheduled);
+    expect((await DaoTask().getById(accepted.id))?.status, TaskStatus.approved);
+    expect(
+      (await DaoTask().getById(alreadyAccepted.id))?.status,
+      TaskStatus.approved,
+    );
+    expect(
+      (await DaoTask().getById(declined.id))?.status,
+      TaskStatus.cancelled,
+    );
+    expect(
+      (await DaoTask().getById(omitted.id))?.status,
+      TaskStatus.awaitingApproval,
+    );
+    expect(
+      (await DaoTask().getById(completed.id))?.status,
+      TaskStatus.completed,
+    );
+    expect(
+      (await DaoTask().getById(inProgress.id))?.status,
+      TaskStatus.inProgress,
+    );
+    expect(
+      (await DaoQuoteLineGroup().getById(acceptedGroup.id))?.lineApprovalStatus,
+      LineApprovalStatus.approved,
+    );
+    expect(
+      (await DaoQuoteLineGroup().getById(declinedGroup.id))?.lineApprovalStatus,
+      LineApprovalStatus.rejected,
+    );
+  });
+
+  test('approval on an active job reveals accepted packing items', () async {
+    final job = await _insertJob(JobStatus.inProgress);
+    final quote = await _insertQuote(QuoteState.sent, job: job);
+    final accepted = await _insertTask(job);
+    final omitted = await _insertTask(job);
+    await _insertGroup(quote, accepted);
+    final packing = await _insertListItem(
+      accepted,
+      TaskItemType.materialsStock,
+    );
+    final hiddenPacking = await _insertListItem(
+      omitted,
+      TaskItemType.materialsStock,
+    );
+    final shopping = await _insertListItem(accepted, TaskItemType.materialsBuy);
+    final previousNotifier = Dao.notifier;
+    final notifications = <String>[];
+    Dao.notifier = (dao, [entityId]) => notifications.add(dao.tablename);
+    addTearDown(() => Dao.notifier = previousNotifier);
+
+    await LifecycleEventDispatcher().dispatchQuote(
+      quote.id,
+      ApproveQuoteEvent.new,
+      context: LifecycleContext(source: 'test.activeApproval'),
+    );
+
+    expect((await DaoJob().getById(job.id))?.status, JobStatus.inProgress);
+    final packingIds = (await DaoTaskItem().getPackingItems(
+      showPreScheduledJobs: false,
+      showPreApprovedTask: false,
+    )).map((item) => item.id);
+    expect(packingIds, contains(packing.id));
+    expect(packingIds, isNot(contains(hiddenPacking.id)));
+    expect(
+      (await DaoTaskItem().getShoppingItems()).map((item) => item.id),
+      contains(shopping.id),
+    );
+    final counts = await DaoTaskItem().getReminderCounts(job);
+    expect(counts.packing, 1);
+    expect(counts.shopping, 1);
+    expect(
+      notifications,
+      containsAll(['quote_line_group', 'task', 'task_item']),
+    );
+  });
+
+  test('reapproval and scheduling preserve omitted tasks', () async {
+    final job = await _insertJob(JobStatus.awaitingApproval);
+    final quote = await _insertQuote(QuoteState.sent, job: job);
+    final accepted = await _insertTask(job);
+    final omitted = await _insertTask(job);
+    final group = await _insertGroup(quote, accepted);
+
+    await DaoQuote().approveQuote(quote.id);
+    await DaoQuote().unapproveQuote(quote.id);
+    await DaoQuote().approveQuote(quote.id);
+    await LifecycleEventDispatcher().dispatchJob(
+      job.id,
+      ScheduleJob.new,
+      context: LifecycleContext(source: 'test.scheduleAfterApproval'),
+    );
+
+    expect((await DaoJob().getById(job.id))?.status, JobStatus.scheduled);
+    expect((await DaoTask().getById(accepted.id))?.status, TaskStatus.approved);
+    expect(
+      (await DaoTask().getById(omitted.id))?.status,
+      TaskStatus.awaitingApproval,
+    );
+    expect(
+      (await DaoQuoteLineGroup().getById(group.id))?.lineApprovalStatus,
+      LineApprovalStatus.approved,
+    );
+    final before = await DaoLifecycleTransition().getByJob(job.id);
+    await expectLater(
+      DaoQuote().approveQuote(quote.id),
+      throwsA(isA<LifecycleException>()),
+    );
+    expect(
+      await DaoLifecycleTransition().getByJob(job.id),
+      hasLength(before.length),
+    );
+  });
+
+  test('invalid quote task link rolls back quote and group approval', () async {
+    final job = await _insertJob(JobStatus.awaitingApproval);
+    final otherJob = await _insertJob(JobStatus.awaitingApproval);
+    final quote = await _insertQuote(QuoteState.sent, job: job);
+    final valid = await _insertTask(job);
+    final foreign = await _insertTask(otherJob);
+    final validGroup = await _insertGroup(quote, valid);
+    final foreignGroup = await _insertGroup(quote, foreign);
+
+    await expectLater(
+      DaoQuote().approveQuote(quote.id),
+      throwsA(isA<LifecycleException>()),
+    );
+
+    expect((await DaoQuote().getById(quote.id))?.state, QuoteState.sent);
+    expect(
+      (await DaoJob().getById(job.id))?.status,
+      JobStatus.awaitingApproval,
+    );
+    expect(
+      (await DaoQuoteLineGroup().getById(validGroup.id))?.lineApprovalStatus,
+      LineApprovalStatus.preApproval,
+    );
+    expect(
+      (await DaoQuoteLineGroup().getById(foreignGroup.id))?.lineApprovalStatus,
+      LineApprovalStatus.preApproval,
+    );
+    expect(
+      (await DaoTask().getById(valid.id))?.status,
+      TaskStatus.awaitingApproval,
+    );
+    expect(await DaoLifecycleTransition().getByJob(job.id), isEmpty);
   });
 
   test(
@@ -515,4 +695,57 @@ Future<Quote> _insertQuote(QuoteState state, {Job? job}) async {
   );
   await DaoQuote().insert(quote);
   return quote;
+}
+
+Future<Task> _insertTask(
+  Job job, {
+  TaskStatus status = TaskStatus.awaitingApproval,
+}) async {
+  final task = Task.forInsert(
+    jobId: job.id,
+    name: 'Quoted task',
+    description: '',
+    status: status,
+  );
+  await DaoTask().insert(task);
+  return task;
+}
+
+Future<QuoteLineGroup> _insertGroup(
+  Quote quote,
+  Task? task, {
+  LineApprovalStatus status = LineApprovalStatus.preApproval,
+}) async {
+  final group = QuoteLineGroup.forInsert(
+    quoteId: quote.id,
+    taskId: task?.id,
+    name: task?.name ?? 'Booking Fee',
+    lineApprovalStatus: status,
+  );
+  await DaoQuoteLineGroup().insert(group);
+  return group;
+}
+
+Future<TaskItem> _insertListItem(Task task, TaskItemType type) async {
+  final item = TaskItem.forInsert(
+    taskId: task.id,
+    description: 'Quoted material',
+    purpose: '',
+    itemType: type,
+    estimatedPrice: MaterialPrice.items(
+      quantity: Fixed.one,
+      unitCost: MoneyEx.fromInt(500),
+    ),
+    chargeMode: ChargeMode.calculated,
+    margin: Percentage.zero,
+    measurementType: MeasurementType.length,
+    dimension1: Fixed.zero,
+    dimension2: Fixed.zero,
+    dimension3: Fixed.zero,
+    units: Units.m,
+    url: '',
+    labourEntryMode: LabourEntryMode.hours,
+  );
+  await DaoTaskItem().insert(item);
+  return item;
 }

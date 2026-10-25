@@ -360,6 +360,10 @@ class LifecycleEventDispatcher {
         await DaoMilestone().voidByQuoteId(quote.id, transaction: transaction);
       }
 
+      if (event is ApproveQuoteEvent) {
+        await _approveQuotedTasks(quote, transaction, now);
+      }
+
       await DaoLifecycleTransition().insert(
         aggregateType: 'quote',
         aggregateId: quote.id,
@@ -386,7 +390,12 @@ class LifecycleEventDispatcher {
         ? await _db.transaction(apply)
         : await apply(transaction);
     if (transaction == null) {
-      _notifyQuoteCommand(result.entity);
+      _notifyQuoteCommand(
+        result.entity,
+        taskScopeChanged:
+            result.from == QuoteState.sent.name &&
+            result.to == QuoteState.approved.name,
+      );
     }
     return result;
   }
@@ -399,12 +408,78 @@ class LifecycleEventDispatcher {
     Dao.notifier(DaoJobActivity());
   }
 
-  void _notifyQuoteCommand(Quote quote) {
+  void _notifyQuoteCommand(Quote quote, {required bool taskScopeChanged}) {
     Dao.notifier(DaoJobActivity());
     Dao.notifier(DaoQuote(), quote.id);
+    if (taskScopeChanged) {
+      Dao.notifier(DaoQuoteLineGroup());
+      Dao.notifier(DaoTask());
+      Dao.notifier(DaoTaskItem());
+    }
     Dao.notifier(DaoJob(), quote.jobId);
     Dao.notifier(DaoMilestone());
     Dao.notifier(DaoToDo());
+  }
+
+  /// A quote accepts its non-rejected groups, not every task on the job.
+  /// Keep these updates in the same transaction as the quote transition.
+  Future<void> _approveQuotedTasks(
+    Quote quote,
+    Transaction transaction,
+    String now,
+  ) async {
+    final groups = await DaoQuoteLineGroup().getByQuoteId(
+      quote.id,
+      transaction,
+    );
+    final taskIds = <int>{};
+    for (final group in groups) {
+      if (group.lineApprovalStatus == LineApprovalStatus.rejected) {
+        continue;
+      }
+      if (group.lineApprovalStatus == LineApprovalStatus.preApproval) {
+        final count = await BillingExecutor(transaction).update(
+          DaoQuoteLineGroup.tableName,
+          {
+            'line_approval_status': LineApprovalStatus.approved.name,
+            'modified_date': now,
+          },
+          where: 'id = ? AND line_approval_status = ?',
+          whereArgs: [group.id, LineApprovalStatus.preApproval.name],
+        );
+        if (count != 1) {
+          throw const LifecycleException(
+            'A quote task group changed while approval was being applied.',
+          );
+        }
+      }
+      if (group.taskId != null) {
+        taskIds.add(group.taskId!);
+      }
+    }
+
+    for (final taskId in taskIds) {
+      final task = await DaoTask().getById(taskId, transaction);
+      if (task == null || task.jobId != quote.jobId) {
+        throw LifecycleException(
+          'Quote ${quote.id} contains a task outside its job.',
+        );
+      }
+      if (task.status != TaskStatus.awaitingApproval) {
+        continue;
+      }
+      final count = await BillingExecutor(transaction).update(
+        DaoTask.tableName,
+        {'task_status_id': TaskStatus.approved.id, 'modifiedDate': now},
+        where: 'id = ? AND task_status_id = ?',
+        whereArgs: [taskId, TaskStatus.awaitingApproval.id],
+      );
+      if (count != 1) {
+        throw const LifecycleException(
+          'A task changed while quote approval was being applied.',
+        );
+      }
+    }
   }
 
   Future<void> _validateQuoteTransition(
@@ -553,12 +628,20 @@ class LifecycleEventDispatcher {
     if (target == JobStatus.toBeScheduled ||
         target == JobStatus.scheduled ||
         target == JobStatus.inProgress) {
-      final tasks = await DaoTask().getTasksByJob(
+      final quotes = await DaoQuote().getByJobId(
         jobId,
         transaction: transaction,
       );
-      for (final task in tasks) {
-        await DaoTask().jobHasBeenApproved(task, transaction: transaction);
+      // An approved quote defines its own accepted task scope. Other job
+      // entry paths retain their existing whole-job approval behavior.
+      if (!quotes.any((quote) => quote.state.isPostApproval)) {
+        final tasks = await DaoTask().getTasksByJob(
+          jobId,
+          transaction: transaction,
+        );
+        for (final task in tasks) {
+          await DaoTask().jobHasBeenApproved(task, transaction: transaction);
+        }
       }
     }
 
