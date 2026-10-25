@@ -350,6 +350,53 @@ void main() {
     );
   });
 
+  test('separate quote versions approve only their accepted tasks', () async {
+    final job = await _insertJob(JobStatus.awaitingApproval);
+    final firstQuote = await _insertQuote(QuoteState.sent, job: job);
+    final laterQuote = await _insertQuote(QuoteState.sent, job: job);
+    final firstTask = await _insertTask(job);
+    final laterTask = await _insertTask(job);
+    final unrelated = await _insertTask(job);
+    final completed = await _insertTask(job, status: TaskStatus.completed);
+    await _insertGroup(firstQuote, firstTask);
+    await _insertGroup(laterQuote, laterTask);
+    await _insertGroup(laterQuote, completed);
+
+    await DaoQuote().approveQuote(firstQuote.id);
+    await LifecycleEventDispatcher().dispatchJob(
+      job.id,
+      ScheduleJob.new,
+      context: LifecycleContext(source: 'test.scheduleFirstQuote'),
+    );
+    expect(
+      (await DaoTask().getById(firstTask.id))?.status,
+      TaskStatus.approved,
+    );
+    expect(
+      (await DaoTask().getById(laterTask.id))?.status,
+      TaskStatus.awaitingApproval,
+    );
+    expect(
+      (await DaoTask().getById(unrelated.id))?.status,
+      TaskStatus.awaitingApproval,
+    );
+
+    await DaoQuote().approveQuote(laterQuote.id);
+    expect((await DaoJob().getById(job.id))?.status, JobStatus.scheduled);
+    expect(
+      (await DaoTask().getById(laterTask.id))?.status,
+      TaskStatus.approved,
+    );
+    expect(
+      (await DaoTask().getById(unrelated.id))?.status,
+      TaskStatus.awaitingApproval,
+    );
+    expect(
+      (await DaoTask().getById(completed.id))?.status,
+      TaskStatus.completed,
+    );
+  });
+
   test('invalid quote task link rolls back quote and group approval', () async {
     final job = await _insertJob(JobStatus.awaitingApproval);
     final otherJob = await _insertJob(JobStatus.awaitingApproval);

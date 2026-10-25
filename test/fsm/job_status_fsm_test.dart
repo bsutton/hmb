@@ -287,6 +287,42 @@ void main() {
       );
     });
 
+    test(
+      'accepting a job without a quote keeps task approval behavior',
+      () async {
+        final job = await _insertJob(JobStatus.prospecting);
+        final pending = Task.forInsert(
+          jobId: job.id,
+          name: 'Pending work',
+          description: '',
+          status: TaskStatus.awaitingApproval,
+        );
+        final completed = Task.forInsert(
+          jobId: job.id,
+          name: 'Completed work',
+          description: '',
+          status: TaskStatus.completed,
+        );
+        await DaoTask().insert(pending);
+        await DaoTask().insert(completed);
+
+        await LifecycleEventDispatcher().dispatchJob(
+          job.id,
+          AcceptJob.new,
+          context: LifecycleContext(source: 'test.acceptWithoutQuote'),
+        );
+
+        expect(
+          (await DaoTask().getById(pending.id))?.status,
+          TaskStatus.approved,
+        );
+        expect(
+          (await DaoTask().getById(completed.id))?.status,
+          TaskStatus.completed,
+        );
+      },
+    );
+
     test('picker keeps distinct actions with the same destination', () async {
       final job = await _insertJob(JobStatus.awaitingPayment);
       final machine = await buildJobMachine(job);
