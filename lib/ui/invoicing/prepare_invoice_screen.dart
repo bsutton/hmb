@@ -3,14 +3,17 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../dao/billing_service.dart';
 import '../../dao/billing_waiver.dart';
+import '../../dao/dao_job.dart';
 import '../../entity/entity.g.dart';
 import '../../util/dart/format.dart';
-import '../../util/dart/local_date.dart';
 import '../../util/dart/money_ex.dart';
 import '../crud/milestone/edit_milestone_payment.dart';
+import '../widgets/fields/hmb_money_editing_controller.dart';
+import '../widgets/fields/hmb_money_field.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/widgets.g.dart';
+import 'invoice_options_screen.dart';
 import 'waive_charges_dialog.dart';
 
 class PrepareInvoiceScreen extends StatefulWidget {
@@ -31,23 +34,47 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
   final _service = BillingService();
   late BillingPreview _preview;
   final _selected = <String>{};
-  Contact? _contact;
-  late LocalDate _dueDate;
+  final _bookingFee = HMBMoneyEditingController();
+  var _savedFeeText = '';
+  late BillingType _billingType;
   var _early = false;
-  var _byTask = true;
   var _saving = false;
   String? _error;
-  InvoicePlan? _pending;
+  var _loaded = false;
+  var _waiverMode = false;
+  final _invoiceSelection = <String>{};
 
   @override
   Future<void> asyncInitState() => BlockingUI().runAndWait(_load);
 
   Future<void> _load() async {
+    final previousKeys = _loaded
+        ? _preview.candidates.map((charge) => charge.key).toSet()
+        : <String>{};
     _preview = await _service.preview(widget.jobId);
-    _contact = _preview.contacts
-        .where((c) => c.id == _preview.defaultContactId)
-        .firstOrNull;
-    _dueDate = LocalDate.today().add(Duration(days: _preview.paymentTerms));
+    _billingType = _preview.job.billingType;
+    _bookingFee.money =
+        _preview.effectiveBookingFee ?? _preview.job.bookingFee ?? MoneyEx.zero;
+    _savedFeeText = _bookingFee.text;
+    if (_loaded) {
+      final available = _preview.candidates.map((c) => c.key).toSet();
+      _selected.removeWhere((key) => !available.contains(key));
+      if (!_waiverMode) {
+        _selected.addAll(
+          _preview.candidates
+              .where(
+                (charge) =>
+                    !previousKeys.contains(charge.key) &&
+                    !charge.isFuture &&
+                    charge.kind != 'quote',
+              )
+              .map((charge) => charge.key),
+        );
+      }
+      _error = null;
+      return;
+    }
+    _loaded = true;
     _selected.clear();
     if (widget.milestoneId != null) {
       final key = 'milestone:${widget.milestoneId}';
@@ -69,13 +96,18 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
             .map((candidate) => candidate.key),
       );
     }
-    _pending = null;
     _error = null;
   }
 
   @override
+  void dispose() {
+    _bookingFee.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Prepare invoice')),
+    appBar: AppBar(title: const Text('Review charges')),
     body: DeferredBuilder(
       this,
       waitingBuilder: (_) => const SizedBox.shrink(),
@@ -91,7 +123,50 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
               _preview.job.summary,
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            Text('Bill to: ${_preview.billingCustomerName}'),
+            if (!_waiverMode)
+              HMBFormSection(
+                children: [
+                  HMBDroplist<BillingType>(
+                    title: 'Job billing type',
+                    items: (_) async => BillingType.values,
+                    selectedItem: () async => _billingType,
+                    format: (type) => type.display,
+                    onChanged: (type) {
+                      if (type != null) {
+                        setState(() => _billingType = type);
+                      }
+                    },
+                  ),
+                  const Text('Existing tasks keep their billing type.'),
+                  for (final quote in _preview.bookingFeeQuotes.entries)
+                    Text(
+                      quote.value
+                          ? 'Booking fee: invoiced with quote #${quote.key}'
+                          : 'Booking fee: included in quote #${quote.key}',
+                    ),
+                  if (_preview.job.bookingFeeInvoiced)
+                    const Text('Booking fee: invoiced separately'),
+                  if (!_preview.job.bookingFeeInvoiced &&
+                      _preview.bookingFeeQuotes.isEmpty)
+                    HMBMoneyField(
+                      controller: _bookingFee,
+                      labelText: 'Booking fee',
+                      fieldName: 'booking fee',
+                      nonZero: false,
+                    ),
+                  HMBButtonSecondary(
+                    label: 'Save changes',
+                    hint: 'Save job billing settings and recalculate charges',
+                    onPressed: _saving ? null : _saveChanges,
+                  ),
+                ],
+              ),
+            if (_waiverMode)
+              const Text(
+                'Select charges to waive. These charges will not be invoiced.',
+              )
+            else
+              const Text('Select charges to include in the invoice.'),
             for (final section in [
               'Fixed payments',
               'Actual work',
@@ -107,7 +182,7 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
                     for (final c in _preview.candidates.where(
                       (c) => _section(c) == section,
                     ))
-                      if (c.kind == 'quote')
+                      if (c.kind == 'quote' && !_waiverMode)
                         _fixedPaymentChoice(c)
                       else
                         _chargeSwitch(c),
@@ -125,46 +200,19 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
               ),
             HMBFormSection(
               children: [
-                HMBDroplist<Contact>(
-                  title: 'Bill to contact',
-                  items: (_) async => _preview.contacts,
-                  selectedItem: () async => _contact,
-                  format: (c) => c.fullname,
-                  onChanged: (contact) => setState(() {
-                    _contact = contact;
-                    _pending = null;
-                  }),
-                ),
-                HMBDateTimeField(
-                  label: 'Payment due',
-                  initialDateTime: _dueDate.toDateTime(),
-                  mode: HMBDateTimeFieldMode.dateOnly,
-                  onChanged: (date) => setState(() {
-                    _dueDate = LocalDate.fromDateTime(date);
-                    _pending = null;
-                  }),
-                ),
-                HMBSwitch(
-                  labelText: 'Group labour by task',
-                  initialValue: _byTask,
-                  leadingSpace: false,
-                  onChanged: (v) => setState(() {
-                    _byTask = v;
-                    _pending = null;
-                  }),
-                ),
-                if (selected.any((c) => c.isFuture))
+                if (!_waiverMode && selected.any((c) => c.isFuture))
                   HMBSwitch(
                     labelText: 'Bill selected future milestones now',
                     initialValue: _early,
                     leadingSpace: false,
                     onChanged: (v) => setState(() {
                       _early = v;
-                      _pending = null;
                     }),
                   ),
                 Text(
-                  'Total: $total',
+                  _waiverMode
+                      ? 'Selected to waive: ${selected.length} — $total'
+                      : 'Total: $total',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 if (_preview.taxRate > 0)
@@ -172,28 +220,42 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
               ],
             ),
             if (_error != null) Text(_error!),
-            HMBButtonSecondary(
-              label: 'Refresh charges',
-              hint: 'Reload current billable work',
-              onPressed: () async {
-                await BlockingUI().runAndWait(_load);
-                if (mounted) {
-                  setState(() {});
-                }
-              },
-            ),
-            HMBButtonPrimary(
-              label: 'Create draft invoice',
-              hint: 'Reserve the selected charges and create this invoice',
-              onPressed: _saving || _selected.isEmpty || _contact == null
-                  ? null
-                  : _create,
-            ),
-            HMBButtonSecondary(
-              label: 'Waive selected charges',
-              hint: 'Record why the selected charges will not be billed',
-              onPressed: _saving || _selected.isEmpty ? null : _waive,
-            ),
+            if (!_waiverMode)
+              HMBButtonPrimary(
+                label: 'Continue to invoice',
+                hint: 'Save changes and choose invoice details',
+                onPressed: _saving || _selected.isEmpty ? null : _create,
+              ),
+            if (_waiverMode) ...[
+              HMBButtonPrimary(
+                label: 'Waive ${selected.length} selected charges',
+                hint: 'Review the charges and give a reason before waiving',
+                onPressed: _saving || _selected.isEmpty ? null : _waive,
+              ),
+              HMBButtonSecondary(
+                label: 'Cancel waiver',
+                hint: 'Return to invoice selection without waiving charges',
+                onPressed: _saving ? null : _exitWaiverMode,
+              ),
+            ] else
+              HMBButtonSecondary(
+                label: 'Choose charges to waive',
+                hint: 'Select charges separately from the invoice selection',
+                onPressed: _saving
+                    ? null
+                    : () async {
+                        if (!await _saveChanges() || !mounted) {
+                          return;
+                        }
+                        setState(() {
+                          _invoiceSelection
+                            ..clear()
+                            ..addAll(_selected);
+                          _selected.clear();
+                          _waiverMode = true;
+                        });
+                      },
+              ),
           ],
         );
       },
@@ -204,12 +266,12 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
     key: ValueKey(charge.key),
     leadingSpace: false,
     labelText:
+        '${_waiverMode ? 'Waive: ' : ''}'
         '${charge.description} — ${charge.amount}'
         '${charge.isFuture ? ' (future milestone)' : ''}',
     initialValue: _selected.contains(charge.key),
     onChanged: (value) => setState(() {
       value ? _selected.add(charge.key) : _selected.remove(charge.key);
-      _pending = null;
     }),
   );
 
@@ -256,7 +318,18 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
         reason: reason,
       ),
     );
+    if (mounted && _error == null) {
+      _exitWaiverMode();
+    }
   }
+
+  void _exitWaiverMode() => setState(() {
+    _waiverMode = false;
+    final available = _preview.candidates.map((c) => c.key).toSet();
+    _selected
+      ..clear()
+      ..addAll(_invoiceSelection.where(available.contains));
+  });
 
   Future<void> _restore(BillingWaiver waiver) => _changeWaiver(
     () => _service.restoreWaiver(jobId: widget.jobId, waiverId: waiver.id),
@@ -290,7 +363,6 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
           hint: 'Include the full agreed price in this invoice',
           onPressed: () => setState(() {
             _selected.add(charge.key);
-            _pending = null;
           }),
         ),
       HMBButtonSecondary(
@@ -302,6 +374,9 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
   );
 
   Future<void> _editSchedule(int quoteId) async {
+    if (!await _saveChanges() || !mounted) {
+      return;
+    }
     final selectedMilestone = await Navigator.of(context).push<int>(
       MaterialPageRoute(
         builder: (_) =>
@@ -329,10 +404,6 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
             _selected.add(charge.key);
           }
         }
-        _contact = refreshed.contacts
-            .where((contact) => contact.id == _contact?.id)
-            .firstOrNull;
-        _pending = null;
         _error = null;
       });
     } on Exception catch (error) {
@@ -348,30 +419,61 @@ class _PrepareInvoiceScreenState extends DeferredState<PrepareInvoiceScreen> {
     _ => 'Actual work',
   };
 
-  Future<void> _create() async {
+  Future<bool> _saveChanges() async {
     setState(() => _saving = true);
     try {
-      _pending ??= _preview.select(
-        keys: _selected,
-        contactId: _contact!.id,
-        groupByTask: _byTask,
-        allowEarlyBilling: _early,
-        dueDate: _dueDate,
-      );
-      final invoice = await BlockingUI().runAndWait(
-        () => _service.commit(_pending!),
-      );
-      if (mounted) {
-        Navigator.of(context).pop(invoice);
+      final fee = _bookingFee.text.trim().isEmpty
+          ? MoneyEx.zero
+          : _bookingFee.money;
+      if (fee == null || fee < MoneyEx.zero) {
+        throw const FormatException('Enter a valid, non-negative booking fee.');
       }
+      await BlockingUI().runAndWait(() async {
+        final job = await DaoJob().getById(widget.jobId);
+        if (job == null) {
+          throw StateError('This job no longer exists.');
+        }
+        final feeChanged =
+            !job.bookingFeeInvoiced &&
+            _preview.bookingFeeQuotes.isEmpty &&
+            _bookingFee.text != _savedFeeText;
+        if (job.billingType != _billingType || feeChanged) {
+          job.billingType = _billingType;
+          if (feeChanged) {
+            job.bookingFee = fee;
+          }
+          await DaoJob().update(job);
+        }
+        await _load();
+      });
+      return true;
     } catch (e) {
       if (mounted) {
         setState(() => _error = e.toString());
       }
+      return false;
     } finally {
       if (mounted) {
         setState(() => _saving = false);
       }
+    }
+  }
+
+  Future<void> _create() async {
+    if (!await _saveChanges() || !mounted || _selected.isEmpty) {
+      return;
+    }
+    final invoice = await Navigator.of(context).push<Invoice>(
+      MaterialPageRoute(
+        builder: (_) => InvoiceOptionsScreen(
+          preview: _preview,
+          selected: Set.of(_selected),
+          allowEarlyBilling: _early,
+        ),
+      ),
+    );
+    if (invoice != null && mounted) {
+      Navigator.of(context).pop(invoice);
     }
   }
 }

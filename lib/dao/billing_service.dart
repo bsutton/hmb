@@ -76,6 +76,10 @@ class BillingPreview {
   final int? billingCustomerId;
   final double taxRate;
   final List<BillingWaiver> waivers;
+
+  /// Quote coverage is separate from the flag for a standalone fee invoice.
+  final Map<String, bool> bookingFeeQuotes;
+  final Money? effectiveBookingFee;
   const BillingPreview({
     required this.job,
     required this.candidates,
@@ -88,6 +92,8 @@ class BillingPreview {
     required this.billingCustomerId,
     required this.taxRate,
     this.waivers = const [],
+    this.bookingFeeQuotes = const {},
+    this.effectiveBookingFee,
   });
 
   Money includedTax(Iterable<BillingCandidate> selected) => selected.fold(
@@ -259,6 +265,7 @@ WHERE i.job_id = ? AND a.released_date IS NULL
     final agreedTasks = agreements.map((a) => a['task_id']! as int).toSet();
     var quotedFee = false;
     final quotesWithFee = <int>{};
+    final bookingFeeQuotes = <String, bool>{};
     final feeLines = await db.rawQuery(
       '''
 SELECT l.id FROM invoice_line l JOIN invoice i ON i.id = l.invoice_id
@@ -312,6 +319,17 @@ AND NOT EXISTS (SELECT 1 FROM billing_allocation a
         orderBy: 'milestone_number',
       )).map(Milestone.fromMap).toList();
       versions.add(milestones.map((m) => m.toMap()).toList());
+      if (quotesWithFee.contains(quote.id)) {
+        bookingFeeQuotes[quote.bestNumber] =
+            claimed.contains('quote:${quote.id}') ||
+            (milestones.isNotEmpty &&
+                milestones.every((milestone) => milestone.invoiceId != null) &&
+                milestones.fold(
+                      MoneyEx.zero,
+                      (sum, milestone) => sum + milestone.paymentAmount,
+                    ) ==
+                    quote.totalAmount);
+      }
       if (claimed.contains('quote:${quote.id}')) {
         continue;
       }
@@ -633,6 +651,8 @@ LIMIT 1
       billingCustomerId: customer?.id,
       taxRate: config.taxRate,
       waivers: List.unmodifiable(waivers),
+      bookingFeeQuotes: Map.unmodifiable(bookingFeeQuotes),
+      effectiveBookingFee: fee,
       fingerprint: _digest([
         versions,
         candidates.map((c) => c.signature).toList(),

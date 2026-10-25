@@ -93,7 +93,7 @@ void main() {
           find.textContaining('Agreed work: Replace tap washer'),
           findsOneWidget,
         );
-        expect(find.text('Prepare invoice'), findsOneWidget);
+        expect(find.text('Review charges'), findsOneWidget);
         await tester.runAsync(() async {
           expect(await DaoQuote().getByJobId(job.id), isEmpty);
           expect(await DaoInvoice().getByJobId(job.id), isEmpty);

@@ -14,7 +14,6 @@
 // lib/src/ui/job/list_ready_to_invoice_screen.dart
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../dao/billing_attention_cache.dart';
@@ -41,6 +40,7 @@ class YetToBeInvoicedScreen extends StatefulWidget {
 class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
   late List<ToBeInvoicedJob> _jobs;
   Set<int> _unsentJobIds = {};
+  Map<int, String> _customerNames = {};
 
   @override
   Future<void> asyncInitState() async {
@@ -111,6 +111,10 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
     _unsentJobIds = (await DaoInvoice().getUnsent())
         .map((invoice) => invoice.jobId)
         .toSet();
+    _customerNames = {
+      for (final customer in await DaoCustomer().getAll())
+        customer.id: customer.name,
+    };
 
     return _snapshot();
   }
@@ -132,59 +136,51 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
         final item = _jobs[index];
         final job = item.job;
 
-        final card = FutureBuilderEx(
-          future: DaoCustomer().getById(job.customerId),
-          waitingBuilder: (_) => const SizedBox.shrink(),
-          errorBuilder: (_, error) => const Text('Could not load customer.'),
-          builder: (context, customer) => HMBListCard(
-            title: 'Customer: ${customer?.name ?? '—'}',
-            actions: [
-              HMBButton(
-                label: item.readiness.canInvoice
-                    ? 'Review charges'
-                    : 'Set up billing',
-                hint: item.readiness.canInvoice
-                    ? 'Invoice or waive selected charges for this job'
-                    : 'Open the quote and milestone billing setup',
-                onPressed: () async {
-                  if (item.readiness.canInvoice) {
-                    await createInvoiceFor(job, context);
-                    await _reloadAfterAction();
-                    return;
-                  }
-                  await Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => FullPageListJobCard(job),
-                    ),
-                  );
-                  await _reloadAfterAction();
-                },
-              ),
-            ],
-            children: [
-              // Job summary as an internal link
-              HMBLinkInternal(
-                label: 'Job : #${job.id} ${job.summary}',
-                navigateTo: () async => FullPageListJobCard(job),
-              ),
-              const HMBSpacer(height: true),
-              HMBText('Type: ${job.billingType.display}'),
-              HMBText(
-                'Attention: ${item.readiness.summary}',
+        final card = HMBListCard(
+          title: _customerNames[job.customerId] ?? '—',
+          children: [
+            HMBLinkInternal(
+              label: 'Job: #${job.id} ${job.summary}',
+              navigateTo: () async => FullPageListJobCard(job),
+            ),
+            HMBText('Type: ${job.billingType.display}'),
+            HMBText(
+              'Attention: ${item.readiness.summary}',
+              color: Colors.orange,
+            ),
+            if (item.hasUnsentInvoice)
+              const HMBText(
+                'Pending invoice exists and has not been sent yet.',
                 color: Colors.orange,
               ),
-              if (item.hasUnsentInvoice)
-                const HMBText(
-                  'Pending invoice exists and has not been sent yet.',
-                  color: Colors.orange,
-                ),
-            ],
-          ),
+            HMBButton(
+              label: item.readiness.canInvoice
+                  ? 'Review charges'
+                  : 'Set up billing',
+              hint: item.readiness.canInvoice
+                  ? 'Invoice or waive selected charges for this job'
+                  : 'Open the quote and milestone billing setup',
+              onPressed: () async {
+                if (item.readiness.canInvoice) {
+                  await createInvoiceFor(job, context);
+                  await _reloadAfterAction();
+                  return;
+                }
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => FullPageListJobCard(job),
+                  ),
+                );
+                await _reloadAfterAction();
+              },
+            ),
+          ],
         );
         final firstInSection =
             index == 0 ||
             _jobs[index - 1].readiness.canInvoice != item.readiness.canInvoice;
         return HMBColumn(
+          key: ValueKey(job.id),
           children: [
             if (firstInSection)
               Text(

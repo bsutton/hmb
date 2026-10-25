@@ -21,6 +21,83 @@ void main() {
   });
   tearDown(tearDownTestDb);
 
+  for (final useMilestones in [false, true]) {
+    test(
+      'quoted booking fee follows invoice coverage: $useMilestones',
+      () async {
+        final job = await createJobWithCustomer(
+          billingType: BillingType.fixedPrice,
+          hourlyRate: MoneyEx.zero,
+          bookingFee: MoneyEx.dollars(100),
+        );
+        final quote = Quote.forInsert(
+          jobId: job.id,
+          summary: 'Fixed work including booking fee',
+          description: '',
+          totalAmount: MoneyEx.dollars(100),
+          state: QuoteState.approved,
+        );
+        await DaoQuote().insert(quote);
+        final group = QuoteLineGroup.forInsert(
+          quoteId: quote.id,
+          taskId: null,
+          name: 'Booking Fee',
+        );
+        await DaoQuoteLineGroup().insert(group);
+        await DaoQuoteLine().insert(
+          QuoteLine.forInsert(
+            quoteId: quote.id,
+            quoteLineGroupId: group.id,
+            description: 'Booking Fee',
+            quantity: Fixed.one,
+            unitCharge: MoneyEx.dollars(100),
+            lineTotal: MoneyEx.dollars(100),
+          ),
+        );
+        if (useMilestones) {
+          for (var number = 1; number <= 2; number++) {
+            await DaoMilestone().insert(
+              Milestone.forInsert(
+                quoteId: quote.id,
+                milestoneNumber: number,
+                paymentAmount: MoneyEx.dollars(50),
+                paymentPercentage: Percentage.fromInt(5000),
+              ),
+            );
+          }
+        }
+        final service = BillingService();
+        var preview = await service.preview(job.id);
+        expect(preview.bookingFeeQuotes, {quote.bestNumber: false});
+        expect(preview.candidates.any((c) => c.kind == 'booking_fee'), isFalse);
+        final first = await service.commit(
+          preview.select(
+            keys: [preview.candidates.first.key],
+            contactId: job.billingContactId!,
+          ),
+        );
+        preview = await service.preview(job.id);
+        expect(preview.bookingFeeQuotes, {quote.bestNumber: !useMilestones});
+        if (useMilestones) {
+          await service.commit(
+            preview.select(
+              keys: [preview.candidates.single.key],
+              contactId: job.billingContactId!,
+            ),
+          );
+          preview = await service.preview(job.id);
+          expect(preview.bookingFeeQuotes, {quote.bestNumber: true});
+        }
+        expect(preview.candidates, isEmpty);
+        await InvoiceLifecycleService().deleteDraft(first.id);
+        preview = await service.preview(job.id);
+        expect(preview.bookingFeeQuotes, {quote.bestNumber: false});
+        expect(preview.candidates.any((c) => c.kind == 'booking_fee'), isFalse);
+        expect(preview.candidates, hasLength(1));
+      },
+    );
+  }
+
   Future<Task> fixedTask(Job job) async {
     final task = Task.forInsert(
       jobId: job.id,
