@@ -14,6 +14,7 @@
 @Tags(['flutter'])
 library;
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
@@ -45,14 +46,15 @@ void main() {
 
   group('Database Backup and Restore', () {
     final HMBDatabaseFactory databaseFactory = FlutterDatabaseFactory();
-    late final BackupProvider backupProvider = TestBackupProvider(
-      databaseFactory,
-      testDbPath,
-      backupDirectory: join(dirname(testDbPath), 'backups'),
-      photosDirectory: join(dirname(testDbPath), 'photos'),
-    );
+    late BackupProvider backupProvider;
 
     setUp(() async {
+      backupProvider = TestBackupProvider(
+        databaseFactory,
+        testDbPath,
+        backupDirectory: join(dirname(testDbPath), 'backups'),
+        photosDirectory: join(dirname(testDbPath), 'photos'),
+      );
       // Insert mock data into the test database
       final db = testDb!;
       await db.insert('photo', {
@@ -176,6 +178,143 @@ void main() {
         backup.deleteSync();
       }
     });
+
+    test('invalid SQLite backup cannot replace the live database', () async {
+      final backup = File(join(dirname(testDbPath), 'invalid-database.zip'))
+        ..writeAsBytesSync(
+          ZipEncoder().encode(
+            Archive()..addFile(
+              ArchiveFile.bytes(
+                'handyman.db',
+                utf8.encode('not a SQLite database'),
+              ),
+            ),
+          ),
+        );
+      try {
+        expect(DatabaseHelper().isOpen(), isTrue);
+        await expectLater(
+          backupProvider.performRestore(
+            Backup(
+              id: 'invalid-db',
+              when: DateTime.now(),
+              pathTo: backup.path,
+              size: 'unknown',
+              status: 'invalid',
+              error: '',
+            ),
+            ProjectScriptSource(),
+            databaseFactory,
+          ),
+          throwsException,
+        );
+        expect(DatabaseHelper().isOpen(), isTrue);
+        expect(
+          await DatabaseHelper().database.query('photo', where: 'id = 1'),
+          isNotEmpty,
+        );
+      } finally {
+        backup.deleteSync();
+      }
+    });
+
+    test('unrelated valid SQLite backup cannot replace HMB data', () async {
+      final unrelated = File(join(dirname(testDbPath), 'unrelated.db'));
+      final other = await databaseFactory.openDatabase(
+        unrelated.path,
+        options: OpenDatabaseOptions(singleInstance: false),
+      );
+      await other.execute('CREATE TABLE unrelated (id INTEGER PRIMARY KEY)');
+      await other.close();
+      final backup = File(join(dirname(testDbPath), 'unrelated.zip'))
+        ..writeAsBytesSync(
+          ZipEncoder().encode(
+            Archive()..addFile(
+              ArchiveFile.bytes('handyman.db', unrelated.readAsBytesSync()),
+            ),
+          ),
+        );
+      try {
+        await expectLater(
+          backupProvider.performRestore(
+            Backup(
+              id: 'unrelated',
+              when: DateTime.now(),
+              pathTo: backup.path,
+              size: 'unknown',
+              status: 'invalid',
+              error: '',
+            ),
+            ProjectScriptSource(),
+            databaseFactory,
+          ),
+          throwsException,
+        );
+        expect(DatabaseHelper().isOpen(), isTrue);
+        expect(
+          await DatabaseHelper().database.query('photo', where: 'id = 1'),
+          isNotEmpty,
+        );
+      } finally {
+        backup.deleteSync();
+        unrelated.deleteSync();
+      }
+    });
+
+    test('failed reopen rolls back the original database', () async {
+      final backupResult = await backupProvider.performBackup(
+        version: 1,
+        src: ProjectScriptSource(),
+      );
+      await DatabaseHelper().database.update('photo', {
+        'comment': 'live-only-after-backup',
+      }, where: 'id = 1');
+      final failingFactory = _FailOnceFactory(databaseFactory, testDbPath);
+      await expectLater(
+        backupProvider.performRestore(
+          Backup(
+            id: 'valid',
+            when: DateTime.now(),
+            pathTo: backupResult.pathToBackup,
+            size: 'unknown',
+            status: 'good',
+            error: '',
+          ),
+          ProjectScriptSource(),
+          failingFactory,
+        ),
+        throwsException,
+      );
+      expect(failingFactory.failed, isTrue);
+      expect(DatabaseHelper().isOpen(), isTrue);
+      final livePhoto = await DatabaseHelper().database.query(
+        'photo',
+        where: 'id = 1',
+      );
+      expect(livePhoto.single['comment'], 'live-only-after-backup');
+    });
+
+    test('backup staging and stored ZIP are private on Linux', () async {
+      if (!Platform.isLinux) {
+        return;
+      }
+      final inspecting = _InspectingBackupProvider(
+        databaseFactory,
+        testDbPath,
+        backupDirectory: join(dirname(testDbPath), 'private-backups'),
+      );
+      final result = await inspecting.performBackup(
+        version: 1,
+        src: ProjectScriptSource(),
+      );
+      expect(inspecting.stagingMode, '700');
+      final stored = await Process.run('stat', [
+        '-c',
+        '%a',
+        result.pathToBackup,
+      ]);
+      expect(stored.stdout.toString().trim(), '600');
+    });
   });
 
   group('Backup file naming', () {
@@ -223,4 +362,56 @@ void main() {
       }
     });
   });
+}
+
+class _FailOnceFactory implements HMBDatabaseFactory {
+  final HMBDatabaseFactory delegate;
+  final String livePath;
+  var failed = false;
+
+  _FailOnceFactory(this.delegate, this.livePath);
+
+  @override
+  Future<Database> openDatabase(
+    String path, {
+    required OpenDatabaseOptions options,
+  }) async {
+    if (path == livePath && !failed) {
+      failed = true;
+      final candidate = await delegate.openDatabase(path, options: options);
+      await candidate.rawQuery('PRAGMA user_version');
+      await candidate.close();
+      throw StateError('Simulated reopen failure');
+    }
+    return await delegate.openDatabase(path, options: options);
+  }
+}
+
+class _InspectingBackupProvider extends TestBackupProvider {
+  String? stagingMode;
+
+  _InspectingBackupProvider(
+    super.databaseFactory,
+    super.pathToDatabase, {
+    super.backupDirectory,
+  });
+
+  @override
+  Future<BackupResult> store({
+    required String pathToDatabaseCopy,
+    required String pathToZippedBackup,
+    required int version,
+  }) async {
+    final mode = await Process.run('stat', [
+      '-c',
+      '%a',
+      dirname(pathToZippedBackup),
+    ]);
+    stagingMode = mode.stdout.toString().trim();
+    return await super.store(
+      pathToDatabaseCopy: pathToDatabaseCopy,
+      pathToZippedBackup: pathToZippedBackup,
+      version: version,
+    );
+  }
 }

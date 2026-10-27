@@ -18,6 +18,7 @@ import 'package:date_time_format/date_time_format.dart';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart';
 import 'package:sentry/sentry.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../../util/dart/exceptions.dart';
 import '../../factory/hmb_database_factory.dart';
@@ -75,7 +76,7 @@ abstract class BackupProvider {
   Future<BackupResult> performBackup({
     required int version,
     required ScriptSource src,
-  }) => withTempDirAsync((tmpDir) async {
+  }) => _withPrivateTempDir((tmpDir) async {
     emitProgress('Initializing backup', 1, 6);
 
     final datePart = formatDate(DateTime.now(), format: 'y-m-d');
@@ -92,6 +93,9 @@ abstract class BackupProvider {
 
       emitProgress('Copying database', 2, 6);
       await copyDatabaseTo(pathToBackupFile, src, this);
+      if (File(pathToBackupFile).lengthSync() > maxRestoredDatabaseBytes) {
+        throw BackupException('Database exceeds the supported backup size');
+      }
 
       emitProgress('Preparing to zip files', 3, 6);
 
@@ -101,6 +105,12 @@ abstract class BackupProvider {
         pathToZip: pathToZip,
         pathToBackupFile: pathToBackupFile,
       );
+
+      if (File(pathToZip).lengthSync() > maxBackupArchiveBytes) {
+        throw BackupException('ZIP exceeds the supported backup size');
+      }
+
+      await _restrictFileToOwner(File(pathToZip));
 
       emitProgress('Storing backup', 5, 6);
       final result = await store(
@@ -135,14 +145,18 @@ abstract class BackupProvider {
     Backup backup,
     ScriptSource src,
     HMBDatabaseFactory databaseFactory,
-  ) => withTempDirAsync((tmpDir) async {
+  ) => _withPrivateTempDir((tmpDir) async {
     emitProgress('Initializing restore', 1, _restoreStageCount);
 
     final wasOpen = DatabaseHelper().isOpen();
 
     try {
       emitProgress('Fetching backup file', 4, _restoreStageCount);
-      final backupFile = await fetchBackup(backup);
+      final fetched = await fetchBackup(backup, join(tmpDir, 'download.zip'));
+      final backupFile = await _snapshotBackup(
+        fetched,
+        join(tmpDir, 'snapshot.zip'),
+      );
 
       emitProgress('Extracting files from backup', 5, _restoreStageCount);
       final dbPath = await extractFiles(
@@ -158,28 +172,14 @@ abstract class BackupProvider {
         throw BackupException('No database found in the zip file');
       }
 
-      // Keep the live database open while validating an untrusted backup.
-      // A rejected archive must not leave the application disconnected.
-      if (wasOpen) {
-        emitProgress('Closing database', 6, _restoreStageCount);
-        await DatabaseHelper().closeDb();
-      }
-
-      // Restore the database file
+      // Check SQLite structure while the original database remains open.
+      await _validateRestoreDatabase(dbPath, databaseFactory);
       emitProgress('Restoring database file', 7, _restoreStageCount);
-      final appDbPath = await databasePath;
-      if (exists(appDbPath)) {
-        delete(appDbPath);
-      }
-      copy(dbPath, appDbPath);
-
-      emitProgress('Reopening database', 8, _restoreStageCount);
-      // Reopen the database after restoring
-      await DatabaseHelper().openDb(
+      await _installRestoredDatabase(
+        dbPath,
+        wasOpen: wasOpen,
         src: src,
-        backupProvider: this,
         databaseFactory: databaseFactory,
-        backup: false,
       );
 
       emitProgress('Restore completed', 9, _restoreStageCount);
@@ -200,11 +200,125 @@ abstract class BackupProvider {
     }
   });
 
+  Future<void> _validateRestoreDatabase(
+    String path,
+    HMBDatabaseFactory factory,
+  ) async {
+    final db = await factory.openDatabase(
+      path,
+      options: OpenDatabaseOptions(readOnly: true, singleInstance: false),
+    );
+    try {
+      final rows = await db.rawQuery('PRAGMA integrity_check');
+      if (rows.length != 1 || rows.single.values.single != 'ok') {
+        throw BackupException('Backup database failed SQLite integrity check');
+      }
+      final tables = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type = 'table' "
+        "AND name IN ('customer', 'job', 'task')",
+      );
+      if (tables.length != 3) {
+        throw BackupException('Backup database is not an HMB database');
+      }
+    } finally {
+      await db.close();
+    }
+  }
+
+  Future<void> _installRestoredDatabase(
+    String stagedPath, {
+    required bool wasOpen,
+    required ScriptSource src,
+    required HMBDatabaseFactory databaseFactory,
+  }) async {
+    final appDbPath = await databasePath;
+    final restoreDir = await _createPrivateTempDirectory(
+      dirname(appDbPath),
+      '.hmb-restore-',
+    );
+    final candidate = File(join(restoreDir.path, 'candidate.db'));
+    const suffixes = ['', '-wal', '-shm', '-journal'];
+    final saved = <String>[];
+    var cleanup = true;
+    var candidateInstalled = false;
+    try {
+      await File(stagedPath).copy(candidate.path);
+      await _restrictFileToOwner(candidate);
+      if (wasOpen) {
+        emitProgress('Closing database', 7, _restoreStageCount);
+        await DatabaseHelper().closeDb();
+      }
+      for (final suffix in suffixes) {
+        final current = File('$appDbPath$suffix');
+        if (current.existsSync()) {
+          await current.rename(join(restoreDir.path, 'previous$suffix'));
+          saved.add(suffix);
+        }
+      }
+      await candidate.rename(appDbPath);
+      candidateInstalled = true;
+      emitProgress('Reopening database', 8, _restoreStageCount);
+      await DatabaseHelper().openDb(
+        src: src,
+        backupProvider: this,
+        databaseFactory: databaseFactory,
+        backup: false,
+      );
+    } catch (error, stack) {
+      try {
+        if (candidateInstalled || saved.isNotEmpty) {
+          if (DatabaseHelper().isOpen()) {
+            await DatabaseHelper().closeDb();
+          }
+          if (candidateInstalled) {
+            for (final suffix in suffixes) {
+              final current = File('$appDbPath$suffix');
+              if (current.existsSync()) {
+                await current.delete();
+              }
+            }
+          }
+          for (final suffix in saved) {
+            await File(
+              join(restoreDir.path, 'previous$suffix'),
+            ).rename('$appDbPath$suffix');
+          }
+        }
+        if (wasOpen &&
+            !DatabaseHelper().isOpen() &&
+            File(appDbPath).existsSync()) {
+          await DatabaseHelper().openDb(
+            src: src,
+            backupProvider: this,
+            databaseFactory: databaseFactory,
+            backup: false,
+          );
+        }
+      } catch (rollbackError) {
+        // Retain the private rollback directory for manual recovery.
+        cleanup = false;
+        throw BackupException(
+          'Restore failed and rollback also failed; previous database is in '
+          '${restoreDir.path}: $rollbackError',
+        );
+      }
+      Error.throwWithStackTrace(error, stack);
+    } finally {
+      if (cleanup) {
+        await restoreDir.delete(recursive: true);
+      }
+    }
+  }
+
   /// Fetchs the backup from storage and makes
   /// it available on the local file system
   /// returning a [File] object to the local file.
   ///
-  Future<File> fetchBackup(Backup backup);
+  Future<File> fetchBackup(Backup backup, String privateDestination);
+
+  /// Ensure a backup remains owner-readable after a cross-volume copy.
+  Future<void> secureStoredBackup(String path) =>
+      _restrictFileToOwner(File(path));
 
   /// Replaces the current database with the one in the backup file.
   Future<void> replaceDatabase(
@@ -330,5 +444,79 @@ class BackupResult {
       ..writeln('Original Size: $sourceSize')
       ..writeln('Backed-up Size: $backupSize');
     return sb.toString();
+  }
+}
+
+Future<T> _withPrivateTempDir<T>(Future<T> Function(String) action) async {
+  final directory = await _createPrivateTempDirectory(
+    Directory.systemTemp.path,
+    'hmb-backup-',
+  );
+  try {
+    return await action(directory.path);
+  } finally {
+    await directory.delete(recursive: true);
+  }
+}
+
+Future<Directory> _createPrivateTempDirectory(
+  String parent,
+  String prefix,
+) async {
+  if (!Platform.isLinux && !Platform.isMacOS) {
+    // Mobile app sandboxes and Windows profile ACLs protect these roots.
+    return await Directory(parent).createTemp(prefix);
+  }
+  // Dart Directory.createTemp and DCLI createTempDir both honor a permissive
+  // umask on POSIX. mktemp creates the directory atomically with mode 0700.
+  const mktemp = '/usr/bin/mktemp';
+  final result = await Process.run(mktemp, [
+    '-d',
+    join(parent, '${prefix}XXXXXX'),
+  ]);
+  if (result.exitCode != 0) {
+    throw const FileSystemException(
+      'Unable to create private backup directory',
+    );
+  }
+  final path = (result.stdout as String).trim();
+  if (!isWithin(absolute(parent), absolute(path))) {
+    throw FileSystemException('Invalid private backup directory', path);
+  }
+  return Directory(path);
+}
+
+Future<void> _restrictFileToOwner(File file) async {
+  if (!Platform.isLinux && !Platform.isMacOS) {
+    return;
+  }
+  final chmod = Platform.isMacOS ? '/bin/chmod' : '/usr/bin/chmod';
+  final result = await Process.run(chmod, ['600', file.path]);
+  if (result.exitCode != 0) {
+    throw FileSystemException('Unable to secure backup file', file.path);
+  }
+}
+
+Future<File> _snapshotBackup(File source, String destination) async {
+  final snapshot = File(destination);
+  final sink = snapshot.openWrite();
+  var copied = 0;
+  var complete = false;
+  try {
+    await for (final chunk in source.openRead()) {
+      copied += chunk.length;
+      if (copied > maxBackupArchiveBytes) {
+        throw BackupException('Backup ZIP exceeds the supported size');
+      }
+      sink.add(chunk);
+    }
+    await sink.flush();
+    complete = true;
+    return snapshot;
+  } finally {
+    await sink.close();
+    if (!complete && snapshot.existsSync()) {
+      await snapshot.delete();
+    }
   }
 }

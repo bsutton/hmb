@@ -42,7 +42,7 @@ class EmailBackupProvider extends BackupProvider {
   }
 
   @override
-  Future<File> fetchBackup(Backup backup) {
+  Future<File> fetchBackup(Backup backup, String privateDestination) {
     /// you can't retrieve emailed backups
     throw UnimplementedError();
   }

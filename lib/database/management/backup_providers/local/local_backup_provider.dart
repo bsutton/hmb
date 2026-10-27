@@ -36,7 +36,8 @@ class LocalBackupProvider extends BackupProvider {
   }
 
   @override
-  Future<File> fetchBackup(Backup backup) async => File(backup.pathTo);
+  Future<File> fetchBackup(Backup backup, String privateDestination) async =>
+      File(backup.pathTo);
 
   @override
   Future<List<Backup>> getBackups() async {
@@ -95,6 +96,15 @@ class LocalBackupProvider extends BackupProvider {
     final pathToBackupFile = join(pathToBackupDir, '$version.$datePart.zip');
 
     move(pathToZippedBackup, pathToBackupFile);
+    try {
+      await secureStoredBackup(pathToBackupFile);
+    } catch (_) {
+      final insecure = File(pathToBackupFile);
+      if (insecure.existsSync()) {
+        await insecure.delete();
+      }
+      rethrow;
+    }
 
     return BackupResult(
       pathToBackup: pathToBackupFile,

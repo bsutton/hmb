@@ -39,7 +39,8 @@ class TestBackupProvider extends BackupProvider {
   }
 
   @override
-  Future<File> fetchBackup(Backup backup) => Future.value(File(backup.pathTo));
+  Future<File> fetchBackup(Backup backup, String privateDestination) =>
+      Future.value(File(backup.pathTo));
 
   @override
   Future<List<Backup>> getBackups() {

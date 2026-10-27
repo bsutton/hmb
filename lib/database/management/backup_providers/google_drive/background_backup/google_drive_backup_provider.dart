@@ -17,7 +17,6 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:archive/archive_io.dart';
-import 'package:dcli_core/dcli_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:path/path.dart';
@@ -27,6 +26,7 @@ import '../../../../../util/dart/exceptions.dart';
 import '../../../../../util/dart/paths.dart';
 import '../../backup.dart';
 import '../../backup_provider.dart';
+import '../../zip_isolate.dart';
 import '../google_drive_api.dart';
 import '../google_drive_auth.dart';
 import 'backup_params.dart';
@@ -61,7 +61,7 @@ class GoogleDriveBackupProvider extends BackupProvider {
   }
 
   @override
-  Future<File> fetchBackup(Backup backup) async {
+  Future<File> fetchBackup(Backup backup, String privateDestination) async {
     try {
       final driveApi = await GoogleDriveApi.selfAuth();
       final media =
@@ -70,7 +70,7 @@ class GoogleDriveBackupProvider extends BackupProvider {
                 downloadOptions: drive.DownloadOptions.fullMedia,
               ))
               as drive.Media;
-      return await saveStreamToFile(media.stream, createTempFile());
+      return await saveStreamToFile(media.stream, privateDestination);
     } catch (e) {
       throw BackupException('Error downloading backup from Google Drive: $e');
     }
@@ -78,16 +78,30 @@ class GoogleDriveBackupProvider extends BackupProvider {
 
   Future<File> saveStreamToFile(
     Stream<List<int>> stream,
-    String filePath,
-  ) async {
+    String filePath, {
+    int maxBytes = maxBackupArchiveBytes,
+  }) async {
     final file = File(filePath);
     final sink = file.openWrite();
+    var written = 0;
+    var completed = false;
     try {
-      await stream.pipe(sink);
+      await for (final chunk in stream) {
+        written += chunk.length;
+        if (written > maxBytes) {
+          throw BackupException('Backup download exceeds size limit');
+        }
+        sink.add(chunk);
+      }
+      await sink.flush();
+      completed = true;
+      return file;
     } finally {
       await sink.close();
+      if (!completed && file.existsSync()) {
+        await file.delete();
+      }
     }
-    return File(filePath);
   }
 
   @override
