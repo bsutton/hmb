@@ -16,6 +16,7 @@ library;
 
 import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/database/factory/flutter_database_factory.dart';
@@ -140,6 +141,40 @@ void main() {
       expect(restoreRuns.isNotEmpty, isTrue);
 
       // Photos are no longer stored in backup zips (synced separately).
+    });
+
+    test('rejected backup leaves the existing database open', () async {
+      final backup = File(join(dirname(testDbPath), 'invalid-restore.zip'))
+        ..writeAsBytesSync(
+          ZipEncoder().encode(
+            Archive()..addFile(ArchiveFile.bytes('photos/handyman.db', [1])),
+          ),
+        );
+      try {
+        expect(DatabaseHelper().isOpen(), isTrue);
+        await expectLater(
+          backupProvider.performRestore(
+            Backup(
+              id: 'invalid',
+              when: DateTime.now(),
+              pathTo: backup.path,
+              size: 'unknown',
+              status: 'invalid',
+              error: '',
+            ),
+            ProjectScriptSource(),
+            databaseFactory,
+          ),
+          throwsException,
+        );
+        expect(DatabaseHelper().isOpen(), isTrue);
+        expect(
+          await DatabaseHelper().database.query('photo', where: 'id = 1'),
+          isNotEmpty,
+        );
+      } finally {
+        backup.deleteSync();
+      }
     });
   });
 

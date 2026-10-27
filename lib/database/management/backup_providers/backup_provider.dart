@@ -141,18 +141,6 @@ abstract class BackupProvider {
     final wasOpen = DatabaseHelper().isOpen();
 
     try {
-      // Close the database if it is currently open
-      if (wasOpen) {
-        emitProgress('Closing database', 2, _restoreStageCount);
-        await DatabaseHelper().closeDb();
-      }
-
-      final photosDir = await photosRootPath;
-      if (!exists(photosDir)) {
-        emitProgress('Creating photos directory', 3, _restoreStageCount);
-        createDir(photosDir, recursive: true);
-      }
-
       emitProgress('Fetching backup file', 4, _restoreStageCount);
       final backupFile = await fetchBackup(backup);
 
@@ -168,6 +156,13 @@ abstract class BackupProvider {
       if (dbPath == null) {
         emitProgress('No database found in backup file', 6, _restoreStageCount);
         throw BackupException('No database found in the zip file');
+      }
+
+      // Keep the live database open while validating an untrusted backup.
+      // A rejected archive must not leave the application disconnected.
+      if (wasOpen) {
+        emitProgress('Closing database', 6, _restoreStageCount);
+        await DatabaseHelper().closeDb();
       }
 
       // Restore the database file

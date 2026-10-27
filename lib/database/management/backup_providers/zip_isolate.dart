@@ -146,42 +146,94 @@ Future<String?> extractFiles(
   final encoder = ZipDecoder();
   String? dbPath;
   // Extract the ZIP file contents to a temporary directory
-  final archive = encoder.decodeStream(InputFileStream(backupFile.path));
+  final input = InputFileStream(backupFile.path);
+  try {
+    final archive = encoder.decodeStream(input);
+    final targets = <({ArchiveFile file, String path})>[];
 
-  const restored = 0;
-
-  for (final file in archive) {
-    final filename = file.name;
-    final filePath = join(tmpDir, filename);
-
-    provider.emitProgress(
-      'Restoring  $restored/${archive.length}',
-      stageNo,
-      stageCount,
-    );
-
-    if (file.isFile) {
-      // If the file is the database extact it
-      // to a temp dir and return the path.
-      if (filename.endsWith('.db')) {
-        dbPath = filePath;
-        await _expandZippedFileToDisk(filePath, file);
+    // Check the complete archive before writing any entry. Backup files can be
+    // replaced outside the app, so ZIP names are not trusted filesystem paths.
+    for (final file in archive) {
+      final segments = _safeArchiveSegments(file.name, isFile: file.isFile);
+      if (!file.isFile) {
+        continue;
       }
-
-      // Write files to the temporary directory
-      if (filename.startsWith(zipPhotoRoot)) {
-        final parts = split(filename);
-        final photoDestPath = joinAll([
-          await provider.photosRootPath,
-          ...parts.sublist(1),
-        ]);
-
-        await _expandZippedFileToDisk(photoDestPath, file);
+      // Current backups contain only the database. The apparent photo root is
+      // actually the user's Documents directory on desktop platforms, so a
+      // ZIP must never write a photo entry there.
+      if (segments.first == 'photos') {
+        throw const FormatException('Photo entries cannot be restored safely.');
+      }
+      if (segments.length == 1 && segments.single.endsWith('.db')) {
+        final path = join(tmpDir, segments.single);
+        _checkExtractionPath(tmpDir, path);
+        targets.add((file: file, path: path));
       }
     }
-  }
 
-  return dbPath;
+    if (targets.length != 1) {
+      throw const FormatException('Backup must contain one database file.');
+    }
+
+    const restored = 0;
+
+    for (final target in targets) {
+      final file = target.file;
+      _checkExtractionPath(tmpDir, target.path);
+
+      provider.emitProgress(
+        'Restoring  $restored/${archive.length}',
+        stageNo,
+        stageCount,
+      );
+
+      dbPath = target.path;
+      await _expandZippedFileToDisk(target.path, file);
+    }
+    return dbPath;
+  } finally {
+    await input.close();
+  }
+}
+
+List<String> _safeArchiveSegments(String name, {required bool isFile}) {
+  if (name.isEmpty ||
+      name.contains(r'\') ||
+      name.contains(':') ||
+      name.contains('\u0000')) {
+    throw const FormatException('Unsafe backup entry name.');
+  }
+  final segments = name.split('/');
+  if (!isFile && segments.last.isEmpty) {
+    segments.removeLast();
+  }
+  if (segments.isEmpty ||
+      segments.any(
+        (segment) => segment.isEmpty || segment == '.' || segment == '..',
+      )) {
+    throw const FormatException('Unsafe backup entry name.');
+  }
+  return segments;
+}
+
+void _checkExtractionPath(String root, String path) {
+  final base = normalize(absolute(root));
+  final destination = normalize(absolute(path));
+  if (!isWithin(base, destination)) {
+    throw const FormatException('Backup entry escapes restore directory.');
+  }
+  var current = base;
+  if (FileSystemEntity.typeSync(current, followLinks: false) ==
+      FileSystemEntityType.link) {
+    throw const FormatException('Backup restore path contains a symlink.');
+  }
+  for (final segment in split(relative(destination, from: base))) {
+    current = join(current, segment);
+    if (FileSystemEntity.typeSync(current, followLinks: false) ==
+        FileSystemEntityType.link) {
+      throw const FormatException('Backup restore path contains a symlink.');
+    }
+  }
 }
 
 Future<void> _expandZippedFileToDisk(
