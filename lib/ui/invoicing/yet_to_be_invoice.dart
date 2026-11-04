@@ -20,6 +20,7 @@ import '../../dao/billing_attention_cache.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../../util/flutter/app_title.dart';
+import '../crud/job/edit_job_screen.dart';
 import '../crud/job/full_page_list_job_card.dart';
 import '../widgets/hmb_link_internal.dart';
 import '../widgets/layout/layout.g.dart';
@@ -141,7 +142,8 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
           children: [
             HMBLinkInternal(
               label: 'Job: #${job.id} ${job.summary}',
-              navigateTo: () async => FullPageListJobCard(job),
+              navigateTo: () async => JobEditScreen(job: job),
+              onReturned: _reloadAfterAction,
             ),
             HMBText('Type: ${job.billingType.display}'),
             HMBText(
