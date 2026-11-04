@@ -23,7 +23,18 @@ class TaskFixedAgreement {
     Money amount,
     String note,
   ) async {
-    if (task.billingType != BillingType.fixedPrice || !amount.isPositive) {
+    final jobRows = await txn.query(
+      'job',
+      columns: ['billing_type'],
+      where: 'id = ?',
+      whereArgs: [task.jobId],
+      limit: 1,
+    );
+    final jobBillingType = jobRows.isEmpty
+        ? BillingType.timeAndMaterial
+        : BillingType.fromName(jobRows.single['billing_type'] as String?);
+    if (task.effectiveBillingType(jobBillingType) != BillingType.fixedPrice ||
+        !amount.isPositive) {
       throw InvoiceException('An agreed fixed task needs a positive price.');
     }
     final old = await txn.query(

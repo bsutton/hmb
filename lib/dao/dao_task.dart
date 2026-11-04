@@ -86,8 +86,6 @@ ORDER BY t.modifiedDate DESC
     if (transaction == null) {
       return await db.transaction((txn) => insert(entity, txn));
     }
-    final job = await DaoJob().getById(entity.jobId, transaction);
-    entity.billingType ??= job?.billingType;
     return await super.insert(entity, transaction);
   }
 
@@ -138,7 +136,6 @@ LIMIT 1
         );
       }
     }
-    entity.billingType ??= job?.billingType;
     return await super.update(entity, transaction);
   }
 

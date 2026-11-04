@@ -137,11 +137,28 @@ class DaoJob extends Dao<Job> {
     }
     final existing = await getById(entity.id, transaction);
     if (existing != null && existing.billingType != entity.billingType) {
-      await withinTransaction(transaction).update(
-        'task',
-        {'billing_type': existing.billingType.name},
-        where: 'job_id = ? AND billing_type IS NULL',
-        whereArgs: [entity.id],
+      // Preserve the old billing source for inherited tasks with worked or
+      // agreed scope. Unworked tasks continue to follow the job setting.
+      await transaction.rawUpdate(
+        '''
+UPDATE task SET billing_type = ?
+WHERE job_id = ? AND billing_type IS NULL AND (
+  EXISTS (SELECT 1 FROM time_entry WHERE task_id = task.id)
+  OR EXISTS (
+    SELECT 1 FROM task_item
+    WHERE task_id = task.id AND (completed = 1 OR billed = 1)
+  )
+  OR EXISTS (
+    SELECT 1 FROM quote_line_group g JOIN quote q ON q.id = g.quote_id
+    WHERE g.task_id = task.id AND q.state IN ('approved', 'invoiced')
+      AND g.line_approval_status != 'rejected'
+  )
+  OR EXISTS (
+    SELECT 1 FROM task_fixed_agreement WHERE task_id = task.id
+  )
+)
+''',
+        [existing.billingType.name, entity.id],
       );
     }
     if (existing != null && existing.status != entity.status) {

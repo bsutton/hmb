@@ -537,6 +537,19 @@ class _JobEstimateBuilderScreenState
             const Text('Includes applicable margins'),
             if (Strings.isNotBlank(task.description))
               HMBTextBody(task.description),
+            if (task.effectiveBillingType(widget.job.billingType) ==
+                BillingType.timeAndMaterial) ...[
+              const Text(
+                'This task is Time and Materials. Labour items in the '
+                r'estimate have a $0.00 line charge. Change this task to '
+                'Fixed Price to include estimated labour.',
+              ),
+              HMBButtonSecondary(
+                label: 'Change task billing',
+                hint: 'Edit this task billing type',
+                onPressed: () => unawaited(_editTask(task)),
+              ),
+            ],
             PhotoGallery.forTask(task: task, emptyHeight: 0),
             _buildTaskItems(task),
             HMBButton(
@@ -665,15 +678,17 @@ class _JobEstimateBuilderScreenState
 
     newItem = await Navigator.of(context).push<TaskItem>(
       MaterialPageRoute(
-        builder: (context) => FutureBuilderEx(
+        builder: (context) => FutureBuilderEx<TaskAndRate>(
           future: getTaskAndRate(task),
+          waitingBuilder: (_) => const HMBEmpty(),
+          errorBuilder: (_, error) =>
+              Text('Unable to load task pricing: $error'),
           builder: (context, taskAndRate) => TaskItemEditScreen(
             forEstimate: true,
             parent: task,
             taskItem: newItem,
-            billingType:
-                taskAndRate?.billingType ?? BillingType.timeAndMaterial,
-            hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
+            billingType: taskAndRate!.billingType,
+            hourlyRate: taskAndRate.rate,
           ),
         ),
       ),
@@ -688,15 +703,17 @@ class _JobEstimateBuilderScreenState
   Future<void> _editItem(TaskItem item, Task task) async {
     final updatedItem = await Navigator.of(context).push<TaskItem>(
       MaterialPageRoute(
-        builder: (context) => FutureBuilderEx(
+        builder: (context) => FutureBuilderEx<TaskAndRate>(
           future: getTaskAndRate(task),
+          waitingBuilder: (_) => const HMBEmpty(),
+          errorBuilder: (_, error) =>
+              Text('Unable to load task pricing: $error'),
           builder: (context, taskAndRate) => TaskItemEditScreen(
             forEstimate: true,
             parent: task,
             taskItem: item,
-            billingType:
-                taskAndRate?.billingType ?? BillingType.timeAndMaterial,
-            hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
+            billingType: taskAndRate!.billingType,
+            hourlyRate: taskAndRate.rate,
           ),
         ),
       ),

@@ -543,7 +543,8 @@ time and materials tools owned items bill only when a charge is specified''',
 
 Future<void> _agreeFixedTasks(Job job) async {
   for (final task in await DaoTask().getTasksByJob(job.id)) {
-    if (task.billingType == BillingType.fixedPrice) {
+    if (task.effectiveBillingType(job.billingType) ==
+        BillingType.fixedPrice) {
       await testDb!.transaction(
         (txn) => TaskFixedAgreement().save(
           txn,

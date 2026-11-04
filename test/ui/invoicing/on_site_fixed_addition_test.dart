@@ -25,7 +25,7 @@ void main() {
 
   for (final type in [BillingType.fixedPrice, BillingType.timeAndMaterial]) {
     testWidgets(
-      'on-site addition reaches invoice review without a quote: ${type.name}',
+      'saved on-site agreement appears in invoice review: ${type.name}',
       (tester) async {
         late Job job;
         await tester.runAsync(() async {
@@ -60,7 +60,9 @@ void main() {
           find.byType(HMBDroplist<BillingTypeOption>),
         );
         typeField.onChanged(
-          BillingTypeOption(BillingType.fixedPrice, 'Fixed Price'),
+          type == BillingType.fixedPrice
+              ? BillingTypeOption(null, "Same as job's")
+              : BillingTypeOption(BillingType.fixedPrice, 'Fixed Price'),
         );
         await tester.pumpAndSettle();
         final price = tester.widget<HMBMoneyField>(find.byType(HMBMoneyField));
@@ -73,16 +75,21 @@ void main() {
             )
             .onChanged(true);
         await tester.pumpAndSettle();
-        final save = tester.widget<HMBButton>(
-          find.widgetWithText(HMBButton, 'Save and prepare invoice'),
-        );
+        expect(find.text('Save and prepare invoice'), findsNothing);
+        final save = tester.widget<SaveAndClose>(find.byType(SaveAndClose));
         await runAsyncAndPump(tester, () async {
-          // Navigation stays open until review is closed.
-          save.onPressed();
-          final tasks = await DaoTask().getTasksByJob(job.id);
-          // The screen's save is asynchronous; wait via the UI below.
-          expect(tasks.length, lessThanOrEqualTo(1));
+          await save.onSave(close: false);
         });
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Stack(
+              children: [
+                PrepareInvoiceScreen(jobId: job.id),
+                const BlockingOverlay(),
+              ],
+            ),
+          ),
+        );
         await pumpUntilFound(tester, find.byType(PrepareInvoiceScreen));
         final preparation = tester.state<DeferredState<PrepareInvoiceScreen>>(
           find.byType(PrepareInvoiceScreen),
@@ -98,7 +105,14 @@ void main() {
           expect(await DaoQuote().getByJobId(job.id), isEmpty);
           expect(await DaoInvoice().getByJobId(job.id), isEmpty);
           final tasks = await DaoTask().getTasksByJob(job.id);
-          expect(tasks.single.billingType, BillingType.fixedPrice);
+          expect(
+            tasks.single.effectiveBillingType(type),
+            BillingType.fixedPrice,
+          );
+          expect(
+            tasks.single.billingType,
+            type == BillingType.fixedPrice ? isNull : BillingType.fixedPrice,
+          );
           expect(
             (await DaoTask().db.query('task_fixed_agreement')).single['amount'],
             8000,

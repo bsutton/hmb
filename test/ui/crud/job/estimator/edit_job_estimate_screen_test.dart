@@ -29,6 +29,62 @@ void main() {
 
   tearDown(tearDownTestDb);
 
+  testWidgets('time and materials task explains zero estimated labour', (
+    tester,
+  ) async {
+    late Job job;
+    await runAsyncAndPump(tester, () async {
+      job = await createJobWithCustomer(
+        billingType: BillingType.fixedPrice,
+        hourlyRate: MoneyEx.dollars(88),
+        status: JobStatus.inProgress,
+      );
+      for (final billingType in [
+        BillingType.timeAndMaterial,
+        BillingType.fixedPrice,
+      ]) {
+        final task = Task.forInsert(
+          jobId: job.id,
+          name: billingType.display,
+          description: '',
+          status: TaskStatus.inProgress,
+          billingType: billingType,
+        );
+        await DaoTask().insert(task);
+        await DaoTaskItem().insert(
+          TaskItem.forInsert(
+            taskId: task.id,
+            description: 'One hour labour',
+            purpose: '',
+            itemType: TaskItemType.labour,
+            chargeMode: ChargeMode.calculated,
+            margin: Percentage.zero,
+            measurementType: MeasurementType.length,
+            dimension1: Fixed.zero,
+            dimension2: Fixed.zero,
+            dimension3: Fixed.zero,
+            units: Units.m,
+            url: '',
+            labourEntryMode: LabourEntryMode.hours,
+            estimatedLabourHours: Fixed.one,
+          ),
+        );
+      }
+    });
+
+    await tester.pumpWidget(
+      ToastificationWrapper(
+        child: MaterialApp(home: JobEstimateBuilderScreen(job: job)),
+      ),
+    );
+    await _pumpUntilFound(tester, find.text('Change task billing'));
+    expect(find.text('Task total: ${MoneyEx.zero}'), findsOneWidget);
+    expect(find.text('Task total: ${MoneyEx.dollars(88)}'), findsOneWidget);
+    expect(find.text('Change task billing'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 10));
+  });
+
   testWidgets('raising a completed estimate opens the job quote list', (
     tester,
   ) async {

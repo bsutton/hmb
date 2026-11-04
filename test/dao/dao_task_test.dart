@@ -8,6 +8,7 @@ import 'package:money2/money2.dart';
 import 'package:test/test.dart';
 
 import '../database/management/db_utility_test_helper.dart';
+import '../ui/ui_test_helpers.dart';
 
 void main() {
   setUp(() async {
@@ -16,6 +17,55 @@ void main() {
 
   tearDown(() async {
     await tearDownTestDb();
+  });
+
+  test('same as job task follows a later billing type change', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.timeAndMaterial,
+      hourlyRate: MoneyEx.dollars(88),
+    );
+    final task = Task.forInsert(
+      jobId: job.id,
+      name: 'Inherited billing',
+      description: '',
+      status: TaskStatus.awaitingApproval,
+    );
+    await DaoTask().insert(task);
+    expect((await DaoTask().getById(task.id))!.billingType, isNull);
+
+    await DaoJob().update(job.copyWith(billingType: BillingType.fixedPrice));
+    final inherited = (await DaoTask().getById(task.id))!;
+    expect(inherited.billingType, isNull);
+    expect(await DaoTask().getBillingType(inherited), BillingType.fixedPrice);
+
+    await DaoTask().update(inherited.copyWith(name: 'Updated task'));
+    expect((await DaoTask().getById(task.id))!.billingType, isNull);
+  });
+
+  test('worked inherited task keeps its original billing type', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.timeAndMaterial,
+      hourlyRate: MoneyEx.dollars(88),
+    );
+    final task = Task.forInsert(
+      jobId: job.id,
+      name: 'Worked task',
+      description: '',
+      status: TaskStatus.inProgress,
+    );
+    await DaoTask().insert(task);
+    await DaoTimeEntry().insert(
+      TimeEntry.forInsert(
+        taskId: task.id,
+        startTime: DateTime(2026, 11, 3, 9),
+        endTime: DateTime(2026, 11, 3, 10),
+      ),
+    );
+
+    await DaoJob().update(job.copyWith(billingType: BillingType.fixedPrice));
+    final frozen = (await DaoTask().getById(task.id))!;
+    expect(frozen.billingType, BillingType.timeAndMaterial);
+    expect(await DaoTask().getBillingType(frozen), BillingType.timeAndMaterial);
   });
 
   test(
