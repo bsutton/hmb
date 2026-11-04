@@ -13,6 +13,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_email_sender/flutter_email_sender.dart';
@@ -141,25 +142,27 @@ end tell
       ]);
     }
 
-    final script =
-        '''
-\$outlook = New-Object -ComObject Outlook.Application
-\$mail = \$outlook.CreateItem(0)
-\$mail.To = ${_asPowerShellString(email.recipients.join(';'))}
-\$mail.CC = ${_asPowerShellString(email.cc.join(';'))}
-\$mail.BCC = ${_asPowerShellString(email.bcc.join(';'))}
-\$mail.Subject = ${_asPowerShellString(email.subject)}
-\$mail.Body = ${_asPowerShellString(email.body)}
-${attachments.map(_powerShellAttachment).join('\n')}
-\$mail.Display()
-''';
-    return _runNativeComposer('powershell.exe', [
-      '-NoProfile',
-      '-ExecutionPolicy',
-      'Bypass',
-      '-Command',
-      script,
-    ]);
+    return _runPowerShellComposer(buildWindowsOutlookScript(email));
+  }
+
+  Future<bool> _runPowerShellComposer(String script) async {
+    try {
+      // The script is ASCII-only: user values are Base64 data. Reading it from
+      // stdin avoids Windows' command-line length limit for long messages.
+      final process = await Process.start(
+        'powershell.exe',
+        windowsPowerShellArguments,
+      );
+      final output = process.stdout.drain<void>();
+      final errors = process.stderr.drain<void>();
+      process.stdin.write(script);
+      await process.stdin.close();
+      final exitCode = await process.exitCode;
+      await Future.wait([output, errors]);
+      return exitCode == 0;
+    } on ProcessException {
+      return false;
+    }
   }
 
   Future<bool> _runNativeComposer(String executable, List<String> args) async {
@@ -202,12 +205,6 @@ ${attachments.map(_powerShellAttachment).join('\n')}
         .replaceAll('"', '$_backslash"');
     return '"$escaped"';
   }
-
-  String _asPowerShellString(String value) =>
-      "'${value.replaceAll("'", "''")}'";
-
-  String _powerShellAttachment(String path) =>
-      '\$mail.Attachments.Add(${_asPowerShellString(path)}) | Out-Null';
 
   Future<void> _sendSmtp(
     Email email,
@@ -297,4 +294,39 @@ ${attachments.map(_powerShellAttachment).join('\n')}
     }
     return from!.trim();
   }
+}
+
+/// Encode untrusted content as data before inserting it into PowerShell code.
+/// PowerShell treats curly quotation marks as string delimiters too, so
+/// escaping only ASCII apostrophes is insufficient.
+String powerShellDataExpression(String value) {
+  final encoded = base64Encode(utf8.encode(value));
+  return '[System.Text.Encoding]::UTF8.GetString('
+      "[System.Convert]::FromBase64String('$encoded'))";
+}
+
+/// Fixed process arguments; the script is sent through standard input.
+const windowsPowerShellArguments = <String>[
+  '-NoProfile',
+  '-ExecutionPolicy',
+  'Bypass',
+  '-Command',
+  '-',
+];
+
+/// Complete Outlook script; only the fixed PowerShell syntax is executable.
+String buildWindowsOutlookScript(Email email) {
+  final attachments = email.attachmentPaths ?? const <String>[];
+  return '''
+\$ErrorActionPreference = 'Stop'
+\$outlook = New-Object -ComObject Outlook.Application
+\$mail = \$outlook.CreateItem(0)
+\$mail.To = ${powerShellDataExpression(email.recipients.join(';'))}
+\$mail.CC = ${powerShellDataExpression(email.cc.join(';'))}
+\$mail.BCC = ${powerShellDataExpression(email.bcc.join(';'))}
+\$mail.Subject = ${powerShellDataExpression(email.subject)}
+\$mail.Body = ${powerShellDataExpression(email.body)}
+${attachments.map((path) => '\$mail.Attachments.Add(${powerShellDataExpression(path)}) | Out-Null').join('\n')}
+\$mail.Display()
+''';
 }

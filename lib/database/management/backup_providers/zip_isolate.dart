@@ -12,8 +12,10 @@
 */
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:typed_data';
 
 import 'package:archive/archive_io.dart';
 import 'package:path/path.dart';
@@ -24,6 +26,11 @@ import 'progress_update.dart';
 
 /// All photos are stored under this path in the zip file
 const zipPhotoRoot = 'photos/';
+
+/// Database-only backups are bounded so a ZIP bomb cannot exhaust disk space.
+const int maxRestoredDatabaseBytes = 512 * 1024 * 1024;
+const int maxBackupArchiveBytes = 256 * 1024 * 1024;
+const int _maxCentralDirectoryBytes = 8 * 1024 * 1024;
 
 Future<void> zipBackup({
   required BackupProvider provider,
@@ -141,56 +148,288 @@ Future<String?> extractFiles(
   File backupFile,
   String tmpDir,
   int stageNo,
-  int stageCount,
-) async {
-  final encoder = ZipDecoder();
-  String? dbPath;
-  // Extract the ZIP file contents to a temporary directory
-  final archive = encoder.decodeStream(InputFileStream(backupFile.path));
+  int stageCount, {
+  int maxDatabaseBytes = maxRestoredDatabaseBytes,
+}) async {
+  final selected = await _preflightZipMetadata(backupFile, maxDatabaseBytes);
+  final path = join(tmpDir, selected.name);
+  _checkExtractionPath(tmpDir, path);
+  final input = InputFileStream(backupFile.path);
+  try {
+    final record = InputMemoryStream(selected.header.sublist(4));
+    final header = ZipFileHeader()..read(record, fileBytes: input);
+    if (header.filename != selected.name ||
+        header.uncompressedSize != selected.size ||
+        header.file == null) {
+      throw const FormatException('Backup ZIP database entry changed.');
+    }
+    final local = header.file!;
+    final expectedCompression = header.compressionMethod == 0
+        ? CompressionType.none
+        : CompressionType.deflate;
+    if (local.filename != header.filename ||
+        local.flags != header.generalPurposeBitFlag ||
+        local.compressionMethod != expectedCompression) {
+      throw const FormatException('Backup ZIP headers disagree.');
+    }
+    final file = ArchiveFile.file(selected.name, selected.size, local);
+    _checkExtractionPath(tmpDir, path);
+    provider.emitProgress('Restoring database', stageNo, stageCount);
+    await _expandZippedFileToDisk(path, file, maxDatabaseBytes, selected.crc32);
+    return path;
+  } finally {
+    await input.close();
+  }
+}
 
-  const restored = 0;
-
-  for (final file in archive) {
-    final filename = file.name;
-    final filePath = join(tmpDir, filename);
-
-    provider.emitProgress(
-      'Restoring  $restored/${archive.length}',
-      stageNo,
-      stageCount,
-    );
-
-    if (file.isFile) {
-      // If the file is the database extact it
-      // to a temp dir and return the path.
-      if (filename.endsWith('.db')) {
-        dbPath = filePath;
-        await _expandZippedFileToDisk(filePath, file);
-      }
-
-      // Write files to the temporary directory
-      if (filename.startsWith(zipPhotoRoot)) {
-        final parts = split(filename);
-        final photoDestPath = joinAll([
-          await provider.photosRootPath,
-          ...parts.sublist(1),
-        ]);
-
-        await _expandZippedFileToDisk(photoDestPath, file);
+/// Inspect raw directory records before any archive entry is decompressed.
+/// Extraction then reads only this selected record, so ZIP64 and ambiguous
+/// comment records cannot redirect a separate decoder to unchecked metadata.
+Future<({Uint8List header, String name, int size, int crc32})>
+_preflightZipMetadata(File backup, int maxDatabaseBytes) async {
+  final input = await backup.open();
+  try {
+    final length = await input.length();
+    if (length > maxBackupArchiveBytes || length < 22) {
+      throw const FormatException('Backup ZIP size is invalid.');
+    }
+    const maxTail = 22 + 0xffff;
+    final tailStart = length > maxTail ? length - maxTail : 0;
+    await input.setPosition(tailStart);
+    final tail = Uint8List.fromList(await input.read(length - tailStart));
+    final tailData = ByteData.sublistView(tail);
+    int? eocd;
+    for (var offset = tail.length - 22; offset >= 0; offset--) {
+      if (tailData.getUint32(offset, Endian.little) == 0x06054b50 &&
+          offset + 22 + tailData.getUint16(offset + 20, Endian.little) ==
+              tail.length) {
+        eocd = offset;
+        break;
       }
     }
+    if (eocd == null) {
+      throw const FormatException('Backup ZIP has no valid directory.');
+    }
+    final disk = tailData.getUint16(eocd + 4, Endian.little);
+    final startDisk = tailData.getUint16(eocd + 6, Endian.little);
+    final diskEntries = tailData.getUint16(eocd + 8, Endian.little);
+    final totalEntries = tailData.getUint16(eocd + 10, Endian.little);
+    final directorySize = tailData.getUint32(eocd + 12, Endian.little);
+    final directoryOffset = tailData.getUint32(eocd + 16, Endian.little);
+    if (disk != 0 ||
+        startDisk != 0 ||
+        diskEntries != totalEntries ||
+        totalEntries == 0 ||
+        totalEntries > 1024 ||
+        directorySize == 0 ||
+        directorySize > _maxCentralDirectoryBytes ||
+        directoryOffset > tailStart + eocd - directorySize) {
+      throw const FormatException('Backup ZIP directory is invalid.');
+    }
+    await input.setPosition(directoryOffset);
+    final bytes = Uint8List.fromList(await input.read(directorySize));
+    if (bytes.length != directorySize) {
+      throw const FormatException('Backup ZIP directory is truncated.');
+    }
+    final directory = ByteData.sublistView(bytes);
+    var cursor = 0;
+    ({Uint8List header, String name, int size, int crc32})? selected;
+    for (var index = 0; index < totalEntries; index++) {
+      if (cursor > bytes.length - 46 ||
+          directory.getUint32(cursor, Endian.little) != 0x02014b50) {
+        throw const FormatException('Backup ZIP entry metadata is invalid.');
+      }
+      final versionMadeBy = directory.getUint16(cursor + 4, Endian.little);
+      final flags = directory.getUint16(cursor + 8, Endian.little);
+      final method = directory.getUint16(cursor + 10, Endian.little);
+      final crc32 = directory.getUint32(cursor + 16, Endian.little);
+      final compressed = directory.getUint32(cursor + 20, Endian.little);
+      final uncompressed = directory.getUint32(cursor + 24, Endian.little);
+      final nameLength = directory.getUint16(cursor + 28, Endian.little);
+      final extraLength = directory.getUint16(cursor + 30, Endian.little);
+      final commentLength = directory.getUint16(cursor + 32, Endian.little);
+      final attributes = directory.getUint32(cursor + 38, Endian.little);
+      final localOffset = directory.getUint32(cursor + 42, Endian.little);
+      final entryLength = 46 + nameLength + extraLength + commentLength;
+      if (entryLength > bytes.length - cursor ||
+          nameLength == 0 ||
+          (flags & 1) != 0 ||
+          (method != 0 && method != 8) ||
+          compressed == 0xffffffff ||
+          uncompressed == 0xffffffff ||
+          uncompressed > maxDatabaseBytes ||
+          localOffset == 0xffffffff ||
+          localOffset >= directoryOffset ||
+          (versionMadeBy >> 8 == 3 &&
+              ((attributes >> 16) & 0xf000) == 0xa000)) {
+        throw const FormatException('Unsafe backup ZIP entry metadata.');
+      }
+      final name = utf8.decode(
+        bytes.sublist(cursor + 46, cursor + 46 + nameLength),
+      );
+      final isFile = !name.endsWith('/');
+      final segments = _safeArchiveSegments(name, isFile: isFile);
+      if (isFile && segments.first == 'photos') {
+        throw const FormatException('Photo entries cannot be restored safely.');
+      }
+      if (isFile && segments.length == 1 && segments.single.endsWith('.db')) {
+        if (selected != null) {
+          throw const FormatException('Backup has multiple database entries.');
+        }
+        selected = (
+          header: bytes.sublist(cursor, cursor + entryLength),
+          name: name,
+          size: uncompressed,
+          crc32: crc32,
+        );
+      }
+      cursor += entryLength;
+    }
+    if (cursor != bytes.length) {
+      throw const FormatException('Backup ZIP directory size is inconsistent.');
+    }
+    if (selected == null) {
+      throw const FormatException('Backup must contain one database file.');
+    }
+    return selected;
+  } finally {
+    await input.close();
   }
+}
 
-  return dbPath;
+List<String> _safeArchiveSegments(String name, {required bool isFile}) {
+  if (name.isEmpty ||
+      name.contains(r'\') ||
+      name.contains(':') ||
+      name.contains('\u0000')) {
+    throw const FormatException('Unsafe backup entry name.');
+  }
+  final segments = name.split('/');
+  if (!isFile && segments.last.isEmpty) {
+    segments.removeLast();
+  }
+  if (segments.isEmpty ||
+      segments.any(
+        (segment) => segment.isEmpty || segment == '.' || segment == '..',
+      )) {
+    throw const FormatException('Unsafe backup entry name.');
+  }
+  return segments;
+}
+
+void _checkExtractionPath(String root, String path) {
+  final base = normalize(absolute(root));
+  final destination = normalize(absolute(path));
+  if (!isWithin(base, destination)) {
+    throw const FormatException('Backup entry escapes restore directory.');
+  }
+  var current = base;
+  if (FileSystemEntity.typeSync(current, followLinks: false) ==
+      FileSystemEntityType.link) {
+    throw const FormatException('Backup restore path contains a symlink.');
+  }
+  for (final segment in split(relative(destination, from: base))) {
+    current = join(current, segment);
+    if (FileSystemEntity.typeSync(current, followLinks: false) ==
+        FileSystemEntityType.link) {
+      throw const FormatException('Backup restore path contains a symlink.');
+    }
+  }
 }
 
 Future<void> _expandZippedFileToDisk(
-  String photoDestPath,
+  String destination,
   ArchiveFile file,
+  int maxBytes,
+  int expectedCrc32,
 ) async {
-  File(photoDestPath)
-    ..createSync(recursive: true)
-    ..writeAsBytesSync(file.content as List<int>);
+  final output = OutputFileStream(destination);
+  try {
+    file.writeContent(_BoundedOutputStream(output, maxBytes));
+    if (output.length != file.size) {
+      throw const FormatException('Backup database size does not match ZIP.');
+    }
+    await output.close();
+    var crc32 = 0;
+    await for (final chunk in File(destination).openRead()) {
+      crc32 = getCrc32(chunk, crc32);
+    }
+    if (crc32 != expectedCrc32) {
+      throw const FormatException('Backup database checksum is invalid.');
+    }
+  } catch (_) {
+    await output.close();
+    final incomplete = File(destination);
+    if (incomplete.existsSync()) {
+      await incomplete.delete();
+    }
+    rethrow;
+  }
+}
+
+class _BoundedOutputStream extends OutputStream {
+  final OutputStream _target;
+  final int _maxBytes;
+
+  _BoundedOutputStream(this._target, this._maxBytes)
+    : super(byteOrder: _target.byteOrder);
+
+  @override
+  int get length => _target.length;
+
+  @override
+  bool get isOpen => _target.isOpen;
+
+  void _check(int count) {
+    if (count < 0 || length > _maxBytes - count) {
+      throw const FormatException('Backup database exceeds size limit.');
+    }
+  }
+
+  @override
+  void clear() => _target.clear();
+
+  @override
+  void flush() => _target.flush();
+
+  @override
+  Future<void> close() => _target.close();
+
+  @override
+  void closeSync() => _target.closeSync();
+
+  @override
+  void writeByte(int value) {
+    _check(1);
+    _target.writeByte(value);
+  }
+
+  @override
+  void writeBytes(List<int> bytes, {int? length}) {
+    final count = length ?? bytes.length;
+    _check(count);
+    _target.writeBytes(bytes, length: count);
+  }
+
+  @override
+  void writeStream(InputStream stream) {
+    while (!stream.isEOS) {
+      final chunk = stream.readBytes(64 * 1024).toUint8List();
+      if (chunk.isEmpty) {
+        break;
+      }
+      writeBytes(chunk);
+    }
+  }
+
+  @override
+  void writeBackReference(int distance, int count) {
+    _check(count);
+    _target.writeBackReference(distance, count);
+  }
+
+  @override
+  Uint8List subset(int start, [int? end]) => _target.subset(start, end);
 }
 
 class _ZipParams {
