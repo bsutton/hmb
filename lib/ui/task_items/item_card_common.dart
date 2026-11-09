@@ -42,6 +42,7 @@ class ItemCardCommon extends StatelessWidget {
       if (Strings.isNotBlank(taskItem.purpose))
         _line('Note: ${taskItem.purpose}'),
       _line(_quantityLabel),
+      if (taskItem.dimensions.isNotEmpty) Text(taskItem.dimensions),
       _line(_costLabel),
       if (_totalLabel case final totalLabel?) _line(totalLabel),
     ],

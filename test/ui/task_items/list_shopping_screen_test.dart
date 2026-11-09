@@ -281,6 +281,7 @@ void main() {
     expect(find.text('Supplier: Purchased card supplier'), findsOneWidget);
     expect(find.text('Note: Purchase note'), findsOneWidget);
     expect(find.text('Quantity: 1'), findsOneWidget);
+    expect(find.text('Length: 1 m'), findsOneWidget);
     expect(find.text(r'Total: $28.00'), findsOneWidget);
     final cardFinder = find.byKey(
       ValueKey('shopping-item-card-${itemContext.taskItem.id}'),
@@ -288,7 +289,8 @@ void main() {
     final card = tester.widget<Surface>(cardFinder);
     expect(card.elevation, SurfaceElevation.e6);
     expect(card.margin, const EdgeInsets.only(bottom: 8));
-    expect(tester.getSize(cardFinder).height, lessThan(340));
+    // The measurement adds one visible line to the purchase details.
+    expect(tester.getSize(cardFinder).height, lessThan(360));
 
     await tester.tap(find.byIcon(Icons.undo));
     await waitForText(tester, 'Return Item');
