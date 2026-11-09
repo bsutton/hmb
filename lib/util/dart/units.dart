@@ -181,6 +181,7 @@ Map<String, Units> _unitsMap = {
   'ft²': Units.ft2,
   'm³': Units.m3,
   'liters': Units.liters,
+  'litres': Units.liters,
   'ft³': Units.ft3,
   'gallons': Units.gallons,
   't': Units.t,
