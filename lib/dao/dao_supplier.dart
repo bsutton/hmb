@@ -117,4 +117,15 @@ $orderByRecentReceipt
 
   @override
   Supplier fromMap(Map<String, dynamic> map) => Supplier.fromMap(map);
+
+  Future<List<Supplier>> getByContact(int contactId) async => toList(
+    await withoutTransaction().rawQuery(
+      '''
+SELECT DISTINCT s.* FROM supplier s
+JOIN supplier_contact sc ON sc.supplier_id = s.id
+WHERE sc.contact_id = ? ORDER BY s.name COLLATE NOCASE, s.id
+''',
+      [contactId],
+    ),
+  );
 }

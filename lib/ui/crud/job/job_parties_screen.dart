@@ -6,6 +6,7 @@ import '../../../dao/dao_contact_role.dart';
 import '../../../dao/dao_job_party.dart';
 import '../../../dao/job_billing_contact.dart';
 import '../../../dao/join_adaptors/join_adaptor_customer_contact.dart';
+import '../../../dao/join_adaptors/join_adaptor_supplier_contact.dart';
 import '../../../entity/contact_role.dart';
 import '../../../entity/entity.g.dart';
 import '../../../entity/job_party.dart';
@@ -36,6 +37,7 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
   Customer? _customer;
   Customer? _referrer;
   Site? _site;
+  final _contactSuppliers = <int, List<Supplier>>{};
 
   @override
   Future<void> asyncInitState() => _load();
@@ -47,6 +49,12 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
       _referrer = await DaoCustomer().getById(_job?.referrerCustomerId);
       _site = await DaoSite().getById(_job?.siteId);
       _parties = await DaoJobParty().getByJob(widget.job.id);
+      _contactSuppliers.clear();
+      for (final contactId in _parties.map((p) => p.contact.id).toSet()) {
+        _contactSuppliers[contactId] = await DaoSupplier().getByContact(
+          contactId,
+        );
+      }
     });
     if (mounted) {
       setState(() {});
@@ -282,7 +290,15 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
                 children: [
                   ListTile(
                     title: Text(party.contact.fullname.trim()),
-                    subtitle: Text(party.role.name),
+                    subtitle: Text(
+                      [
+                        party.role.name,
+                        for (final supplier
+                            in _contactSuppliers[party.contact.id] ??
+                                <Supplier>[])
+                          'Supplier: ${supplier.name}',
+                      ].join(' · '),
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -306,6 +322,10 @@ class _JobPartiesScreenState extends DeferredState<JobPartiesScreen> {
                         contact: party.contact,
                         job: _job,
                         customer: _customer,
+                        supplier: switch (_contactSuppliers[party.contact.id]) {
+                          [final supplier] => supplier,
+                          _ => null,
+                        },
                         site: _site,
                       ),
                     ),
@@ -378,6 +398,8 @@ class JobPartyAssignmentEditor extends StatefulWidget {
       JobPartyAssignmentEditorState();
 }
 
+enum JobPartyContactSource { customer, supplier }
+
 class JobPartyAssignmentEditorState
     extends DeferredState<JobPartyAssignmentEditor> {
   final _form = GlobalKey<FormState>();
@@ -390,6 +412,8 @@ class JobPartyAssignmentEditorState
   final _customers = <int, Customer>{};
   final _relatedCustomerIds = <int>{};
   int? _customerFilterId;
+  JobPartyContactSource _contactSource = JobPartyContactSource.customer;
+  Supplier? _supplier;
 
   int? get _effectiveCustomerId => _customerFilterId;
 
@@ -413,10 +437,20 @@ class JobPartyAssignmentEditorState
       ])).map((customer) => customer.id),
     );
     if (widget.party case final party?) {
+      final customer = party.contact.id < 0
+          ? null
+          : await DaoCustomer().getByContact(party.contact.id);
       _customerFilterId = party.contact.id < 0
           ? widget.draftContactCustomerIds[party.contact.id]
-          : (await DaoCustomer().getByContact(party.contact.id))?.id ??
-                widget.customerId;
+          : customer?.id ?? widget.customerId;
+      if (party.contact.id >= 0 && customer == null) {
+        _supplier = (await DaoSupplier().getByContact(
+          party.contact.id,
+        )).firstOrNull;
+        if (_supplier != null) {
+          _contactSource = JobPartyContactSource.supplier;
+        }
+      }
     }
     if (_customerFilterId != null &&
         !_customers.containsKey(_customerFilterId)) {
@@ -429,6 +463,15 @@ class JobPartyAssignmentEditorState
       : _customers[id]?.name ?? widget.newCustomerName;
 
   Future<List<Contact>> _filteredContacts(String? filter) async {
+    if (_contactSource == JobPartyContactSource.supplier) {
+      return (await DaoContact().getBySupplier(_supplier))
+          .where(
+            (contact) => '${contact.fullname} ${contact.bestEmail}'
+                .toLowerCase()
+                .contains((filter ?? '').toLowerCase()),
+          )
+          .toList();
+    }
     final customerId = _effectiveCustomerId;
     final contacts = <int, Contact>{
       for (final contact
@@ -473,6 +516,25 @@ class JobPartyAssignmentEditorState
   }
 
   Future<void> _createContact() async {
+    if (_contactSource == JobPartyContactSource.supplier) {
+      final supplier = _supplier;
+      if (supplier == null) {
+        HMBToast.error('Select a supplier before creating a contact.');
+        return;
+      }
+      final contact = await Navigator.of(context).push<Contact>(
+        MaterialPageRoute(
+          builder: (_) => ContactEditScreen<Supplier>(
+            parent: supplier,
+            daoJoin: JoinAdaptorSupplierContact(),
+          ),
+        ),
+      );
+      if (mounted && contact != null) {
+        _selectContact(contact);
+      }
+      return;
+    }
     if (widget.createContact != null) {
       final billing = _roleId == ContactRole.billing;
       final ownerId = _effectiveCustomerId == -2
@@ -602,20 +664,53 @@ class JobPartyAssignmentEditorState
     child: DeferredBuilder(
       this,
       waitingBuilder: (_) => const SizedBox.shrink(),
-      errorBuilder: (_, error) => const Text('Could not load customers.'),
+      errorBuilder: (_, error) => const Text('Could not load job parties.'),
       builder: (context) => Form(
         key: _form,
         child: HMBFormList(
           children: [
-            HMBDroplist<int>(
-              key: ValueKey('customer-$_effectiveCustomerId'),
-              title: 'Customer filter',
-              sortByRecent: false,
-              selectedItem: () async => _effectiveCustomerId ?? -1,
-              items: (filter) async {
-                final ids =
-                    [if (widget.customerId == null) -1, ..._customers.keys, -2]
-                      ..sort((a, b) {
+            HMBDroplist<JobPartyContactSource>(
+              title: 'Contact source',
+              selectedItem: () async => _contactSource,
+              items: (_) async => JobPartyContactSource.values,
+              format: (source) => switch (source) {
+                JobPartyContactSource.customer => 'Customer',
+                JobPartyContactSource.supplier => 'Supplier',
+              },
+              onChanged: (source) {
+                if (source == null || source == _contactSource) {
+                  return;
+                }
+                setState(() {
+                  _contactSource = source;
+                  _contact = null;
+                });
+              },
+            ),
+            if (_contactSource == JobPartyContactSource.supplier)
+              HMBDroplist<Supplier>(
+                title: 'Supplier',
+                selectedItem: () async => _supplier,
+                items: (filter) => DaoSupplier().getByFilter(filter),
+                format: (supplier) => supplier.name,
+                onChanged: (supplier) => setState(() {
+                  _supplier = supplier;
+                  _contact = null;
+                }),
+              )
+            else
+              HMBDroplist<int>(
+                key: ValueKey('customer-$_effectiveCustomerId'),
+                title: 'Customer filter',
+                sortByRecent: false,
+                selectedItem: () async => _effectiveCustomerId ?? -1,
+                items: (filter) async {
+                  final ids =
+                      [
+                        if (widget.customerId == null) -1,
+                        ..._customers.keys,
+                        -2,
+                      ]..sort((a, b) {
                         if (a == b) {
                           return 0;
                         }
@@ -638,22 +733,24 @@ class JobPartyAssignmentEditorState
                             .compareTo(_customerLabel(b).toLowerCase());
                         return byName == 0 ? a.compareTo(b) : byName;
                       });
-                return ids
-                    .where(
-                      (id) => _customerLabel(
-                        id,
-                      ).toLowerCase().contains((filter ?? '').toLowerCase()),
-                    )
-                    .toList();
-              },
-              format: _customerLabel,
-              onChanged: (id) => setState(() {
-                _customerFilterId = id == -1 ? null : id;
-                _contact = null;
-              }),
-            ),
+                  return ids
+                      .where(
+                        (id) => _customerLabel(
+                          id,
+                        ).toLowerCase().contains((filter ?? '').toLowerCase()),
+                      )
+                      .toList();
+                },
+                format: _customerLabel,
+                onChanged: (id) => setState(() {
+                  _customerFilterId = id == -1 ? null : id;
+                  _contact = null;
+                }),
+              ),
             HMBDroplist<Contact>(
               key: ValueKey((
+                _contactSource,
+                _supplier?.id,
                 _effectiveCustomerId,
                 _roleId == ContactRole.billing,
               )),
@@ -662,7 +759,11 @@ class JobPartyAssignmentEditorState
               items: _filteredContacts,
               format: (contact) => contact.fullname.trim(),
               onChanged: _selectContact,
-              onAdd: _createContact,
+              onAdd:
+                  _contactSource == JobPartyContactSource.supplier &&
+                      _supplier == null
+                  ? null
+                  : _createContact,
             ),
             ContactRoleSelector(
               roleId: _roleId,
@@ -676,7 +777,7 @@ class JobPartyAssignmentEditorState
             const Text(
               'The contact’s default role is a suggestion. '
               'Changing this assignment only affects this job. '
-              'Contacts can belong to any customer. '
+              'Contacts can belong to a customer or supplier. '
               'The Bill To customer is selected separately in Billing.',
             ),
             HMBSaveCancelButtons(
