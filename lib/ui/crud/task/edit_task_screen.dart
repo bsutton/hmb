@@ -11,8 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'dart:async';
-
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:june/june.dart';
@@ -25,13 +23,10 @@ import '../../../entity/entity.g.dart';
 import '../../../util/dart/exceptions.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../../util/flutter/platform_ex.dart';
-import '../../invoicing/create_invoice_ui.dart';
-import '../../widgets/blocking_ui.dart';
 import '../../widgets/fields/hmb_money_editing_controller.dart';
 import '../../widgets/fields/hmb_money_field.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
-import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_crud_checklist_item.dart';
 import '../../widgets/hmb_switch.dart';
 import '../../widgets/icons/help_button.dart';
@@ -39,7 +34,6 @@ import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../base_nested/edit_nested_screen.dart';
-import '../base_nested/list_nested_screen.dart';
 import '../category/select_category.dart';
 import 'photo_crud.dart';
 
@@ -208,32 +202,12 @@ class _TaskEditScreenState extends DeferredState<TaskEditScreen>
                     controller: _agreementNote,
                     labelText: 'Agreement note (optional)',
                   ),
-                  Builder(
-                    builder: (saveContext) => HMBButton(
-                      label: 'Save and prepare invoice',
-                      hint: 'Save the agreed task and review its invoice',
-                      enabled: _agreed,
-                      onPressed: () async {
-                        final task = await BlockingUI().runAndWait(
-                          () => ParentSaveScope.maybeOf(
-                            saveContext,
-                          )!.ensureSaved(),
-                        );
-                        if (task != null && saveContext.mounted) {
-                          await createInvoiceFor(
-                            widget.job,
-                            saveContext,
-                            taskId: task.id,
-                          );
-                        }
-                      },
-                    ),
-                  ),
                 ],
                 const Text(
                   'Record an on-site agreement here, or leave the price blank '
-                  'and prepare a formal quote. '
-                  'Enter the final customer price, including any tax.',
+                  'and prepare a formal quote. Enter the final customer '
+                  'price, including any tax. Save the task, then create the '
+                  'invoice from the job Invoices page.',
                 ),
               ],
             ),
@@ -376,7 +350,8 @@ Use an agreed task price or a formal quote, then Create invoice.
   Future<Task> forUpdate(Task task) async => task.copyWith(
     jobId: widget.job.id,
     name: _nameController.text,
-    billingType: selectedBillingType ?? widget.job.billingType,
+    billingType: selectedBillingType,
+    clearBillingType: selectedBillingType == null,
     description: _descriptionController.text,
     assumption: _assumptionController.text,
     status: June.getState(SelectedTaskStatus.new).taskStatus,
@@ -392,7 +367,7 @@ Use an agreed task price or a formal quote, then Create invoice.
   Future<Task> forInsert() async => Task.forInsert(
     jobId: widget.job.id,
     name: _nameController.text,
-    billingType: selectedBillingType ?? widget.job.billingType,
+    billingType: selectedBillingType,
     description: _descriptionController.text,
     assumption: _assumptionController.text,
     status: June.getState(SelectedTaskStatus.new).taskStatus!,

@@ -31,7 +31,8 @@ class DevBackupProvider extends BackupProvider {
   }
 
   @override
-  Future<File> fetchBackup(Backup backup) async => File(backup.pathTo);
+  Future<File> fetchBackup(Backup backup, String privateDestination) async =>
+      File(backup.pathTo);
 
   @override
   Future<List<Backup>> getBackups() async {

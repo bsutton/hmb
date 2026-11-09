@@ -346,6 +346,12 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   }
 
   List<Widget> _buildLabourFields() => [
+    if (widget.forEstimate && widget.billingType == BillingType.timeAndMaterial)
+      const Text(
+        r'This task is Time and Materials. Labour items here have a $0.00 '
+        'estimate charge. Change the task billing type to Fixed Price '
+        'to price estimated hours.',
+      ),
     HMBDroplist<LabourEntryMode>(
       title: 'Labour Entry Mode',
       selectedItem: () async => _labourEntryMode,

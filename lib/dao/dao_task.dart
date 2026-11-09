@@ -86,8 +86,6 @@ ORDER BY t.modifiedDate DESC
     if (transaction == null) {
       return await db.transaction((txn) => insert(entity, txn));
     }
-    final job = await DaoJob().getById(entity.jobId, transaction);
-    entity.billingType ??= job?.billingType;
     return await super.insert(entity, transaction);
   }
 
@@ -119,17 +117,41 @@ UNION ALL SELECT id FROM task_item WHERE task_id = ? AND billed = 1 LIMIT 1
         job != null &&
         old.effectiveBillingType(job.billingType) !=
             entity.effectiveBillingType(job.billingType)) {
+      // An unagreed addition may have inherited fixed pricing by mistake.
+      // Let the user explicitly correct it to actuals without discarding its
+      // recorded work. Contracts and invoice history still protect the scope.
+      final correctingToActuals =
+          old.jobId == entity.jobId &&
+          old.effectiveBillingType(job.billingType) == BillingType.fixedPrice &&
+          entity.billingType == BillingType.timeAndMaterial;
       final protected = await transaction.rawQuery(
         '''
 SELECT id FROM time_entry WHERE task_id = ?
-UNION ALL SELECT id FROM task_item WHERE task_id = ? AND (completed = 1 OR billed = 1)
+ AND (? = 0 OR billed = 1 OR invoice_line_id IS NOT NULL)
+UNION ALL SELECT id FROM task_item WHERE task_id = ?
+ AND ((? = 0 AND completed = 1) OR billed = 1 OR invoice_line_id IS NOT NULL)
 UNION ALL SELECT g.id FROM quote_line_group g JOIN quote q ON q.id = g.quote_id
  WHERE g.task_id = ? AND q.state IN ('approved', 'invoiced')
  AND g.line_approval_status != 'rejected'
 UNION ALL SELECT id FROM task_fixed_agreement WHERE task_id = ?
+UNION ALL SELECT a.id FROM billing_allocation a
+ JOIN invoice i ON i.id = a.invoice_id
+ WHERE (a.source_type = 'time' AND a.source_id IN
+   (SELECT id FROM time_entry WHERE task_id = ?))
+ OR (a.source_type = 'item' AND a.source_id IN
+   (SELECT id FROM task_item WHERE task_id = ?))
 LIMIT 1
 ''',
-        [entity.id, entity.id, entity.id, entity.id],
+        [
+          entity.id,
+          if (correctingToActuals) 1 else 0,
+          entity.id,
+          if (correctingToActuals) 1 else 0,
+          entity.id,
+          entity.id,
+          entity.id,
+          entity.id,
+        ],
       );
       if (protected.isNotEmpty) {
         throw InvoiceException(
@@ -138,7 +160,6 @@ LIMIT 1
         );
       }
     }
-    entity.billingType ??= job?.billingType;
     return await super.update(entity, transaction);
   }
 

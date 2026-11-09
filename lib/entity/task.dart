@@ -80,6 +80,7 @@ class Task extends Entity<Task> {
     TaskStatus? status,
     bool? estimateComplete,
     BillingType? billingType,
+    bool clearBillingType = false,
     int? categoryId,
     double? effortQuantity,
     String? effortUnit,
@@ -97,7 +98,7 @@ class Task extends Entity<Task> {
     estimateComplete: estimateComplete ?? this.estimateComplete,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
-    billingType: billingType ?? this.billingType,
+    billingType: clearBillingType ? null : billingType ?? this.billingType,
     categoryId: clearCategory ? null : categoryId ?? this.categoryId,
     effortQuantity: clearEffortQuantity
         ? null
