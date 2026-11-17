@@ -10,6 +10,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../dao/dao_system.dart';
 import '../../../entity/system_credentials.dart';
 import '../../../util/flutter/app_title.dart';
+import '../../widgets/fields/hmb_secret_field.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
 
@@ -90,12 +91,9 @@ class _GoogleMapsIntegrationScreenState
                       'Optimization API.',
                     ),
                     const HMBSpacer(height: true),
-                    TextFormField(
+                    HMBSecretField(
                       controller: _apiKeyController,
-                      decoration: const InputDecoration(
-                        labelText: 'Google Maps API Key',
-                      ),
-                      obscureText: true,
+                      labelText: 'Google Maps API Key',
                     ),
                   ],
                 ),

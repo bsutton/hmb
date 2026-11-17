@@ -23,6 +23,7 @@ import '../../../entity/system.dart';
 import '../../../entity/system_credentials.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../nav/dashboards/sync_warnings.dart';
+import '../../widgets/fields/hmb_secret_field.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
@@ -54,20 +55,19 @@ class XeroIntegrationScreenState extends State<XeroIntegrationScreen> {
 
   void _initializeControllers() {
     unawaited(
-      Future.wait([DaoSystem().get(), DaoSystem().getXeroCredentials()]).then((
-        results,
-      ) {
-        final system = results[0] as SystemConfiguration;
-        final credentials = results[1] as XeroCredentials;
-        _xeroClientIdController.text = system.xeroClientId ?? '';
-        _xeroClientSecretController.text = credentials.clientSecret ?? '';
-        _invoiceLineAccountCodeController.text =
-            system.invoiceLineRevenueAccountCode ?? '';
-        _invoiceLineItemCodeController.text =
-            system.invoiceLineInventoryItemCode ?? '';
-        _xeroEnabled = system.enableXeroIntegration;
-        setState(() {});
-      }),
+      Future.wait([DaoSystem().get(), DaoSystem().getXeroCredentials()])
+          .then((results) {
+            final system = results[0] as SystemConfiguration;
+            final credentials = results[1] as XeroCredentials;
+            _xeroClientIdController.text = system.xeroClientId ?? '';
+            _xeroClientSecretController.text = credentials.clientSecret ?? '';
+            _invoiceLineAccountCodeController.text =
+                system.invoiceLineRevenueAccountCode ?? '';
+            _invoiceLineItemCodeController.text =
+                system.invoiceLineInventoryItemCode ?? '';
+            _xeroEnabled = system.enableXeroIntegration;
+            setState(() {});
+          }),
     );
   }
 
@@ -107,9 +107,8 @@ class XeroIntegrationScreenState extends State<XeroIntegrationScreen> {
     );
 
     if (!_xeroEnabled) {
-      June.getState<AccountingSyncWarningState>(
-        AccountingSyncWarningState.new,
-      ).clearWarning();
+      June.getState<AccountingSyncWarningState>(AccountingSyncWarningState.new)
+          .clearWarning();
     }
 
     if (mounted) {
@@ -169,11 +168,9 @@ class XeroIntegrationScreenState extends State<XeroIntegrationScreen> {
           labelText: 'Xero Client ID',
           keyboardType: TextInputType.number,
         ),
-        HMBTextField(
+        HMBSecretField(
           controller: _xeroClientSecretController,
           labelText: 'Xero Client Secret',
-          keyboardType: TextInputType.number,
-          obscureText: true,
         ),
         HMBTextField(
           controller: _invoiceLineAccountCodeController,

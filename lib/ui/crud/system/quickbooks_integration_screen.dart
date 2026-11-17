@@ -8,6 +8,7 @@ import '../../../dao/dao_system.dart';
 import '../../../entity/quickbooks_settings.dart';
 import '../../../entity/system_credentials.dart';
 import '../../../util/flutter/app_title.dart';
+import '../../widgets/fields/hmb_secret_field.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/hmb_form_section.dart';
 import '../../widgets/widgets.g.dart';
@@ -145,10 +146,9 @@ class _QuickBooksState extends DeferredState<QuickBooksIntegrationScreen> {
           ),
           Text(_connected ? 'Connected' : 'Not connected'),
           HMBTextField(controller: _client, labelText: 'Intuit client ID'),
-          HMBTextField(
+          HMBSecretField(
             controller: _secret,
             labelText: 'Client secret (blank keeps saved)',
-            obscureText: true,
           ),
           HMBTextField(
             controller: _redirect,
@@ -209,10 +209,9 @@ class _QuickBooksState extends DeferredState<QuickBooksIntegrationScreen> {
               'do not '
               'share it or use an untrusted callback service.',
             ),
-            HMBTextField(
+            HMBSecretField(
               controller: _callback,
               labelText: 'Authorization callback URL',
-              obscureText: true,
             ),
             HMBButtonPrimary(
               label: 'Complete connection',

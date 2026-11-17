@@ -19,6 +19,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../dao/dao_system.dart';
 import '../../../entity/system_credentials.dart';
 import '../../../util/flutter/app_title.dart';
+import '../../widgets/fields/hmb_secret_field.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
 
@@ -113,10 +114,9 @@ class ChatGptIntegrationScreenState extends State<ChatGptIntegrationScreen> {
           'extraction during booking import, and receipt line extraction '
           'from receipt photos.',
         ),
-        TextFormField(
+        HMBSecretField(
           controller: _apiKeyController,
-          decoration: const InputDecoration(labelText: 'OpenAI API Key'),
-          obscureText: true,
+          labelText: 'OpenAI API Key',
         ),
       ],
     ),

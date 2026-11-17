@@ -32,6 +32,8 @@ class HMBTextField extends StatelessWidget {
   final TextCapitalization textCapitalization;
   final bool enabled;
   final bool obscureText;
+  final bool autocorrect;
+  final bool enableSuggestions;
   final Widget? suffixIcon;
   final List<TextInputFormatter> inputFormatters;
   final Key? fieldKey;
@@ -50,6 +52,8 @@ class HMBTextField extends StatelessWidget {
     this.onPaste,
     this.enabled = true,
     this.obscureText = false,
+    this.autocorrect = true,
+    this.enableSuggestions = true,
     super.key,
     this.autofocus = false,
     this.textCapitalization = TextCapitalization.none,
@@ -100,6 +104,8 @@ class HMBTextField extends StatelessWidget {
       minLines: minLines,
       maxLines: maxLines,
       obscureText: obscureText,
+      autocorrect: autocorrect,
+      enableSuggestions: enableSuggestions,
       textCapitalization: textCapitalization,
       inputFormatters: inputFormatters,
       onChanged: onChanged?.call,

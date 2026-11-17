@@ -23,6 +23,7 @@ import '../../../entity/system_credentials.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../dialog/google_mail_auth.dart';
 import '../../dialog/hmb_email_sender.dart';
+import '../../widgets/fields/hmb_secret_field.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
@@ -262,12 +263,11 @@ class _SmtpIntegrationScreenState extends State<SmtpIntegrationScreen> {
                           : 'SMTP Username',
                     ),
                     if (_authMode == SmtpAuthMode.password)
-                      HMBTextField(
+                      HMBSecretField(
                         controller: _passwordController,
                         labelText: _provider == SmtpProvider.gmail
                             ? 'Gmail App Password'
                             : 'SMTP Password',
-                        obscureText: true,
                       ),
                     HMBTextField(
                       controller: _fromEmailController,

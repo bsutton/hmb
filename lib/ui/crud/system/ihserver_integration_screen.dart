@@ -25,6 +25,7 @@ import '../../../dao/dao_system.dart';
 import '../../../entity/system.dart';
 import '../../../entity/system_credentials.dart';
 import '../../../util/flutter/app_title.dart';
+import '../../widgets/fields/hmb_secret_field.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
@@ -175,12 +176,10 @@ class IhServerIntegrationScreenState
           keyboardType: TextInputType.url,
           required: _enabled,
         ).help('Example', 'https://ivanhoehandyman.com.au'),
-        HMBTextField(
+        HMBSecretField(
           controller: _tokenController,
           labelText: 'Access Token',
-          keyboardType: TextInputType.visiblePassword,
           required: _enabled,
-          obscureText: true,
           suffixIcon: IconButton(
             tooltip: 'Generate token',
             icon: const Icon(Icons.auto_fix_high),
