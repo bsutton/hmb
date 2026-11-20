@@ -511,13 +511,12 @@ class LifecycleEventDispatcher {
       return;
     }
     final invoiced = await transaction.rawQuery(
-      'SELECT 1 FROM milestone '
-      'WHERE quote_id = ? AND voided = 0 AND invoice_id IS NOT NULL LIMIT 1',
+      'SELECT 1 FROM cancellation_quote_invoice WHERE quote_id = ? LIMIT 1',
       [quote.id],
     );
     if (invoiced.isNotEmpty) {
       throw const LifecycleException(
-        'An approved quote with an invoiced milestone cannot be changed.',
+        'An approved quote with reserved invoice history cannot be changed.',
       );
     }
   }

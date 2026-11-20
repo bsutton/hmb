@@ -1,3 +1,4 @@
+import 'package:hmb/dao/billing_service.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/dao/invoice_lifecycle_service.dart';
 import 'package:hmb/entity/entity.g.dart';
@@ -735,7 +736,11 @@ void main() {
         description: 'Customer cancelled',
       );
 
-      expect((await DaoQuote().getById(quote.id))?.state, QuoteState.invoiced);
+      expect((await DaoQuote().getById(quote.id))?.state, QuoteState.approved);
+      expect(
+        (await DaoJob().getById(job.id))?.status,
+        JobStatus.awaitingPayment,
+      );
       await rejectJob(job.id);
       await rejectJob(job.id); // No repeat transition on a retry.
 
@@ -756,7 +761,7 @@ void main() {
         whereArgs: [invoice.id],
       );
       expect(allocations.single['released_date'], isNull);
-      expect(await DaoLifecycleTransition().getByJob(job.id), hasLength(3));
+      expect(await DaoLifecycleTransition().getByJob(job.id), hasLength(4));
     },
   );
 
@@ -838,6 +843,7 @@ void main() {
       invoice.id,
       'fixture-only-external-id',
     );
+    expect((await DaoQuote().getById(quote.id))?.state, QuoteState.approved);
     await rejectJob(job.id);
     expect((await DaoQuote().getById(quote.id))?.state, QuoteState.rejected);
     expect((await DaoMilestone().getById(milestone.id))?.invoiceId, invoice.id);
@@ -871,8 +877,136 @@ void main() {
       description: 'Cancelled',
       confirmedXeroInvoiceId: externalId,
     );
+    expect((await DaoQuote().getById(quote.id))?.state, QuoteState.approved);
     await rejectJob(job.id);
     expect((await DaoJob().getById(job.id))?.status, JobStatus.rejected);
+  });
+
+  test(
+    'only the last safely voided linked invoice restores approval',
+    () async {
+      final job = await _insertJob(JobStatus.awaitingPayment);
+      final quote = await _insertQuote(QuoteState.invoiced, job: job);
+      final unknown = await _insertQuote(QuoteState.invoiced, job: job);
+      final (first, firstLink) = await _linkInvoice(quote);
+      final (second, secondLink) = await _linkInvoice(quote, number: 2);
+      await _insertIssuedInvoice(job.id); // Unrelated invoice on the same job.
+
+      await DaoInvoice().voidInvoice(
+        invoiceId: first.id,
+        description: 'void 1',
+      );
+      expect((await DaoQuote().getById(quote.id))?.state, QuoteState.invoiced);
+      await DaoInvoice().voidInvoice(
+        invoiceId: second.id,
+        description: 'void 2',
+      );
+      expect((await DaoQuote().getById(quote.id))?.state, QuoteState.approved);
+      expect(
+        (await DaoQuote().getById(unknown.id))?.state,
+        QuoteState.invoiced,
+      );
+      expect((await DaoMilestone().getById(firstLink.id))?.invoiceId, first.id);
+      expect(
+        (await DaoMilestone().getById(secondLink.id))?.invoiceId,
+        second.id,
+      );
+      expect(
+        (await DaoJob().getById(job.id))?.status,
+        JobStatus.awaitingPayment,
+      );
+      final audit = (await DaoLifecycleTransition().getByJob(job.id)).single;
+      expect(audit.event, 'RestoreApprovalAfterInvoiceVoid');
+      expect(audit.fromState, 'invoiced');
+      expect(audit.toState, 'approved');
+    },
+  );
+
+  test('a paid linked invoice prevents restored approval', () async {
+    final quote = await _insertQuote(QuoteState.invoiced);
+    final (invoice, _) = await _linkInvoice(quote);
+    await _linkInvoice(quote, number: 2, paid: true);
+    await DaoInvoice().voidInvoice(invoiceId: invoice.id, description: 'void');
+    expect((await DaoQuote().getById(quote.id))?.state, QuoteState.invoiced);
+    expect(await DaoLifecycleTransition().getByJob(quote.jobId), isEmpty);
+  });
+
+  for (final mode in [
+    'direct reservation',
+    'visible legacy milestone',
+    'hidden legacy milestone',
+  ]) {
+    test('restoring approval retains protections for $mode', () async {
+      final job = await _insertJob(JobStatus.awaitingPayment);
+      final quote = await _insertQuote(
+        QuoteState.invoiced,
+        job: job,
+        amount: MoneyEx.dollars(100),
+      );
+      final invoice = await _insertIssuedInvoice(job.id);
+      if (mode == 'direct reservation') {
+        await testDb!.insert('billing_allocation', {
+          'invoice_id': invoice.id,
+          'source_type': 'quote',
+          'source_id': quote.id,
+          'amount': 10000,
+          'created_date': '2025-01-01',
+        });
+      } else {
+        await testDb!.insert(
+          'milestone',
+          Milestone.forInsert(
+            quoteId: quote.id,
+            milestoneNumber: 1,
+            paymentAmount: MoneyEx.dollars(100),
+            paymentPercentage: Percentage.fromInt(100),
+            invoiceId: invoice.id,
+            voided: mode == 'hidden legacy milestone',
+          ).toMap()..remove('id'),
+        );
+      }
+      final before = await BillingService().preview(
+        job.id,
+        forEligibility: true,
+      );
+      expect(before.candidates.where((c) => c.quoteId == quote.id), isEmpty);
+      await DaoInvoice().voidInvoice(
+        invoiceId: invoice.id,
+        description: 'void',
+      );
+      expect((await DaoQuote().getById(quote.id))?.state, QuoteState.approved);
+      final preview = await BillingService().preview(
+        job.id,
+        forEligibility: true,
+      );
+      expect(preview.candidates.where((c) => c.quoteId == quote.id), isEmpty);
+      await expectLater(
+        DaoQuote().unapproveQuote(quote.id),
+        throwsA(isA<LifecycleException>()),
+      );
+    });
+  }
+
+  test('cross-job invoice evidence cannot restore quote approval', () async {
+    final quote = await _insertQuote(QuoteState.invoiced);
+    final (invoice, _) = await _linkInvoice(quote);
+    final otherJob = await _insertJob(JobStatus.awaitingPayment);
+    final otherInvoice = await _insertIssuedInvoice(
+      otherJob.id,
+      status: InvoiceExternalSyncStatus.voided,
+    );
+    await DaoMilestone().insert(
+      Milestone.forInsert(
+        quoteId: quote.id,
+        milestoneNumber: 2,
+        paymentAmount: MoneyEx.dollars(50),
+        paymentPercentage: Percentage.fromInt(50),
+        invoiceId: otherInvoice.id,
+      ),
+    );
+    await DaoInvoice().voidInvoice(invoiceId: invoice.id, description: 'void');
+    expect((await DaoQuote().getById(quote.id))?.state, QuoteState.invoiced);
+    expect(await DaoLifecycleTransition().getByJob(quote.jobId), isEmpty);
   });
 
   test('DAO rejects direct quote state writes', () async {
@@ -901,13 +1035,13 @@ Future<Job> _insertJob(JobStatus status) async {
   return job;
 }
 
-Future<Quote> _insertQuote(QuoteState state, {Job? job}) async {
+Future<Quote> _insertQuote(QuoteState state, {Job? job, Money? amount}) async {
   final owner = job ?? await _insertJob(JobStatus.prospecting);
   final quote = Quote.forInsert(
     jobId: owner.id,
     summary: 'Quote',
     description: 'description',
-    totalAmount: MoneyEx.zero,
+    totalAmount: amount ?? MoneyEx.zero,
     state: state,
   );
   await DaoQuote().insert(quote);
@@ -992,6 +1126,7 @@ Future<(Invoice, Milestone)> _linkInvoice(
   Quote quote, {
   InvoiceExternalSyncStatus status = InvoiceExternalSyncStatus.none,
   bool paid = false,
+  int number = 1,
 }) async {
   final invoice = await _insertIssuedInvoice(
     quote.jobId,
@@ -1000,7 +1135,7 @@ Future<(Invoice, Milestone)> _linkInvoice(
   );
   final milestone = Milestone.forInsert(
     quoteId: quote.id,
-    milestoneNumber: 1,
+    milestoneNumber: number,
     paymentAmount: MoneyEx.dollars(100),
     paymentPercentage: Percentage.fromInt(100),
     milestoneDescription: 'Invoiced milestone',

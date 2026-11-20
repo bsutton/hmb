@@ -333,7 +333,8 @@ AND NOT EXISTS (SELECT 1 FROM billing_allocation a
       if (claimed.contains('quote:${quote.id}')) {
         continue;
       }
-      if (quote.state.name == 'invoiced') {
+      if (quote.state.name == 'invoiced' ||
+          milestones.any((milestone) => milestone.invoiceId != null)) {
         final hasOpenMilestones = milestones.any((m) => m.invoiceId == null);
         final fullyInvoicedMilestones =
             milestones.isNotEmpty &&
@@ -439,6 +440,16 @@ LIMIT 1
         continue;
       }
       if (milestones.isEmpty) {
+        final historicalMilestone = await db.rawQuery(
+          'SELECT 1 FROM milestone m WHERE m.quote_id = ? '
+          'AND (m.invoice_id IS NOT NULL OR EXISTS (SELECT 1 '
+          'FROM billing_allocation a WHERE a.source_type = ? '
+          'AND a.source_id = m.id AND a.released_date IS NULL)) LIMIT 1',
+          [quote.id, 'milestone'],
+        );
+        if (historicalMilestone.isNotEmpty) {
+          continue;
+        }
         add(
           BillingCandidate(
             kind: 'quote',
