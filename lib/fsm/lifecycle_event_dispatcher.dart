@@ -498,10 +498,23 @@ class LifecycleEventDispatcher {
         limit: 1,
       );
       if (eligible.isEmpty) {
-        throw LifecycleException(
-          'Quote ${quote.id} has an active invoice or unverified billing '
-          'history. Resolve it before rejecting the quote.',
+        final linked = await transaction.rawQuery(
+          'SELECT l.invoice_id FROM cancellation_quote_invoice l '
+          'WHERE l.quote_id = ? AND NOT EXISTS '
+          '(SELECT 1 FROM cancellation_void_invoice v '
+          'WHERE v.id = l.invoice_id AND v.job_id = ?) '
+          'ORDER BY l.invoice_id LIMIT 1',
+          [quote.id, quote.jobId],
         );
+        final detail = linked.isEmpty
+            ? 'It is marked invoiced, but there is no verified invoice link. '
+                  'Check its invoice history before retrying.'
+            : await _invoiceRejectionDetail(
+                transaction,
+                linked.single['invoice_id']! as int,
+                quote.jobId,
+              );
+        throw LifecycleException('Cannot reject quote #${quote.id}. $detail');
       }
       return;
     }
@@ -680,16 +693,90 @@ class LifecycleEventDispatcher {
     final blockers = await transaction.rawQuery(
       'SELECT i.id FROM invoice i WHERE i.job_id = ? AND NOT EXISTS '
       '(SELECT 1 FROM cancellation_void_invoice v WHERE v.id = i.id) '
-      'LIMIT 1',
+      'ORDER BY i.id LIMIT 1',
       [jobId],
     );
     if (blockers.isNotEmpty) {
-      throw const LifecycleException(
-        'This job has an active invoice or unresolved payment or accounting '
-        'activity. For a voided Xero invoice, open it and select '
-        'Verify void in Xero before retrying.',
+      final invoiceId = blockers.single['id']! as int;
+      final linked = await transaction.rawQuery(
+        'SELECT DISTINCT q.id FROM cancellation_quote_invoice l '
+        'JOIN quote q ON q.id = l.quote_id '
+        'WHERE l.invoice_id = ? AND q.job_id = ? ORDER BY q.id',
+        [invoiceId, jobId],
       );
+      final quotes = linked.map((row) => '#${row['id']}').join(', ');
+      final scope = switch (linked.length) {
+        0 => '',
+        1 => ' (quote $quotes)',
+        _ => ' (quotes $quotes)',
+      };
+      final detail = await _invoiceRejectionDetail(
+        transaction,
+        invoiceId,
+        jobId,
+      );
+      throw LifecycleException('Cannot reject job #$jobId$scope. $detail');
     }
+  }
+
+  Future<String> _invoiceRejectionDetail(
+    Transaction transaction,
+    int invoiceId,
+    int jobId,
+  ) async {
+    final rows = await transaction.rawQuery(
+      '''
+SELECT i.job_id, i.invoice_num, i.external_sync_status,
+ i.external_invoice_id, i.paid, i.paid_date, i.accounting_state,
+ (EXISTS (SELECT 1 FROM debtor_payment_allocation p WHERE p.invoice_id = i.id)
+  OR EXISTS (SELECT 1 FROM credit_allocation c WHERE c.invoice_id = i.id)
+  OR EXISTS (SELECT 1 FROM debtor_adjustment a WHERE a.invoice_id = i.id))
+   AS has_ledger,
+ EXISTS (SELECT 1 FROM quickbooks_invoice_export e WHERE e.invoice_id = i.id)
+   AS has_quickbooks
+FROM invoice i WHERE i.id = ?
+''',
+      [invoiceId],
+    );
+    if (rows.isEmpty) {
+      return 'Linked invoice #$invoiceId is missing. '
+          'Check the invoice history.';
+    }
+    final row = rows.single;
+    final number = (row['invoice_num'] as String?)?.trim();
+    final label =
+        'Invoice ${number == null || number.isEmpty ? '#$invoiceId' : number}';
+    if (row['job_id'] != jobId) {
+      return '$label belongs to a different job. Check the invoice link.';
+    }
+    if (row['paid'] == 1 ||
+        row['paid_date'] != null ||
+        row['has_ledger'] == 1) {
+      return '$label has a payment, credit or adjustment. '
+          'Reconcile it before retrying.';
+    }
+    if (row['has_quickbooks'] == 1) {
+      return '$label has a QuickBooks export. Reconcile it before retrying.';
+    }
+    final status = InvoiceExternalSyncStatus.fromOrdinal(
+      row['external_sync_status'] as int?,
+    );
+    if (status == InvoiceExternalSyncStatus.voided) {
+      final xeroId = (row['external_invoice_id'] as String?)?.trim();
+      if (xeroId != null && xeroId.isNotEmpty) {
+        return '$label is marked void in HMB. Open it and select '
+            'Verify void in Xero, then retry.';
+      }
+      return '$label is marked void, but HMB cannot verify it. '
+          'Check its invoice history before retrying.';
+    }
+    if (status == InvoiceExternalSyncStatus.deleted) {
+      return '$label is marked deleted, not void. Check its invoice history.';
+    }
+    if (row['accounting_state'] == 'draft') {
+      return '$label is a draft. Resolve the draft before retrying.';
+    }
+    return '$label is still active. Void the unpaid invoice before retrying.';
   }
 
   Future<void> _rejectQuotesForJob(

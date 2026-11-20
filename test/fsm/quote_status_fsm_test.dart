@@ -1009,6 +1009,94 @@ void main() {
     expect(await DaoLifecycleTransition().getByJob(quote.jobId), isEmpty);
   });
 
+  test(
+    'job rejection names the active invoice, not an unrelated quote',
+    () async {
+      final job = await _insertJob(JobStatus.awaitingPayment);
+      await _insertQuote(QuoteState.sent, job: job);
+      final invoice = await _insertIssuedInvoice(job.id);
+      await expectLater(
+        rejectJob(job.id),
+        throwsA(
+          isA<LifecycleException>().having(
+            (error) => error.message,
+            'message',
+            'Cannot reject job #${job.id}. Invoice #${invoice.id} is still '
+                'active. Void the unpaid invoice before retrying.',
+          ),
+        ),
+      );
+    },
+  );
+
+  test(
+    'job rejection gives Xero verification only for a linked void',
+    () async {
+      final job = await _insertJob(JobStatus.awaitingPayment);
+      final quote = await _insertQuote(QuoteState.invoiced, job: job);
+      final (invoice, _) = await _linkInvoice(
+        quote,
+        status: InvoiceExternalSyncStatus.voided,
+      );
+      await testDb!.update(
+        'invoice',
+        {
+          'invoice_num': 'INV-FIXTURE',
+          'external_invoice_id': 'fixture-only-id',
+        },
+        where: 'id = ?',
+        whereArgs: [invoice.id],
+      );
+      await expectLater(
+        rejectJob(job.id),
+        throwsA(
+          isA<LifecycleException>().having(
+            (error) => error.message,
+            'message',
+            'Cannot reject job #${job.id} (quote #${quote.id}). '
+                'Invoice INV-FIXTURE is marked void in HMB. Open it and select '
+                'Verify void in Xero, then retry.',
+          ),
+        ),
+      );
+    },
+  );
+
+  test('quote rejection explains missing invoice history', () async {
+    final quote = await _insertQuote(QuoteState.invoiced);
+    await expectLater(
+      DaoQuote().rejectQuote(quote.id),
+      throwsA(
+        isA<LifecycleException>().having(
+          (error) => error.message,
+          'message',
+          'Cannot reject quote #${quote.id}. It is marked invoiced, but '
+              'there is no verified invoice link. Check its invoice history '
+              'before retrying.',
+        ),
+      ),
+    );
+  });
+
+  test(
+    'quote rejection names a paid invoice without suggesting a void',
+    () async {
+      final quote = await _insertQuote(QuoteState.invoiced);
+      final (invoice, _) = await _linkInvoice(quote, paid: true);
+      await expectLater(
+        DaoQuote().rejectQuote(quote.id),
+        throwsA(
+          isA<LifecycleException>().having(
+            (error) => error.message,
+            'message',
+            'Cannot reject quote #${quote.id}. Invoice #${invoice.id} has a '
+                'payment, credit or adjustment. Reconcile it before retrying.',
+          ),
+        ),
+      );
+    },
+  );
+
   test('DAO rejects direct quote state writes', () async {
     final quote = await _insertQuote(QuoteState.reviewing);
     await expectLater(
