@@ -15,7 +15,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 import 'test_database_config.dart';
 
 void main() {
-  test('combined registry contains unique versions through v230', () async {
+  test('combined registry contains unique versions through v231', () async {
     final source = ProjectScriptSource();
     final paths = await source.upgradeScripts();
     final versions = paths.map(extractVerionForSQLUpgradeScript).toList();
@@ -28,7 +28,8 @@ void main() {
     expect(versions.where((version) => version == 228), hasLength(1));
     expect(versions.where((version) => version == 229), hasLength(1));
     expect(versions.where((version) => version == 230), hasLength(1));
-    expect(await getLatestVersion(source), 230);
+    expect(versions.where((version) => version == 231), hasLength(1));
+    expect(await getLatestVersion(source), 231);
     for (final path in paths) {
       expect(File(path).existsSync(), isTrue, reason: path);
     }
@@ -45,6 +46,7 @@ void main() {
     (227, 227, false),
     (228, 228, false),
     (229, 229, false),
+    (230, 230, false),
     // Interrupted open: HMB recorded a migration before SQLite user_version.
     (222, 223, false),
     (223, 224, false),
@@ -115,8 +117,8 @@ void main() {
         final jobsBefore = await db.query('job');
         final activitiesBefore = await db.query('job_activity');
         final source = _RecordingSource();
-        await upgrade(230, source);
-        expect(await getUpgradeResumeVersion(db, previous.$1), 230);
+        await upgrade(231, source);
+        expect(await getUpgradeResumeVersion(db, previous.$1), 231);
         final applied = source.loadedVersions.where((v) => v >= 223).toList();
         expect(applied, [
           if (previous.$2 < 223) 223,
@@ -126,7 +128,8 @@ void main() {
           if (previous.$2 < 227) 227,
           if (previous.$2 < 228) 228,
           if (previous.$2 < 229) 229,
-          230,
+          if (previous.$2 < 230) 230,
+          231,
         ]);
         expect(await db.query('xero_customer_credit'), isEmpty);
         expect(await db.query('xero_customer_credit_event'), isEmpty);
@@ -172,7 +175,7 @@ void main() {
         // A repeated/resumed upgrade must neither duplicate the SMS suffix
         // nor recreate the archive table, discard history, or duplicate audit.
         source.loadedVersions.clear();
-        await upgrade(230, source);
+        await upgrade(231, source);
         expect(source.loadedVersions, isEmpty);
         expect(
           await db.query(

@@ -5,6 +5,7 @@ import '../entity/invoice_line.dart';
 import '../util/dart/exceptions.dart';
 import 'billing_mutation.dart';
 import 'dao.dart';
+import 'dao_quote.dart';
 
 /// Source reservation and document lifecycle changes share one transaction.
 class InvoiceLifecycleService {
@@ -273,46 +274,72 @@ FROM invoice_line WHERE invoice_id = ?), modified_date = ? WHERE id = ?
     int id,
     String reason, {
     String? confirmedXeroInvoiceId,
-  }) => _db.transaction((txn) async {
-    final row = await _invoice(txn, id);
-    final invoice = Invoice.fromMap(row);
-    await _withoutLedger(txn, id);
-    if (invoice.paid ||
-        invoice.isExternallyDeletedOrVoided ||
-        reason.trim().isEmpty) {
-      throw InvoiceException(
-        'A void requires an unpaid active invoice and a reason.',
+  }) async {
+    final updated = await _db.transaction((txn) async {
+      final row = await _invoice(txn, id);
+      final invoice = Invoice.fromMap(row);
+      await _withoutLedger(txn, id);
+      if (invoice.paid ||
+          invoice.isExternallyDeletedOrVoided ||
+          reason.trim().isEmpty) {
+        throw InvoiceException(
+          'A void requires an unpaid active invoice and a reason.',
+        );
+      }
+      // Keep source reservations: voiding is not permission to charge again.
+      await txn.update(
+        'invoice',
+        {
+          'external_sync_status': InvoiceExternalSyncStatus.voided.ordinal,
+          'void_description': reason.trim(),
+          'modified_date': DateTime.now().toIso8601String(),
+        },
+        where: 'id = ?',
+        whereArgs: [id],
       );
+      if (confirmedXeroInvoiceId != null) {
+        await _recordXeroVoid(txn, invoice, confirmedXeroInvoiceId);
+      }
+      final updated = await _restoreQuoteApproval(txn, id);
+      await BillingMutation.enqueue(txn, {invoice.jobId});
+      return updated;
+    });
+    if (updated != 0) {
+      Dao.notifier(DaoQuote());
     }
-    // Keep source reservations: voiding is not permission to charge again.
-    await txn.update(
-      'invoice',
-      {
-        'external_sync_status': InvoiceExternalSyncStatus.voided.ordinal,
-        'void_description': reason.trim(),
-        'modified_date': DateTime.now().toIso8601String(),
-      },
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    if (confirmedXeroInvoiceId != null) {
-      await _recordXeroVoid(txn, invoice, confirmedXeroInvoiceId);
-    }
-    await BillingMutation.enqueue(txn, {invoice.jobId});
-  });
+  }
 
   /// Record the result of explicitly checking a previously voided invoice.
   Future<void> confirmVoidedXeroInvoice(
     int id,
     String confirmedXeroInvoiceId,
-  ) => _db.transaction((txn) async {
-    final invoice = Invoice.fromMap(await _invoice(txn, id));
-    if (invoice.externalSyncStatus != InvoiceExternalSyncStatus.voided) {
-      throw InvoiceException('This invoice is not marked void in HMB.');
+  ) async {
+    final updated = await _db.transaction((txn) async {
+      final invoice = Invoice.fromMap(await _invoice(txn, id));
+      if (invoice.externalSyncStatus != InvoiceExternalSyncStatus.voided) {
+        throw InvoiceException('This invoice is not marked void in HMB.');
+      }
+      await _withoutLedger(txn, id);
+      await _recordXeroVoid(txn, invoice, confirmedXeroInvoiceId);
+      final updated = await _restoreQuoteApproval(txn, id);
+      if (updated != 0) {
+        await BillingMutation.enqueue(txn, {invoice.jobId});
+      }
+      return updated;
+    });
+    if (updated != 0) {
+      Dao.notifier(DaoQuote());
     }
-    await _withoutLedger(txn, id);
-    await _recordXeroVoid(txn, invoice, confirmedXeroInvoiceId);
-  });
+  }
+
+  Future<int> _restoreQuoteApproval(Transaction txn, int invoiceId) =>
+      txn.rawUpdate(
+        "UPDATE quote SET state = 'approved', modified_date = ? "
+        'WHERE id IN (SELECT q.id FROM invoice_void_reopenable_quote q '
+        'JOIN cancellation_quote_invoice l ON l.quote_id = q.id '
+        'WHERE l.invoice_id = ?)',
+        [DateTime.now().toIso8601String(), invoiceId],
+      );
 
   Future<void> _recordXeroVoid(
     Transaction txn,
