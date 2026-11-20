@@ -249,6 +249,10 @@ class LifecycleEventDispatcher {
     };
     final resumeChanged = resumeStatus != job.resumeStatus;
 
+    if (target == JobStatus.rejected) {
+      await _validateJobCancellation(job.id, transaction);
+    }
+
     if (changed || resumeChanged) {
       await BillingExecutor(transaction)
           .update(
@@ -353,10 +357,9 @@ class LifecycleEventDispatcher {
         );
       }
 
-      if (event is RejectQuoteEvent ||
-          event is RejectQuoteAndJob ||
-          event is WithdrawQuote ||
-          event is AmendQuote) {
+      if (event is RejectQuoteEvent || event is RejectQuoteAndJob) {
+        await DaoMilestone().cancelForRejectedQuote(quote.id, transaction);
+      } else if (event is WithdrawQuote || event is AmendQuote) {
         await DaoMilestone().voidByQuoteId(quote.id, transaction: transaction);
       }
 
@@ -487,11 +490,24 @@ class LifecycleEventDispatcher {
     QuoteEvent event,
     Transaction transaction,
   ) async {
+    if (event is RejectQuoteEvent || event is RejectQuoteAndJob) {
+      final eligible = await transaction.query(
+        'cancellation_rejectable_quote',
+        where: 'id = ?',
+        whereArgs: [quote.id],
+        limit: 1,
+      );
+      if (eligible.isEmpty) {
+        throw LifecycleException(
+          'Quote ${quote.id} has an active invoice or unverified billing '
+          'history. Resolve it before rejecting the quote.',
+        );
+      }
+      return;
+    }
+
     if (quote.state != QuoteState.approved ||
-        (event is! UnapproveQuote &&
-            event is! RejectQuoteEvent &&
-            event is! RejectQuoteAndJob &&
-            event is! AmendQuote)) {
+        (event is! UnapproveQuote && event is! AmendQuote)) {
       return;
     }
     final invoiced = await transaction.rawQuery(
@@ -658,6 +674,25 @@ class LifecycleEventDispatcher {
     }
   }
 
+  Future<void> _validateJobCancellation(
+    int jobId,
+    Transaction transaction,
+  ) async {
+    final blockers = await transaction.rawQuery(
+      'SELECT i.id FROM invoice i WHERE i.job_id = ? AND NOT EXISTS '
+      '(SELECT 1 FROM cancellation_void_invoice v WHERE v.id = i.id) '
+      'LIMIT 1',
+      [jobId],
+    );
+    if (blockers.isNotEmpty) {
+      throw const LifecycleException(
+        'This job has an active invoice or unresolved payment or accounting '
+        'activity. For a voided Xero invoice, open it and select '
+        'Verify void in Xero before retrying.',
+      );
+    }
+  }
+
   Future<void> _rejectQuotesForJob(
     int jobId,
     LifecycleContext context,
@@ -679,7 +714,6 @@ class LifecycleEventDispatcher {
         RejectQuoteEvent(quote),
         transaction,
       );
-      await DaoMilestone().voidByQuoteId(quote.id, transaction: transaction);
       await BillingExecutor(transaction).update(
         DaoQuote.tableName,
         {
@@ -689,6 +723,7 @@ class LifecycleEventDispatcher {
         where: 'id = ?',
         whereArgs: [quote.id],
       );
+      await DaoMilestone().cancelForRejectedQuote(quote.id, transaction);
       await DaoLifecycleTransition().insert(
         aggregateType: 'quote',
         aggregateId: quote.id,

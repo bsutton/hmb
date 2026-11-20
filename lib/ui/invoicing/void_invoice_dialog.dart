@@ -18,6 +18,7 @@ import '../../api/external_accounting.dart';
 import '../../api/xero/xero_api.dart';
 import '../../dao/dao_invoice.dart';
 import '../../dao/debtor_ledger_service.dart';
+import '../../dao/invoice_lifecycle_service.dart';
 import '../../entity/invoice.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
@@ -56,24 +57,59 @@ Future<bool> promptAndVoidInvoice({
   }
 
   try {
-    if (await ExternalAccounting().isEnabled()) {
-      if (Strings.isNotBlank(invoice.invoiceNum)) {
-        final xeroApi = XeroApi();
-        await xeroApi.login();
-        await BlockingUI().runAndWait(() async {
-          await xeroApi.voidInvoice(invoice);
-        }, label: 'Voiding Invoice');
+    String? confirmedXeroInvoiceId;
+    if (invoice.paymentSource == InvoicePaymentSource.xero &&
+        !invoice.isUploaded()) {
+      HMBToast.error('Sync this invoice with Xero before voiding it.');
+      return false;
+    }
+    if (invoice.isUploaded()) {
+      if (!await ExternalAccounting().isEnabled()) {
+        HMBToast.error('Connect to Xero and sync this invoice before voiding.');
+        return false;
       }
+      final xeroApi = XeroApi();
+      await xeroApi.login();
+      await BlockingUI().runAndWait(() async {
+        confirmedXeroInvoiceId = await xeroApi.voidInvoice(invoice);
+      }, label: 'Voiding Invoice');
     }
     await DaoInvoice().voidInvoice(
       invoiceId: invoice.id,
       description: description,
+      confirmedXeroInvoiceId: confirmedXeroInvoiceId,
     );
-    HMBToast.info('Invoice ${invoice.bestNumber} voided');
+    if (invoice.isUploaded() && confirmedXeroInvoiceId == null) {
+      HMBToast.info(
+        'Invoice marked void in HMB. Select Verify void in Xero '
+        'before rejecting the job.',
+      );
+    } else {
+      HMBToast.info('Invoice ${invoice.bestNumber} voided');
+    }
     return true;
   } catch (e) {
     HMBToast.error('Failed to void invoice: $e', acknowledgmentRequired: true);
     return false;
+  }
+}
+
+Future<void> verifyVoidedInvoiceInXero(Invoice invoice) async {
+  try {
+    final api = XeroApi();
+    await api.login();
+    await BlockingUI().runAndWait(() async {
+      final externalId = await api.confirmInvoiceVoided(
+        invoice.externalInvoiceId!,
+      );
+      await InvoiceLifecycleService().confirmVoidedXeroInvoice(
+        invoice.id,
+        externalId,
+      );
+    }, label: 'Checking Xero invoice');
+    HMBToast.info('Xero confirmed the invoice was voided.');
+  } catch (error) {
+    HMBToast.error('Could not confirm the void in Xero: $error');
   }
 }
 

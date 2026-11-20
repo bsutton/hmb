@@ -53,7 +53,9 @@ Future<StateMachine> buildQuoteMachine(
     ..state<QuoteWasInvoiced>(
       (state) => state
         ..on<SendQuote, QuoteWasInvoiced>()
-        ..on<QuoteInvoiced, QuoteWasInvoiced>(),
+        ..on<QuoteInvoiced, QuoteWasInvoiced>()
+        ..on<RejectQuoteEvent, QuoteRejected>()
+        ..on<RejectQuoteAndJob, QuoteRejected>(),
     )
     ..state<QuoteRejected>((state) => state..on<AmendQuote, QuoteRejected>())
     ..state<QuoteWithdrawn>((state) => state..on<AmendQuote, QuoteWithdrawn>());
