@@ -200,6 +200,14 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
               _buildBillingContact(details, canChangeInvoice),
               if (Strings.isNotBlank(invoice.voidDescription))
                 Text('Void description: ${invoice.voidDescription}'),
+              if (invoice.externalSyncStatus ==
+                      InvoiceExternalSyncStatus.voided &&
+                  invoice.isUploaded())
+                HMBButtonSecondary(
+                  label: 'Verify void in Xero',
+                  hint: 'Confirm the void before rejecting the job',
+                  onPressed: () => verifyVoidedInvoiceInXero(invoice),
+                ),
               if (readOnlyInvoice && !invoice.isUploaded())
                 HMBButton(
                   label: 'Release work for rebilling',

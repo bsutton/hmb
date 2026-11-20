@@ -1,8 +1,24 @@
 -- A cancelled job keeps its invoices and billing reservations. Legacy links
 -- now use these same checks without changing any stored job or invoice state.
+CREATE TABLE IF NOT EXISTS invoice_xero_void_confirmation (
+  invoice_id INTEGER PRIMARY KEY REFERENCES invoice(id) ON DELETE CASCADE,
+  external_invoice_id TEXT NOT NULL,
+  confirmed_date TEXT NOT NULL
+);
+
 CREATE VIEW IF NOT EXISTS cancellation_void_invoice AS
 SELECT i.id, i.job_id FROM invoice i
 WHERE i.external_sync_status = 3 AND i.paid = 0 AND i.paid_date IS NULL
+  AND (
+    (NULLIF(TRIM(i.external_invoice_id), '') IS NULL AND i.payment_source != 1
+      AND NULLIF(TRIM(i.external_status), '') IS NULL
+      AND NULLIF(TRIM(i.void_description), '') IS NOT NULL)
+    OR (NULLIF(TRIM(i.external_invoice_id), '') IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM invoice_xero_void_confirmation x
+        WHERE x.invoice_id = i.id AND x.external_invoice_id = i.external_invoice_id
+      ))
+  )
   AND NOT EXISTS (SELECT 1 FROM debtor_payment_allocation p WHERE p.invoice_id = i.id)
   AND NOT EXISTS (SELECT 1 FROM credit_allocation c WHERE c.invoice_id = i.id)
   AND NOT EXISTS (SELECT 1 FROM debtor_adjustment a WHERE a.invoice_id = i.id)

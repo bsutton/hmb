@@ -269,31 +269,70 @@ FROM invoice_line WHERE invoice_id = ?), modified_date = ? WHERE id = ?
     }
   }
 
-  Future<void> voidInvoice(int id, String reason) =>
-      _db.transaction((txn) async {
-        final row = await _invoice(txn, id);
-        final invoice = Invoice.fromMap(row);
-        await _withoutLedger(txn, id);
-        if (invoice.paid ||
-            invoice.isExternallyDeletedOrVoided ||
-            reason.trim().isEmpty) {
-          throw InvoiceException(
-            'A void requires an unpaid active invoice and a reason.',
-          );
-        }
-        // Keep source reservations: voiding is not permission to charge again.
-        await txn.update(
-          'invoice',
-          {
-            'external_sync_status': InvoiceExternalSyncStatus.voided.ordinal,
-            'void_description': reason.trim(),
-            'modified_date': DateTime.now().toIso8601String(),
-          },
-          where: 'id = ?',
-          whereArgs: [id],
-        );
-        await BillingMutation.enqueue(txn, {invoice.jobId});
-      });
+  Future<void> voidInvoice(
+    int id,
+    String reason, {
+    String? confirmedXeroInvoiceId,
+  }) => _db.transaction((txn) async {
+    final row = await _invoice(txn, id);
+    final invoice = Invoice.fromMap(row);
+    await _withoutLedger(txn, id);
+    if (invoice.paid ||
+        invoice.isExternallyDeletedOrVoided ||
+        reason.trim().isEmpty) {
+      throw InvoiceException(
+        'A void requires an unpaid active invoice and a reason.',
+      );
+    }
+    // Keep source reservations: voiding is not permission to charge again.
+    await txn.update(
+      'invoice',
+      {
+        'external_sync_status': InvoiceExternalSyncStatus.voided.ordinal,
+        'void_description': reason.trim(),
+        'modified_date': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (confirmedXeroInvoiceId != null) {
+      await _recordXeroVoid(txn, invoice, confirmedXeroInvoiceId);
+    }
+    await BillingMutation.enqueue(txn, {invoice.jobId});
+  });
+
+  /// Record the result of explicitly checking a previously voided invoice.
+  Future<void> confirmVoidedXeroInvoice(
+    int id,
+    String confirmedXeroInvoiceId,
+  ) => _db.transaction((txn) async {
+    final invoice = Invoice.fromMap(await _invoice(txn, id));
+    if (invoice.externalSyncStatus != InvoiceExternalSyncStatus.voided) {
+      throw InvoiceException('This invoice is not marked void in HMB.');
+    }
+    await _withoutLedger(txn, id);
+    await _recordXeroVoid(txn, invoice, confirmedXeroInvoiceId);
+  });
+
+  Future<void> _recordXeroVoid(
+    Transaction txn,
+    Invoice invoice,
+    String confirmedXeroInvoiceId,
+  ) async {
+    if (invoice.paid ||
+        invoice.paidDate != null ||
+        confirmedXeroInvoiceId.isEmpty ||
+        invoice.externalInvoiceId != confirmedXeroInvoiceId) {
+      throw InvoiceException(
+        'The confirmed Xero invoice does not match this unpaid invoice.',
+      );
+    }
+    await txn.insert('invoice_xero_void_confirmation', {
+      'invoice_id': invoice.id,
+      'external_invoice_id': confirmedXeroInvoiceId,
+      'confirmed_date': DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
 
   /// Explicit local rebilling decision, separate from voiding the document.
   Future<void> releaseVoidedInvoice(int id) => _db.transaction((txn) async {

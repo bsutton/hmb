@@ -1,4 +1,5 @@
 import 'package:hmb/dao/dao.g.dart';
+import 'package:hmb/dao/invoice_lifecycle_service.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/entity/helpers/charge_mode.dart';
 import 'package:hmb/fsm/job_events.dart';
@@ -810,6 +811,70 @@ void main() {
     });
   }
 
+  test('a local void flag cannot confirm an invoice linked to Xero', () async {
+    final job = await _insertJob(JobStatus.awaitingPayment);
+    final quote = await _insertQuote(QuoteState.invoiced, job: job);
+    final (invoice, milestone) = await _linkInvoice(
+      quote,
+      status: InvoiceExternalSyncStatus.voided,
+    );
+    await testDb!.update(
+      'invoice',
+      {
+        'external_invoice_id': 'fixture-only-external-id',
+        'payment_source': InvoicePaymentSource.xero.ordinal,
+      },
+      where: 'id = ?',
+      whereArgs: [invoice.id],
+    );
+    final lifecycle = InvoiceLifecycleService();
+
+    await expectLater(rejectJob(job.id), throwsA(isA<LifecycleException>()));
+    await expectLater(
+      lifecycle.confirmVoidedXeroInvoice(invoice.id, 'different-id'),
+      throwsException,
+    );
+    await lifecycle.confirmVoidedXeroInvoice(
+      invoice.id,
+      'fixture-only-external-id',
+    );
+    await rejectJob(job.id);
+    expect((await DaoQuote().getById(quote.id))?.state, QuoteState.rejected);
+    expect((await DaoMilestone().getById(milestone.id))?.invoiceId, invoice.id);
+  });
+
+  test('fresh Xero void records matching proof atomically', () async {
+    final job = await _insertJob(JobStatus.awaitingPayment);
+    final quote = await _insertQuote(QuoteState.invoiced, job: job);
+    final (invoice, _) = await _linkInvoice(quote);
+    const externalId = 'fixture-fresh-xero-id';
+    await DaoInvoice().markManagedByXero(
+      invoice.id,
+      invoiceNum: 'TEST-1',
+      externalInvoiceId: externalId,
+    );
+
+    await expectLater(
+      DaoInvoice().voidInvoice(
+        invoiceId: invoice.id,
+        description: 'Cancelled',
+        confirmedXeroInvoiceId: 'wrong-id',
+      ),
+      throwsException,
+    );
+    expect(
+      (await DaoInvoice().getById(invoice.id))?.externalSyncStatus,
+      InvoiceExternalSyncStatus.linked,
+    );
+    await DaoInvoice().voidInvoice(
+      invoiceId: invoice.id,
+      description: 'Cancelled',
+      confirmedXeroInvoiceId: externalId,
+    );
+    await rejectJob(job.id);
+    expect((await DaoJob().getById(job.id))?.status, JobStatus.rejected);
+  });
+
   test('DAO rejects direct quote state writes', () async {
     final quote = await _insertQuote(QuoteState.reviewing);
     await expectLater(
@@ -915,6 +980,9 @@ Future<Invoice> _insertIssuedInvoice(
     sent: true,
     paid: paid,
     externalSyncStatus: status,
+    voidDescription: status == InvoiceExternalSyncStatus.voided
+        ? 'Previously voided in HMB'
+        : null,
   );
   await DaoInvoice().insert(invoice);
   return invoice;

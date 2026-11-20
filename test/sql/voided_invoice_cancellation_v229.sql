@@ -1,7 +1,8 @@
 CREATE TABLE job (id INTEGER PRIMARY KEY, status_id TEXT);
 CREATE TABLE invoice (
   id INTEGER PRIMARY KEY, job_id INTEGER, external_sync_status INTEGER,
-  paid INTEGER, paid_date TEXT
+  paid INTEGER, paid_date TEXT, external_invoice_id TEXT,
+  payment_source INTEGER, external_status TEXT, void_description TEXT
 );
 CREATE TABLE quote (
   id INTEGER PRIMARY KEY, job_id INTEGER, state TEXT, total_amount INTEGER
@@ -22,7 +23,9 @@ BEGIN
 END;
 
 INSERT INTO job VALUES (1, 'awaitingPayment');
-INSERT INTO invoice VALUES (8, 1, 3, 0, NULL), (9, 1, 0, 0, NULL);
+INSERT INTO invoice VALUES
+  (8, 1, 3, 0, NULL, NULL, 2, NULL, 'Voided before upgrade'),
+  (9, 1, 0, 0, NULL, NULL, 0, NULL, NULL);
 INSERT INTO quote VALUES
   (178, 1, 'invoiced', 10000), (179, 1, 'invoiced', 10000),
   (180, 1, 'invoiced', 10000);

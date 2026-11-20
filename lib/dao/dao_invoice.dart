@@ -365,8 +365,13 @@ ORDER BY modified_date DESC
   Future<void> voidInvoice({
     required int invoiceId,
     required String description,
+    String? confirmedXeroInvoiceId,
   }) async {
-    await InvoiceLifecycleService().voidInvoice(invoiceId, description);
+    await InvoiceLifecycleService().voidInvoice(
+      invoiceId,
+      description,
+      confirmedXeroInvoiceId: confirmedXeroInvoiceId,
+    );
     Dao.notifier(this, invoiceId);
   }
 

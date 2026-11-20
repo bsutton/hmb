@@ -687,7 +687,8 @@ class LifecycleEventDispatcher {
     if (blockers.isNotEmpty) {
       throw const LifecycleException(
         'This job has an active invoice or unresolved payment or accounting '
-        'activity. Resolve it before rejecting the job.',
+        'activity. For a voided Xero invoice, open it and select '
+        'Verify void in Xero before retrying.',
       );
     }
   }

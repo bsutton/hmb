@@ -126,30 +126,85 @@ class XeroApi {
 
   /// Invoices which have been authorised cannot be deleted and
   /// instead must be voided.
-  Future<http.Response> voidInvoice(Invoice invoice) async {
+  Future<String?> voidInvoice(Invoice invoice) async {
     await _checkIntegration();
 
+    final externalId = invoice.externalInvoiceId;
+    if (externalId == null || externalId.trim().isEmpty) {
+      throw InvoiceException('This invoice is not linked to Xero.');
+    }
     final tenantId = await getTenantId();
     final response = await http.post(
-      Uri.parse('${_baseUrl}Invoices/${invoice.invoiceNum}'),
+      Uri.parse('${_baseUrl}Invoices/${Uri.encodeComponent(externalId)}'),
       headers: {
         'Authorization': 'Bearer ${xeroAuth.accessToken}',
         'Content-Type': 'application/json',
         'Xero-tenant-id': tenantId,
       },
-      body:
-          '''
-{
-    "InvoiceNumber": "${invoice.invoiceNum}",
-    "Status": "VOIDED"
-}
-''',
+      body: jsonEncode({'InvoiceID': externalId, 'Status': 'VOIDED'}),
     );
-    if (response.statusCode != 200) {
-      throw Exception('Error deleting invoice: ${response.body}');
+    if (isConfirmedUnpaidVoid(response, externalId)) {
+      return externalId;
     }
-    return response;
+    try {
+      // Also recover when an earlier attempt voided the remote invoice.
+      return await confirmInvoiceVoided(externalId);
+    } on Exception {
+      if (response.statusCode != 200) {
+        rethrow;
+      }
+      // Preserve the previously supported local void after an accepted
+      // request. Until verification, cancellation remains blocked.
+      return null;
+    }
   }
+
+  /// Check the exact linked invoice, not an invoice display number.
+  Future<String> confirmInvoiceVoided(String externalId) async {
+    final response = await getInvoice(externalId);
+    if (!isConfirmedUnpaidVoid(response, externalId)) {
+      throw InvoiceException(
+        'Xero did not confirm this invoice is voided with no payments '
+        'or credits. Check it in Xero and try again.',
+      );
+    }
+    return externalId;
+  }
+
+  static bool isConfirmedUnpaidVoid(http.Response response, String id) {
+    if (response.statusCode != 200 || id.trim().isEmpty) {
+      return false;
+    }
+    try {
+      final body = jsonDecode(response.body);
+      if (body is! Map<String, dynamic> || body['Invoices'] is! List<dynamic>) {
+        return false;
+      }
+      final invoices = body['Invoices'] as List<dynamic>;
+      if (invoices.length != 1 || invoices.single is! Map<String, dynamic>) {
+        return false;
+      }
+      final invoice = invoices.single as Map<String, dynamic>;
+      final returnedId = invoice['InvoiceID'];
+      return returnedId is String &&
+          returnedId.toLowerCase() == id.toLowerCase() &&
+          invoice['Status'] == 'VOIDED' &&
+          _isZeroAmount(invoice['AmountPaid']) &&
+          _isZeroAmount(invoice['AmountCredited']) &&
+          _isEmptyAllocationList(invoice['Payments']) &&
+          _isEmptyAllocationList(invoice['CreditNotes']) &&
+          _isEmptyAllocationList(invoice['Prepayments']) &&
+          _isEmptyAllocationList(invoice['Overpayments']);
+    } on FormatException {
+      return false;
+    }
+  }
+
+  static bool _isZeroAmount(Object? amount) =>
+      amount == 0 || (amount is String && num.tryParse(amount.trim()) == 0);
+
+  static bool _isEmptyAllocationList(Object? allocations) =>
+      allocations == null || (allocations is List && allocations.isEmpty);
 
   /// Instruct xero to send the invoice to the jobs primary contact.
   Future<http.Response> sendInvoice(Invoice invoice) async {
@@ -260,7 +315,9 @@ class XeroApi {
     await _checkIntegration();
     final tenantId = await getTenantId();
     return http.get(
-      Uri.parse('${_baseUrl}Invoices/$externalInvoiceId'),
+      Uri.parse(
+        '${_baseUrl}Invoices/${Uri.encodeComponent(externalInvoiceId)}',
+      ),
       headers: {
         'Authorization': 'Bearer ${xeroAuth.accessToken}',
         'Content-Type': 'application/json',
