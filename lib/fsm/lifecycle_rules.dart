@@ -131,6 +131,7 @@ QuoteState? targetForQuoteEvent(QuoteState from, QuoteEvent event) =>
       QuoteState.invoiced => switch (event) {
         SendQuote() => QuoteState.invoiced,
         QuoteInvoiced() => QuoteState.invoiced,
+        RejectQuoteEvent() || RejectQuoteAndJob() => QuoteState.rejected,
         _ => null,
       },
       QuoteState.rejected => switch (event) {

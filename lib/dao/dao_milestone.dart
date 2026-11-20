@@ -152,6 +152,21 @@ class DaoMilestone extends Dao<Milestone> {
     );
   }
 
+  /// Cancel milestones without erasing invoice links or billing reservations.
+  Future<void> cancelForRejectedQuote(int quoteId, Transaction txn) async {
+    await txn.rawUpdate(
+      'UPDATE milestone SET voided = 1, modified_date = ? '
+      'WHERE quote_id = ? AND voided = 0 AND invoice_id IS NULL '
+      'AND NOT EXISTS (SELECT 1 FROM billing_allocation a '
+      "WHERE a.source_type = 'milestone' AND a.source_id = milestone.id "
+      'AND a.released_date IS NULL) AND EXISTS '
+      '(SELECT 1 FROM quote q JOIN cancellation_rejectable_quote eligible '
+      'ON eligible.id = q.id WHERE q.id = milestone.quote_id '
+      "AND q.state = 'rejected')",
+      [DateTime.now().toIso8601String(), quoteId],
+    );
+  }
+
   Future<void> detachFromInvoice(int invoiceId) async {
     await withoutTransaction().update(
       'milestone',
