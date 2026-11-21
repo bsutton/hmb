@@ -1,10 +1,37 @@
 import 'dart:convert';
 
 import 'package:hmb/api/xero/xero_api.dart';
+import 'package:hmb/api/xero/xero_void_confirmation.dart';
 import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
 
 void main() {
+  test('a sparse void needs a lookup, a conflicting void stays blocked', () {
+    const id = 'fixture-id';
+    final invoice = <String, Object?>{
+      'InvoiceID': id,
+      'Status': 'VOIDED',
+      'AmountPaid': 0.0,
+      'Overpayments': [],
+      'Prepayments': [],
+    };
+    final body = {
+      'Invoices': [invoice],
+    };
+    expect(xeroVoidProblem(body, id), contains('omitted AmountCredited'));
+    expect(needsXeroVoidLookup(body, id), isTrue);
+    expect(needsXeroVoidLookup(body, 'different-id'), isFalse);
+    invoice['AmountCredited'] = 0.0;
+    expect(xeroVoidProblem(body, id), isNull);
+    expect(needsXeroVoidLookup(body, id), isFalse);
+    invoice['AmountCredited'] = 12.34;
+    expect(xeroVoidProblem(body, id), contains('12.34'));
+    expect(needsXeroVoidLookup(body, id), isFalse);
+    invoice.remove('AmountCredited');
+    invoice['Payments'] = ['payment'];
+    expect(needsXeroVoidLookup(body, id), isFalse);
+  });
+
   test('omitted totals need complete empty allocation lists', () {
     final invoice = <String, Object?>{
       'InvoiceID': 'fixture',

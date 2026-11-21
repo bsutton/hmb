@@ -163,12 +163,29 @@ class XeroApi {
 
   /// Check the exact linked invoice, not an invoice display number.
   Future<String> confirmInvoiceVoided(String externalId) async {
-    final response = await getInvoice(externalId.trim());
+    final response = await getInvoiceForPaymentSync(externalId.trim());
     final problem = voidConfirmationProblem(response, externalId);
     if (problem != null) {
       throw InvoiceException(problem);
     }
     return externalId;
+  }
+
+  Future<http.Response> getInvoiceForPaymentSync(String id) async {
+    final detail = await getInvoice(id);
+    if (detail.statusCode == 200) {
+      try {
+        if (needsXeroVoidLookup(jsonDecode(detail.body), id)) {
+          return await _getCreditResource('Invoices', {
+            'IDs': id,
+            'Statuses': 'VOIDED',
+          });
+        }
+      } on FormatException {
+        // Keep the original response for the caller's error handling.
+      }
+    }
+    return detail;
   }
 
   static bool isConfirmedUnpaidVoid(http.Response response, String id) =>

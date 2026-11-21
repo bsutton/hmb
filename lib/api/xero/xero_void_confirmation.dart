@@ -1,5 +1,9 @@
 /// Check the identity, status and settlement details of one Xero invoice.
-String? xeroVoidProblem(Object? body, String id) {
+String? xeroVoidProblem(
+  Object? body,
+  String id, {
+  bool allowMissingTotals = false,
+}) {
   if (body is! Map<String, dynamic> || body['Invoices'] is! List<dynamic>) {
     return 'Xero returned an unexpected invoice response.';
   }
@@ -40,17 +44,25 @@ String? xeroVoidProblem(Object? body, String id) {
     if (amount == 0 || (amount is String && num.tryParse(amount.trim()) == 0)) {
       continue;
     }
-    if (!invoice.containsKey(entry.key) &&
-        entry.value.every((key) => invoice[key] is List)) {
-      continue;
+    if (!invoice.containsKey(entry.key)) {
+      if (allowMissingTotals ||
+          entry.value.every((key) => invoice[key] is List)) {
+        continue;
+      }
+      return 'Xero omitted ${entry.key} and its complete allocation details.';
     }
-    return 'Xero did not report a zero ${entry.key} for this invoice.';
+    if (amount is num || (amount is String && num.tryParse(amount) != null)) {
+      return 'Xero reports ${entry.key} as $amount for this invoice.';
+    }
+    return 'Xero returned an unreadable ${entry.key} for this invoice.';
   }
   return null;
 }
 
-bool isConfirmedUnpaidXeroVoid(Object? body, String id) =>
-    xeroVoidProblem(body, id) == null;
+/// Only a missing total on an otherwise valid void warrants a second read.
+bool needsXeroVoidLookup(Object? body, String id) =>
+    xeroVoidProblem(body, id) != null &&
+    xeroVoidProblem(body, id, allowMissingTotals: true) == null;
 
 bool _emptyOrAbsent(Object? value) =>
     value == null || (value is List && value.isEmpty);

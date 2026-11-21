@@ -403,7 +403,7 @@ class XeroInvoicePaymentSyncService {
     final isPaid = status == 'PAID' || (amountDue <= 0 && amountPaid > 0);
 
     return _RemoteInvoiceState(
-      confirmedUnpaidVoid: isConfirmedUnpaidXeroVoid(body, externalId),
+      confirmedUnpaidVoid: xeroVoidProblem(body, externalId) == null,
       invoiceNumber: invoiceNumber == null || invoiceNumber.isEmpty
           ? null
           : invoiceNumber,
