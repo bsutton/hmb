@@ -554,8 +554,20 @@ void main() {
     expect(find.text('Manage payments'), findsNothing);
     expect(find.textContaining('Voided in accounting'), findsOneWidget);
     expect(find.text('Xero invoice number: INV-0042'), findsOneWidget);
+    expect(find.text('Verify void in Xero'), findsOneWidget);
     expect(find.text('No email address recorded.'), findsOneWidget);
     expect(find.textContaining('before sending'), findsNothing);
+  });
+
+  testWidgets('confirmed Xero void hides the verification button', (
+    tester,
+  ) async {
+    final details = _details(xeroVoidConfirmed: true);
+    details.invoice.externalInvoiceId = 'fixture-external-id';
+    details.invoice.externalSyncStatus = InvoiceExternalSyncStatus.voided;
+    await _pump(tester, loadDetails: (_) async => details);
+    expect(find.textContaining('Voided in accounting'), findsOneWidget);
+    expect(find.text('Verify void in Xero'), findsNothing);
   });
 
   testWidgets('manual tracking cannot acquire a sync upload action', (
@@ -1070,6 +1082,7 @@ Future<void> _pump(
 }
 
 InvoiceDetails _details({
+  bool xeroVoidConfirmed = false,
   bool sent = false,
   bool includeLines = false,
   Money? paid,
@@ -1089,6 +1102,7 @@ InvoiceDetails _details({
   final total = invoice.totalAmount;
   return InvoiceDetails(
     invoice: invoice,
+    xeroVoidConfirmed: xeroVoidConfirmed,
     job: Job.forInsert(
       customerId: 1,
       summary: 'Bathroom repair',

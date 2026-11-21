@@ -18,6 +18,7 @@ import '../../util/dart/exceptions.dart';
 
 class InvoiceDetails {
   final Invoice invoice;
+  final bool xeroVoidConfirmed;
   final Job job;
   final Customer? customer;
   final Customer? billingCustomer;
@@ -34,6 +35,7 @@ class InvoiceDetails {
     required this.ledger,
     required this.ledgerHistory,
     required this.lineGroups,
+    this.xeroVoidConfirmed = false,
     this.billingCustomer,
     this.billingContact = const ResolvedInvoiceBillingContact(
       contact: null,
@@ -77,6 +79,10 @@ class InvoiceDetails {
 
     return InvoiceDetails(
       invoice: invoice,
+      xeroVoidConfirmed:
+          invoice.externalSyncStatus == InvoiceExternalSyncStatus.voided &&
+          invoice.isUploaded() &&
+          await DaoInvoice().hasXeroVoidConfirmation(invoice),
       job: job,
       customer: customer,
       billingCustomer: billingCustomer,

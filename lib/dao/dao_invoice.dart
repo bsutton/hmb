@@ -253,6 +253,15 @@ ORDER BY modified_date DESC
     );
   }
 
+  Future<bool> hasXeroVoidConfirmation(Invoice invoice) async =>
+      (await db.query(
+        'invoice_xero_void_confirmation',
+        columns: ['invoice_id'],
+        where: 'invoice_id = ? AND external_invoice_id = ?',
+        whereArgs: [invoice.id, invoice.externalInvoiceId],
+        limit: 1,
+      )).isNotEmpty;
+
   Future<List<Invoice>> getUnconfirmedXeroVoids() async => toList(
     await db.rawQuery(
       '''

@@ -95,7 +95,7 @@ Future<bool> promptAndVoidInvoice({
   }
 }
 
-Future<void> verifyVoidedInvoiceInXero(Invoice invoice) async {
+Future<bool> verifyVoidedInvoiceInXero(Invoice invoice) async {
   try {
     final api = XeroApi();
     await BlockingUI().runAndWait(() async {
@@ -113,11 +113,13 @@ Future<void> verifyVoidedInvoiceInXero(Invoice invoice) async {
       );
     }, label: 'Checking Xero invoice');
     HMBToast.info('Xero confirmed the invoice was voided.');
+    return true;
   } catch (error) {
     HMBToast.error(
       'Could not verify invoice ${invoice.bestNumber}. $error',
       acknowledgmentRequired: true,
     );
+    return false;
   }
 }
 

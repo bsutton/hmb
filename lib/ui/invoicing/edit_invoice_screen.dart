@@ -198,11 +198,16 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                 Text('Void description: ${invoice.voidDescription}'),
               if (invoice.externalSyncStatus ==
                       InvoiceExternalSyncStatus.voided &&
-                  invoice.isUploaded())
+                  invoice.isUploaded() &&
+                  !details.xeroVoidConfirmed)
                 HMBButtonSecondary(
                   label: 'Verify void in Xero',
                   hint: 'Confirm the void before rejecting the job',
-                  onPressed: () => verifyVoidedInvoiceInXero(invoice),
+                  onPressed: () async {
+                    if (await verifyVoidedInvoiceInXero(invoice) && mounted) {
+                      await _reloadInvoiceAndRefresh();
+                    }
+                  },
                 ),
               if (readOnlyInvoice && !invoice.isUploaded())
                 HMBButton(
