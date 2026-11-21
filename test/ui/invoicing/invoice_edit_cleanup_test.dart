@@ -538,6 +538,7 @@ void main() {
   ) async {
     final details = _details();
     details.invoice.externalInvoiceId = 'fixture-external-id';
+    details.invoice.invoiceNum = 'INV-0042';
     details.invoice.externalSyncStatus = InvoiceExternalSyncStatus.linked;
     details.invoice.paymentSource = InvoicePaymentSource.xero;
     await _pump(tester, loadDetails: (_) async => details);
@@ -545,12 +546,14 @@ void main() {
     expect(find.text('Add Discount'), findsNothing);
     expect(find.text('Synced with accounting'), findsOneWidget);
     expect(find.textContaining('Linked to accounting'), findsNothing);
+    expect(find.text('Xero invoice number: INV-0042'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
     details.invoice.externalSyncStatus = InvoiceExternalSyncStatus.voided;
     await _pump(tester, loadDetails: (_) async => details);
     expect(find.text('Delivery'), findsNothing);
     expect(find.text('Manage payments'), findsNothing);
     expect(find.textContaining('Voided in accounting'), findsOneWidget);
+    expect(find.text('Xero invoice number: INV-0042'), findsOneWidget);
     expect(find.text('No email address recorded.'), findsOneWidget);
     expect(find.textContaining('before sending'), findsNothing);
   });

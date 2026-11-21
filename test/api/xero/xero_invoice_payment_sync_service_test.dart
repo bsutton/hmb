@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:hmb/api/xero/xero_invoice_payment_sync_service.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
+import 'package:hmb/fsm/job_status_fsm.dart';
 import 'package:hmb/util/dart/local_date.dart';
 import 'package:hmb/util/dart/log.dart';
 import 'package:hmb/util/dart/money_ex.dart';
@@ -44,6 +45,85 @@ void main() {
     expect(updated, 0);
     expect(loginAttempts, 0);
   });
+
+  for (final status in [
+    InvoiceExternalSyncStatus.linked,
+    InvoiceExternalSyncStatus.voided,
+  ]) {
+    test(
+      'Xero sync verifies a ${status.name} quote invoice for rejection',
+      () async {
+        final job = await createJobWithCustomer(
+          billingType: BillingType.fixedPrice,
+          hourlyRate: MoneyEx.zero,
+          summary: 'Xero void cancellation',
+        );
+        final quote = Quote.forInsert(
+          jobId: job.id,
+          summary: job.summary,
+          description: '',
+          totalAmount: MoneyEx.dollars(100),
+          state: QuoteState.invoiced,
+        );
+        await DaoQuote().insert(quote);
+        const externalId = 'xero-voided-invoice';
+        final invoice = Invoice.forInsert(
+          jobId: job.id,
+          dueDate: LocalDate.today(),
+          totalAmount: quote.totalAmount,
+          billingContactId: job.billingContactId,
+          sent: true,
+          externalInvoiceId: externalId,
+          externalSyncStatus: status,
+          paymentSource: InvoicePaymentSource.xero,
+        )..invoiceNum = 'INV-VOID';
+        await DaoInvoice().insert(invoice);
+        await testDb!.insert('billing_allocation', {
+          'invoice_id': invoice.id,
+          'source_type': 'quote',
+          'source_id': quote.id,
+          'amount': 10000,
+          'created_date': '2025-01-01',
+        });
+        var confirmed = false;
+        final service = XeroInvoicePaymentSyncService(
+          login: ({allowInteractive = true}) async => true,
+          getInvoice: (_) async => http.Response(
+            jsonEncode({
+              'Invoices': [
+                {
+                  'InvoiceID': confirmed ? externalId : 'different-invoice',
+                  'Status': 'VOIDED',
+                  'AmountPaid': 0,
+                  'AmountCredited': 0,
+                },
+              ],
+            }),
+            200,
+          ),
+        );
+
+        await service.sync(force: true);
+        expect(
+          (await DaoInvoice().getById(invoice.id))?.externalSyncStatus,
+          status,
+        );
+        await expectLater(rejectJob(job.id), throwsException);
+        confirmed = true;
+        await service.sync(force: true);
+        expect(await DaoInvoice().getUnconfirmedXeroVoids(), isEmpty);
+        expect(
+          (await DaoQuote().getById(quote.id))?.state,
+          QuoteState.approved,
+        );
+        expect((await rejectJob(job.id)).status, JobStatus.rejected);
+        expect(
+          (await DaoQuote().getById(quote.id))?.state,
+          QuoteState.rejected,
+        );
+      },
+    );
+  }
 
   test('imports Xero payments and credit notes into debtor ledger', () async {
     final job = await createJobWithCustomer(

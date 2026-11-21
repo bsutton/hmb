@@ -84,7 +84,7 @@ enum _BillingContactFix { edit, change }
 
 class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   late final int invoiceId;
-  late Future<InvoiceDetails> _invoiceDetails;
+  late InvoiceDetails _invoiceDetails;
   var _accounting = const InvoiceAccountingState(
     destination: InvoiceAccountingDestination.none,
   );
@@ -101,8 +101,9 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
 
   Future<void> _reloadInvoice() async {
     try {
-      _invoiceDetails = (widget.loadDetails ?? InvoiceDetails.load)(invoiceId);
-      await _invoiceDetails;
+      _invoiceDetails = await (widget.loadDetails ?? InvoiceDetails.load)(
+        invoiceId,
+      );
       _loadError = null;
     } catch (error) {
       // DeferredState must complete initialization even when a lookup fails.
@@ -152,20 +153,13 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       errorBuilder: (_, _) => _buildLoadError(),
       builder: (_) => _loadError != null
           ? _buildLoadError()
-          : BlockingUITransition<InvoiceDetails>(
-              key: ObjectKey(_invoiceDetails),
-              slowAction: () => _invoiceDetails,
-              errorBuilder: (_, _) => _buildLoadError(),
-              builder: _buildInvoice,
-            ),
+          : _buildInvoice(context, _invoiceDetails),
     ),
   );
 
-  Widget _buildInvoice(BuildContext context, InvoiceDetails? details) {
-    if (details == null) {
-      return const SizedBox.shrink();
-    }
+  Widget _buildInvoice(BuildContext context, InvoiceDetails details) {
     final invoice = details.invoice;
+    final xeroNumber = invoice.invoiceNum?.trim() ?? '';
     final job = details.job;
     final customer = details.customer;
     final lineGroups = details.lineGroups;
@@ -190,6 +184,8 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   Text('Customer: ${customer?.name ?? "N/A"}'),
+                  if (xeroNumber.isNotEmpty)
+                    Text('Xero invoice number: $xeroNumber'),
                   Text(
                     'Job #${job.id} · '
                     'Created ${formatDate(invoice.createdDate)}',
@@ -978,7 +974,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       if (!state.canUpload) {
         return;
       }
-      final details = await _invoiceDetails;
+      final details = _invoiceDetails;
       if (!mounted ||
           !_canContinueAccounting ||
           details.invoice.isUploaded() ||
@@ -1016,7 +1012,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
 
   Future<void> _uploadInvoiceToAccounting() async {
     try {
-      final details = await _invoiceDetails;
+      final details = _invoiceDetails;
       if (!_canContinueAccounting) {
         return;
       }
@@ -1136,7 +1132,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   }
 
   Future<void> _editInvoiceLine(BuildContext context, InvoiceLine line) async {
-    final details = await _invoiceDetails;
+    final details = _invoiceDetails;
     if (!InvoiceEditorActions(details).canEdit) {
       HMBToast.error('Only drafts without ledger activity can be edited.');
       return;
@@ -1167,7 +1163,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   }
 
   Future<void> _deleteInvoiceLine(InvoiceLine line) async {
-    final details = await _invoiceDetails;
+    final details = _invoiceDetails;
     if (!InvoiceEditorActions(details).canEdit) {
       HMBToast.error('Only drafts without ledger activity can be edited.');
       return;
@@ -1217,7 +1213,7 @@ Total: ${line.lineTotal}'''),
   }
 
   Future<void> _promptAddDiscount() async {
-    final details = await _invoiceDetails;
+    final details = _invoiceDetails;
     if (!InvoiceEditorActions(details).canEdit) {
       HMBToast.error('Only drafts without ledger activity can be changed.');
       return;

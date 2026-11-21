@@ -146,7 +146,10 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
       June.getState(SelectJobStatus.new).jobStatus = widget.job.status;
       widget.onStatusChanged?.call();
     } catch (e) {
-      HMBToast.error('Could not perform job action: $e');
+      HMBToast.error(
+        'Could not perform job action: $e',
+        acknowledgmentRequired: true,
+      );
     } finally {
       if (mounted) {
         await _hydrate();

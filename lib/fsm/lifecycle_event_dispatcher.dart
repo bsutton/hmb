@@ -499,7 +499,7 @@ class LifecycleEventDispatcher {
       );
       if (eligible.isEmpty) {
         final linked = await transaction.rawQuery(
-          'SELECT l.invoice_id FROM cancellation_quote_invoice l '
+          'SELECT l.invoice_id FROM invoice_void_quote_link l '
           'WHERE l.quote_id = ? AND NOT EXISTS '
           '(SELECT 1 FROM cancellation_void_invoice v '
           'WHERE v.id = l.invoice_id AND v.job_id = ?) '
@@ -699,7 +699,7 @@ class LifecycleEventDispatcher {
     if (blockers.isNotEmpty) {
       final invoiceId = blockers.single['id']! as int;
       final linked = await transaction.rawQuery(
-        'SELECT DISTINCT q.id FROM cancellation_quote_invoice l '
+        'SELECT DISTINCT q.id FROM invoice_void_quote_link l '
         'JOIN quote q ON q.id = l.quote_id '
         'WHERE l.invoice_id = ? AND q.job_id = ? ORDER BY q.id',
         [invoiceId, jobId],

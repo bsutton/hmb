@@ -20,6 +20,7 @@ import '../../dao/dao_invoice.dart';
 import '../../dao/debtor_ledger_service.dart';
 import '../../dao/invoice_lifecycle_service.dart';
 import '../../entity/invoice.dart';
+import '../../util/dart/exceptions.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
@@ -97,8 +98,12 @@ Future<bool> promptAndVoidInvoice({
 Future<void> verifyVoidedInvoiceInXero(Invoice invoice) async {
   try {
     final api = XeroApi();
-    await api.login();
     await BlockingUI().runAndWait(() async {
+      if (!await api.login()) {
+        throw InvoiceException(
+          'Xero sign-in did not complete. Retry verification.',
+        );
+      }
       final externalId = await api.confirmInvoiceVoided(
         invoice.externalInvoiceId!,
       );
@@ -109,7 +114,10 @@ Future<void> verifyVoidedInvoiceInXero(Invoice invoice) async {
     }, label: 'Checking Xero invoice');
     HMBToast.info('Xero confirmed the invoice was voided.');
   } catch (error) {
-    HMBToast.error('Could not confirm the void in Xero: $error');
+    HMBToast.error(
+      'Could not verify invoice ${invoice.bestNumber}. $error',
+      acknowledgmentRequired: true,
+    );
   }
 }
 

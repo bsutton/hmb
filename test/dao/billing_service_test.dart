@@ -311,6 +311,17 @@ void main() {
     );
   });
 
+  test('delete removes an unbilled customer-agreed task and price', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.fixedPrice,
+      hourlyRate: MoneyEx.zero,
+    );
+    final task = await fixedTask(job);
+    await DaoTask().delete(task.id);
+    expect(await DaoTask().getById(task.id), isNull);
+    expect(await TaskFixedAgreement().get(task.id), isNull);
+  });
+
   test('invoice history protects fixed agreement and billing mode', () async {
     final job = await createJobWithCustomer(
       billingType: BillingType.timeAndMaterial,
@@ -341,6 +352,8 @@ void main() {
       DaoTask().update(task.copyWith(billingType: BillingType.timeAndMaterial)),
       throwsException,
     );
+    await expectLater(DaoTask().delete(task.id), throwsException);
+    expect(await TaskFixedAgreement().get(task.id), isNotNull);
   });
   test(
     'failure during source claim rolls back invoice and source writes',

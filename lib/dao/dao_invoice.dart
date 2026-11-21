@@ -253,6 +253,26 @@ ORDER BY modified_date DESC
     );
   }
 
+  Future<List<Invoice>> getUnconfirmedXeroVoids() async => toList(
+    await db.rawQuery(
+      '''
+SELECT i.* FROM invoice i
+WHERE i.external_sync_status = ?
+  AND i.paid = 0 AND i.paid_date IS NULL
+  AND NULLIF(TRIM(i.external_invoice_id), '') IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM invoice_xero_void_confirmation x
+    WHERE x.invoice_id = i.id AND x.external_invoice_id = i.external_invoice_id
+  )
+  AND NOT EXISTS (SELECT 1 FROM debtor_payment_allocation p WHERE p.invoice_id = i.id)
+  AND NOT EXISTS (SELECT 1 FROM credit_allocation c WHERE c.invoice_id = i.id)
+  AND NOT EXISTS (SELECT 1 FROM debtor_adjustment a WHERE a.invoice_id = i.id)
+  AND NOT EXISTS (SELECT 1 FROM quickbooks_invoice_export e WHERE e.invoice_id = i.id)
+''',
+      [InvoiceExternalSyncStatus.voided.ordinal],
+    ),
+  );
+
   Future<List<Invoice>> getUploadedMissingInvoiceNumber() async {
     final db = withoutTransaction();
     return toList(

@@ -219,10 +219,14 @@ ORDER BY i.created_date DESC, i.id DESC LIMIT 1
   }
 
   Future<void> deleteTaskPhotos(int taskId, {Transaction? transaction}) async {
-    final photos = await DaoPhoto().getByParent(taskId, ParentType.task);
+    final photos = await DaoPhoto().getByParent(
+      taskId,
+      ParentType.task,
+      transaction,
+    );
 
     for (final photo in photos) {
-      await DaoPhoto().delete(photo.id);
+      await DaoPhoto().delete(photo.id, transaction);
 
       final absolutePathToPhoto = await PhotoMeta.fromPhoto(
         photo: photo,
@@ -440,10 +444,18 @@ WHERE ti.id = ?
 
   @override
   Future<int> delete(int id, [Transaction? transaction]) async {
+    if (transaction == null) {
+      return await this.db.transaction((txn) => delete(id, txn));
+    }
     final db = withinTransaction(transaction);
     final agreed = await db.rawQuery(
       '''
-SELECT id FROM task_fixed_agreement WHERE task_id = ?
+SELECT f.id FROM task_fixed_agreement f WHERE f.task_id = ? AND (
+ EXISTS (SELECT 1 FROM billing_allocation a WHERE a.source_type = 'task_scope'
+  AND a.source_id = f.id AND (a.released_date IS NULL OR EXISTS
+   (SELECT 1 FROM invoice i WHERE i.id = a.invoice_id)))
+ OR EXISTS (SELECT 1 FROM billing_waiver w WHERE w.source_type = 'task_scope'
+  AND w.source_id = f.id AND w.job_id = f.job_id))
 UNION ALL SELECT g.id FROM quote_line_group g JOIN quote q ON q.id = g.quote_id
 WHERE g.task_id = ? AND q.state IN ('approved', 'invoiced')
 AND g.line_approval_status != 'rejected' LIMIT 1
@@ -451,7 +463,9 @@ AND g.line_approval_status != 'rejected' LIMIT 1
       [id, id],
     );
     if (agreed.isNotEmpty) {
-      throw InvoiceException('Agreed work must remain in the job history.');
+      throw InvoiceException(
+        'This task has quote, invoice or waiver history and cannot be deleted.',
+      );
     }
     final rows = await db.rawQuery(
       '''
@@ -524,8 +538,13 @@ SELECT
 
     await DaoTimeEntry().deleteByTask(id, transaction);
     await DaoTaskItem().deleteByTask(id, transaction);
-    await deleteTaskPhotos(id, transaction: transaction);
+    await db.delete(
+      'task_fixed_agreement',
+      where: 'task_id = ?',
+      whereArgs: [id],
+    );
     await super.delete(id, transaction);
+    await deleteTaskPhotos(id, transaction: transaction);
     return id;
   }
 

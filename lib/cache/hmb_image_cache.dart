@@ -13,7 +13,7 @@ import 'dart:typed_data';
 
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart' as p;
-import 'package:sqflite_common/sqlite_api.dart' show Database;
+import 'package:sqflite_common/sqlite_api.dart' show Database, Transaction;
 
 import '../dao/dao_image_cache_variant.dart';
 import '../database/management/database_helper.dart';
@@ -404,9 +404,12 @@ class HMBImageCache {
   // Maintenance
   // ---------------------------------------------------------------------------
 
-  Future<void> evictPhotoByMeta(PhotoMeta meta) async {
+  Future<void> evictPhotoByMeta(
+    PhotoMeta meta, [
+    Transaction? transaction,
+  ]) async {
     await meta.resolve();
-    await evictPhoto(meta.photo.id.toString());
+    await evictPhoto(meta.photo.id.toString(), transaction);
   }
 
   Future<void> evictVariant(ImageVariant variant) async {
@@ -422,20 +425,20 @@ class HMBImageCache {
     await dao.removeKey(parts.photoId, parts.variant);
   }
 
-  Future<void> evictPhoto(String photoId) async {
+  Future<void> evictPhoto(String photoId, [Transaction? transaction]) async {
     final id = int.tryParse(photoId);
     if (id == null) {
       return;
     }
     final dao = DaoImageCacheVariant();
-    final rows = await dao.getByPhotoId(id);
+    final rows = await dao.getByPhotoId(id, transaction);
     for (final row in rows) {
       final path = p.join(_cacheDir, row.fileName);
       if (exists(path)) {
         delete(path);
       }
     }
-    await dao.removeByPhotoId(id);
+    await dao.removeByPhotoId(id, transaction);
   }
 
   Future<void> clear() async {

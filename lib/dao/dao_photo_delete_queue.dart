@@ -19,8 +19,8 @@ class DaoPhotoDeleteQueue extends Dao<PhotoDeleteQueue> {
   PhotoDeleteQueue fromMap(Map<String, dynamic> map) =>
       PhotoDeleteQueue.fromMap(map);
 
-  Future<void> enqueue(int photoId) async {
-    final db = withoutTransaction();
+  Future<void> enqueue(int photoId, [Transaction? transaction]) async {
+    final db = withinTransaction(transaction);
     final entity = PhotoDeleteQueue.forInsert(photoId: photoId);
     await db.insert(
       tableName,

@@ -11,6 +11,7 @@ import 'package:hmb/fsm/lifecycle_rules.dart';
 import 'package:hmb/fsm/quote_events.dart';
 import 'package:hmb/fsm/quote_states.dart';
 import 'package:hmb/fsm/quote_status_fsm.dart';
+import 'package:hmb/util/dart/exceptions.dart';
 import 'package:hmb/util/dart/local_date.dart';
 import 'package:hmb/util/dart/measurement_type.dart';
 import 'package:hmb/util/dart/money_ex.dart';
@@ -765,6 +766,51 @@ void main() {
     },
   );
 
+  for (final source in ['quote', 'milestone']) {
+    test('rejects jobs with a released voided $source invoice', () async {
+      final job = await _insertJob(JobStatus.awaitingPayment);
+      final quote = await _insertQuote(QuoteState.invoiced, job: job);
+      final Invoice invoice;
+      if (source == 'milestone') {
+        (invoice, _) = await _linkInvoice(
+          quote,
+          status: InvoiceExternalSyncStatus.voided,
+        );
+      } else {
+        invoice = await _insertIssuedInvoice(
+          job.id,
+          status: InvoiceExternalSyncStatus.voided,
+        );
+        await testDb!.insert('billing_allocation', {
+          'invoice_id': invoice.id,
+          'source_type': source,
+          'source_id': quote.id,
+          'amount': 10000,
+          'created_date': DateTime.now().toIso8601String(),
+        });
+      }
+      await InvoiceLifecycleService().releaseVoidedInvoice(invoice.id);
+
+      await rejectJob(job.id);
+      expect((await DaoJob().getById(job.id))?.status, JobStatus.rejected);
+      expect((await DaoQuote().getById(quote.id))?.state, QuoteState.rejected);
+      await expectLater(
+        BillingService().preview(job.id, forEligibility: true),
+        throwsA(isA<InvoiceException>()),
+      );
+      expect(
+        (await DaoInvoice().getById(invoice.id))?.externalSyncStatus,
+        InvoiceExternalSyncStatus.voided,
+      );
+      final history = await testDb!.query(
+        'billing_allocation',
+        where: 'invoice_id = ?',
+        whereArgs: [invoice.id],
+      );
+      expect(history.single['released_date'], isNotNull);
+    });
+  }
+
   for (final blocker in [
     'live',
     'paid',
@@ -1235,7 +1281,7 @@ Future<(Invoice, Milestone)> _linkInvoice(
     'source_type': 'milestone',
     'source_id': milestone.id,
     'amount': 10000,
-    'created_date': '2025-01-01',
+    'created_date': DateTime.now().toIso8601String(),
   });
   return (invoice, milestone);
 }

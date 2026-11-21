@@ -29,8 +29,12 @@ class DaoPhoto extends Dao<Photo> {
   static const tableName = 'photo';
   DaoPhoto() : super(tableName);
 
-  Future<List<Photo>> getByParent(int parentId, ParentType parentType) async {
-    final db = withoutTransaction();
+  Future<List<Photo>> getByParent(
+    int parentId,
+    ParentType parentType, [
+    Transaction? transaction,
+  ]) async {
+    final db = withinTransaction(transaction);
     return toList(
       await db.query(
         tableName,
@@ -113,7 +117,7 @@ WHERE id = ?
 
   @override
   Future<int> delete(int id, [Transaction? transaction]) async {
-    final photo = await getById(id);
+    final photo = await getById(id, transaction);
     if (photo == null) {
       return 0;
     }
@@ -121,12 +125,12 @@ WHERE id = ?
     try {
       final meta = PhotoMeta.fromPhoto(photo: photo);
       await meta.resolve();
-      await HMBImageCache().evictPhotoByMeta(meta);
+      await HMBImageCache().evictPhotoByMeta(meta, transaction);
     } catch (_) {
       // Best-effort cache cleanup; continue with deletion.
     }
 
-    await DaoPhotoDeleteQueue().enqueue(photo.id);
+    await DaoPhotoDeleteQueue().enqueue(photo.id, transaction);
     return super.delete(id, transaction);
   }
 

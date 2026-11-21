@@ -336,7 +336,7 @@ FROM invoice_line WHERE invoice_id = ?), modified_date = ? WHERE id = ?
       txn.rawUpdate(
         "UPDATE quote SET state = 'approved', modified_date = ? "
         'WHERE id IN (SELECT q.id FROM invoice_void_reopenable_quote q '
-        'JOIN cancellation_quote_invoice l ON l.quote_id = q.id '
+        'JOIN invoice_void_quote_link l ON l.quote_id = q.id '
         'WHERE l.invoice_id = ?)',
         [DateTime.now().toIso8601String(), invoiceId],
       );

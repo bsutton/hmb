@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:money2/money2.dart';
 
 import '../../dao/dao.g.dart';
+import '../../dao/invoice_lifecycle_service.dart';
 import '../../entity/entity.g.dart';
 import '../../util/dart/exceptions.dart';
 import '../../util/dart/log.dart';
@@ -10,6 +11,7 @@ import '../../util/dart/money_ex.dart';
 import '../external_accounting.dart';
 import 'xero_customer_credit_sync.dart';
 import 'xero_invoice_payment_client.dart';
+import 'xero_void_confirmation.dart';
 
 typedef XeroInvoicePaymentSyncErrorHandler =
     void Function(Object error, StackTrace stackTrace);
@@ -84,6 +86,8 @@ class XeroInvoicePaymentSyncService {
       final pending = await _daoInvoiceForSync().getUploadedUnpaid();
       final missingInvoiceNumbers = await _daoInvoiceForSync()
           .getUploadedMissingInvoiceNumber();
+      final unconfirmedVoids = await _daoInvoiceForSync()
+          .getUnconfirmedXeroVoids();
       final unsyncedPayments = await DaoDebtorPayment().getUnsyncedForProvider(
         'xero',
       );
@@ -98,6 +102,7 @@ class XeroInvoicePaymentSyncService {
       }
       if (pending.isEmpty &&
           missingInvoiceNumbers.isEmpty &&
+          unconfirmedVoids.isEmpty &&
           unsyncedPayments.isEmpty &&
           unsyncedCredits.isEmpty &&
           pendingEvents.isEmpty) {
@@ -133,7 +138,9 @@ class XeroInvoicePaymentSyncService {
       final invoicesById = <int, Invoice>{
         for (final invoice in pending) invoice.id: invoice,
         for (final invoice in missingInvoiceNumbers) invoice.id: invoice,
+        for (final invoice in unconfirmedVoids) invoice.id: invoice,
       };
+      final unconfirmedVoidIds = unconfirmedVoids.map((i) => i.id).toSet();
       for (final invoice in invoicesById.values) {
         try {
           final remoteState = await _loadRemoteState(invoice);
@@ -150,6 +157,16 @@ class XeroInvoicePaymentSyncService {
             );
             await _daoInvoiceForSync().update(currentInvoice);
             updated += 1;
+          }
+          if (unconfirmedVoidIds.contains(currentInvoice.id)) {
+            if (remoteState.confirmedUnpaidVoid) {
+              await InvoiceLifecycleService().confirmVoidedXeroInvoice(
+                currentInvoice.id,
+                currentInvoice.externalInvoiceId!,
+              );
+              updated += 1;
+            }
+            continue;
           }
           if (currentInvoice.externalSyncStatus !=
               remoteState.externalSyncStatus) {
@@ -184,6 +201,15 @@ class XeroInvoicePaymentSyncService {
             currentInvoice,
             remoteState.creditNotes,
           );
+          if (remoteState.confirmedUnpaidVoid &&
+              !currentInvoice.paid &&
+              currentInvoice.paidDate == null) {
+            await InvoiceLifecycleService().confirmVoidedXeroInvoice(
+              currentInvoice.id,
+              currentInvoice.externalInvoiceId!,
+            );
+            updated += 1;
+          }
           if (remoteState.paidDate != null &&
               remoteState.payments.isEmpty &&
               remoteState.creditNotes.isEmpty) {
@@ -364,6 +390,11 @@ class XeroInvoicePaymentSyncService {
     if (remote is! Map<String, dynamic>) {
       return null;
     }
+    final returnedId = remote['InvoiceID'];
+    if (returnedId is String &&
+        returnedId.toLowerCase() != externalId.toLowerCase()) {
+      return null;
+    }
 
     final status = ((remote['Status'] as String?) ?? '').trim().toUpperCase();
     final invoiceNumber = (remote['InvoiceNumber'] as String?)?.trim();
@@ -372,6 +403,7 @@ class XeroInvoicePaymentSyncService {
     final isPaid = status == 'PAID' || (amountDue <= 0 && amountPaid > 0);
 
     return _RemoteInvoiceState(
+      confirmedUnpaidVoid: isConfirmedUnpaidXeroVoid(body, externalId),
       invoiceNumber: invoiceNumber == null || invoiceNumber.isEmpty
           ? null
           : invoiceNumber,
@@ -690,6 +722,7 @@ class XeroInvoicePaymentSyncService {
 }
 
 class _RemoteInvoiceState {
+  final bool confirmedUnpaidVoid;
   final String? invoiceNumber;
   final InvoiceExternalSyncStatus externalSyncStatus;
   final DateTime? paidDate;
@@ -697,6 +730,7 @@ class _RemoteInvoiceState {
   final List<_RemoteCreditNote> creditNotes;
 
   const _RemoteInvoiceState({
+    required this.confirmedUnpaidVoid,
     required this.invoiceNumber,
     required this.externalSyncStatus,
     required this.paidDate,

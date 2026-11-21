@@ -22,6 +22,7 @@ import '../../util/dart/exceptions.dart';
 import '../external_accounting.dart';
 import 'models/xero_invoice.dart';
 import 'xero_auth.dart';
+import 'xero_void_confirmation.dart';
 
 class XeroApi {
   Future<http.Response> getInvoiceBatch(List<String> ids) => _getCreditResource(
@@ -138,6 +139,7 @@ class XeroApi {
       Uri.parse('${_baseUrl}Invoices/${Uri.encodeComponent(externalId)}'),
       headers: {
         'Authorization': 'Bearer ${xeroAuth.accessToken}',
+        'Accept': 'application/json',
         'Content-Type': 'application/json',
         'Xero-tenant-id': tenantId,
       },
@@ -161,50 +163,32 @@ class XeroApi {
 
   /// Check the exact linked invoice, not an invoice display number.
   Future<String> confirmInvoiceVoided(String externalId) async {
-    final response = await getInvoice(externalId);
-    if (!isConfirmedUnpaidVoid(response, externalId)) {
-      throw InvoiceException(
-        'Xero did not confirm this invoice is voided with no payments '
-        'or credits. Check it in Xero and try again.',
-      );
+    final response = await getInvoice(externalId.trim());
+    final problem = voidConfirmationProblem(response, externalId);
+    if (problem != null) {
+      throw InvoiceException(problem);
     }
     return externalId;
   }
 
-  static bool isConfirmedUnpaidVoid(http.Response response, String id) {
-    if (response.statusCode != 200 || id.trim().isEmpty) {
-      return false;
+  static bool isConfirmedUnpaidVoid(http.Response response, String id) =>
+      voidConfirmationProblem(response, id) == null;
+
+  static String? voidConfirmationProblem(http.Response response, String id) {
+    if (response.statusCode != 200) {
+      return switch (response.statusCode) {
+        401 || 403 => 'Reconnect Xero in integration settings and retry.',
+        404 => 'Invoice not found in the connected Xero organisation.',
+        429 => 'Xero is limiting requests. Try again shortly.',
+        _ => 'Xero invoice lookup failed (HTTP ${response.statusCode}).',
+      };
     }
     try {
-      final body = jsonDecode(response.body);
-      if (body is! Map<String, dynamic> || body['Invoices'] is! List<dynamic>) {
-        return false;
-      }
-      final invoices = body['Invoices'] as List<dynamic>;
-      if (invoices.length != 1 || invoices.single is! Map<String, dynamic>) {
-        return false;
-      }
-      final invoice = invoices.single as Map<String, dynamic>;
-      final returnedId = invoice['InvoiceID'];
-      return returnedId is String &&
-          returnedId.toLowerCase() == id.toLowerCase() &&
-          invoice['Status'] == 'VOIDED' &&
-          _isZeroAmount(invoice['AmountPaid']) &&
-          _isZeroAmount(invoice['AmountCredited']) &&
-          _isEmptyAllocationList(invoice['Payments']) &&
-          _isEmptyAllocationList(invoice['CreditNotes']) &&
-          _isEmptyAllocationList(invoice['Prepayments']) &&
-          _isEmptyAllocationList(invoice['Overpayments']);
+      return xeroVoidProblem(jsonDecode(response.body), id);
     } on FormatException {
-      return false;
+      return 'Xero returned an unreadable invoice response.';
     }
   }
-
-  static bool _isZeroAmount(Object? amount) =>
-      amount == 0 || (amount is String && num.tryParse(amount.trim()) == 0);
-
-  static bool _isEmptyAllocationList(Object? allocations) =>
-      allocations == null || (allocations is List && allocations.isEmpty);
 
   /// Instruct xero to send the invoice to the jobs primary contact.
   Future<http.Response> sendInvoice(Invoice invoice) async {
@@ -320,7 +304,7 @@ class XeroApi {
       ),
       headers: {
         'Authorization': 'Bearer ${xeroAuth.accessToken}',
-        'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'Xero-tenant-id': tenantId,
       },
     );
