@@ -24,6 +24,7 @@ import 'package:sentry/sentry.dart';
 
 import '../../../../../util/dart/exceptions.dart';
 import '../../../../../util/dart/paths.dart';
+import '../../../../../util/dart/sentry_error_reporting.dart';
 import '../../backup.dart';
 import '../../backup_provider.dart';
 import '../../zip_isolate.dart';
@@ -225,10 +226,9 @@ Google Drive backup failed${failureMessage == null ? '' : ': $failureMessage'}''
   // --------------------
   static Future<void> _performDriveBackup(BackupParams params) async {
     await Sentry.init((options) {
-      options
-        ..dsn =
-            'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312'
-        ..tracesSampleRate = 1.0;
+      options.dsn =
+          'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312';
+      configureSentryErrorReporting(options);
     });
 
     final sendPort = params.sendPort;

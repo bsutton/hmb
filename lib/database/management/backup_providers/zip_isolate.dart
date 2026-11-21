@@ -21,6 +21,7 @@ import 'package:archive/archive_io.dart';
 import 'package:path/path.dart';
 import 'package:sentry/sentry.dart';
 
+import '../../../util/dart/sentry_error_reporting.dart';
 import 'backup_provider.dart';
 import 'progress_update.dart';
 
@@ -93,10 +94,9 @@ Future<void> zipBackup({
 // _zipFiles function
 Future<void> _zipFiles(_ZipParams params) async {
   await Sentry.init((options) {
-    options
-      ..dsn =
-          'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312'
-      ..tracesSampleRate = 1.0;
+    options.dsn =
+        'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312';
+    configureSentryErrorReporting(options);
   });
 
   final encoder = ZipFileEncoder();
