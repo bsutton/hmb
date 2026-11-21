@@ -15,6 +15,7 @@ import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
 import '../api/xero/models/xero_invoice.dart';
+import '../api/xero/models/xero_line_item.dart';
 import '../dao/dao.g.dart';
 import '../dao/invoice_billing_contact.dart';
 import '../util/dart/exceptions.dart';
@@ -189,17 +190,61 @@ You must set the Account Code and Item Code in System | Integration before you c
       contact: xeroContact,
       issueDate: LocalDate.fromDateTime(invoice.createdDate),
       dueDate: invoice.dueDate,
-      lineItems: filteredLines
-          .map(
-            (line) => line.toXeroLineItem(
-              accountCode: system.invoiceLineRevenueAccountCode!,
-              itemCode: system.invoiceLineInventoryItemCode!,
-            ),
-          )
-          .toList(),
+      lineItems: [
+        for (final line in filteredLines)
+          await _exportLine(
+            line,
+            accountCode: system.invoiceLineRevenueAccountCode!,
+            itemCode: system.invoiceLineInventoryItemCode!,
+          ),
+      ],
       lineAmountTypes: 'Inclusive',
     ); // All amounts are inclusive of tax.
     return xeroInvoice;
+  }
+
+  Future<XeroLineItem> _exportLine(
+    InvoiceLine line, {
+    required String accountCode,
+    required String itemCode,
+  }) async {
+    final item = line.toXeroLineItem(
+      accountCode: accountCode,
+      itemCode: itemCode,
+    );
+    bool matchesTotal(Fixed hours) =>
+        (hours.toDecimal() * item.unitAmount.toDecimal()).round(scale: 2) ==
+        item.lineTotal.toDecimal();
+
+    if (matchesTotal(item.quantity)) {
+      return item;
+    }
+    // The invoice stores hundredths of an hour, but labour is billed by minute.
+    final entries = await DaoTimeEntry().getByInvoiceLineId(line.id);
+    if (entries.isEmpty || entries.any((entry) => entry.endTime == null)) {
+      return item;
+    }
+    final minutes = entries.fold<int>(
+      0,
+      (total, entry) => total + entry.duration.inMinutes,
+    );
+    final hours = Fixed.fromInt(
+      (minutes * 10000 / 60).round(),
+      decimalDigits: 4,
+    );
+    final useHours = matchesTotal(hours);
+    return XeroLineItem(
+      description: useHours
+          ? item.description
+          : '${item.description} ($minutes min at ${item.unitAmount}/hr)',
+      quantity: useHours ? hours : Fixed.one,
+      unitAmount: useHours ? item.unitAmount : item.lineTotal,
+      lineTotal: item.lineTotal,
+      taxAmount: item.taxAmount,
+      taxType: item.taxType,
+      accountCode: accountCode,
+      itemCode: itemCode,
+    );
   }
 
   Future<List<InvoiceLine>> _suppressOffsettingLines(

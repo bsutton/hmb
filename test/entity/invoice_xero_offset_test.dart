@@ -26,6 +26,44 @@ void main() {
     await tearDownTestDb();
   });
 
+  for (final (rate, cents, quantity, unitAmount) in [
+    (88, 7333, '0.8333', '88'),
+    (240, 20000, '1', '200'),
+  ]) {
+    test('exports persisted 50-minute labour at \$$rate/hr', () async {
+      final fixture = await _createFixture();
+      final invoice = await _createInvoice(fixture.job, fixture.contact);
+      final group = await _createLineGroup(invoice, 'Task');
+      final start = DateTime(2026, 11, 21, 9);
+      final entry = TimeEntry.forInsert(
+        taskId: fixture.task.id,
+        startTime: start,
+        endTime: start.add(const Duration(minutes: 50)),
+      );
+      await DaoTimeEntry().insert(entry);
+      final price = MoneyEx.dollars(rate);
+      final line = InvoiceLine.forInsert(
+        invoiceId: invoice.id,
+        invoiceLineGroupId: group.id,
+        description: 'Labour: Installation',
+        quantity: entry.hours,
+        unitPrice: price,
+        lineTotal: entry.calcLabourCharge(price),
+      );
+      await DaoInvoiceLine().insert(line);
+      await DaoTimeEntry().markAsBilled(entry, line.id);
+
+      final exported = await invoice.toXeroInvoice(invoice);
+      final json = exported.lineItems.single.toJson();
+      expect(json['Quantity'], quantity);
+      expect(json['UnitAmount'], unitAmount);
+      expect(json['LineAmount'], MoneyEx.fromInt(cents).format('0.##'));
+      if (quantity == '1') {
+        expect(json['Description'], contains('50 min'));
+      }
+    });
+  }
+
   test('suppresses offset pair when return links to source '
       'and both are on same invoice', () async {
     final fixture = await _createFixture();
