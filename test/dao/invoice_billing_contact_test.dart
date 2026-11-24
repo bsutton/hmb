@@ -77,6 +77,47 @@ void main() {
     expect(reloaded?.billingContactId, fixture.invoiceContact.id);
   });
 
+  test(
+    'changing Bill to saves the customer and its contact together',
+    () async {
+      final fixture = await _createFixture();
+      final other = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.zero,
+      );
+      await testDb!.insert('customer_contact', {
+        'customer_id': other.customerId,
+        'contact_id': fixture.invoiceContact.id,
+      });
+      final invoice = _invoice(
+        fixture.job,
+        billingContactId: fixture.jobContact.id,
+      );
+      final dao = DaoInvoice();
+      await dao.insert(invoice);
+      Future<void> change(int contactId) => dao.updateBillTo(
+        invoiceId: invoice.id,
+        customerId: other.customerId!,
+        contactId: contactId,
+      );
+      await expectLater(change(fixture.jobContact.id), throwsException);
+      expect(
+        (await dao.getById(invoice.id))!.billingCustomerId,
+        fixture.job.billingCustomerId,
+      );
+      await change(fixture.invoiceContact.id);
+      final saved = (await dao.getById(invoice.id))!;
+      expect(saved.billingCustomerId, other.customerId);
+      expect(
+        (await requireInvoiceBillingContact(saved)).id,
+        fixture.invoiceContact.id,
+      );
+      saved.sent = true;
+      await dao.update(saved);
+      await expectLater(change(fixture.invoiceContact.id), throwsException);
+    },
+  );
+
   test('sent invoice billing contact cannot be changed', () async {
     final fixture = await _createFixture();
     final invoice = _invoice(

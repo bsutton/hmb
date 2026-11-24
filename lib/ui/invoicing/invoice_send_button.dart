@@ -100,7 +100,9 @@ class BuildSendButton extends StatelessWidget {
         );
         final system = await DaoSystem().get();
 
-        final recipients = await DaoInvoice().getEmailsByInvoice(invoice);
+        final recipients = invoiceBillsJobCustomer(invoice, job)
+            ? await DaoInvoice().getEmailsByInvoice(invoice)
+            : <String>[];
         final preferredRecipient =
             Strings.isNotBlank(greetingContact?.bestEmail)
             ? greetingContact!.bestEmail
@@ -238,7 +240,7 @@ Future<Contact?> invoiceGreetingContact({
   required Contact? primaryContact,
 }) async =>
     (await resolveInvoiceBillingContact(invoice, job: job)).contact ??
-    primaryContact;
+    (invoiceBillsJobCustomer(invoice, job) ? primaryContact : null);
 
 Future<Contact> _prepareBillingContactForDelivery(
   Invoice invoice,

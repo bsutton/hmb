@@ -20,6 +20,8 @@ void main() {
     );
 
     expect(find.text('Sent'), findsOneWidget);
+    expect(find.text('Bill to: Billing account'), findsOneWidget);
+    expect(find.textContaining('Test Customer'), findsNothing);
     expect(find.textContaining('Outstanding due'), findsNothing);
     expect(find.text('Managed locally'), findsNothing);
   });
@@ -68,6 +70,14 @@ Future<void> _pumpCard(
             ),
             customer: Customer.forInsert(
               name: 'Test Customer',
+              description: null,
+              disbarred: false,
+              customerType: CustomerType.residential,
+              hourlyRate: MoneyEx.zero,
+              billingContactId: null,
+            ),
+            billingCustomer: Customer.forInsert(
+              name: 'Billing account',
               description: null,
               disbarred: false,
               customerType: CustomerType.residential,

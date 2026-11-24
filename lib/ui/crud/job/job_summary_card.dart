@@ -168,7 +168,12 @@ class _JobSummaryCardState extends DeferredState<JobSummaryCard> {
           HMBColumn(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(_customer?.name ?? 'No customer selected'),
+              Text('Job customer: ${_customer?.name ?? 'Not selected'}'),
+              HMBButtonSecondary(
+                label: 'Change job customer',
+                hint: 'Choose the customer for this job',
+                onPressed: () => widget.onEdit(JobEditSection.customer),
+              ),
               _text(widget.job.description, 'No description'),
             ],
           ),

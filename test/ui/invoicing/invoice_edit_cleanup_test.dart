@@ -461,6 +461,7 @@ void main() {
   ) async {
     await _pump(tester);
     expect(find.text('Preview / send'), findsOneWidget);
+    expect(find.text('Change Bill To'), findsOneWidget);
     expect(find.text('Add Discount'), findsOneWidget);
     expect(find.text('Manage payments'), findsNothing);
     expect(find.textContaining('Credited:'), findsNothing);
@@ -475,6 +476,7 @@ void main() {
   ) async {
     await _pump(tester, loadDetails: (_) async => _details(sent: true));
     expect(find.text('View / resend'), findsOneWidget);
+    expect(find.text('Change Bill To'), findsNothing);
     expect(find.text('Add Discount'), findsNothing);
     expect(find.text('Record or allocate payment'), findsOneWidget);
     expect(find.text('Record Payment'), findsNothing);

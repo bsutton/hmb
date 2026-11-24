@@ -15,6 +15,10 @@ import 'dao_job.dart';
 
 enum InvoiceBillingContactSource { invoice, jobFallback, missing }
 
+bool invoiceBillsJobCustomer(Invoice invoice, Job job) =>
+    invoice.billingCustomerId == null ||
+    invoice.billingCustomerId == job.billingCustomerId;
+
 class ResolvedInvoiceBillingContact {
   final Contact? contact;
   final InvoiceBillingContactSource source;
@@ -40,7 +44,8 @@ Future<ResolvedInvoiceBillingContact> resolveInvoiceBillingContact(
   }
 
   final resolvedJob = job ?? await DaoJob().getById(invoice.jobId);
-  final jobContact = resolvedJob == null
+  final jobContact =
+      resolvedJob == null || !invoiceBillsJobCustomer(invoice, resolvedJob)
       ? null
       : await DaoContact().getBillingContactByJob(resolvedJob);
   return ResolvedInvoiceBillingContact(

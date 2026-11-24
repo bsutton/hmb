@@ -584,6 +584,51 @@ void main() {
     },
   );
 
+  for (final separatePayer in [false, true]) {
+    testWidgets('change job customer with separate payer: $separatePayer', (
+      tester,
+    ) async {
+      final job = await seed(tester);
+      final replacement = await runAsyncAndPump(tester, () async {
+        final other = await createJobWithCustomer(
+          billingType: BillingType.timeAndMaterial,
+          hourlyRate: MoneyEx.zero,
+        );
+        final payer = separatePayer
+            ? await createJobWithCustomer(
+                billingType: BillingType.timeAndMaterial,
+                hourlyRate: MoneyEx.zero,
+              )
+            : job;
+        job.billToCustomerId = payer.customerId;
+        await DaoJob().update(job);
+        return (await DaoCustomer().getById(other.customerId))!;
+      });
+      await showEditor(tester, job);
+      await pumpUntil(tester, find.text('Change job customer'));
+      await tester.tap(find.text('Change job customer'));
+      final picker = find.byType(HMBDroplist<Customer>);
+      await pumpUntil(tester, picker);
+      tester.widget<HMBDroplist<Customer>>(picker).onChanged(replacement);
+      await pumpUntil(tester, find.text('Save'));
+      await tester.tap(find.text('Save'));
+      await pumpUntil(tester, find.text('Job customer: ${replacement.name}'));
+      final saved = await runAsyncAndPump(
+        tester,
+        () => DaoJob().getById(job.id),
+      );
+      expect(saved!.customerId, replacement.id);
+      expect(
+        saved.billingCustomerId,
+        separatePayer ? job.billToCustomerId : replacement.id,
+      );
+      expect(
+        saved.billingContactId,
+        separatePayer ? job.billingContactId : null,
+      );
+    });
+  }
+
   for (final crossBilling in [false, true]) {
     testWidgets('billing defaults and cross-customer choices: $crossBilling', (
       tester,

@@ -19,6 +19,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:strings/strings.dart';
 
 import '../../api/accounting/accounting_adaptor.dart';
+import '../../dao/dao_customer.dart';
 import '../../dao/dao_invoice.dart';
 import '../../dao/dao_invoice_line.dart';
 import '../../dao/dao_invoice_line_group.dart';
@@ -46,6 +47,7 @@ import '../widgets/icons/hmb_edit_icon.dart';
 import '../widgets/layout/hmb_spacing.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/layout/surface.dart';
+import '../widgets/select/hmb_droplist_dialog.dart';
 import 'apply_payment_to_invoice_dialog.dart';
 import 'edit_invoice_line_dialog.dart';
 import 'invoice_accounting_state.dart';
@@ -161,7 +163,6 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
     final invoice = details.invoice;
     final xeroNumber = invoice.invoiceNum?.trim() ?? '';
     final job = details.job;
-    final customer = details.customer;
     final lineGroups = details.lineGroups;
     final readOnlyInvoice = invoice.isExternallyDeletedOrVoided;
     final actions = InvoiceEditorActions(details);
@@ -183,7 +184,6 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                     job.summary,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                  Text('Customer: ${customer?.name ?? "N/A"}'),
                   if (xeroNumber.isNotEmpty)
                     Text('Xero invoice number: $xeroNumber'),
                   Text(
@@ -404,7 +404,9 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   Widget _buildBillingContact(InvoiceDetails details, bool canChangeInvoice) {
     final resolved = details.billingContact;
     final contact = resolved.contact;
-    final jobContact = details.jobBillingContact;
+    final jobContact = invoiceBillsJobCustomer(details.invoice, details.job)
+        ? details.jobBillingContact
+        : null;
     final contactName = contact?.fullname.trim();
     final hasMismatch =
         contact != null && jobContact != null && contact.id != jobContact.id;
@@ -425,6 +427,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                 : 'Billing & delivery',
             style: Theme.of(context).textTheme.titleMedium,
           ),
+          Text('Bill to: ${details.billingCustomer?.name ?? "Unassigned"}'),
           Text(
             contact == null || contactName!.isEmpty
                 ? 'No billing contact selected'
@@ -451,6 +454,13 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
+                if (!_accounting.hasSnapshotAttempt &&
+                    details.invoice.paidDate == null)
+                  HMBButtonSecondary(
+                    label: 'Change Bill To',
+                    hint: 'Choose the customer and contact for this invoice',
+                    onPressed: () => _changeBillTo(details),
+                  ),
                 HMBButtonSecondary(
                   label: 'Change Contact',
                   hint: 'Select the billing contact for this invoice',
@@ -565,6 +575,42 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       HMBToast.info('Work is available in Prepare invoice.');
     } catch (error) {
       HMBToast.error('Unable to release work: $error');
+    }
+  }
+
+  Future<void> _changeBillTo(InvoiceDetails details) async {
+    final customer = await showDialog<Customer>(
+      context: context,
+      builder: (_) => HMBDroplistDialog<Customer>(
+        title: 'Bill to customer',
+        getItems: (filter) => DaoCustomer().getByFilter(filter),
+        formatItem: (customer) => customer.name,
+      ),
+    );
+    if (customer == null || !mounted) {
+      return;
+    }
+    final contact = await SelectBillingContactDialog.show(
+      context,
+      customer,
+      null,
+      null,
+    );
+    if (contact == null || !mounted) {
+      return;
+    }
+    try {
+      await BlockingUI().runAndWait(
+        () => DaoInvoice().updateBillTo(
+          invoiceId: details.invoice.id,
+          customerId: customer.id,
+          contactId: contact.id,
+        ),
+        label: 'Updating bill-to customer',
+      );
+      await _reloadInvoiceAndRefresh();
+    } catch (error) {
+      HMBToast.error(error.toString());
     }
   }
 

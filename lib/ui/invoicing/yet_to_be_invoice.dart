@@ -138,7 +138,7 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
         final job = item.job;
 
         final card = HMBListCard(
-          title: _customerNames[job.customerId] ?? '—',
+          title: _customerNames[job.billingCustomerId] ?? '—',
           children: [
             HMBLinkInternal(
               label: 'Job: #${job.id} ${job.summary}',

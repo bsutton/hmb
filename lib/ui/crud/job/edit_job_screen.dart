@@ -451,7 +451,17 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
           ..summary = _summaryController.text.trim()
           ..description = _descriptionController.text;
       case JobEditSection.customer:
-        job.customerId = June.getState(SelectedCustomer.new).customerId;
+        final selectedId = June.getState(SelectedCustomer.new).customerId;
+        if (selectedId != job.customerId) {
+          if (job.billingParty == BillingParty.customer &&
+              job.billingCustomerId == job.customerId) {
+            // Migrated jobs can explicitly store the job customer as Bill To.
+            job
+              ..billToCustomerId = null
+              ..billingContactId = null;
+          }
+          job.customerId = selectedId;
+        }
       case JobEditSection.site:
         job.siteId = June.getState(SelectedSite.new).siteId;
       case JobEditSection.billing:

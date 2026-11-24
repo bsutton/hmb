@@ -43,7 +43,7 @@ class ListInvoiceCard extends StatelessWidget {
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
       Text(
-        'Customer: ${invoiceDetails.customer?.name ?? 'N/A'}',
+        'Bill to: ${invoiceDetails.billingCustomer?.name ?? 'Unassigned'}',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),

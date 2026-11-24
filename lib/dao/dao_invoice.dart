@@ -22,6 +22,7 @@ import '../entity/entity.g.dart';
 import '../util/dart/exceptions.dart';
 import '../util/dart/money_ex.dart';
 import 'dao.dart';
+import 'dao_contact.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
 import 'dao_job.dart';
@@ -375,6 +376,31 @@ ORDER BY modified_date DESC
       return;
     }
     await update(invoice.copyWith(paymentSource: InvoicePaymentSource.manual));
+  }
+
+  Future<void> updateBillTo({
+    required int invoiceId,
+    required int customerId,
+    required int contactId,
+  }) async {
+    await db.transaction((txn) async {
+      await InvoiceLifecycleService().requireDraft(txn, invoiceId);
+      final contacts = await DaoContact().getByCustomer(customerId, txn);
+      if (!contacts.any((contact) => contact.id == contactId)) {
+        throw InvoiceException('Select a contact for the bill-to customer.');
+      }
+      await txn.update(
+        tableName,
+        {
+          'billing_customer_id': customerId,
+          'billing_contact_id': contactId,
+          'modified_date': DateTime.now().toIso8601String(),
+        },
+        where: 'id = ?',
+        whereArgs: [invoiceId],
+      );
+    });
+    Dao.notifier(this, invoiceId);
   }
 
   Future<void> updateBillingContact(int invoiceId, int contactId) async {

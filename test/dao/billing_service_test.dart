@@ -21,6 +21,38 @@ void main() {
   });
   tearDown(tearDownTestDb);
 
+  test(
+    'new invoice uses the saved bill-to customer and default contact',
+    () async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.dollars(90),
+        bookingFee: MoneyEx.dollars(20),
+      );
+      final payer = await createJobWithCustomer(
+        billingType: BillingType.timeAndMaterial,
+        hourlyRate: MoneyEx.zero,
+      );
+      job
+        ..billToCustomerId = payer.customerId
+        ..billingContactId = null;
+      await DaoJob().update(job);
+      final service = BillingService();
+      final preview = await service.preview(job.id);
+      expect(preview.billingCustomerId, payer.customerId);
+      expect(preview.defaultContactId, payer.contactId);
+      final draft = await service.commit(
+        preview.select(
+          keys: ['booking_fee:${job.id}'],
+          contactId: preview.defaultContactId!,
+        ),
+      );
+      final saved = await DaoInvoice().getById(draft.id);
+      expect(saved!.billingCustomerId, payer.customerId);
+      expect(saved.billingContactId, payer.contactId);
+    },
+  );
+
   for (final useMilestones in [false, true]) {
     test(
       'quoted booking fee follows invoice coverage: $useMilestones',
